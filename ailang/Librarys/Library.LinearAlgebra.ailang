@@ -1,0 +1,622 @@
+// ============================================================================
+// AILANG Linear Algebra Library - Complete Implementation
+// High-Performance, Cache-Aware Linear Algebra Operations with Hard PEMDAS
+// ============================================================================
+
+// Memory pools for different linear algebra workloads
+FixedPool SmallVectors {
+    "vector_storage": ElementType-FloatingPoint, MaximumLength-100000,
+    "cache_policy": Initialize-"L1", CanChange-False
+}
+
+DynamicPool LargeMatrices {
+    "matrix_storage": ElementType-FloatingPoint, CanChange-True,
+    "cache_policy": Initialize-"L3", CanChange-False,
+    "numa_aware": Initialize-True, CanChange-False
+}
+
+TemporalPool TemporaryWorkspace {
+    "temp_data": ElementType-FloatingPoint, MaximumLength-1000000,
+    "lifetime": Initialize-"function_scope", CanChange-False
+}
+
+TemporalPool EigenWorkspace {
+    "eigen_data": ElementType-FloatingPoint, MaximumLength-10000000,
+    "lifetime": Initialize-"algorithm_scope", CanChange-False
+}
+
+// ============================================================================
+// Core Data Types (simplified for AILANG)
+// ============================================================================
+
+FixedPool Vector2Pool {
+    "data": ElementType-FloatingPoint, MaximumLength-2,
+    "cache_line": Initialize-0, CanChange-False
+}
+
+FixedPool Vector3Pool {
+    "data": ElementType-FloatingPoint, MaximumLength-3,
+    "cache_line": Initialize-0, CanChange-False
+}
+
+FixedPool Vector4Pool {
+    "data": ElementType-FloatingPoint, MaximumLength-4,
+    "cache_line": Initialize-0, CanChange-False
+}
+
+FixedPool VectorXPool {
+    "data": ElementType-FloatingPoint, MaximumLength-1000000,
+    "size": Initialize-0, CanChange-True,
+    "capacity": Initialize-0, CanChange-True,
+    "pool_id": Initialize-0, CanChange-False
+}
+
+FixedPool Matrix2Pool {
+    "data": ElementType-FloatingPoint, MaximumLength-4,
+    "rows": Initialize-2, CanChange-False,
+    "cols": Initialize-2, CanChange-False,
+    "cache_aligned": Initialize-True, CanChange-False
+}
+
+FixedPool Matrix3Pool {
+    "data": ElementType-FloatingPoint, MaximumLength-9,
+    "rows": Initialize-3, CanChange-False,
+    "cols": Initialize-3, CanChange-False,
+    "cache_aligned": Initialize-True, CanChange-False
+}
+
+FixedPool Matrix4Pool {
+    "data": ElementType-FloatingPoint, MaximumLength-16,
+    "rows": Initialize-4, CanChange-False,
+    "cols": Initialize-4, CanChange-False,
+    "cache_aligned": Initialize-True, CanChange-False
+}
+
+FixedPool MatrixXPool {
+    "data": ElementType-FloatingPoint, MaximumLength-10000000,
+    "rows": Initialize-0, CanChange-True,
+    "cols": Initialize-0, CanChange-True,
+    "stride": Initialize-0, CanChange-True,
+    "pool_id": Initialize-0, CanChange-False,
+    "storage_order": Initialize-"column_major", CanChange-False
+}
+
+FixedPool SparseMatrixPool {
+    "values": ElementType-FloatingPoint, MaximumLength-1000000,
+    "row_indices": ElementType-Integer, MaximumLength-1000000,
+    "col_pointers": ElementType-Integer, MaximumLength-10000,
+    "rows": Initialize-0, CanChange-True,
+    "cols": Initialize-0, CanChange-True,
+    "nnz": Initialize-0, CanChange-True
+}
+
+// ============================================================================
+// Basic Vector Operations (Already implemented with PEMDAS)
+// ============================================================================
+
+Function VectorDot2D {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, bx: FloatingPoint, by: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((ax * bx) + (ay * by)))
+    }
+}
+
+Function VectorDot3D {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, az: FloatingPoint, 
+            bx: FloatingPoint, by: FloatingPoint, bz: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((ax * bx) + (ay * by)) + (az * bz)))
+    }
+}
+
+Function VectorMagnitude2D {
+    Input: (x: FloatingPoint, y: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(SquareRoot((x * x) + (y * y)))
+    }
+}
+
+Function VectorNormalize2D {
+    Input: (x: FloatingPoint, y: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(SquareRoot((x * x) + (y * y)))
+    }
+}
+
+Function VectorCross2D {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, bx: FloatingPoint, by: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((ax * by) - (ay * bx)))
+    }
+}
+
+// ============================================================================
+// Matrix Operations with PEMDAS
+// ============================================================================
+
+Function Matrix2x2Determinant {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a11 * a22) - (a12 * a21)))
+    }
+}
+
+Function Matrix3x3Determinant {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a11 * ((a22 * a33) - (a23 * a32))) - (a12 * ((a21 * a33) - (a23 * a31)))) + (a13 * ((a21 * a32) - (a22 * a31)))))
+    }
+}
+
+Function Matrix2x2Inverse11 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((a22 / ((a11 * a22) - (a12 * a21))))
+    }
+}
+
+Function Matrix2x2Inverse12 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((-1.0) * a12) / ((a11 * a22) - (a12 * a21))))
+    }
+}
+
+Function Matrix2x2Inverse21 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((-1.0) * a21) / ((a11 * a22) - (a12 * a21))))
+    }
+}
+
+Function Matrix2x2Inverse22 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((a11 / ((a11 * a22) - (a12 * a21))))
+    }
+}
+
+// Matrix multiplication elements
+Function Matrix2x2Multiply11 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b21: FloatingPoint, b22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a11 * b11) + (a12 * b21)))
+    }
+}
+
+Function Matrix2x2Multiply12 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b21: FloatingPoint, b22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a11 * b12) + (a12 * b22)))
+    }
+}
+
+Function Matrix2x2Multiply21 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b21: FloatingPoint, b22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a21 * b11) + (a22 * b21)))
+    }
+}
+
+Function Matrix2x2Multiply22 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b21: FloatingPoint, b22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a21 * b12) + (a22 * b22)))
+    }
+}
+
+Function Matrix2x2VectorMultiply1 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            v1: FloatingPoint, v2: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a11 * v1) + (a12 * v2)))
+    }
+}
+
+Function Matrix2x2VectorMultiply2 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            v1: FloatingPoint, v2: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((a21 * v1) + (a22 * v2)))
+    }
+}
+
+Function Matrix2x2Transpose11 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(a11)
+    }
+}
+
+Function Matrix2x2Transpose12 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(a21)
+    }
+}
+
+Function Matrix2x2Transpose21 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(a12)
+    }
+}
+
+Function Matrix2x2Transpose22 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(a22)
+    }
+}
+
+Function Matrix2x2Trace {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((a11 + a22))
+    }
+}
+
+Function Matrix2x2FrobeniusNorm {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(SquareRoot((((a11 * a11) + (a12 * a12)) + ((a21 * a21) + (a22 * a22)))))
+    }
+}
+
+// ============================================================================
+// 3x3 Matrix Operations
+// ============================================================================
+
+Function Matrix3x3Multiply11 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b13: FloatingPoint,
+            b21: FloatingPoint, b22: FloatingPoint, b23: FloatingPoint,
+            b31: FloatingPoint, b32: FloatingPoint, b33: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a11 * b11) + (a12 * b21)) + (a13 * b31)))
+    }
+}
+
+Function Matrix3x3Multiply12 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b13: FloatingPoint,
+            b21: FloatingPoint, b22: FloatingPoint, b23: FloatingPoint,
+            b31: FloatingPoint, b32: FloatingPoint, b33: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a11 * b12) + (a12 * b22)) + (a13 * b32)))
+    }
+}
+
+Function Matrix3x3Multiply13 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint,
+            b11: FloatingPoint, b12: FloatingPoint, b13: FloatingPoint,
+            b21: FloatingPoint, b22: FloatingPoint, b23: FloatingPoint,
+            b31: FloatingPoint, b32: FloatingPoint, b33: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a11 * b13) + (a12 * b23)) + (a13 * b33)))
+    }
+}
+
+Function Matrix3x3VectorMultiply1 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint,
+            v1: FloatingPoint, v2: FloatingPoint, v3: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a11 * v1) + (a12 * v2)) + (a13 * v3)))
+    }
+}
+
+Function Matrix3x3VectorMultiply2 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint,
+            v1: FloatingPoint, v2: FloatingPoint, v3: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a21 * v1) + (a22 * v2)) + (a23 * v3)))
+    }
+}
+
+Function Matrix3x3VectorMultiply3 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a13: FloatingPoint,
+            a21: FloatingPoint, a22: FloatingPoint, a23: FloatingPoint,
+            a31: FloatingPoint, a32: FloatingPoint, a33: FloatingPoint,
+            v1: FloatingPoint, v2: FloatingPoint, v3: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((((a31 * v1) + (a32 * v2)) + (a33 * v3)))
+    }
+}
+
+// ============================================================================
+// Vector Operations with Magnitude
+// ============================================================================
+
+Function VectorMagnitude3D {
+    Input: (x: FloatingPoint, y: FloatingPoint, z: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(SquareRoot((((x * x) + (y * y)) + (z * z))))
+    }
+}
+
+Function VectorNormalize3D_X {
+    Input: (x: FloatingPoint, y: FloatingPoint, z: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((x / SquareRoot((((x * x) + (y * y)) + (z * z)))))
+    }
+}
+
+Function VectorNormalize3D_Y {
+    Input: (x: FloatingPoint, y: FloatingPoint, z: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((y / SquareRoot((((x * x) + (y * y)) + (z * z)))))
+    }
+}
+
+Function VectorNormalize3D_Z {
+    Input: (x: FloatingPoint, y: FloatingPoint, z: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue((z / SquareRoot((((x * x) + (y * y)) + (z * z)))))
+    }
+}
+
+// ============================================================================
+// 3D Vector Cross Product Components
+// ============================================================================
+
+Function VectorCross3D_X {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, az: FloatingPoint,
+            bx: FloatingPoint, by: FloatingPoint, bz: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((ay * bz) - (az * by)))
+    }
+}
+
+Function VectorCross3D_Y {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, az: FloatingPoint,
+            bx: FloatingPoint, by: FloatingPoint, bz: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((az * bx) - (ax * bz)))
+    }
+}
+
+Function VectorCross3D_Z {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, az: FloatingPoint,
+            bx: FloatingPoint, by: FloatingPoint, bz: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(((ax * by) - (ay * bx)))
+    }
+}
+
+// ============================================================================
+// Linear System Solvers
+// ============================================================================
+
+Function LinearSolve2x2_X {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            b1: FloatingPoint, b2: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        // Using Cramer's rule: x = (b1*a22 - b2*a12) / det(A)
+        ReturnValue((((b1 * a22) - (b2 * a12)) / ((a11 * a22) - (a12 * a21))))
+    }
+}
+
+Function LinearSolve2x2_Y {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint,
+            b1: FloatingPoint, b2: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        // Using Cramer's rule: y = (a11*b2 - a21*b1) / det(A)
+        ReturnValue((((a11 * b2) - (a21 * b1)) / ((a11 * a22) - (a12 * a21))))
+    }
+}
+
+// ============================================================================
+// Matrix Eigenvalue Calculations (2x2)
+// ============================================================================
+
+Function Matrix2x2Eigenvalue1 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        // λ1 = (trace + sqrt(trace² - 4*det)) / 2
+        ReturnValue((((a11 + a22) + SquareRoot((((a11 + a22) * (a11 + a22)) - (4.0 * ((a11 * a22) - (a12 * a21)))))) / 2.0))
+    }
+}
+
+Function Matrix2x2Eigenvalue2 {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        // λ2 = (trace - sqrt(trace² - 4*det)) / 2
+        ReturnValue((((a11 + a22) - SquareRoot((((a11 + a22) * (a11 + a22)) - (4.0 * ((a11 * a22) - (a12 * a21)))))) / 2.0))
+    }
+}
+
+// ============================================================================
+// Initialization Functions
+// ============================================================================
+
+Function VectorArrayInitialize {
+    Input: (value: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(value)
+    }
+}
+
+Function MatrixArrayInitialize {
+    Input: (value: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(value)
+    }
+}
+
+Function MatrixIdentityElement {
+    Input: (i: Integer, j: Integer)
+    Output: FloatingPoint
+    Body: {
+        IfCondition EqualTo(i, j) ThenBlock {
+            ReturnValue(1.0)
+        } ElseBlock {
+            ReturnValue(0.0)
+        }
+    }
+}
+
+// ============================================================================
+// Distance and Angle Calculations
+// ============================================================================
+
+Function VectorDistance2D {
+    Input: (x1: FloatingPoint, y1: FloatingPoint, x2: FloatingPoint, y2: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(SquareRoot((((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)))))
+    }
+}
+
+Function VectorDistance3D {
+    Input: (x1: FloatingPoint, y1: FloatingPoint, z1: FloatingPoint,
+            x2: FloatingPoint, y2: FloatingPoint, z2: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        ReturnValue(SquareRoot(((((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1))) + ((z2 - z1) * (z2 - z1)))))
+    }
+}
+
+Function VectorAngleCosine2D {
+    Input: (ax: FloatingPoint, ay: FloatingPoint, bx: FloatingPoint, by: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        // cos(θ) = (a·b) / (|a| * |b|)
+        ReturnValue((((ax * bx) + (ay * by)) / (SquareRoot((ax * ax) + (ay * ay)) * SquareRoot((bx * bx) + (by * by)))))
+    }
+}
+
+// ============================================================================
+// Matrix Condition Number (simplified)
+// ============================================================================
+
+Function Matrix2x2ConditionNumber {
+    Input: (a11: FloatingPoint, a12: FloatingPoint, a21: FloatingPoint, a22: FloatingPoint)
+    Output: FloatingPoint
+    Body: {
+        // Simplified: ratio of largest to smallest singular value
+        // For 2x2, approximated using Frobenius norm and determinant
+        ReturnValue((SquareRoot((((a11 * a11) + (a12 * a12)) + ((a21 * a21) + (a22 * a22)))) / SquareRoot(AbsoluteValue((a11 * a22) - (a12 * a21)))))
+    }
+}
+
+// ============================================================================
+// Demo and Test Functions
+// ============================================================================
+
+Function LinearAlgebraDemo {
+    Input: (dummy: Integer)
+    Output: Integer
+    Body: {
+        PrintMessage("AILANG Linear Algebra Library Demo - PEMDAS Enhanced!")
+        PrintMessage("Now featuring beautiful mathematical expressions:")
+        PrintMessage("  ((a * b) + c) instead of Add(Multiply(a, b), c)")
+        PrintMessage("  ((-1.0) * x) for negative multiplication")
+        PrintMessage("  ((a / b) - (c * d)) for complex expressions")
+        PrintMessage("All functions now use elegant infix notation!")
+        ReturnValue(1)
+    }
+}
+
+Function TestVector2D {
+    Input: (dummy: Integer)
+    Output: Integer
+    Body: {
+        PrintMessage("Testing 2D Vector Operations:")
+        
+        // Test dot product: (3,4) · (1,2) = 3*1 + 4*2 = 11
+       vector1 = Vector2D(x-3.0, y-4.0)
+vector2 = Vector2D(x-1.0, y-2.0)
+dot = VectorDot2D(v1-vector1, v2-vector2)
+        PrintMessage("Dot product: " + NumberToString(dot))
+        
+        // Test magnitude: |(3,4)| = 5
+        mag = VectorMagnitude2D(3.0, 4.0)
+        PrintMessage("Magnitude: " + NumberToString(mag))
+        
+        // Test cross product (2D): 3*2 - 4*1 = 2
+        cross = VectorCross2D(3.0, 4.0, 1.0, 2.0)
+        PrintMessage("Cross product: " + NumberToString(cross))
+        
+        ReturnValue(1)
+    }
+}
+
+Function TestMatrix2x2 {
+    Input: (dummy: Integer)
+    Output: Integer
+    Body: {
+        PrintMessage("Testing 2x2 Matrix Operations:")
+        
+        // Test determinant: |[2,1][3,4]| = 2*4 - 1*3 = 5
+        det = Matrix2x2Determinant(2.0, 1.0, 3.0, 4.0)
+        PrintMessage("Determinant: " + NumberToString(det))
+        
+        // Test trace: tr([2,1][3,4]) = 2 + 4 = 6
+        trace = Matrix2x2Trace(2.0, 1.0, 3.0, 4.0)
+        PrintMessage("Trace: " + NumberToString(trace))
+        
+        // Test matrix multiply element [1,1]
+        m11 = Matrix2x2Multiply11(2.0, 1.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0)
+        PrintMessage("Matrix multiply [1,1]: " + NumberToString(m11))
+        
+        ReturnValue(1)
+    }
+}

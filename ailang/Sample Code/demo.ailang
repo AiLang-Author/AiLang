@@ -1,0 +1,42 @@
+//DOC: Complex AILang test file for VSCode extension validation //
+//TAG: TestCase #001
+//COM: Includes pools, VM ops, interrupts, and graphics //
+
+AcronymDefinitions {
+  GRP = "GraphicsPool"
+  VMEM = "VirtualMemory"
+  INT = "InterruptHandler"
+}
+
+FixedPool GRP {
+  "buffer": Initialize-Null, CanChange-True, MaximumLength-4194304
+  "clipBox": Initialize-[0.0, 0.0, 1024.0, 768.0], CanBeNull-False
+}
+
+FixedPool VMConfig {
+  "page_levels": Initialize-4
+  "page_size": Initialize-"4KB"
+  "memory_size": Initialize-1048576
+}
+
+Function RenderFrame {
+  Input: (x: Integer, y: Integer)
+  Output: Pointer[Byte]
+  Body: {
+    PrintMessage("Rendering frame")
+    ReturnValue(GRP_buffer)
+  }
+}
+
+MacroBlock VMUtils {
+  "flush_enabled": Initialize-True
+}
+
+SecurityContext KernelSafe {
+  "memory_limit": Initialize-16777216
+}
+
+InterruptHandler INT0 {
+  "vector": Initialize-0x20
+  "enabled": Initialize-True
+}
