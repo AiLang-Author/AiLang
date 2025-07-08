@@ -1,9 +1,8 @@
-# Module exports for AILANG compiler
-from ailang_compiler.modules.arithmetic_ops import ArithmeticOps
-from ailang_compiler.modules.fileio_ops import FileIOOps
-from ailang_compiler.modules.control_flow import ControlFlow
-from ailang_compiler.modules.memory_manager import MemoryManager
-from ailang_compiler.modules.string_ops import StringOps
-from ailang_compiler.modules.expression_compiler import ExpressionCompiler
-from ailang_compiler.modules.code_generator import CodeGenerator
-from ailang_compiler.modules.lowlevel_ops import LowLevelOps
+# Module exports for AILANG compilerfrom .arithmetic_ops import ArithmeticOps
+from .fileio_ops import FileIOOps
+from .control_flow import ControlFlow
+from .memory_manager import MemoryManager
+from .string_ops import StringOps
+from .expression_compiler import ExpressionCompiler
+from .code_generator import CodeGenerator
+from .lowlevel_ops import LowLevelOps
