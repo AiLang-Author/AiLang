@@ -44,14 +44,14 @@ ailang
 Copy
 Edit
 // Declare a task
-Define Task BuildBrain {
-    Input: SensorData
-    Output: NeuralMap
-
-    Step 1: Parse SensorData
-    Step 2: Generate NeuralMap using SynapseMatrix
-    Step 3: Validate Output
-}
+//Define Task BuildBrain {
+//    Input: SensorData
+//    Output: NeuralMap
+//
+//    Step 1: Parse SensorData
+//    Step 2: Generate NeuralMap using SynapseMatrix
+//    Step 3: Validate Output
+//}
 
 // Run it
 Run Task BuildBrain with Input = LiveFeed
