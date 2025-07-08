@@ -5,11 +5,8 @@ Handles VM operations with user-mode safe implementations for testing
 Preserves all functionality while avoiding privileged instructions
 """
 
-import sys
-import os
 import struct
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class VirtualMemoryOpsUserMode:
     """USER MODE SAFE: Virtual Memory operations for testing in user space"""
@@ -499,5 +496,4 @@ class VirtualMemoryOpsUserMode:
             return args
             
         except Exception as e:
-            print(f"ERROR: USER MODE - Failed to parse VM arguments: {str(e)}")
-            return {}
+            print(f"ERROR: USER MODE - Failed to parse VM arguments: {str(e)}")            return {}

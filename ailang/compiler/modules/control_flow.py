@@ -4,11 +4,8 @@ Control Flow Module for AILANG Compiler
 Handles if/else and while loops with proper condition type support
 """
 
-import sys
-import os
 import struct
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class ControlFlow:
     """Handles control flow constructs"""
@@ -136,5 +133,4 @@ class ControlFlow:
             print(f"DEBUG: If end at position {end_pos}, JMP offset: {jmp_offset}")
             
         except Exception as e:
-            print(f"ERROR: If condition compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: If condition compilation failed: {str(e)}")            raise

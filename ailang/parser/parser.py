@@ -1,7 +1,7 @@
 # parser.py - ENHANCED FOR SYSTEMS PROGRAMMING
 from typing import List, Optional, Tuple, Dict
-from lexer import TokenType, Token, LexerError
-from ailang_ast import *
+from .lexer import TokenType, Token, LexerError
+from .ailang_ast import *
 
 class ParseError(Exception):
     def __init__(self, message: str, token: Optional[Token] = None):
@@ -1839,5 +1839,4 @@ class Parser:
             function=function_name,
             arguments=arguments,
             line=start_token.line,
-            column=start_token.column
-        )
+            column=start_token.column        )
