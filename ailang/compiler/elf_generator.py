@@ -156,5 +156,4 @@ class ELFGenerator:
         
         # Data section
         result.extend(data)
-        
-        return bytes(result)
+                return bytes(result)

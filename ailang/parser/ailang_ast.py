@@ -523,5 +523,4 @@ class CacheOperation(ASTNode):
 class MemoryBarrierOperation(ASTNode):
     """Memory barrier and ordering operations"""
     barrier_type: str  # "read", "write", "full", "acquire", "release"
-    scope: Optional[ASTNode] = None  # "local", "global", "device"
-    ordering: Optional[ASTNode] = None  # Memory ordering semantics    
+    scope: Optional[ASTNode] = None  # "local", "global", "device"    ordering: Optional[ASTNode] = None  # Memory ordering semantics

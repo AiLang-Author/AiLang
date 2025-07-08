@@ -113,5 +113,4 @@ def compile_ailang_to_executable(source_code: str, output_file: str = "program",
         print(f"🚀 Run with: {output_file}")
     else:
         print(f"❌ ERROR: File {output_file} was not created!")
-    
-    return True
+        return True

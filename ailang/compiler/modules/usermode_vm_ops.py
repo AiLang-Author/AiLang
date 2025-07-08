@@ -499,5 +499,4 @@ class VirtualMemoryOpsUserMode:
             return args
             
         except Exception as e:
-            print(f"ERROR: USER MODE - Failed to parse VM arguments: {str(e)}")
-            return {}
+            print(f"ERROR: USER MODE - Failed to parse VM arguments: {str(e)}")            return {}

@@ -961,5 +961,4 @@ class X64Assembler:
         
         # Clear pending jumps
         resolved_count = len(self.pending_jumps)
-        self.pending_jumps = []
-        print(f"DEBUG: Successfully resolved {resolved_count} 32-bit jumps")
+        self.pending_jumps = []        print(f"DEBUG: Successfully resolved {resolved_count} 32-bit jumps")

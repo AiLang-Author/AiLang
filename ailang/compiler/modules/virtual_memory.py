@@ -504,5 +504,4 @@ class VirtualMemoryOps:
             return args
             
         except Exception as e:
-            print(f"ERROR: Failed to parse VM arguments: {str(e)}")
-            return {}
+            print(f"ERROR: Failed to parse VM arguments: {str(e)}")            return {}

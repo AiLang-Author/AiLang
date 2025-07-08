@@ -54,5 +54,4 @@ class CodeGenerator:
             print(f"DEBUG: Emitted {jump_type} to {target_label} at position {jump_pos}")
             return jump_pos
         except Exception as e:
-            print(f"ERROR: Conditional jump emission failed: {str(e)}")
-            raise
+            print(f"ERROR: Conditional jump emission failed: {str(e)}")            raise

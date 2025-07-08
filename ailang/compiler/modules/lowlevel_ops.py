@@ -880,5 +880,4 @@ class LowLevelOps:
             return False
             
         except Exception as e:
-            print(f"ERROR: System call compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: System call compilation failed: {str(e)}")            raise

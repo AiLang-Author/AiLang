@@ -1035,5 +1035,4 @@ class Lexer:
                 continue
 
             self.error(f"Unknown character '{self.current_char()}'")
-        self.tokens.append(Token(TokenType.EOF, None, self.line, self.column))
-        return self.tokens
+        self.tokens.append(Token(TokenType.EOF, None, self.line, self.column))        return self.tokens

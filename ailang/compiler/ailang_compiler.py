@@ -183,5 +183,4 @@ def emit_dmareceive(var_name, source_pool):
 def allocate_stack_slot(var_name, slot_index):
     return f"// STACK ALLOC: {var_name} @ slot {slot_index}\n"
 
-def emit_variable_pool_comment(var_name, pool_name):
-    return f"// VAR {var_name} is in pool '{pool_name}'\n"
+def emit_variable_pool_comment(var_name, pool_name):    return f"// VAR {var_name} is in pool '{pool_name}'\n"

@@ -151,5 +151,4 @@ class ArithmeticOps:
             return str(arg.value)
         elif hasattr(arg, 'function'):  # FunctionCall
             return f"{arg.function}(...)"
-        else:
-            return type(arg).__name__
+        else:            return type(arg).__name__

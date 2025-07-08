@@ -1839,5 +1839,4 @@ class Parser:
             function=function_name,
             arguments=arguments,
             line=start_token.line,
-            column=start_token.column
-        )
+            column=start_token.column        )

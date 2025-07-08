@@ -47,5 +47,4 @@ class ExpressionCompiler:
                 raise ValueError(f"Unsupported expression type: {type(expr)}")
                 
         except Exception as e:
-            print(f"ERROR: Expression compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: Expression compilation failed: {str(e)}")            raise

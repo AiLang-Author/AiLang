@@ -292,5 +292,4 @@ class MemoryManager:
             return identifier_name
             
         except Exception as e:
-            print(f"ERROR: Failed to resolve acronym {identifier_name}: {str(e)}")
-            return identifier_name
+            print(f"ERROR: Failed to resolve acronym {identifier_name}: {str(e)}")            return identifier_name

@@ -372,5 +372,4 @@ class FileIOOps:
             print("DEBUG: FileExists compilation completed (CLEAN LABELS)")
             
         except Exception as e:
-            print(f"ERROR: FileExists compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: FileExists compilation failed: {str(e)}")            raise

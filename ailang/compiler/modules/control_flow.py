@@ -136,5 +136,4 @@ class ControlFlow:
             print(f"DEBUG: If end at position {end_pos}, JMP offset: {jmp_offset}")
             
         except Exception as e:
-            print(f"ERROR: If condition compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: If condition compilation failed: {str(e)}")            raise
