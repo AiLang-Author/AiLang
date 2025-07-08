@@ -8,8 +8,8 @@ NO MORE HARDCODED OFFSETS!
 import os
 import struct
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+
+from ..ailang_ast import *
 
 class FileIOOps:
     """Handles file I/O operations with clean label-based jumps"""

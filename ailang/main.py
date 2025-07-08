@@ -6,9 +6,9 @@ Compiles AILANG source to x86-64 executables
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Ailang', 'ailang_parser')))
-from compiler import AILANGCompiler
-from ailang_compiler import AILANGToX64Compiler
+
+from .compiler import AILANGCompiler
+from .ailang_compiler import AILANGToX64Compiler
 
 def compile_ailang_to_executable(source_code: str, output_file: str = "program", vm_mode: str = "user"):
     """Compile AILANG source directly to executable with VM mode selection"""

@@ -1,8 +1,8 @@
 # Update ailang_compiler/ailang_compiler.py for dual-mode VM operations
 
 # 1. ADD IMPORTS (around line 15):
-from ailang_compiler.modules.virtual_memory import VirtualMemoryOps  # Kernel mode
-from ailang_compiler.modules.virtual_memory_usermode import VirtualMemoryOpsUserMode  # User mode
+from .modules.virtual_memory import VirtualMemoryOps  # Kernel mode
+from .modules.virtual_memory_usermode import VirtualMemoryOpsUserMode  # User mode
 
 # 2. UPDATE the AILANGToX64Compiler class __init__ method:
 

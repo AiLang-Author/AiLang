@@ -6,10 +6,9 @@ Tests both USER MODE and KERNEL MODE VM operations
 
 import sys
 import os
-sys.path.append('ailang_parser')
-sys.path.append('ailang_compiler')
-from compiler import AILANGCompiler
-from ailang_compiler import AILANGToX64Compiler
+
+from .compiler import AILANGCompiler
+from .ailang_compiler import AILANGToX64Compiler
 
 # VM Test Program
 vm_source = '''
