@@ -1,8 +1,8 @@
 
 # compiler.py
-from lexer import Lexer
-from parser import Parser
-from ailang_ast import Program
+from .lexer import Lexer
+from .parser import Parser
+from .ailang_ast import Program
 
 class AILANGCompiler:
     """Main compiler class for AILANG"""

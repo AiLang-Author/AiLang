@@ -7,8 +7,8 @@ Handles expression evaluation
 import sys
 import os
 import struct
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+
+from ..ailang_ast import *
 
 class ExpressionCompiler:
     """Handles expression compilation"""
