@@ -10,18 +10,18 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
 from ailang_ast import *
 
-from ailang_compiler.x64_assembler import X64Assembler
-from ailang_compiler.elf_generator import ELFGenerator
+from ailang.compiler.x64_assembler import X64Assembler
+from ailang.compiler.elf_generator import ELFGenerator
 from ailang_ast import *
-from ailang_compiler.modules.arithmetic_ops import ArithmeticOps
-from ailang_compiler.modules.fileio_ops import FileIOOps
-from ailang_compiler.modules.control_flow import ControlFlow
-from ailang_compiler.modules.memory_manager import MemoryManager
-from ailang_compiler.modules.string_ops import StringOps
-from ailang_compiler.modules.expression_compiler import ExpressionCompiler
-from ailang_compiler.modules.code_generator import CodeGenerator
-from ailang_compiler.modules.lowlevel_ops import LowLevelOps
-from ailang_compiler.modules.virtual_memory import VirtualMemoryOps
+from ailang.compiler.modules.arithmetic_ops import ArithmeticOps
+from ailang.compiler.modules.fileio_ops import FileIOOps
+from ailang.compiler.modules.control_flow import ControlFlow
+from ailang.compiler.modules.memory_manager import MemoryManager
+from ailang.compiler.modules.string_ops import StringOps
+from ailang.compiler.modules.expression_compiler import ExpressionCompiler
+from ailang.compiler.modules.code_generator import CodeGenerator
+from ailang.compiler.modules.lowlevel_ops import LowLevelOps
+from ailang.compiler.modules.virtual_memory import VirtualMemoryOps
 
 class AILANGToX64Compiler:
     """Main compiler orchestrator for AILANG to x86-64 compilation"""
@@ -54,11 +54,11 @@ class AILANGToX64Compiler:
         
         # VM OPERATIONS MODULE SELECTION
         if self.vm_mode == "kernel":
-            from ailang_compiler.modules.virtual_memory import VirtualMemoryOps
+            from ailang.compiler.modules.virtual_memory import VirtualMemoryOps
             self.virtual_memory = VirtualMemoryOps(self)
             print("DEBUG: Using KERNEL MODE VM operations (privileged instructions)")
         else:  # Default to user mode
-            from ailang_compiler.modules.usermode_vm_ops import VirtualMemoryOpsUserMode
+            from ailang.compiler.modules.usermode_vm_ops import VirtualMemoryOpsUserMode
             self.virtual_memory = VirtualMemoryOpsUserMode(self)
             print("DEBUG: Using USER MODE VM operations (safe for testing)")
 
