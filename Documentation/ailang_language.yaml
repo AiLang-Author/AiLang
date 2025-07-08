@@ -1,0 +1,256 @@
+```yaml
+---
+language: AILANG
+version: 1.0
+description: AILANG is a domain-specific language for system programming with enhanced arithmetic and pool-based resource management.
+
+# Syntax Overview
+syntax:
+  indentation: 2 spaces
+  comments:
+    single_line: "//"
+    multi_line: "//DOC:// ... //"
+  delimiters:
+    block_start: "{"
+    block_end: "}"
+    param_list_start: "("
+    param_list_end: ")"
+    array_start: "["
+    array_end: "]"
+    separator: ","
+    assignment: "="
+    namespace: "."
+    key_value: ":"
+
+# Keywords
+keywords:
+  control_flow:
+    - RunTask
+    - PrintMessage
+    - ReturnValue
+    - IfCondition
+    - ThenBlock
+    - ElseBlock
+    - ChoosePath
+    - WhileLoop
+    - ForEvery
+    - TryBlock
+    - CatchError
+    - FinallyBlock
+    - BreakLoop
+    - ContinueLoop
+    - HaltProgram
+  pool_types:
+    - FixedPool
+    - DynamicPool
+    - TemporalPool
+    - NeuralPool
+    - KernelPool
+    - ActorPool
+    - SecurityPool
+    - ConstrainedPool
+  pool_operations:
+    - SubPool
+    - Initialize
+    - CanChange
+    - CanBeNull
+    - Range
+    - MaximumLength
+    - MinimumLength
+    - ElementType
+    - Where
+  operators:
+    arithmetic:
+      - Add
+      - Subtract
+      - Multiply
+      - Divide
+      - Power
+      - Modulo
+      - SquareRoot
+      - AbsoluteValue
+    comparison:
+      - GreaterThan
+      - LessThan
+      - GreaterEqual
+      - LessEqual
+      - EqualTo
+      - NotEqual
+    logical:
+      - And
+      - Or
+      - Not
+      - Xor
+      - Implies
+  input_functions:
+    - ReadInput
+    - ReadInputNumber
+    - GetUserChoice
+  string_functions:
+    - StringEquals
+    - StringContains
+    - StringConcat
+    - StringLength
+    - NumberToString
+    - StringToNumber
+  types:
+    - Integer
+    - FloatingPoint
+    - Text
+    - Boolean
+    - Array
+    - Map
+    - Void
+    - Any
+  organization:
+    - Function
+    - SubRoutine
+    - LibraryImport
+    - AcronymDefinitions
+
+# Constructs
+constructs:
+  program:
+    structure: Program { declarations }
+    description: Top-level program containing declarations
+  pool:
+    syntax: |
+      <PoolType>.<name> {
+        "<key>": Initialize-<value>, <attributes>
+        SubPool.<name> { ... }
+      }
+    example: |
+      FixedPool.SystemResources {
+        "MemorySize": Initialize-1024, CanChange-False
+        SubPool.CPU {
+          "Cores": Initialize-4
+        }
+      }
+    description: Resource pools for managing variables and data
+  function:
+    syntax: |
+      Function.<name> {
+        Input: (<param>: <type>, ...)
+        Output: <type>
+        Body: { statements }
+      }
+    example: |
+      Function.CalculateSum {
+        Input: (a: Integer, b: Integer)
+        Output: Integer
+        Body: {
+          ReturnValue(Add(a, b))
+        }
+      }
+  if_condition:
+    syntax: |
+      IfCondition <condition> ThenBlock {
+        statements
+      } ElseBlock {
+        statements
+      }
+    example: |
+      IfCondition EqualTo(x, 0) ThenBlock {
+        PrintMessage("Zero")
+      } ElseBlock {
+        PrintMessage("Non-zero")
+      }
+  while_loop:
+    syntax: |
+      WhileLoop <condition> {
+        statements
+      }
+    example: |
+      WhileLoop LessThan(i, 10) {
+        PrintMessage(NumberToString(i))
+        i = Add(i, 1)
+      }
+  assignment:
+    syntax: <identifier> = <expression>
+    example: x = Add(5, 3)
+  print_message:
+    syntax: PrintMessage(<expression>)
+    example: PrintMessage("Hello, World!")
+  acronym_definitions:
+    syntax: |
+      AcronymDefinitions {
+        <ACRONYM> = <FullName>,
+        ...
+      }
+    example: |
+      AcronymDefinitions {
+        SYS = SystemResources,
+        CFG = Configuration
+      }
+
+# Semantics
+semantics:
+  variable_scope: Variables are stack-allocated with pre-calculated offsets
+  type_system: Dynamic typing with optional constraints
+  execution_model: Sequential with syscall-based I/O
+  memory_management: Pool-based with explicit initialization
+  arithmetic: Supports unlimited precision via named operators
+  error_handling: Try-Catch-Finally blocks for exception handling
+
+# Mapping C/C++ to AILANG
+c_to_ailang_mapping:
+  variables:
+    c: int x = 5;
+    ailang: x = 5
+  functions:
+    c: |
+      int add(int a, int b) {
+        return a + b;
+      }
+    ailang: |
+      Function.add {
+        Input: (a: Integer, b: Integer)
+        Output: Integer
+        Body: {
+          ReturnValue(Add(a, b))
+        }
+      }
+  loops:
+    c: |
+      while (i < 10) {
+        printf("%d\n", i);
+        i++;
+      }
+    ailang: |
+      WhileLoop LessThan(i, 10) {
+        PrintMessage(NumberToString(i))
+        i = Add(i, 1)
+      }
+  conditionals:
+    c: |
+      if (x == 0) {
+        printf("Zero");
+      } else {
+        printf("Non-zero");
+      }
+    ailang: |
+      IfCondition EqualTo(x, 0) ThenBlock {
+        PrintMessage("Zero")
+      } ElseBlock {
+        PrintMessage("Non-zero")
+      }
+  input_output:
+    c: printf("Hello");
+    ailang: PrintMessage("Hello")
+  pointers:
+    note: Not directly supported; map to pool resources or flag for manual review
+  classes_structs:
+    note: Map to FixedPool or DynamicPool with ResourceItems
+
+# Post-Parsing Tasks for AI
+post_parsing_tasks:
+  - validate_variable_names: Ensure identifiers meet AILANG's naming rules (3+ chars unless allowed)
+  - optimize_pool_allocation: Group related variables into appropriate pool types
+  - handle_pointers: Convert C/C++ pointers to pool-based resources or references
+  - add_acronyms: Generate AcronymDefinitions for common abbreviations
+  - verify_types: Add type annotations where possible
+  - flag_unsupported: Identify C/C++ features (e.g., templates, inline assembly) for manual review
+  - optimize_expressions: Convert infix notation to AILANG's named operator functions
+  - add_error_handling: Insert Try-Catch blocks for I/O operations
+---
+```
