@@ -184,7 +184,7 @@ CachePrefetch.Suggest(memory_address, access_pattern-SEQUENTIAL)
 
 ### New Compiler Modules Required:
 ```
-ailang_compiler/modules/
+ailang/compiler/modules/
 ├── virtual_memory.py         # Phase 2A
 ├── cpu_native_scheduling.py  # Phase 2B - REVOLUTIONARY  
 ├── cache_management.py       # Phase 2B - Cache-aware ops
