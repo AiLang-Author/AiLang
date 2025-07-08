@@ -252,7 +252,7 @@ implementation_phases:
 # ============================================================================
 components:
   agent_compiler_module:
-    location: "ailang_compiler/modules/agent_ops.py"
+    location: "ailang/compiler/modules/agent_ops.py"
     responsibilities:
       - "Compile agent declarations to memory layouts"
       - "Generate state machine execution code"
@@ -266,7 +266,7 @@ components:
       - "optimize_agent_placement()"
   
   agent_runtime_module:
-    location: "ailang_compiler/modules/agent_runtime.py"
+    location: "ailang/compiler/modules/agent_runtime.py"
     responsibilities:
       - "Agent execution engine implementation"
       - "State machine interpreter"
@@ -280,7 +280,7 @@ components:
       - "monitor_agent_performance()"
   
   communication_module:
-    location: "ailang_compiler/modules/agent_communication.py"
+    location: "ailang/compiler/modules/agent_communication.py"
     responsibilities:
       - "Lock-free message passing implementation"
       - "Memory barrier synchronization"
