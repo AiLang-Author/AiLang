@@ -7,9 +7,7 @@ NO MORE HARDCODED OFFSETS!
 
 import os
 import struct
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class FileIOOps:
     """Handles file I/O operations with clean label-based jumps"""
@@ -372,5 +370,4 @@ class FileIOOps:
             print("DEBUG: FileExists compilation completed (CLEAN LABELS)")
             
         except Exception as e:
-            print(f"ERROR: FileExists compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: FileExists compilation failed: {str(e)}")            raise

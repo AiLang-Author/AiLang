@@ -5,11 +5,8 @@ Handles systems programming operations: pointers, hardware access, atomic operat
 FIXED: compile_operation now handles both AST nodes and FunctionCall nodes
 """
 
-import sys
-import os
 import struct
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class LowLevelOps:
     """Handles low-level systems programming operations"""
@@ -880,5 +877,4 @@ class LowLevelOps:
             return False
             
         except Exception as e:
-            print(f"ERROR: System call compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: System call compilation failed: {str(e)}")            raise

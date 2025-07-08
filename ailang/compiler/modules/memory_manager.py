@@ -5,10 +5,7 @@ Handles stack allocation, variable management, and pool operations
 """
 
 import struct
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class MemoryManager:
     """Handles memory-related operations"""
@@ -292,5 +289,4 @@ class MemoryManager:
             return identifier_name
             
         except Exception as e:
-            print(f"ERROR: Failed to resolve acronym {identifier_name}: {str(e)}")
-            return identifier_name
+            print(f"ERROR: Failed to resolve acronym {identifier_name}: {str(e)}")            return identifier_name

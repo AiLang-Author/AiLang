@@ -1,7 +1,7 @@
 # parser.py
 from typing import List, Optional, Tuple, Dict
-from lexer import TokenType, Token, LexerError
-from ailang_ast import *
+from .lexer import TokenType, Token, LexerError
+from .ailang_ast import *
 
 class ParseError(Exception):
     def __init__(self, message: str, token: Optional[Token] = None):

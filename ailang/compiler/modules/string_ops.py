@@ -5,11 +5,8 @@ Handles string printing and manipulation operations
 FIXED: Proper string address dereferencing for ReadTextFile
 """
 
-import sys
-import os
 import struct
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class StringOps:
     """Handles string-related operations"""

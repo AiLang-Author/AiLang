@@ -5,14 +5,11 @@ Coordinates compilation process using modular components with proper integration
 """
 
 import struct
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 from ailang.compiler.x64_assembler import X64Assembler
 from ailang.compiler.elf_generator import ELFGenerator
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 from ailang.compiler.modules.arithmetic_ops import ArithmeticOps
 from ailang.compiler.modules.fileio_ops import FileIOOps
 from ailang.compiler.modules.control_flow import ControlFlow
@@ -183,5 +180,4 @@ def emit_dmareceive(var_name, source_pool):
 def allocate_stack_slot(var_name, slot_index):
     return f"// STACK ALLOC: {var_name} @ slot {slot_index}\n"
 
-def emit_variable_pool_comment(var_name, pool_name):
-    return f"// VAR {var_name} is in pool '{pool_name}'\n"
+def emit_variable_pool_comment(var_name, pool_name):    return f"// VAR {var_name} is in pool '{pool_name}'\n"

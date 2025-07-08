@@ -4,11 +4,8 @@ Expression Compiler Module for AILANG Compiler
 Handles expression evaluation
 """
 
-import sys
-import os
 import struct
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
-from ailang_ast import *
+from ailang.parser.ailang_ast import *
 
 class ExpressionCompiler:
     """Handles expression compilation"""
@@ -47,5 +44,4 @@ class ExpressionCompiler:
                 raise ValueError(f"Unsupported expression type: {type(expr)}")
                 
         except Exception as e:
-            print(f"ERROR: Expression compilation failed: {str(e)}")
-            raise
+            print(f"ERROR: Expression compilation failed: {str(e)}")            raise
