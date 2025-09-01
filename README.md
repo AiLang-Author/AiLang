@@ -39,24 +39,7 @@ Maintainers who think in systems, not symbols
 
 This isn’t just about better syntax — it’s about reclaiming intent as the foundation of code.
 
-🔍 Syntax Example
-ailang
-Copy
-Edit
-// Declare a task
-//Define Task BuildBrain {
-//    Input: SensorData
-//    Output: NeuralMap
-//
-//    Step 1: Parse SensorData
-//    Step 2: Generate NeuralMap using SynapseMatrix
-//    Step 3: Validate Output
-//}
 
-// Run it
-Run Task BuildBrain with Input = LiveFeed
-No colons. No semicolons.
-Just intent → logic → result.
 
 🧠 Who is AILANG for?
 System architects
@@ -76,9 +59,9 @@ If you think in actions, symbols, or causal flows, this language is for you.
 
 🧠 Symbolic parser: Active
 
-🧵 Memory model: Custom glyph engine + structured tag pool
+🧵 Memory model: Clearly defined language level cache, ram and more mangement. 
 
-🎛️ Target platforms: Linux, bare metal, embedded cognitive OS
+🎛️ Target platforms: Linux, bare metal,S
 
 📝 License
 Free for private, academic, and non-commercial use.
