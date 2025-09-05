@@ -166,6 +166,34 @@ class X64Assembler:
         """MOV RDI, RBX"""
         self.emit_bytes(0x48, 0x89, 0xDF)
         print("DEBUG: MOV RDI, RBX")
+        
+    def emit_mov_rcx_rax(self):
+        """MOV RCX, RAX"""
+        self.emit_bytes(0x48, 0x89, 0xC1)
+        print("DEBUG: MOV RCX, RAX")
+
+    def emit_mov_rsi_rax(self):
+        """MOV RSI, RAX"""
+        self.emit_bytes(0x48, 0x89, 0xC6)
+        print("DEBUG: MOV RSI, RAX")
+
+    def emit_mov_rsi_rcx(self):
+        """MOV RSI, RCX"""
+        self.emit_bytes(0x48, 0x89, 0xCE)
+        print("DEBUG: MOV RSI, RCX")
+
+    def emit_mov_rsi_from_rbx(self):
+        """MOV RSI, RBX"""
+        self.emit_bytes(0x48, 0x89, 0xDE)
+        print("DEBUG: MOV RSI, RBX")   
+        
+    def emit_mov_rax_rcx(self):
+        """MOV RAX, RCX"""
+        self.emit_bytes(0x48, 0x89, 0xC8)
+        print("DEBUG: MOV RAX, RCX")
+     
+        
+        
     
     # === NEW: ENHANCED MEMORY ACCESS OPERATIONS ===
     
@@ -256,6 +284,49 @@ class X64Assembler:
             self.emit_bytes(*struct.pack('<i', offset))
         
         print(f"DEBUG: MOV [{base_reg} + {offset}], RAX")
+    
+    # === New : Pool Operations ===
+      
+    def emit_mov_qword_ptr_rax_rcx(self):
+        """MOV [RAX], RCX - Store RCX at address in RAX"""
+        self.emit_bytes(0x48, 0x89, 0x08)
+
+    def emit_mov_rcx_qword_ptr_rax_minus_8(self):
+        """MOV RCX, [RAX-8] - Load from 8 bytes before RAX"""
+        self.emit_bytes(0x48, 0x8B, 0x48, 0xF8)
+
+    def emit_lea_rax_rbx_plus_8(self):
+        """LEA RAX, [RBX+8] - Load effective address"""
+        self.emit_bytes(0x48, 0x8D, 0x43, 0x08)
+
+    def emit_lea_rax_rdi_plus_8(self):
+        """LEA RAX, [RDI+8] - Load effective address"""
+        self.emit_bytes(0x48, 0x8D, 0x47, 0x08)
+        
+        
+    # === Additional Pool Support Methods ===
+    
+    def emit_mov_rsi_from_stack_offset(self, offset):
+        """MOV RSI, [RSP+offset] - Load from stack at offset"""
+        if offset <= 127:
+            self.emit_bytes(0x48, 0x8B, 0x74, 0x24, offset)
+        else:
+            self.emit_bytes(0x48, 0x8B, 0xB4, 0x24)
+            self.emit_bytes(*struct.pack('<I', offset))
+        print(f"DEBUG: MOV RSI, [RSP+{offset}]")
+
+    def emit_add_rsp_imm8(self, value):
+        """ADD RSP, imm8 - Adjust stack pointer"""
+        self.emit_bytes(0x48, 0x83, 0xC4, value & 0xFF)
+        print(f"DEBUG: ADD RSP, {value}")
+
+    def emit_test_rax_rax(self):
+        """TEST RAX, RAX - Set flags based on RAX (for NULL checks)"""
+        self.emit_bytes(0x48, 0x85, 0xC0)
+        print("DEBUG: TEST RAX, RAX")
+    
+    
+    
     
     # === NEW: POINTER OPERATIONS ===
     
@@ -799,12 +870,27 @@ class X64Assembler:
             
             # Handle zero case
             self.emit_bytes(0x48, 0x83, 0xF8, 0x00)    # CMP RAX, 0
-            self.emit_bytes(0x75, 0x08)                # JNZ skip_zero
+            
+            # Mark position for the JNZ instruction
+            jnz_pos = len(self.code)
+            self.emit_bytes(0x75, 0x00)                # JNZ skip_zero (placeholder)
+            
+            # Zero case: put '0' in buffer
             self.emit_bytes(0x48, 0xFF, 0xCE)          # DEC RSI
             self.emit_bytes(0xC6, 0x06, 0x30)          # MOV BYTE PTR [RSI], '0'
-            self.emit_bytes(0xEB, 0x1E)                # JMP to_print
             
-            # Conversion loop
+            # Mark position for JMP to output
+            jmp_to_output_pos = len(self.code)
+            self.emit_bytes(0xEB, 0x00)                # JMP to_print (placeholder)
+            
+            # Mark where skip_zero jumps to (start of conversion loop)
+            skip_zero_target = len(self.code)
+            
+            # Fix the JNZ offset (jump to skip_zero_target)
+            jnz_offset = skip_zero_target - (jnz_pos + 2)
+            self.code[jnz_pos + 1] = jnz_offset & 0xFF
+            
+            # Conversion loop for non-zero numbers
             loop_start = len(self.code)
             
             # Divide by 10
@@ -820,12 +906,17 @@ class X64Assembler:
             # Continue if quotient is not zero
             self.emit_bytes(0x48, 0x83, 0xF8, 0x00)    # CMP RAX, 0
             
-            # Calculate jump offset
+            # Calculate and emit loop jump
             current_pos = len(self.code) + 2
-            jump_offset = loop_start - current_pos
-            self.emit_bytes(0x75, jump_offset & 0xFF)   # JNZ loop_start
+            loop_offset = (loop_start - current_pos) & 0xFF
+            self.emit_bytes(0x75, loop_offset)         # JNZ loop_start
             
-            # === OUTPUT THE STRING ===
+            # === OUTPUT THE STRING (to_print label here) ===
+            output_start = len(self.code)
+            
+            # Fix the JMP offset from zero case
+            jmp_offset = output_start - (jmp_to_output_pos + 2)
+            self.code[jmp_to_output_pos + 1] = jmp_offset & 0xFF
             
             # Calculate string length
             self.emit_bytes(0x48, 0x89, 0xE0)          # MOV RAX, RSP (buffer start)
@@ -916,10 +1007,22 @@ class X64Assembler:
             # JG with 32-bit offset: 0x0F 0x8F + 4-byte offset
             self.emit_bytes(0x0F, 0x8F, 0x00, 0x00, 0x00, 0x00)
             jump_pos = len(self.code) - 4
+        elif jump_type == "JGE":  # ADD THIS
+            # JGE with 32-bit offset: 0x0F 0x8D + 4-byte offset
+            self.emit_bytes(0x0F, 0x8D, 0x00, 0x00, 0x00, 0x00)
+            jump_pos = len(self.code) - 4
+        elif jump_type == "JZ":  # ADD THIS TOO (same as JE but clearer intent)
+            # JZ with 32-bit offset: 0x0F 0x84 + 4-byte offset
+            self.emit_bytes(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00)
+            jump_pos = len(self.code) - 4
         elif jump_type == "JNE":
             # JNE with 32-bit offset: 0x0F 0x85 + 4-byte offset
             self.emit_bytes(0x0F, 0x85, 0x00, 0x00, 0x00, 0x00)
             jump_pos = len(self.code) - 4
+        elif jump_type == "JNZ":
+            # JNZ with 32-bit offset: 0x0F 0x85 + 4-byte offset (same as JNE)
+            self.emit_bytes(0x0F, 0x85, 0x00, 0x00, 0x00, 0x00)
+            jump_pos = len(self.code) - 4    
         else:
             raise ValueError(f"Unsupported jump type: {jump_type}")
         
