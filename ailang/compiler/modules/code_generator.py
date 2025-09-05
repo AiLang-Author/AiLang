@@ -4,8 +4,10 @@ Code Generator Module for AILANG Compiler
 Handles low-level code emission helpers
 """
 
+import sys
+import os
 import struct
-from ailang.parser.ailang_ast import *
+from ailang_parser.ailang_ast import *
 
 class CodeGenerator:
     """Handles low-level code generation"""
@@ -51,4 +53,5 @@ class CodeGenerator:
             print(f"DEBUG: Emitted {jump_type} to {target_label} at position {jump_pos}")
             return jump_pos
         except Exception as e:
-            print(f"ERROR: Conditional jump emission failed: {str(e)}")            raise
+            print(f"ERROR: Conditional jump emission failed: {str(e)}")
+            raise

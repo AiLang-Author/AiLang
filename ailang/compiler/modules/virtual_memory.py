@@ -4,8 +4,10 @@ Virtual Memory Operations Module for AILANG Compiler
 Handles VM operations: PageTable, VirtualMemory, Cache, TLB, MemoryBarrier
 """
 
+import sys
+import os
 import struct
-from ailang.parser.ailang_ast import *
+from ailang_parser.ailang_ast import *
 
 class VirtualMemoryOps:
     """Handles Virtual Memory operations compilation"""
@@ -501,4 +503,5 @@ class VirtualMemoryOps:
             return args
             
         except Exception as e:
-            print(f"ERROR: Failed to parse VM arguments: {str(e)}")            return {}
+            print(f"ERROR: Failed to parse VM arguments: {str(e)}")
+            return {}

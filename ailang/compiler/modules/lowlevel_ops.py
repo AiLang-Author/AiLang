@@ -5,8 +5,10 @@ Handles systems programming operations: pointers, hardware access, atomic operat
 FIXED: compile_operation now handles both AST nodes and FunctionCall nodes
 """
 
+import sys
+import os
 import struct
-from ailang.parser.ailang_ast import *
+from ailang_parser.ailang_ast import *
 
 class LowLevelOps:
     """Handles low-level systems programming operations"""
@@ -52,6 +54,8 @@ class LowLevelOps:
                     return self.compile_memory_set(node)
                 elif node.function == 'MemoryCompare':
                     return self.compile_memory_compare(node)
+                elif node.function == 'StoreValue':
+                    return self.compile_storevalue(node)
                 elif node.function in ['PortRead', 'PortWrite']:
                     return self.compile_port_operation(node)
                 elif node.function in ['AtomicRead', 'AtomicWrite', 'AtomicAdd', 'AtomicCompareSwap']:
@@ -408,6 +412,55 @@ class LowLevelOps:
         except Exception as e:
             print(f"ERROR: MemoryCompare compilation failed: {str(e)}")
             raise
+
+    def compile_storevalue(self, node):
+        """Compile StoreValue operation - write value to memory address"""
+        try:
+            print(f"DEBUG: Compiling StoreValue operation")
+            
+            if len(node.arguments) < 2:
+                raise ValueError("StoreValue requires at least 2 arguments (address, value)")
+            
+            # Compile value expression first (result in RAX)
+            self.compiler.compile_expression(node.arguments[1])
+            self.asm.emit_push_rax()  # Save value on stack
+            
+            # Compile address expression (result in RAX)  
+            self.compiler.compile_expression(node.arguments[0])
+            self.asm.emit_mov_rbx_rax()  # Move address to RBX
+            
+            # Restore value to RAX
+            self.asm.emit_pop_rax()
+            
+            # Determine size (default to qword)
+            size_hint = "qword"
+            if len(node.arguments) > 2:
+                if hasattr(node.arguments[2], 'value'):
+                    size_hint = str(node.arguments[2].value).lower()
+            
+            # Swap registers: address to RAX, value to RBX
+            self.asm.emit_push_rax()  # Save value
+            self.asm.emit_mov_rax_rbx()  # Move address to RAX
+            self.asm.emit_pop_rbx()  # Pop value to RBX
+            
+            if size_hint == "byte":
+                self.asm.emit_store_to_pointer_byte("RBX")
+            elif size_hint == "word":
+                self.asm.emit_bytes(0x66, 0x89, 0x18)  # MOV WORD PTR [RAX], BX
+            elif size_hint == "dword":
+                self.asm.emit_bytes(0x89, 0x18)  # MOV DWORD PTR [RAX], EBX
+            else:  # qword or default
+                self.asm.emit_store_to_pointer_qword("RBX")
+            
+            print(f"DEBUG: Stored {size_hint} to memory")
+            self.asm.emit_mov_rax_imm64(1)
+            
+            print("DEBUG: StoreValue operation completed")
+            return True
+            
+        except Exception as e:
+            print(f"ERROR: StoreValue compilation failed: {str(e)}")
+            raise
     
     def compile_port_operation(self, node):
         """Compile port I/O operations"""
@@ -758,7 +811,17 @@ class LowLevelOps:
                 self.asm.emit_dereference_dword()
                 print(f"DEBUG: Dereferenced as dword")
             else:  # qword or default
-                self.asm.emit_dereference_qword()
+                # Use byte dereference by default for string operations
+                # Default to byte dereference for string operations
+                if size_hint == "qword":
+                    self.asm.emit_dereference_qword()
+                    print("DEBUG: Dereferenced as qword (explicit)")
+                elif size_hint == "word":
+                    self.asm.emit_dereference_word()
+                    print("DEBUG: Dereferenced as word")
+                else:  # Default to byte, including when size_hint is None
+                    self.asm.emit_dereference_byte()
+                    print("DEBUG: Dereferenced as byte (default)")
                 print(f"DEBUG: Dereferenced as qword")
             
             print("DEBUG: Dereference AST compilation completed")
@@ -877,4 +940,5 @@ class LowLevelOps:
             return False
             
         except Exception as e:
-            print(f"ERROR: System call compilation failed: {str(e)}")            raise
+            print(f"ERROR: System call compilation failed: {str(e)}")
+            raise

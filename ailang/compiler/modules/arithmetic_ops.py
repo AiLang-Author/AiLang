@@ -4,7 +4,10 @@ Arithmetic Operations Module
 Handles all arithmetic and comparison operations for AILANG compiler
 """
 
-from ailang.parser.ailang_ast import *
+import sys
+import os
+import struct
+from ailang_parser.ailang_ast import *
 
 class ArithmeticOps:
     """Module for handling arithmetic and comparison operations"""
@@ -148,4 +151,5 @@ class ArithmeticOps:
             return str(arg.value)
         elif hasattr(arg, 'function'):  # FunctionCall
             return f"{arg.function}(...)"
-        else:            return type(arg).__name__
+        else:
+            return type(arg).__name__

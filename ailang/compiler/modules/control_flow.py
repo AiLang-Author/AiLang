@@ -4,8 +4,10 @@ Control Flow Module for AILANG Compiler
 Handles if/else and while loops with proper condition type support
 """
 
+import sys
+import os
 import struct
-from ailang.parser.ailang_ast import *
+from ailang_parser.ailang_ast import *
 
 class ControlFlow:
     """Handles control flow constructs"""
@@ -45,92 +47,166 @@ class ControlFlow:
             raise
     
     def compile_while_loop(self, node):
-        """Compile While loop with flexible condition support"""
+        """Compile While loop using the modern label-based jump system"""
         try:
-            print("DEBUG: Compiling While loop")
+            print("DEBUG: Compiling While loop (using label system)")
             
-            loop_start = self.compiler.get_label()
-            loop_end = self.compiler.get_label()
+            loop_start_label = self.asm.create_label()
+            loop_end_label = self.asm.create_label()
             
-            loop_start_pos = len(self.asm.code)
-            self.asm.labels[loop_start] = loop_start_pos
-            print(f"DEBUG: While loop start at position {loop_start_pos}")
+            # Mark the start of the loop
+            self.asm.mark_label(loop_start_label)
             
-            # Compile condition (now supports multiple types)
+            # Compile the condition
             self.compile_condition(node.condition)
             
-            # Test if condition is false (RAX == 0)
+            # Test if the condition is false (RAX == 0) and jump to the end if so
             self.asm.emit_bytes(0x48, 0x83, 0xF8, 0x00)  # CMP RAX, 0
-            self.asm.emit_bytes(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00)  # JE loop_end
-            je_pos = len(self.asm.code) - 4
-            print(f"DEBUG: Conditional jump at position {je_pos}")
+            self.asm.emit_jump_to_label(loop_end_label, "JE")
             
-            # Compile loop body
+            # Compile the loop body
             for stmt in node.body:
                 self.compiler.compile_node(stmt)
             
-            # Jump back to loop start
-            current_pos = len(self.asm.code)
-            jmp_offset = loop_start_pos - (current_pos + 5)
-            self.asm.emit_bytes(0xE9)  # JMP
-            self.asm.emit_bytes(*struct.pack('<i', jmp_offset))
-            print(f"DEBUG: Jump back to loop start, offset: {jmp_offset}")
+            # Jump back to the start to re-evaluate the condition
+            self.asm.emit_jump_to_label(loop_start_label, "JMP")
             
-            # Fix the conditional jump to point here (loop end)
-            loop_end_pos = len(self.asm.code)
-            self.asm.labels[loop_end] = loop_end_pos
-            je_offset = loop_end_pos - (je_pos + 4)
-            self.asm.code[je_pos:je_pos+4] = struct.pack('<i', je_offset)
-            print(f"DEBUG: While loop end at position {loop_end_pos}, fixed JE offset: {je_offset}")
+            # Mark the end of the loop, where the exit jump will land
+            self.asm.mark_label(loop_end_label)
+            
+            print("DEBUG: While loop compilation completed (label system)")
             
         except Exception as e:
             print(f"ERROR: While loop compilation failed: {str(e)}")
             raise
     
     def compile_if_condition(self, node):
-        """Compile If condition with flexible condition support"""
+        """Compile If condition using the modern label-based jump system"""
         try:
-            print("DEBUG: Compiling If condition")
+            print("DEBUG: Compiling If condition (using label system)")
             
-            # Compile condition (now supports multiple types)
+            else_label = self.asm.create_label()
+            end_label = self.asm.create_label()
+            
+            # Compile the condition
             self.compile_condition(node.condition)
             
-            # Test if condition is false (RAX == 0)
+            # Test if condition is false (RAX == 0) and jump to the else block
             self.asm.emit_bytes(0x48, 0x83, 0xF8, 0x00)  # CMP RAX, 0
-            else_label = self.compiler.get_label()
-            end_label = self.compiler.get_label()
+            self.asm.emit_jump_to_label(else_label, "JE")
             
-            self.asm.emit_bytes(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00)  # JE else_block
-            je_pos = len(self.asm.code) - 4
-            print(f"DEBUG: If condition JE at position {je_pos}")
-            
-            # Compile then block
+            # Compile the 'then' block
             for stmt in node.then_body:
                 self.compiler.compile_node(stmt)
             
-            # Jump to end (skip else block)
-            self.asm.emit_bytes(0xE9, 0x00, 0x00, 0x00, 0x00)  # JMP end
-            jmp_pos = len(self.asm.code) - 4
-            print(f"DEBUG: Then block JMP at position {jmp_pos}")
+            # If there's an 'else' block, jump over it to the end
+            if node.else_body:
+                self.asm.emit_jump_to_label(end_label, "JMP")
             
-            # Fix conditional jump to point to else block
-            else_pos = len(self.asm.code)
-            self.asm.labels[else_label] = else_pos
-            je_offset = else_pos - (je_pos + 4)
-            self.asm.code[je_pos:je_pos+4] = struct.pack('<i', je_offset)
-            print(f"DEBUG: Else label at position {else_pos}, JE offset: {je_offset}")
+            # Mark the start of the 'else' block
+            self.asm.mark_label(else_label)
             
-            # Compile else block (if it exists)
+            # Compile the 'else' block if it exists
             if node.else_body:
                 for stmt in node.else_body:
                     self.compiler.compile_node(stmt)
             
-            # Fix jump to end
-            end_pos = len(self.asm.code)
-            self.asm.labels[end_label] = end_pos
-            jmp_offset = end_pos - (jmp_pos + 4)
-            self.asm.code[jmp_pos:jmp_pos+4] = struct.pack('<i', jmp_offset)
-            print(f"DEBUG: If end at position {end_pos}, JMP offset: {jmp_offset}")
+            # Mark the end of the entire if-else structure
+            self.asm.mark_label(end_label)
+
+            print("DEBUG: If condition compilation completed (label system)")
             
         except Exception as e:
-            print(f"ERROR: If condition compilation failed: {str(e)}")            raise
+            print(f"ERROR: If condition compilation failed: {str(e)}")
+            raise
+
+        
+        
+        
+    def compile_fork(self, node):
+        """Compile Fork construct"""
+        try:
+            print("DEBUG: Compiling Fork construct")
+            
+            # Generate labels
+            false_label = self.asm.create_label()
+            end_label = self.asm.create_label()
+            
+            # Compile condition
+            self.compile_condition(node.condition)
+            
+            # Test condition and jump if false
+            self.asm.emit_bytes(0x48, 0x83, 0xF8, 0x00)  # CMP RAX, 0
+            self.asm.emit_jump_to_label(false_label, "JE")
+            
+            # Compile true block
+            for stmt in node.true_block:
+                self.compiler.compile_node(stmt)
+            self.asm.emit_jump_to_label(end_label, "JMP")
+            
+            # False block
+            self.asm.mark_label(false_label)
+            for stmt in node.false_block:
+                self.compiler.compile_node(stmt)
+            
+            # End
+            self.asm.mark_label(end_label)
+            
+            print("DEBUG: Fork compilation completed")
+            
+        except Exception as e:
+            print(f"ERROR: Fork compilation failed: {str(e)}")
+            raise
+
+    def compile_branch(self, node):
+        """Compile Branch construct"""
+        try:
+            print("DEBUG: Compiling Branch construct")
+            
+            # Compile expression once
+            self.compiler.compile_expression(node.expression)
+            self.asm.emit_push_rax()  # Save expression value
+            
+            end_label = self.asm.create_label()
+            case_labels = []
+            
+            # Create labels for each case
+            for _ in node.cases:
+                case_labels.append(self.asm.create_label())
+            
+            # Generate comparison chain
+            for i, (value, block) in enumerate(node.cases):
+                self.asm.emit_bytes(0x48, 0x8B, 0x04, 0x24)  # MOV RAX, [RSP]
+                
+                # Compare with case value
+                self.compiler.compile_expression(value)
+                self.asm.emit_mov_rbx_rax()
+                self.asm.emit_pop_rax()
+                self.asm.emit_push_rax()
+                self.asm.emit_bytes(0x48, 0x39, 0xD8)  # CMP RAX, RBX
+                
+                # Jump to case if equal
+                self.asm.emit_jump_to_label(case_labels[i], "JE")
+            
+            # Default case or end
+            if node.default:
+                for stmt in node.default:
+                    self.compiler.compile_node(stmt)
+            self.asm.emit_jump_to_label(end_label, "JMP")
+            
+            # Compile case blocks
+            for i, (_, block) in enumerate(node.cases):
+                self.asm.mark_label(case_labels[i])
+                for stmt in block:
+                    self.compiler.compile_node(stmt)
+                self.asm.emit_jump_to_label(end_label, "JMP")
+            
+            # End - clean up stack
+            self.asm.mark_label(end_label)
+            self.asm.emit_pop_rax()  # Remove saved expression value
+            
+            print("DEBUG: Branch compilation completed")
+            
+        except Exception as e:
+            print(f"ERROR: Branch compilation failed: {str(e)}")
+            raise

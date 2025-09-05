@@ -5,9 +5,10 @@ Uses label-based jumps instead of hardcoded offsets
 NO MORE HARDCODED OFFSETS!
 """
 
+import sys
 import os
 import struct
-from ailang.parser.ailang_ast import *
+from ailang_parser.ailang_ast import *
 
 class FileIOOps:
     """Handles file I/O operations with clean label-based jumps"""
@@ -370,4 +371,5 @@ class FileIOOps:
             print("DEBUG: FileExists compilation completed (CLEAN LABELS)")
             
         except Exception as e:
-            print(f"ERROR: FileExists compilation failed: {str(e)}")            raise
+            print(f"ERROR: FileExists compilation failed: {str(e)}")
+            raise
