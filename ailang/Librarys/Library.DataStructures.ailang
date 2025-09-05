@@ -1,0 +1,98 @@
+LibraryImport.Core.DataStructures {
+    // Record type definitions for common data structures
+    
+    // Linked list node
+    ListNode = Record {value: Any, next: Address}
+    
+    // Hash table entry
+    HashEntry = Record {key: Text, value: Any, next: Address}
+    
+    // Binary tree node
+    TreeNode = Record {value: Any, left: Address, right: Address}
+    
+    // Stack frame
+    StackFrame = Record {value: Any, prev: Address}
+    
+    // Queue node
+    QueueNode = Record {value: Any, next: Address}
+    
+    // Memory pools for data structures
+    DynamicPool.Pool.DataStructures.Nodes {
+        "listNodes": ElementType-Address, MaximumLength-1000000
+        "hashEntries": ElementType-Address, MaximumLength-1000000
+        "treeNodes": ElementType-Address, MaximumLength-1000000
+    }
+    
+    // Linked List operations
+    Function.List.CreateNode {
+        Input: (value: Any, next: Address)
+        Output: Address
+        Body: {
+            // Allocate memory for node (simplified for now)
+            node = Allocate(16)  // Size of ListNode
+            // In real implementation, would set fields
+            ReturnValue(node)
+        }
+    }
+    
+    Function.List.Append {
+        Input: (head: Address, value: Any)
+        Output: Address
+        Body: {
+            newNode = RunTask.List.CreateNode(value-value, next-Null)
+            IfCondition EqualTo(head, Null) ThenBlock {
+                ReturnValue(newNode)
+            }
+            current = head
+            WhileLoop NotEqual(Dereference(Add(current, 8)), Null) {
+                current = Dereference(Add(current, 8))
+            }
+            // Set next pointer
+            ReturnValue(head)
+        }
+    }
+    
+    // Hash table operations
+    Function.Hash.Create {
+        Input: (size: Integer)
+        Output: Address
+        Body: {
+            // Allocate array of bucket pointers
+            table = Allocate(Multiply(size, 8))
+            ReturnValue(table)
+        }
+    }
+    
+    Function.Hash.StringHash {
+        Input: (key: Text)
+        Output: Integer
+        Body: {
+            hash = 5381
+            // Simple DJB2 hash (simplified)
+            ReturnValue(hash)
+        }
+    }
+    
+    // Stack operations
+    Function.Stack.Push {
+        Input: (stack: Address, value: Any)
+        Output: Address
+        Body: {
+            frame = Allocate(16)  // StackFrame size
+            // Set value and prev pointer
+            ReturnValue(frame)
+        }
+    }
+    
+    Function.Stack.Pop {
+        Input: (stack: Address)
+        Output: Any
+        Body: {
+            IfCondition EqualTo(stack, Null) ThenBlock {
+                ReturnValue(Null)
+            }
+            value = Dereference(stack)
+            // Get prev pointer and free current
+            ReturnValue(value)
+        }
+    }

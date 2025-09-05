@@ -1,0 +1,131 @@
+LibraryImport.Core.SortedSet {
+    // Sorted set implementation (simplified Redis zset-like)
+    
+    // Simple memory pool
+    DynamicPool.Pool.SortedSet.Main {
+        "nodes": ElementType-Address, MaximumLength-10000000,
+        "headers": ElementType-Address, MaximumLength-1000
+    }
+    
+    // Constants
+    Constant.SKIPLIST_MAXLEVEL = 32
+    Constant.SKIPLIST_P = 0.25
+    
+ Function.ZSet.Create {
+    Output: Address
+    Body: {
+        // Allocate header structure for skip list
+        // Header layout: [max_level:8][current_level:8][count:8][forward_pointers:256]
+        // Total size: 8 + 8 + 8 + (32 * 8) = 280 bytes
+        header = PoolAllocate("ZSetHeader", 280)
+        
+        // Initialize max level (store at offset 0)
+        StoreValue(header, SKIPLIST_MAXLEVEL)
+        
+        // Initialize current level to 1 (store at offset 8)
+        level_offset = Add(header, 8)
+        StoreValue(level_offset, 1)
+        
+        // Initialize count to 0 (store at offset 16)
+        count_offset = Add(header, 16)
+        StoreValue(count_offset, 0)
+        
+        // Initialize forward pointers to null (offsets 24-279)
+        i = 0
+        While(LessThan(i, SKIPLIST_MAXLEVEL)) {
+            ptr_offset = Add(header, Add(24, Multiply(i, 8)))
+            StoreValue(ptr_offset, 0)
+            i = Add(i, 1)
+        }
+        
+        // Debug output
+        PrintMessage("ZSet created at address:")
+        PrintMessage(header)
+        
+        ReturnValue(header)
+    }
+}
+
+Function.ZSet.Add {
+    Input: (zset: Address, member: Text, score: Number)
+    Output: Boolean
+    Body: {
+        // Actual skip list insertion logic in AILANG
+        // ...
+    }
+}
+    
+    // Get score for member
+    Function.ZSet.Score {
+        Input: (zset: Address, member: Text)
+        Output: FloatingPoint
+        Body: {
+            // Simplified - would search skip list
+            ReturnValue(0.0)
+        }
+    }
+    
+    // Get rank of member
+    Function.ZSet.Rank {
+        Input: (zset: Address, member: Text)
+        Output: Integer
+        Body: {
+            // Simplified - would traverse skip list
+            ReturnValue(0)
+        }
+    }
+    
+    // Remove member
+    Function.ZSet.Remove {
+        Input: (zset: Address, member: Text)
+        Output: Boolean
+        Body: {
+            // Simplified - would remove from skip list
+            ReturnValue(True)
+        }
+    }
+    
+    // Get count of members
+    Function.ZSet.Count {
+        Input: (zset: Address)
+        Output: Integer
+        Body: {
+            // Would return actual count
+            ReturnValue(0)
+        }
+    }
+    
+    // Range by rank (get members from rank start to stop)
+    Function.ZSet.Range {
+        Input: (zset: Address, start: Integer, stop: Integer)
+        Output: Address
+        Body: {
+            // Would return array of members
+            results = Allocate(1000)
+            ReturnValue(results)
+        }
+    }
+    
+    // Range by score
+    Function.ZSet.RangeByScore {
+        Input: (zset: Address, min_score: FloatingPoint, max_score: FloatingPoint)
+        Output: Address
+        Body: {
+            // Would return array of members with scores in range
+            results = Allocate(1000)
+            ReturnValue(results)
+        }
+    }
+    
+    // Increment score of member
+    Function.ZSet.IncrBy {
+        Input: (zset: Address, member: Text, increment: FloatingPoint)
+        Output: FloatingPoint
+        Body: {
+            current = RunTask.ZSet.Score(zset-zset, member-member)
+            new_score = Add(current, increment)
+            RunTask.ZSet.Add(zset-zset, member-member, score-new_score)
+            ReturnValue(new_score)
+        }
+    }
+
