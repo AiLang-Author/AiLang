@@ -1,8 +1,10 @@
-
 # compiler.py
+
+# --- FIX: Use relative imports for modules in the same package ---
 from .lexer import Lexer
 from .parser import Parser
 from .ailang_ast import Program
+# --- End FIX ---
 
 class AILANGCompiler:
     """Main compiler class for AILANG"""

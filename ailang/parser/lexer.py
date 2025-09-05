@@ -29,6 +29,16 @@ class TokenType(Enum):
     HALTPROGRAM = auto()
     CONTINUELOOP = auto()
     
+    
+    # Branching logic
+    FORK = auto()
+    BRANCH = auto()
+    CASE = auto()
+    DEFAULT = auto()
+    TRUEPATH = auto()
+    FALSEPATH = auto()
+
+    
     # Pool Types
     FIXEDPOOL = auto()
     DYNAMICPOOL = auto()
@@ -50,6 +60,24 @@ class TokenType(Enum):
     MINIMUMLENGTH = auto()
     ELEMENTTYPE = auto()
     WHERE = auto()
+    
+    #Pool management
+    POOLRESIZE = auto()
+    POOLMOVE = auto() 
+    POOLCOMPACT = auto()
+    POOLALLOCATE = auto()
+    HASHCREATE = auto()
+    HASHFUNCTION = auto()
+    HASHSET = auto()
+    HASHGET = auto()
+    SOCKETCREATE = auto()
+    SOCKETBIND = auto()
+    SOCKETLISTEN = auto()
+    SOCKETACCEPT = auto()
+    SOCKETREAD = auto()
+    SOCKETWRITE = auto()
+    SOCKETCLOSE = auto()
+    POOLFREE = auto()
     
     # Math Operators (Named)
     ADD = auto()
@@ -157,11 +185,12 @@ class TokenType(Enum):
     DEREFERENCE = auto()               # Dereference pointer to get value
     ADDRESSOF = auto()                 # Get address of variable
     SIZEOF = auto()                    # Get size of type/variable
-    ALLOCATE = auto()                  # Allocate memory
-    DEALLOCATE = auto()                # Free allocated memory
+    ALLOCATE = auto()
+    DEALLOCATE = auto()
     MEMORYCOPY = auto()                # Copy memory blocks
     MEMORYSET = auto()                 # Set memory to value
     MEMORYCOMPARE = auto()             # Compare memory blocks
+    STOREVALUE = auto()                # Store value to memory address
     
     # Hardware Register Access
     HARDWAREREGISTER = auto()          # Access CPU registers
@@ -467,6 +496,11 @@ class Lexer:
             'ActorPool': TokenType.ACTORPOOL,
             'SecurityPool': TokenType.SECURITYPOOL,
             'ConstrainedPool': TokenType.CONSTRAINEDPOOL,
+            'PoolResize': TokenType.POOLRESIZE,
+            'PoolMove': TokenType.POOLMOVE,
+            'PoolCompact': TokenType.POOLCOMPACT,
+            'PoolAllocate': TokenType.POOLALLOCATE,
+            'PoolFree': TokenType.POOLFREE,
             'FilePool': TokenType.FILEPOOL,
             'SubPool': TokenType.SUBPOOL,
             'Initialize': TokenType.INITIALIZE,
@@ -569,6 +603,16 @@ class Lexer:
             'Microseconds': TokenType.MICROSECONDS,
             'Percent': TokenType.PERCENT,
             
+            #branching logic 
+            'Fork': TokenType.FORK,
+            'Branch': TokenType.BRANCH,
+            'Case': TokenType.CASE,
+            'Default': TokenType.DEFAULT,
+            'TruePath': TokenType.TRUEPATH,
+            'FalsePath': TokenType.FALSEPATH,
+            
+            
+            
             # String and I/O functions (preserved)
             'ReadInput': TokenType.READINPUT,
             'ReadInputNumber': TokenType.READINPUTNUMBER,
@@ -639,10 +683,22 @@ class Lexer:
             'AddressOf': TokenType.ADDRESSOF,
             'SizeOf': TokenType.SIZEOF,
             'Allocate': TokenType.ALLOCATE,
+            'HashCreate': TokenType.HASHCREATE,
+            'HashFunction': TokenType.HASHFUNCTION,
+            'HashSet': TokenType.HASHSET,
+            'HashGet': TokenType.HASHGET,
+            'SocketCreate': TokenType.SOCKETCREATE,
+            'SocketBind': TokenType.SOCKETBIND,
+            'SocketListen': TokenType.SOCKETLISTEN,
+            'SocketAccept': TokenType.SOCKETACCEPT,
+            'SocketRead': TokenType.SOCKETREAD,
+            'SocketWrite': TokenType.SOCKETWRITE,
+            'SocketClose': TokenType.SOCKETCLOSE,
             'Deallocate': TokenType.DEALLOCATE,
             'MemoryCopy': TokenType.MEMORYCOPY,
             'MemorySet': TokenType.MEMORYSET,
             'MemoryCompare': TokenType.MEMORYCOMPARE,
+    'StoreValue': TokenType.STOREVALUE,
             
             # Hardware Register Access
             'HardwareRegister': TokenType.HARDWAREREGISTER,
@@ -855,56 +911,69 @@ class Lexer:
             self.error("Unterminated string literal")
         return value
 
-    def read_number(self) -> Union[int, float]:
+    def read_number(self) -> Token:
+        """Read a numeric literal and return a NUMBER token with string value."""
+        start_pos = self.position
+        line_start = self.line
+        col_start = self.column
         value = ''
-        has_dot = False
+        
+        # Handle hexadecimal literals (e.g., 0xFF)
         if self.current_char() == '0' and self.peek_char() in 'xX':
-            self.advance()
-            self.advance()
-            hex_value = ''
-            while self.current_char() and self.current_char() in '0123456789ABCDEFabcdef_':
-                if self.current_char() != '_':
-                    hex_value += self.current_char()
-                self.advance()
-            if not hex_value:
-                self.error("Invalid hexadecimal literal")
-            return int(hex_value, 16)
-        while self.current_char() and (self.current_char().isdigit() or self.current_char() in '._'):
-            if self.current_char() == '.':
-                if has_dot:
-                    break
-                has_dot = True
-                value += '.'
-            elif self.current_char() != '_':
-                value += self.current_char()
-            self.advance()
-        if self.current_char() and self.current_char() in 'eE':
             value += self.current_char()
             self.advance()
-            if self.current_char() and self.current_char() in '+-':
+            value += self.current_char()
+            self.advance()
+            while self.current_char() and self.current_char() in '0123456789ABCDEFabcdef_':
+                if self.current_char() != '_':
+                    value += self.current_char()
+                self.advance()
+            if len(value) <= 2:  # Only "0x" or "0X"
+                self.error("Invalid hexadecimal literal")
+        else:
+            # Handle decimal numbers (integers or floats)
+            has_dot = False
+            while self.current_char() and (self.current_char().isdigit() or self.current_char() in '._'):
+                if self.current_char() == '.':
+                    if has_dot:
+                        break
+                    has_dot = True
+                    value += '.'
+                elif self.current_char() != '_':
+                    value += self.current_char()
+                self.advance()
+            
+            # Handle scientific notation (e.g., 1e-10)
+            if self.current_char() and self.current_char() in 'eE':
                 value += self.current_char()
                 self.advance()
-            while self.current_char() and self.current_char().isdigit():
-                value += self.current_char()
-                self.advance()
-        try:
-            return float(value) if has_dot or 'e' in value.lower() else int(value)
-        except ValueError:
-            self.error(f"Invalid number literal: {value}")
+                if self.current_char() and self.current_char() in '+-':
+                    value += self.current_char()
+                    self.advance()
+                while self.current_char() and self.current_char().isdigit():
+                    value += self.current_char()
+                    self.advance()
+        
+            # Validate the number
+            if not value or value == '.':
+                self.error(f"Invalid number literal: {value}")
+            if value.count('.') > 1:
+                self.error(f"Invalid number literal: multiple decimal points in {value}")
+        
+        return Token(TokenType.NUMBER, value, line_start, col_start, len(value))
 
     def read_identifier(self) -> str:
         value = ''
-        if not (self.current_char().isalpha() or self.current_char() == '_'):
-            self.error(f"Identifier must start with letter or underscore, not '{self.current_char()}'")
+        if self.current_char().isalpha() or self.current_char() == '_':
+            value += self.current_char()
+            self.advance()
         while self.current_char() and (self.current_char().isalnum() or self.current_char() == '_'):
             value += self.current_char()
             self.advance()
-        
-        # Relaxed identifier length checking for systems programming
-        if self.strict_mode and len(value) < 3 and value not in self.allowed_short_identifiers:
-            self.warning(f"Identifier '{value}' is short - consider using descriptive names for readability")
-        
+        if not value:
+            self.error(f"Invalid identifier at line {self.line}, column {self.column}")
         return value
+
 
     def read_dotted_identifier(self) -> str:
         parts = [self.read_identifier()]
@@ -957,6 +1026,7 @@ class Lexer:
         return comment_type, value.strip()
 
     def tokenize(self) -> List[Token]:
+        self.tokens = []
         while self.position < len(self.source):
             self.skip_whitespace()
             if not self.current_char():
@@ -976,8 +1046,7 @@ class Lexer:
                 self.tokens.append(Token(TokenType.STRING, value, line_start, col_start))
                 continue
             if self.current_char().isdigit():
-                value = self.read_number()
-                self.tokens.append(Token(TokenType.NUMBER, value, line_start, col_start))
+                self.tokens.append(self.read_number())  # Append Token directly
                 continue
             two_char = self.source[self.position:self.position+2]
             if two_char == '->':
@@ -1009,31 +1078,23 @@ class Lexer:
                     self.tokens.append(Token(token_type, value, line_start, col_start, 1))
                     continue
             if self.current_char().isalpha() or self.current_char() == '_':
-                # Read just the first identifier part
                 value = self.read_identifier()
                 token_type = self.keywords.get(value, TokenType.IDENTIFIER)
-                
-                # If it's a keyword, use it as-is
                 if token_type != TokenType.IDENTIFIER:
                     self.tokens.append(Token(token_type, value, line_start, col_start, len(value)))
                     continue
-                
-                # If it's an identifier, check for dots and continue reading
                 if self.current_char() == '.' and self.peek_char() and self.peek_char().isalpha():
                     parts = [value]
                     while self.current_char() == '.' and self.peek_char() and self.peek_char().isalpha():
                         self.advance()  # consume the dot
                         parts.append(self.read_identifier())
                     value = '.'.join(parts)
-                
                 self.tokens.append(Token(TokenType.IDENTIFIER, value, line_start, col_start, len(value)))
                 continue
-            # Handle dot as a separate token
             if self.current_char() == '.':
                 self.advance()
                 self.tokens.append(Token(TokenType.DOT, '.', line_start, col_start, 1))
                 continue
-
             self.error(f"Unknown character '{self.current_char()}'")
         self.tokens.append(Token(TokenType.EOF, None, self.line, self.column))
         return self.tokens

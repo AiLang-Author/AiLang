@@ -332,10 +332,19 @@ class ReturnValue(ASTNode):
     value: ASTNode
 
 @dataclass
-class If(ASTNode):
+class Fork(ASTNode):
+    """Fork construct for conditional branching"""
     condition: ASTNode
-    then_body: List[ASTNode]
-    else_body: Optional[List[ASTNode]] = None
+    true_block: List[ASTNode]
+    false_block: List[ASTNode]
+
+@dataclass
+class Branch(ASTNode):
+    """Branch construct for multi-way branching"""
+    expression: ASTNode
+    cases: List[Tuple[ASTNode, List[ASTNode]]]  # (value, statements)
+    default: Optional[List[ASTNode]] = None
+
 
 @dataclass
 class ChoosePath(ASTNode):
@@ -525,3 +534,84 @@ class MemoryBarrierOperation(ASTNode):
     barrier_type: str  # "read", "write", "full", "acquire", "release"
     scope: Optional[ASTNode] = None  # "local", "global", "device"
     ordering: Optional[ASTNode] = None  # Memory ordering semantics    
+# === MISSING CONTROL FLOW NODES ===
+
+@dataclass
+class If(ASTNode):
+    """If-then-else statement"""
+    condition: ASTNode
+    then_body: List[ASTNode]
+    else_body: Optional[List[ASTNode]] = None
+
+@dataclass
+class While(ASTNode):
+    """While loop statement"""
+    condition: ASTNode
+    body: List[ASTNode]
+
+@dataclass
+class ForEvery(ASTNode):
+    """ForEvery loop statement"""
+    variable: str
+    collection: ASTNode
+    body: List[ASTNode]
+
+@dataclass
+class ChoosePath(ASTNode):
+    """Switch/case-like statement"""
+    expression: ASTNode
+    cases: List[Tuple[str, List[ASTNode]]]
+    default: Optional[List[ASTNode]] = None
+
+@dataclass
+class Try(ASTNode):
+    """Try-catch-finally statement"""
+    body: List[ASTNode]
+    catch_clauses: List[Tuple[str, List[ASTNode]]]
+    finally_body: Optional[List[ASTNode]] = None
+
+@dataclass
+class SendMessage(ASTNode):
+    """Send message statement"""
+    target: str
+    parameters: Dict[str, ASTNode]
+
+@dataclass
+class ReceiveMessage(ASTNode):
+    """Receive message statement"""
+    message_type: str
+    body: List[ASTNode]
+
+@dataclass
+class EveryInterval(ASTNode):
+    """Interval-based execution"""
+    interval_type: str
+    interval_value: Union[int, float]
+    body: List[ASTNode]
+
+@dataclass
+class WithSecurity(ASTNode):
+    """Security context statement"""
+    context: str
+    body: List[ASTNode]
+
+@dataclass
+class BreakLoop(ASTNode):
+    """Break loop statement"""
+    pass
+
+@dataclass
+class ContinueLoop(ASTNode):
+    """Continue loop statement"""
+    pass
+
+@dataclass
+class HaltProgram(ASTNode):
+    """Halt program statement"""
+    message: Optional[str] = None
+
+@dataclass
+class RecordTypeDefinition(ASTNode):
+    """Type definition for a Record structure"""
+    name: str
+    record_type: TypeExpression

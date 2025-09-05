@@ -17,6 +17,7 @@ class Parser:
         self.tokens = tokens
         self.position = 0
         self.current_token = self.tokens[0] if tokens else None
+        self.previous_token = None
         self.strict_math = strict_math
         self.context_stack: List[str] = []
 
@@ -37,6 +38,7 @@ class Parser:
     def advance(self):
         if self.position < len(self.tokens) - 1:
             self.position += 1
+            self.previous_token = self.current_token
             self.current_token = self.tokens[self.position]
 
     def peek(self, offset: int = 1) -> Optional[Token]:
@@ -48,6 +50,10 @@ class Parser:
     def match(self, *token_types: TokenType) -> bool:
         return self.current_token and self.current_token.type in token_types
 
+
+    def check(self, token_type: TokenType) -> bool:
+        """Check if current token matches type without consuming it"""
+        return self.current_token and self.current_token.type == token_type
     def match_sequence(self, *token_types: TokenType) -> bool:
         for i, token_type in enumerate(token_types):
             token = self.peek(i) if i > 0 else self.current_token
@@ -134,22 +140,36 @@ class Parser:
         start_token = self.consume(TokenType.LIBRARYIMPORT)
         self.consume(TokenType.DOT)
         name = self.parse_dotted_name()
+        
+        body = []  # Default to an empty body for simple imports
         self.skip_newlines()
-        self.consume(TokenType.LBRACE)
-        self.skip_newlines()
-        body = []
-        while not self.match(TokenType.RBRACE):
+
+        # --- NEW: Check for an optional body ---
+        if self.match(TokenType.LBRACE):
+            self.consume(TokenType.LBRACE)
             self.skip_newlines()
-            if self.match(TokenType.LIBRARYIMPORT):
-                body.append(self.parse_library())
-            elif self.match(TokenType.FUNCTION):
-                body.append(self.parse_function())
-            elif self.match(TokenType.CONSTANT):
-                body.append(self.parse_constant())
-            else:
-                self.advance()
-            self.skip_newlines()
-        self.consume(TokenType.RBRACE)
+            
+            while not self.match(TokenType.RBRACE):
+                # This is your original logic for parsing the body's contents
+                self.skip_newlines()
+                if self.match(TokenType.EOF):
+                    self.error("Unclosed library body, reached end of file.")
+                
+                # You can add more declaration types here as needed
+                if self.match(TokenType.LIBRARYIMPORT):
+                    body.append(self.parse_library())
+                elif self.match(TokenType.FUNCTION):
+                    body.append(self.parse_function())
+                elif self.match(TokenType.CONSTANT):
+                    body.append(self.parse_constant())
+                else:
+                    self.advance() # Move past unexpected tokens to avoid getting stuck
+                
+                self.skip_newlines()
+
+            self.consume(TokenType.RBRACE)
+        # --- END NEW LOGIC ---
+
         self.pop_context()
         return Library(name=name, body=body, line=start_token.line, column=start_token.column)
 
@@ -163,22 +183,26 @@ class Parser:
     def parse_pool(self) -> Pool:
         pool_type_token = self.current_token
         pool_type = pool_type_token.value
-        self.advance()
+        self.advance() # Consumes the pool type (e.g., DynamicPool)
         self.push_context(f"{pool_type}")
-        name = self.consume(TokenType.IDENTIFIER).value
+
+        # --- FIX: Consume the DOT token between the type and the name ---
+        self.consume(TokenType.DOT)
+        # --- END OF FIX ---
+        
+        name = self.consume(TokenType.IDENTIFIER).value # Now correctly finds the name
         self.skip_newlines()
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
         body = []
         while not self.match(TokenType.RBRACE):
             self.skip_newlines()
-            if self.match(TokenType.SUBPOOL):
-                body.append(self.parse_subpool())
-            elif self.match(TokenType.STRING):
+            if self.match(TokenType.STRING):
                 item = self.parse_resource_item()
                 body.append(item)
             else:
-                self.advance()
+                if not self.match(TokenType.RBRACE):
+                    self.error(f"Expected string key for resource item, got {self.current_token.type.name}")
             self.skip_newlines()
         self.consume(TokenType.RBRACE)
         self.pop_context()
@@ -211,13 +235,22 @@ class Parser:
         self.consume(TokenType.COLON)
         value = None
         attributes = {}
+        
+        # Handle first attribute - can be Initialize OR ElementType
         if self.match(TokenType.INITIALIZE):
             self.consume(TokenType.INITIALIZE)
             self.consume(TokenType.DASH)
             value = self.parse_primary()
+        elif self.match(TokenType.ELEMENTTYPE):
+            self.consume(TokenType.ELEMENTTYPE)
+            self.consume(TokenType.DASH)
+            attributes['ElementType'] = self.parse_type()  # Use parse_type() for type names
+        
+        # Handle comma-separated additional attributes
         while self.match(TokenType.COMMA):
             self.consume(TokenType.COMMA)
             self.skip_newlines()
+            
             if self.match(TokenType.CANCHANGE):
                 self.consume(TokenType.CANCHANGE)
                 self.consume(TokenType.DASH)
@@ -239,16 +272,19 @@ class Parser:
                 self.consume(TokenType.DASH)
                 attributes['MinimumLength'] = self.parse_primary()
             elif self.match(TokenType.ELEMENTTYPE):
+                # ElementType can also appear as additional attribute
                 self.consume(TokenType.ELEMENTTYPE)
                 self.consume(TokenType.DASH)
-                attributes['ElementType'] = self.parse_type()
+                attributes['ElementType'] = self.parse_type()  # Use parse_type() here too
             else:
+                # Generic attribute handling
                 if self.match(TokenType.IDENTIFIER):
                     attr_name = self.consume(TokenType.IDENTIFIER).value
                     self.consume(TokenType.DASH)
                     attributes[attr_name] = self.parse_expression()
                 else:
                     break
+        
         return ResourceItem(key=key, value=value, attributes=attributes,
                             line=self.current_token.line, column=self.current_token.column)
 
@@ -659,6 +695,10 @@ class Parser:
             return self.parse_while()
         elif self.match(TokenType.FOREVERY):
             return self.parse_forevery()
+        elif self.match(TokenType.FORK):
+            return self.parse_fork()
+        elif self.match(TokenType.BRANCH):
+            return self.parse_branch()
         elif self.match(TokenType.TRYBLOCK):
             return self.parse_try()
         elif self.match(TokenType.SENDMESSAGE):
@@ -940,6 +980,137 @@ class Parser:
         self.pop_context()
         return ForEvery(variable=variable, collection=collection, body=body,
                         line=start_token.line, column=start_token.column)
+        
+        
+        
+    def parse_fork(self) -> Fork:
+        """Parse Fork construct: Fork condition { true_block } { false_block }"""
+        start_token = self.consume(TokenType.FORK)
+        self.push_context("Fork")
+        
+        # Parse condition expression
+        condition = self.parse_expression()
+        
+        self.skip_newlines()
+        
+        # Parse true block
+        self.consume(TokenType.LBRACE)
+        self.skip_newlines()
+        self.push_context("Fork.TrueBlock")
+        true_block = []
+        while not self.match(TokenType.RBRACE):
+            stmt = self.parse_statement()
+            if stmt:
+                true_block.append(stmt)
+            self.skip_newlines()
+        self.consume(TokenType.RBRACE)
+        self.pop_context()
+        
+        self.skip_newlines()
+        
+        # Parse false block (required - both blocks must be present)
+        false_block = []
+        if self.match(TokenType.LBRACE):
+            self.consume(TokenType.LBRACE)
+            self.skip_newlines()
+            self.push_context("Fork.FalseBlock")
+            while not self.match(TokenType.RBRACE):
+                stmt = self.parse_statement()
+                if stmt:
+                    false_block.append(stmt)
+                self.skip_newlines()
+            self.consume(TokenType.RBRACE)
+            self.pop_context()
+        else:
+            # Fork requires both blocks
+            self.error("Fork requires both true and false blocks")
+        
+        self.pop_context()
+        return Fork(condition=condition, true_block=true_block, false_block=false_block,
+                    line=start_token.line, column=start_token.column)
+
+    def parse_branch(self) -> Branch:
+        """Parse Branch construct: Branch expression { Case value { block } ... Default { block } }"""
+        start_token = self.consume(TokenType.BRANCH)
+        self.push_context("Branch")
+        
+        # Parse expression to branch on
+        expression = self.parse_expression()
+        
+        self.skip_newlines()
+        self.consume(TokenType.LBRACE)
+        self.skip_newlines()
+        
+        cases = []
+        default = None
+        
+        while not self.match(TokenType.RBRACE):
+            self.skip_newlines()
+            
+            if self.match(TokenType.CASE):
+                self.consume(TokenType.CASE)
+                
+                # Parse case value (can be number, string, or identifier)
+                if self.match(TokenType.NUMBER):
+                    case_value = Number(value=self.current_token.value, 
+                                    line=self.current_token.line, 
+                                    column=self.current_token.column)
+                    self.advance()
+                elif self.match(TokenType.STRING):
+                    case_value = String(value=self.current_token.value,
+                                    line=self.current_token.line,
+                                    column=self.current_token.column)
+                    self.advance()
+                elif self.match(TokenType.IDENTIFIER):
+                    case_value = Identifier(name=self.current_token.value,
+                                        line=self.current_token.line,
+                                        column=self.current_token.column)
+                    self.advance()
+                else:
+                    self.error("Case value must be a number, string, or identifier")
+                
+                self.skip_newlines()
+                self.consume(TokenType.LBRACE)
+                self.skip_newlines()
+                
+                self.push_context(f"Branch.Case({case_value})")
+                case_body = []
+                while not self.match(TokenType.RBRACE):
+                    stmt = self.parse_statement()
+                    if stmt:
+                        case_body.append(stmt)
+                    self.skip_newlines()
+                self.consume(TokenType.RBRACE)
+                self.pop_context()
+                
+                cases.append((case_value, case_body))
+                
+            elif self.match(TokenType.DEFAULT):
+                self.consume(TokenType.DEFAULT)
+                self.skip_newlines()
+                self.consume(TokenType.LBRACE)
+                self.skip_newlines()
+                
+                self.push_context("Branch.Default")
+                default = []
+                while not self.match(TokenType.RBRACE):
+                    stmt = self.parse_statement()
+                    if stmt:
+                        default.append(stmt)
+                    self.skip_newlines()
+                self.consume(TokenType.RBRACE)
+                self.pop_context()
+            
+            else:
+                self.skip_newlines()
+                if not self.match(TokenType.RBRACE):
+                    self.error(f"Expected Case or Default in Branch, got {self.current_token.type.name if self.current_token else 'EOF'}")
+        
+        self.consume(TokenType.RBRACE)
+        self.pop_context()
+        
+        return Branch(expression=expression, cases=cases, default=default,
+                    line=start_token.line, column=start_token.column)    
 
     def parse_try(self) -> Try:
         start_token = self.consume(TokenType.TRYBLOCK)
@@ -1106,24 +1277,28 @@ class Parser:
         if self.match(TokenType.LPAREN):
             return self.parse_parenthesized_expression()
         if self.match(TokenType.ADD, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.SUBTRACT, 
-                  TokenType.POWER, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
-                  TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
-                  TokenType.AND, TokenType.OR, TokenType.NOT,
-                  TokenType.READINPUT, TokenType.READINPUTNUMBER, TokenType.GETUSERCHOICE,
-                  TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGCONCAT,
-                  TokenType.STRINGLENGTH, TokenType.STRINGTONUMBER, TokenType.NUMBERTOSTRING,
-                  TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
+                    TokenType.POWER, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
+                    TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
+                    TokenType.AND, TokenType.OR, TokenType.NOT,
+                    TokenType.READINPUT, TokenType.READINPUTNUMBER, TokenType.GETUSERCHOICE,
+                    TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGCONCAT,
+                    TokenType.STRINGLENGTH, TokenType.STRINGTONUMBER, TokenType.NUMBERTOSTRING,
+                    TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
             return self.parse_math_function()
         # === NEW: Low-Level Function Parsing ===
         elif self.match(TokenType.DEREFERENCE, TokenType.ADDRESSOF, TokenType.SIZEOF,
                     TokenType.ALLOCATE, TokenType.DEALLOCATE, TokenType.MEMORYCOPY,
                     TokenType.PORTREAD, TokenType.PORTWRITE, TokenType.HARDWAREREGISTER,
-                    TokenType.ATOMICREAD, TokenType.ATOMICWRITE, TokenType.MMIOREAD, TokenType.MMIOWRITE):
+                    TokenType.ATOMICREAD, TokenType.ATOMICWRITE, TokenType.MMIOREAD, TokenType.MMIOWRITE, TokenType.STOREVALUE):
             return self.parse_lowlevel_function()
-    # === NEW: Virtual Memory Expression Parsing ===
+        # === NEW: Virtual Memory Expression Parsing ===
         elif self.match(TokenType.PAGETABLE, TokenType.VIRTUALMEMORY, TokenType.CACHE, 
                     TokenType.TLB, TokenType.MEMORYBARRIER):
             return self.parse_vm_operation()
+        # === NEW: Pool Memory Operations Parsing ===
+        elif self.match(TokenType.POOLRESIZE, TokenType.POOLMOVE, TokenType.POOLCOMPACT,
+                    TokenType.POOLALLOCATE, TokenType.POOLFREE):
+            return self.parse_pool_operation()
         return self.parse_primary()
 
     def parse_parenthesized_expression(self) -> ASTNode:
@@ -1228,67 +1403,284 @@ class Parser:
             return FunctionCall(function=op_name, arguments=args,
                                line=op_token.line, column=op_token.column)
 
+    def parse_pool_operation(self) -> FunctionCall:
+        """Parse pool memory operations like PoolResize, PoolMove, etc."""
+        op_token = self.current_token
+        operation = op_token.value  # Will be "PoolResize", "PoolMove", etc.
+        self.advance()
+        
+        self.consume(TokenType.LPAREN, f"Expected '(' after {operation}")
+        
+        arguments = []
+        self.skip_newlines()
+        
+        # Parse arguments
+        while not self.match(TokenType.RPAREN):
+            arguments.append(self.parse_expression())
+            self.skip_newlines()
+            
+            if not self.match(TokenType.RPAREN):
+                self.consume(TokenType.COMMA, f"Expected ',' or ')' in {operation} arguments")
+                self.skip_newlines()
+        
+        self.consume(TokenType.RPAREN, f"Expected ')' after {operation} arguments")
+        
+        return FunctionCall(
+            function=operation,
+            arguments=arguments,
+            line=op_token.line,
+            column=op_token.column
+        )
+
+
     def parse_primary(self) -> ASTNode:
         self.skip_newlines()
+        
         if self.match(TokenType.NUMBER):
             token = self.current_token
             self.advance()
             return Number(value=token.value, line=token.line, column=token.column)
+        
         elif self.match(TokenType.STRING):
             token = self.current_token
             self.advance()
             return String(value=token.value, line=token.line, column=token.column)
+        
         elif self.match(TokenType.TRUE):
             token = self.current_token
             self.advance()
             return Boolean(value=True, line=token.line, column=token.column)
+        
         elif self.match(TokenType.FALSE):
             token = self.current_token
             self.advance()
             return Boolean(value=False, line=token.line, column=token.column)
+        
         elif self.match(TokenType.NULL):
             token = self.current_token
             self.advance()
             return Identifier(name='Null', line=token.line, column=token.column)
+        
         elif self.match(TokenType.LAMBDA):
             return self.parse_lambda()
+        
         elif self.match(TokenType.APPLY):
             return self.parse_apply()
+        
         elif self.match(TokenType.RUNTASK):
             return self.parse_runtask()
+        
         elif self.match(TokenType.RUNMACRO):
             return self.parse_runmacro()
+        
+        elif self.match(TokenType.RECORD):
+            return self.parse_record_type()
+        
         elif self.match(TokenType.IDENTIFIER):
             return self.parse_identifier()
+        
         elif self.match(TokenType.LPAREN):
             return self.parse_parenthesized_expression()
+        
         elif self.match(TokenType.LBRACKET):
             return self.parse_array_literal()
+        
         elif self.match(TokenType.LBRACE):
             return self.parse_map_literal()
+        
         elif self.match(TokenType.PI):
             token = self.current_token
             self.advance()
             return Number(value=3.14159265358979323846, line=token.line, column=token.column)
+        
         elif self.match(TokenType.E):
             token = self.current_token
             self.advance()
             return Number(value=2.71828182845904523536, line=token.line, column=token.column)
+        
         elif self.match(TokenType.PHI):
             token = self.current_token
             self.advance()
             return Number(value=1.61803398874989484820, line=token.line, column=token.column)
+        
         elif self.match(TokenType.BYTES, TokenType.KILOBYTES, TokenType.MEGABYTES,
-                       TokenType.GIGABYTES, TokenType.SECONDS, TokenType.MILLISECONDS,
-                       TokenType.MICROSECONDS, TokenType.PERCENT):
+                    TokenType.GIGABYTES, TokenType.SECONDS, TokenType.MILLISECONDS,
+                    TokenType.MICROSECONDS, TokenType.PERCENT):
             return self.parse_unit()
-        # === NEW: Low-Level Type Parsing ===
-        elif self.match(TokenType.BYTE, TokenType.WORD, TokenType.DWORD, TokenType.QWORD,
-                       TokenType.UINT8, TokenType.UINT16, TokenType.UINT32, TokenType.UINT64,
-                       TokenType.INT8, TokenType.INT16, TokenType.INT32, TokenType.INT64):
-            return self.parse_lowlevel_type()
+        
+        elif self.match(TokenType.BYTE, TokenType.WORD, TokenType.DWORD, TokenType.QWORD):
+            return self.parse_memory_size_cast()
+        
+        # Hash operations
+        elif self.match(TokenType.HASHCREATE):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "HashCreate", args)
+        
+        elif self.match(TokenType.HASHFUNCTION):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "HashFunction", args)
+        
+        elif self.match(TokenType.HASHSET):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "HashSet", args)
+        
+        elif self.match(TokenType.HASHGET):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "HashGet", args)
+        
+        # Socket operations
+        elif self.match(TokenType.SOCKETCREATE):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketCreate", args)
+        
+        elif self.match(TokenType.SOCKETBIND):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketBind", args)
+        
+        elif self.match(TokenType.SOCKETLISTEN):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketListen", args)
+        
+        elif self.match(TokenType.SOCKETACCEPT):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketAccept", args)
+        
+        elif self.match(TokenType.SOCKETREAD):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketRead", args)
+        
+        elif self.match(TokenType.SOCKETWRITE):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketWrite", args)
+        
+        elif self.match(TokenType.SOCKETCLOSE):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketClose", args)
+        
         else:
             self.error(f"Unexpected token in expression: {self.current_token.value if self.current_token else 'EOF'}")
+
 
     def parse_lowlevel_type(self) -> LowLevelType:
         """Parse low-level type literals"""
@@ -1522,8 +1914,12 @@ class Parser:
                 self.consume(TokenType.COMMA)
                 self.skip_newlines()
         self.consume(TokenType.RBRACE)
-        return TypeExpression(base_type='Record', parameters=[TypeExpression(base_type=f[0], parameters=[f[1]]) for f in fields],
-                             line=start_token.line, column=start_token.column)
+        return TypeExpression(
+            base_type='Record', 
+            parameters=[TypeExpression(base_type=f[0], parameters=[f[1]], line=self.current_token.line, column=self.current_token.column) for f in fields],
+            line=self.current_token.line,
+            column=self.current_token.column
+        )
 
     def parse_optional_type(self) -> TypeExpression:
         start_token = self.consume(TokenType.OPTIONALTYPE)
@@ -1603,11 +1999,9 @@ class Parser:
             if self.match(TokenType.STRING):
                 # String literal: RG = "ResourceGlobal" (literal string expansion)
                 full_name = self.consume(TokenType.STRING).value
-                print(f"DEBUG: Acronym {acronym} -> STRING LITERAL: '{full_name}'")
             elif self.match(TokenType.IDENTIFIER):
                 # Identifier reference: RG = ResourceGlobal (identifier reference)  
                 full_name = self.consume(TokenType.IDENTIFIER).value
-                print(f"DEBUG: Acronym {acronym} -> IDENTIFIER REF: {full_name}")
             else:
                 self.error(f"Expected string literal or identifier for acronym value, got {self.current_token.type.name if self.current_token else 'EOF'}")
             
@@ -1839,4 +2233,5 @@ class Parser:
             function=function_name,
             arguments=arguments,
             line=start_token.line,
-            column=start_token.column        )
+            column=start_token.column
+        )

@@ -1,6 +1,6 @@
 
 # visitor.py
-from .ailang_ast import ASTNode, Program, Library, Pool, ResourceItem, Loop, SubRoutine, Function, RunTask, PrintMessage, ReturnValue, If, While, ForEvery, Assignment, MathExpression, FunctionCall, Identifier, Number, String, Boolean, ArrayLiteral, TypeExpression, ChoosePath, Try, SendMessage, ReceiveMessage, EveryInterval, WithSecurity, BreakLoop, ContinueLoop, HaltProgram, Lambda, Combinator, MacroBlock, MacroDefinition, SecurityContext, SecurityLevel, ConstrainedType, Constant, Apply, RunMacro, MapLiteral, SubPool
+from ailang_ast import ASTNode, Program, Library, Pool, ResourceItem, Loop, SubRoutine, Function, RunTask, PrintMessage, ReturnValue, If, While, ForEvery, Assignment, MathExpression, FunctionCall, Identifier, Number, String, Boolean, ArrayLiteral, TypeExpression, ChoosePath, Try, SendMessage, ReceiveMessage, EveryInterval, WithSecurity, BreakLoop, ContinueLoop, HaltProgram, Lambda, Combinator, MacroBlock, MacroDefinition, SecurityContext, SecurityLevel, ConstrainedType, Constant, Apply, RunMacro, MapLiteral, SubPool
 
 class ASTVisitor:
     """Base class for AST visitors"""
@@ -315,3 +315,6 @@ class ASTPrinter(ASTVisitor):
         result += self.indent() + "}"
         return result
 
+
+    def visit_RecordTypeDefinition(self, node) -> str:
+        return f"{node.name} = {self.visit(node.record_type)}"
