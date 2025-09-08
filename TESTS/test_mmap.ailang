@@ -1,0 +1,4 @@
+buffer = Allocate(64)
+StoreValue(buffer, 42)  // Store '*' (ASCII 42)
+val = Dereference(buffer)
+PrintNumber(val)  // Should print 42

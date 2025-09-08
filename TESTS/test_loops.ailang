@@ -1,0 +1,188 @@
+// test_loops.ailang - Testing AILANG's Loop concurrency model (FIXED)
+
+PrintMessage("==================================================")
+PrintMessage("        AILANG LOOP MODEL TEST SUITE")
+PrintMessage("==================================================")
+PrintMessage("")
+
+// Global state for testing
+counter = 0
+message_queue = HashCreate(16)
+loop_running = 1
+
+// ==========================================
+// TEST 1: BASIC SUBROUTINE
+// ==========================================
+PrintMessage("TEST 1: SubRoutine Test")
+PrintMessage("-----------------------")
+
+SubRoutine.IncrementCounter {
+    counter = Add(counter, 1)
+    PrintMessage("SubRoutine: Counter incremented to:")
+    PrintNumber(counter)
+}
+
+// Call the subroutine
+RunTask.IncrementCounter()
+RunTask.IncrementCounter()
+RunTask.IncrementCounter()
+
+PrintMessage("")
+
+// ==========================================
+// TEST 2: LOOP MAIN 
+// ==========================================
+PrintMessage("TEST 2: LoopMain Test")
+PrintMessage("---------------------")
+
+LoopMain.EventProcessor {
+    iterations = 0
+    WhileLoop LessThan(iterations, 3) {
+        PrintMessage("LoopMain iteration:")
+        PrintNumber(iterations)
+        iterations = Add(iterations, 1)
+    }
+    PrintMessage("LoopMain completed")
+}
+
+PrintMessage("")
+
+// ==========================================
+// TEST 3: LOOP ACTOR
+// ==========================================
+PrintMessage("TEST 3: LoopActor Test")
+PrintMessage("----------------------")
+
+LoopActor.MessageHandler {
+    actor_id = 1
+    messages_processed = 0
+    
+    WhileLoop LessThan(messages_processed, 3) {
+        PrintMessage("Actor processing message:")
+        PrintNumber(messages_processed)
+        messages_processed = Add(messages_processed, 1)
+    }
+    PrintMessage("Actor completed")
+}
+
+PrintMessage("")
+
+// ==========================================
+// TEST 4: LOOP START (Initialization)
+// ==========================================
+PrintMessage("TEST 4: LoopStart Test")
+PrintMessage("----------------------")
+
+LoopStart.InitSystem {  // Changed from "Initialize" to "InitSystem"
+    PrintMessage("Initialization loop running...")
+    
+    // Initialize resources
+    buffer = Allocate(256)
+    StoreValue(buffer, 42)
+    
+    val = Dereference(buffer)
+    PrintMessage("Initialized buffer with value:")
+    PrintNumber(val)
+    
+    Deallocate(buffer)
+    PrintMessage("Initialization complete")
+}
+
+PrintMessage("")
+
+// ==========================================
+// TEST 5: LOOP SHADOW (Background)
+// ==========================================
+PrintMessage("TEST 5: LoopShadow Test")
+PrintMessage("-----------------------")
+
+LoopShadow.BackgroundWorker {
+    PrintMessage("Shadow loop started")
+    
+    work_items = 0
+    WhileLoop LessThan(work_items, 2) {
+        PrintMessage("Shadow processing item:")
+        PrintNumber(work_items)
+        work_items = Add(work_items, 1)
+    }
+    
+    PrintMessage("Shadow loop finished")
+}
+
+PrintMessage("")
+
+// ==========================================
+// TEST 6: MESSAGE PASSING BETWEEN LOOPS
+// ==========================================
+PrintMessage("TEST 6: Inter-Loop Communication")
+PrintMessage("--------------------------------")
+
+// Producer loop
+LoopActor.Producer {
+    item = 0
+    WhileLoop LessThan(item, 3) {
+        PrintMessage("Producer: Creating item")
+        PrintNumber(item)
+        
+        // Store in shared hash table  
+        key = StringConcat("item_", NumberToString(item))
+        HashSet(message_queue, key, item)
+        
+        item = Add(item, 1)
+    }
+    PrintMessage("Producer finished")
+}
+
+// Consumer loop
+LoopActor.Consumer {
+    item = 0
+    WhileLoop LessThan(item, 3) {
+        key = StringConcat("item_", NumberToString(item))
+        value = HashGet(message_queue, key)
+        
+        PrintMessage("Consumer: Retrieved item")
+        PrintNumber(value)
+        
+        item = Add(item, 1)
+    }
+    PrintMessage("Consumer finished")
+}
+
+PrintMessage("")
+
+// ==========================================
+// TEST 7: LOOP WITH SEND/RECEIVE
+// ==========================================
+PrintMessage("TEST 7: Send/Receive Messages")
+PrintMessage("-----------------------------")
+
+LoopActor.Sender {
+    SendMessage.TestMessage("Hello from Sender")
+    PrintMessage("Message sent")
+}
+
+LoopActor.Receiver {
+    ReceiveMessage.TestMessage {
+        PrintMessage("Message received in Receiver")
+    }
+}
+
+PrintMessage("")
+
+// ==========================================
+// FINAL SUMMARY
+// ==========================================
+PrintMessage("==================================================")
+PrintMessage("           LOOP TEST SUITE COMPLETE")
+PrintMessage("==================================================")
+PrintMessage("")
+PrintMessage("Summary:")
+PrintMessage("✓ SubRoutines working")
+PrintMessage("✓ LoopMain tested")
+PrintMessage("✓ LoopActor tested")
+PrintMessage("✓ LoopStart tested")
+PrintMessage("✓ LoopShadow tested")
+PrintMessage("✓ Inter-loop communication tested")
+PrintMessage("✓ Send/Receive message tested")
+PrintMessage("")
+PrintMessage("Loop concurrency model operational!")

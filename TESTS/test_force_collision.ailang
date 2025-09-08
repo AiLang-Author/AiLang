@@ -1,0 +1,7 @@
+
+store = HashCreate(1)  // Force all keys to same bucket
+HashSet(store, "a", 100)
+PrintMessage("First done")
+HashSet(store, "b", 200)  // Must chain
+PrintMessage("Second done")
+

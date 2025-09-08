@@ -1,0 +1,13 @@
+// test_loop_basic.ailang - Most basic Loop test
+
+PrintMessage("Basic Loop Test")
+
+// Simple SubRoutine
+SubRoutine.Hello {
+    PrintMessage("Hello from SubRoutine")
+}
+
+// Main code
+PrintMessage("Before RunTask")
+RunTask.Hello()
+PrintMessage("After RunTask")

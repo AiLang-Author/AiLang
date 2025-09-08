@@ -1,0 +1,11 @@
+// debug_addr.ailang
+PrintMessage("Address Debug Test")
+buffer = Allocate(32)
+PrintMessage("Buffer address (as number):")
+PrintNumber(buffer)
+
+// Try to store and retrieve
+StoreValue(buffer, 42)
+val = Dereference(buffer)
+PrintMessage("Value stored and retrieved:")
+PrintNumber(val)

@@ -1,0 +1,53 @@
+// test_loop_phase3_primitives.ailang - Fixed syntax
+
+PrintMessage("Testing Loop Scheduling Primitives")
+PrintMessage("===================================")
+
+// PRIMITIVE 1: LoopYield - Cooperative yielding
+SubRoutine.CooperativeTask {
+    PrintMessage("Task: Starting work")
+    counter = 0
+    WhileLoop LessThan(counter, 3) {
+        PrintMessage("Task: Working...")
+        counter = Add(counter, 1)
+        LoopYield()  // Give up CPU voluntarily
+    }
+    PrintMessage("Task: Complete")
+}
+
+// Define a test actor first
+LoopActor.Worker {
+    PrintMessage("Worker actor running")
+}
+
+// PRIMITIVE 2: LoopSpawn - Create new execution context
+SubRoutine.TestSpawn {
+    handle = LoopSpawn("Worker")  // Use string for actor name
+    PrintMessage("Spawned worker with handle:")
+    PrintNumber(handle)
+}
+
+// PRIMITIVE 3: LoopGetState - Check actor state
+SubRoutine.TestState {
+    handle = LoopSpawn("Worker")
+    state = LoopGetState(handle)
+    // States: 0=ready, 1=running, 2=blocked, 3=dead
+    PrintMessage("Actor state:")
+    PrintNumber(state)
+}
+
+// PRIMITIVE 4: LoopGetCurrent - Get current actor handle
+SubRoutine.TestCurrent {
+    myHandle = LoopGetCurrent()
+    PrintMessage("My handle:")
+    PrintNumber(myHandle)
+}
+
+// Run tests
+RunTask.CooperativeTask()
+RunTask.TestSpawn()
+RunTask.TestState()
+RunTask.TestCurrent()
+
+PrintMessage("")
+PrintMessage("With these primitives, we can build schedulers!")

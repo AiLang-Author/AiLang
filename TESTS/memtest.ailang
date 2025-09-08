@@ -1,0 +1,12 @@
+PrintMessage("Memory Test")
+buffer = Allocate(32)
+PrintMessage("Buffer allocated")
+
+// Store value 42 at buffer[0]
+StoreValue(buffer, 42)
+PrintMessage("Stored 42")
+
+// Read it back
+val = Dereference(buffer)
+PrintMessage("Read back:")
+PrintNumber(val)

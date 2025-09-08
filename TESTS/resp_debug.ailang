@@ -1,0 +1,55 @@
+// resp_debug.ailang
+PrintMessage("RESP Debug Test")
+PrintMessage("===============")
+
+// Allocate and store values
+resp_buffer = Allocate(64)
+StoreValue(resp_buffer, 42)
+StoreValue(Add(resp_buffer, 8), 71)
+StoreValue(Add(resp_buffer, 9), 69)
+StoreValue(Add(resp_buffer, 10), 84)
+
+// Read values back
+first = Dereference(resp_buffer)
+g = Dereference(Add(resp_buffer, 8))
+e = Dereference(Add(resp_buffer, 9))
+t = Dereference(Add(resp_buffer, 10))
+
+// Print what we read
+PrintMessage("First byte read:")
+PrintNumber(first)
+PrintMessage("Expected: 42")
+
+PrintMessage("G byte read:")
+PrintNumber(g)
+PrintMessage("Expected: 71")
+
+PrintMessage("E byte read:")
+PrintNumber(e)
+PrintMessage("Expected: 69")
+
+PrintMessage("T byte read:")
+PrintNumber(t)
+PrintMessage("Expected: 84")
+
+// Test comparisons
+PrintMessage("Testing comparisons:")
+is_array = EqualTo(first, 42)
+PrintMessage("first == 42 result:")
+PrintNumber(is_array)
+
+check_g = EqualTo(g, 71)
+PrintMessage("g == 71 result:")
+PrintNumber(check_g)
+
+// Test IfCondition
+PrintMessage("Testing IfCondition:")
+IfCondition is_array ThenBlock {
+    PrintMessage("SUCCESS: RESP array detected!")
+}
+
+IfCondition check_g ThenBlock {
+    PrintMessage("SUCCESS: G detected!")
+}
+
+PrintMessage("Test complete")

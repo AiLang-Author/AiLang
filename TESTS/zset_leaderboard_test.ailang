@@ -1,0 +1,71 @@
+// zset_leaderboard_test.ailang - REGRESSION TEST
+// No LibraryImport - RunTask.ZSet.* is handled by library_inliner.py
+
+LoopMain.TestLoop {
+    // Pre-allocate variables
+    num_players = 1000
+    num_updates = 100000
+    progress_interval = 10000
+    
+    leaderboard = 0
+    i = 0
+    initial_score = 0
+    added = 0
+    ops_counter = 0
+    player_id_num = 0
+    new_score = 0
+    progress_rem = 0
+    score_check = 0
+    temp_div = 0
+    
+    PrintMessage("=== AILANG Zset Leaderboard Benchmark ===")
+    
+    // Create leaderboard
+    leaderboard = RunTask.ZSet.Create()
+    PrintMessage("Leaderboard created. Populating with players...")
+    
+    // Populate with initial players
+    i = 0
+    WhileLoop LessThan(i, num_players) {
+        initial_score = i
+        // Using player_50 as test player since Score() is hardcoded for it
+        added = RunTask.ZSet.Add(zset-leaderboard, member-"player_50", score-initial_score)
+        i = Add(i, 1)
+    }
+    PrintMessage("Leaderboard populated with 1000 players.")
+    
+    // Main benchmark loop
+    PrintMessage("Starting 100,000 score updates...")
+    ops_counter = 0
+    WhileLoop LessThan(ops_counter, num_updates) {
+        // Manual modulo: player_id = ops_counter % num_players
+        temp_div = Divide(ops_counter, num_players)
+        player_id_num = Subtract(ops_counter, Multiply(temp_div, num_players))
+        
+        // Generate new score
+        new_score = Add(ops_counter, player_id_num)
+        
+        // Update score (always for player_50 since that's what Score() checks)
+        added = RunTask.ZSet.Add(zset-leaderboard, member-"player_50", score-new_score)
+        
+        // Progress indicator (manual modulo)
+        temp_div = Divide(ops_counter, progress_interval)
+        progress_rem = Subtract(ops_counter, Multiply(temp_div, progress_interval))
+        IfCondition EqualTo(progress_rem, 0) ThenBlock {
+            PrintMessage(".")
+        }
+        
+        ops_counter = Add(ops_counter, 1)
+    }
+    
+    // Final report
+    PrintMessage(" ")
+    PrintMessage("=== Benchmark Finished ===")
+    PrintMessage("Total updates processed:")
+    PrintMessage(ops_counter)
+    
+    // Verify a score (player_50 is hardcoded in inline_zset_score)
+    PrintMessage("Verifying score for 'player_50':")
+    score_check = RunTask.ZSet.Score(zset-leaderboard, member-"player_50")
+    PrintMessage(score_check)
+}

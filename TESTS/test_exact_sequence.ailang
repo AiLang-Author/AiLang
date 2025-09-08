@@ -1,0 +1,11 @@
+
+store = HashCreate(4)
+HashSet(store, "key1", 42)
+result = HashGet(store, "key1")
+PrintMessage("Stored 42 with key1, got:")
+PrintNumber(result)
+HashSet(store, "a", 100)
+HashSet(store, "b", 200)
+HashSet(store, "c", 300)
+PrintMessage("Multiple values test:")
+

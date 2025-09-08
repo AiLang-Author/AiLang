@@ -1,0 +1,37 @@
+// test_debug.ailang - Minimal version to find segfault
+
+PrintMessage("=== DEBUG TEST START ===")
+
+// Test 1: Basic print
+PrintMessage("Test 1: Basic print works")
+
+// Test 2: Number variable
+val = 42
+PrintMessage("Test 2: Number stored")
+
+// Test 3: Print number
+PrintMessage("Test 3: About to print number")
+PrintNumber(val)
+
+// Test 4: Basic arithmetic
+result = Add(10, 20)
+PrintMessage("Test 4: Add completed")
+PrintNumber(result)
+
+// Test 5: Hash create (often causes issues)
+PrintMessage("Test 5: Creating hash table")
+store = HashCreate(4)
+PrintMessage("Test 5: Hash created")
+
+// Test 6: Hash set
+PrintMessage("Test 6: Setting hash value")
+HashSet(store, "key", 42)
+PrintMessage("Test 6: Hash set complete")
+
+// Test 7: Hash get
+PrintMessage("Test 7: Getting hash value")
+result = HashGet(store, "key")
+PrintMessage("Test 7: Got value:")
+PrintNumber(result)
+
+PrintMessage("=== DEBUG TEST END ===")
