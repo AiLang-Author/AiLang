@@ -105,17 +105,110 @@
 <subroutine_declaration> ::= "SubRoutine" "." <dotted_name> "{" { <statement> } "}"
 
 # ==============================================
-# LOOP DECLARATIONS
+# LOOP CONCURRENCY MODEL
 # ==============================================
 
-<loop_declaration> ::= <loop_type> "." IDENTIFIER "{" { <statement> } "}" [ <loop_end> ]
+# Loop Declarations (add to <declaration>)
+<declaration> ::= ...existing...
+                | <subroutine_declaration>
+                | <loop_main_declaration>
+                | <loop_actor_declaration>
+                | <loop_start_declaration>
+                | <loop_shadow_declaration>
 
-<loop_type> ::= "LoopMain"
-              | "LoopActor"
-              | "LoopStart"
-              | "LoopShadow"
+# SubRoutine Declaration
+<subroutine_declaration> ::= "SubRoutine" "." <dotted_name> "{" { <statement> } "}"
 
-<loop_end> ::= "LoopEnd" "." IDENTIFIER
+# Loop Declarations
+<loop_main_declaration> ::= "LoopMain" "." IDENTIFIER "{" { <statement> } "}"
+<loop_actor_declaration> ::= "LoopActor" "." IDENTIFIER "{" { <loop_actor_body> } "}"
+<loop_start_declaration> ::= "LoopStart" "." IDENTIFIER "{" { <statement> } "}"
+<loop_shadow_declaration> ::= "LoopShadow" "." IDENTIFIER "{" { <statement> } "}"
+
+# Loop Actor Body
+<loop_actor_body> ::= <statement>
+                    | <loop_receive_block>
+                    | <loop_state_declaration>
+
+# Loop State Declaration
+<loop_state_declaration> ::= IDENTIFIER "=" <expression>
+
+# Loop Communication Statements (add to <statement>)
+<statement> ::= ...existing...
+              | <loop_send>
+              | <loop_receive_block>
+              | <loop_reply>
+              | <loop_yield>
+              | <loop_continue>
+              | <loop_spawn>
+              | <loop_join>
+              | <loop_interrupt>
+              | <loop_transaction>
+              | <loop_sequence>
+              | <loop_select>
+              | <loop_catch>
+              | <loop_timeout>
+              | <loop_barrier>
+              | <loop_flow>
+
+# Loop Communication
+<loop_send> ::= "LoopSend" "(" <expression> "," <expression> ")"
+
+<loop_receive_block> ::= "LoopReceive" [ IDENTIFIER ] "{" { <loop_case> } "}"
+
+<loop_case> ::= "case" ( STRING | IDENTIFIER ) ":" ( <statement> | "{" { <statement> } "}" )
+
+<loop_reply> ::= "LoopReply" "(" <expression> ")"
+
+# Loop Control Flow
+<loop_continue> ::= "LoopContinue" "{" { <statement> } "}"
+
+<loop_yield> ::= "LoopYield" [ "(" <expression> ")" ]
+
+<loop_sequence> ::= "LoopSequence" "." IDENTIFIER "{" { <sequence_step> } "}"
+
+<sequence_step> ::= IDENTIFIER ":" <statement>
+
+<loop_transaction> ::= "LoopTransaction" "{" { <statement> } "}" 
+                      [ "OnFailure" "{" { <statement> } "}" ]
+
+# Loop Lifecycle
+<loop_spawn> ::= "LoopSpawn" "(" <loop_reference> [ "," <expression> ] ")"
+
+<loop_reference> ::= "LoopActor" "." IDENTIFIER
+                   | "LoopShadow" "." IDENTIFIER
+
+<loop_join> ::= "LoopJoin" "(" <expression> [ "," "timeout" ":" NUMBER ] ")"
+
+<loop_interrupt> ::= "LoopInterrupt" "(" <expression> "," "signal" ":" STRING ")"
+
+# Loop Error Handling
+<loop_catch> ::= "LoopCatch" "{" { <statement> } "}" 
+                "OnError" [ IDENTIFIER ] "{" { <statement> } "}"
+
+<loop_timeout> ::= "LoopTimeout" "(" NUMBER ")" "{" { <statement> } "}"
+                  [ "OnTimeout" "{" { <statement> } "}" ]
+
+# Loop Synchronization
+<loop_barrier> ::= "LoopBarrier" "." IDENTIFIER "{" <barrier_config> "}"
+
+<barrier_config> ::= "participants" ":" NUMBER
+                   [ "OnComplete" ":" <statement> ]
+
+<loop_select> ::= "LoopSelect" "{" { <select_case> } 
+                 [ "timeout" NUMBER ":" <statement> ] "}"
+
+<select_case> ::= "case" IDENTIFIER ":" <statement>
+
+# Loop Flow (Stream Processing)
+<loop_flow> ::= "LoopFlow" "." ( "Send" | "Receive" ) 
+               "(" <expression> [ "," <flow_options> ] ")"
+
+<flow_options> ::= "pressure" ":" STRING
+                 | "timeout" ":" NUMBER
+
+# RunTask for SubRoutine calls (add to existing <run_task>)
+<run_task> ::= "RunTask" "." <dotted_name> "(" [ <argument_list> ] ")"
 
 # ==============================================
 # LAMBDA AND COMBINATOR DECLARATIONS
@@ -413,6 +506,7 @@
 
 <memory_operation> ::= "Allocate" "(" <expression> [ "," <expression> ] ")"
                      | "Deallocate" "(" <expression> ")"
+                     | "StoreValue" "(" <expression> "," <expression> [ "," STRING ] ")"
                      | "MemoryCopy" "(" <expression> "," <expression> "," <expression> ")"
                      | "MemorySet" "(" <expression> "," <expression> "," <expression> ")"
                      | "MemoryCompare" "(" <expression> "," <expression> "," <expression> ")"
