@@ -123,7 +123,6 @@ class TokenType(Enum):
     STRINGCONTAINS = auto()
     STRINGSTARTSWITH = auto()
     STRINGENDSWITH = auto()
-    STRINGCOMPARE = auto()
     
     # String Manipulation Functions
     STRINGCONCAT = auto()
@@ -622,7 +621,6 @@ class Lexer:
             'StringContains': TokenType.STRINGCONTAINS,
             'StringStartsWith': TokenType.STRINGSTARTSWITH,
             'StringEndsWith': TokenType.STRINGENDSWITH,
-            'StringCompare': TokenType.STRINGCOMPARE,
             'StringConcat': TokenType.STRINGCONCAT,
             'StringLength': TokenType.STRINGLENGTH,
             'StringSubstring': TokenType.STRINGSUBSTRING,

@@ -7,6 +7,121 @@ class ASTNode:
     line: int
     column: int
 
+
+@dataclass
+class SubRoutine(ASTNode):
+    """SubRoutine declaration"""
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class LoopMain(ASTNode):
+    """Main event loop"""
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class LoopActor(ASTNode):
+    """Actor with isolated state"""
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class LoopStart(ASTNode):
+    """Initialization loop"""
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class LoopShadow(ASTNode):
+    """Background loop"""
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class LoopSend(ASTNode):
+    """Send message to actor"""
+    target: ASTNode
+    message: ASTNode
+
+@dataclass
+class LoopReceive(ASTNode):
+    """Receive message block"""
+    variable: Optional[str]
+    cases: List['LoopCase']
+
+@dataclass
+class LoopCase(ASTNode):
+    """Case in receive block"""
+    pattern: str
+    action: List[ASTNode]
+
+@dataclass
+class LoopReply(ASTNode):
+    """Reply to sender"""
+    message: ASTNode
+
+@dataclass
+class LoopYield(ASTNode):
+    """Yield control"""
+    expression: Optional[ASTNode]
+
+@dataclass
+class LoopContinue(ASTNode):
+    """Continuous loop"""
+    body: List[ASTNode]
+
+@dataclass
+class RunTask(ASTNode):
+    """Call a subroutine"""
+    task_name: str
+    arguments: List[ASTNode]
+
+@dataclass
+class LoopSpawn(ASTNode):
+    """Spawn a new actor instance"""
+    actor_reference: ASTNode
+    initial_state: Optional[ASTNode] = None
+
+@dataclass
+class LoopJoin(ASTNode):
+    """Wait for actor completion"""
+    handle: ASTNode
+    timeout: Optional[ASTNode] = None
+
+@dataclass
+class LoopGetState(ASTNode):
+    """Get actor state"""
+    handle: ASTNode
+
+@dataclass
+class LoopSetPriority(ASTNode):
+    """Set actor priority hint"""
+    handle: ASTNode
+    priority: ASTNode
+
+@dataclass
+class LoopGetCurrent(ASTNode):
+    """Get current actor handle"""
+    pass
+
+@dataclass
+class LoopSuspend(ASTNode):
+    """Suspend an actor"""
+    handle: ASTNode
+
+@dataclass
+class LoopResume(ASTNode):
+    """Resume a suspended actor"""
+    handle: ASTNode
+
+@dataclass
+class LoopInterrupt(ASTNode):
+    """Send interrupt signal to actor"""
+    handle: ASTNode
+    signal: ASTNode
+
+
 @dataclass
 class Program(ASTNode):
     declarations: List[ASTNode]
