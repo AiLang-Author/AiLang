@@ -19,6 +19,7 @@ class MemoryManager:
         self.pool_metadata = {}
         self.allocation_headers = {}
 
+    # In memory_manager.py
     def compile_program(self, node):
         """Compile Program with stack management"""
         try:
@@ -28,9 +29,18 @@ class MemoryManager:
             print_buffer_size = 64
             temp_space = 128
             red_zone = 128
-            total_space = self.compiler.stack_size + print_buffer_size + temp_space + red_zone
-            
+            allocate_space = self.scan_allocate_sizes(node)
+            print(f"DEBUG: Total Allocate space needed: {allocate_space}")
+            total_space = self.compiler.stack_size + print_buffer_size + temp_space + red_zone + allocate_space
+            print(f"DEBUG: Stack calculation - {len(self.compiler.variables)} vars = {self.compiler.stack_size} bytes, total allocated: {total_space}")
             self.compiler.codegen.emit_stack_frame_prologue(total_space)
+            
+            # Zero-initialize all stack variables
+            for var_name, offset in self.compiler.variables.items():
+                self.asm.emit_mov_rax_imm64(0)
+                self.asm.emit_bytes(0x48, 0x89, 0x85)
+                self.asm.emit_bytes(*struct.pack('<i', -offset))
+                print(f"DEBUG: Zero-initialized {var_name} at [rbp - {offset}]")
             
             self.asm.emit_push_rbx()
             self.asm.emit_push_r12()
@@ -54,16 +64,9 @@ class MemoryManager:
             self.asm.emit_syscall()
             
             print("DEBUG: Program compilation completed")
-            
         except Exception as e:
             print(f"ERROR: Program compilation failed: {str(e)}")
-            try:
-                self.compiler.codegen.emit_stack_frame_epilogue()
-                self.asm.emit_mov_rax_imm64(60)
-                self.asm.emit_mov_rdi_imm64(1)
-                self.asm.emit_syscall()
-            except:
-                pass
+            self.compiler.codegen.emit_stack_frame_epilogue()
             raise
     
     def calculate_stack_size(self, node, depth=0):
@@ -121,99 +124,71 @@ class MemoryManager:
         elif hasattr(node, 'message'):
             self.calculate_stack_size(node.message, depth + 1)
     
+
+    def scan_allocate_sizes(self, node, depth=0):
+        """Scan AST for Allocate calls and sum their sizes"""
+        total_alloc = 0
+        
+        if hasattr(node, '__dict__'):
+            # Check if this is an Allocate call
+            if hasattr(node, 'function') and node.function == 'Allocate':
+                if hasattr(node, 'arguments') and len(node.arguments) > 0:
+                    arg = node.arguments[0]
+                    if hasattr(arg, 'value'):
+                        try:
+                            size = int(arg.value)
+                            total_alloc += size
+                            print(f"DEBUG: Found Allocate({size}) at depth {depth}")
+                        except:
+                            # If it's not a constant, reserve 1KB as safety
+                            total_alloc += 1024
+                            print(f"DEBUG: Found dynamic Allocate, reserving 1024")
+            
+            # Recursively scan all attributes
+            for attr_name in dir(node):
+                if not attr_name.startswith('_'):
+                    attr = getattr(node, attr_name)
+                    if isinstance(attr, list):
+                        for item in attr:
+                            total_alloc += self.scan_allocate_sizes(item, depth + 1)
+                    elif hasattr(attr, '__dict__'):
+                        total_alloc += self.scan_allocate_sizes(attr, depth + 1)
+        
+        return total_alloc
+
     def compile_assignment(self, node):
-        """Compile Assignment"""
+        """Compile variable assignment with enhanced type support"""
         try:
             print(f"DEBUG: Assignment to {node.target}, value: {node.value}, type: {type(node.value)}")
             
-            # Handle Record type definitions
-            if hasattr(node.value, 'base_type') and node.value.base_type == 'Record':
-                if not hasattr(self.compiler, "record_types"):
-                    self.compiler.record_types = {}
-                self.compiler.record_types[node.target] = node.value
-                print(f"DEBUG: Registered Record type '{node.target}'")
-                return
-            
-            # Check for pre-allocation with Initialize-0
-            is_pre_alloc = False
-            value_type = type(node.value).__name__
-            
-            if value_type == 'FunctionCall':
-                print(f"DEBUG: FunctionCall function: {node.value.function}")
-                if (node.value.function == "Initialize" and 
-                    len(node.value.arguments) == 1 and 
-                    type(node.value.arguments[0]).__name__ == 'Number' and 
-                    node.value.arguments[0].value == 0):
-                    is_pre_alloc = True
-            
-            if is_pre_alloc:
-                if node.target in self.compiler.variables:
-                    raise ValueError(f"Variable {node.target} already allocated")
-                print(f"DEBUG: Pre-allocating {node.target}")
-                self.compiler.variables[node.target] = self.compiler.stack_pointer
-                self.asm.emit_mov_rax_imm64(0)
-                self.asm.emit_push_rax()
-                self.compiler.stack_pointer += 8
-                print(f"DEBUG: Pre-allocation of {node.target} completed")
-                return
-            
-            # Regular assignment
-            if node.target not in self.compiler.variables:
-                raise ValueError(f"Variable {node.target} not pre-allocated")
-            
-            # Use type name checking instead of isinstance
-            if value_type == 'Number':
-                 self.asm.emit_mov_rax_imm64(int(float(node.value.value)))
-            elif value_type == 'String':
-                string_offset = self.asm.add_string(node.value.value)
-                string_addr = 0x402000 + string_offset
-                self.asm.emit_mov_rax_imm64(string_addr)
-            elif value_type == 'Boolean':
-                if node.value.value:
-                    self.asm.emit_mov_rax_imm64(1)
-                    print(f"DEBUG: Loading boolean True as 1")
-                else:
-                    self.asm.emit_mov_rax_imm64(0)
-                    print(f"DEBUG: Loading boolean False as 0")
-            elif value_type == 'Identifier':
-                resolved_name = self.compiler.resolve_acronym_identifier(node.value.name)
-                if resolved_name in self.compiler.variables:
-                    offset = self.compiler.variables[resolved_name]
-                    self.asm.emit_bytes(0x48, 0x8B, 0x45)
-                    self.asm.emit_bytes(256 - offset if offset <= 127 else 0)
-                    if offset > 127:
-                        self.asm.emit_bytes(0x48, 0x8B, 0x85)
-                        self.asm.emit_bytes(*struct.pack('<i', -offset))
-                else:
-                    raise ValueError(f"Undefined variable: {resolved_name}")
-            elif value_type == 'FunctionCall':
-                self.compiler.compile_function_call(node.value)
-            elif value_type in ['AddressOf', 'Dereference', 'SizeOf']:
-                print(f"DEBUG: Compiling low-level operation: {value_type}")
-                if hasattr(self.compiler, 'lowlevel') and self.compiler.lowlevel:
-                    self.compiler.lowlevel.compile_operation(node.value)
-                else:
-                    print(f"DEBUG: No lowlevel module available")
-                    raise ValueError(f"Low-level operation {value_type} requires lowlevel module")
-            elif value_type == 'RunTask':
-                # Use library inliner for RunTask
-                if hasattr(self.compiler, 'library_inliner'):
-                    self.compiler.library_inliner.compile_runtask(node.value)
-                else:
-                    print(f"ERROR: Library inliner not available")
-                    self.asm.emit_mov_rax_imm64(0)
+            # Compile the value expression first
+            if isinstance(node.value, (Number, String, Identifier, FunctionCall)):
+                # These are handled by compile_expression
+                self.compiler.compile_expression(node.value)
+            elif type(node.value).__name__ == 'RunTask':
+                # Compile RunTask - it should leave result in RAX
+                self.compiler.compile_node(node.value)
             else:
-                raise ValueError(f"Unsupported assignment value: {value_type}")
+                # Try to compile as expression for other types
+                value_type = type(node.value).__name__
+                print(f"DEBUG: Attempting to compile {value_type} as expression")
+                self.compiler.compile_expression(node.value)
             
+            # Result is now in RAX, store it in the variable
+            resolved_name = self.compiler.resolve_acronym_identifier(node.target)
             
-            # Store RAX value to variable
-            offset = self.compiler.variables[node.target]
-            if offset <= 127:
-                self.asm.emit_bytes(0x48, 0x89, 0x45)
-                self.asm.emit_bytes(256 - offset)
+            if resolved_name not in self.compiler.variables:
+                # Allocate space for new variable
+                self.compiler.stack_size += 16
+                offset = self.compiler.stack_size
+                self.compiler.variables[resolved_name] = offset
+                print(f"DEBUG: Allocated {resolved_name} at stack offset {offset}")
             else:
-                self.asm.emit_bytes(0x48, 0x89, 0x85)
-                self.asm.emit_bytes(*struct.pack('<i', -offset))
+                offset = self.compiler.variables[resolved_name]
+            
+            # Store RAX to [RBP - offset]
+            self.compiler.asm.emit_bytes(0x48, 0x89, 0x85)
+            self.compiler.asm.emit_bytes(*struct.pack('<i', -offset))
             
             print(f"DEBUG: Assignment to {node.target} completed")
             
@@ -486,46 +461,69 @@ class MemoryManager:
             print(f"ERROR: PoolCompact compilation failed: {str(e)}")
             raise
 
+       
+    # In memory_manager.py
     def compile_pool_allocate(self, node):
-        """Compile PoolAllocate(pool_name, size) - allocate with size tracking"""
+        """Compile PoolAllocate(pool_name, size)"""
         try:
-            print("DEBUG: Compiling PoolAllocate with size header")
+            print("DEBUG: Compiling PoolAllocate")
+            pool_name = node.arguments[0].value if isinstance(node.arguments[0], String) else node.arguments[0].name
+            size_node = node.arguments[1]
+            size = int(size_node.value) if isinstance(size_node, Number) else 8
+            if size <= 0:
+                size = 8
+            size += 8
             
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_push_rax()
+            self.compiler.compile_expression(size_node)
+            self.asm.emit_mov_rsi_rax()  # Size in RSI
             
-            self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x08)
-            self.asm.emit_mov_rsi_rax()
-            
-            self.asm.emit_mov_rax_imm64(9)
-            self.asm.emit_mov_rdi_imm64(0)
-            self.asm.emit_mov_rdx_imm64(3)
-            self.asm.emit_mov_r10_imm64(0x22)
-            self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)
-            self.asm.emit_mov_r9_imm64(0)
+            self.asm.emit_mov_rax_imm64(9)  # mmap syscall
+            self.asm.emit_mov_rdi_imm64(0)  # addr = NULL
+            self.asm.emit_mov_rdx_imm64(3)  # PROT_READ | PROT_WRITE
+            self.asm.emit_mov_r10_imm64(0x22)  # MAP_PRIVATE | MAP_ANONYMOUS
+            self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)  # fd = -1
+            self.asm.emit_mov_r9_imm64(0)  # offset = 0
             self.asm.emit_syscall()
             
             error_label = self.asm.create_label()
             success_label = self.asm.create_label()
             
-            self.asm.emit_bytes(0x48, 0x85, 0xC0)
+            self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
             self.asm.emit_jump_to_label(error_label, "JZ")
             
-            self.asm.emit_mov_rbx_rax()
-            self.asm.emit_pop_rcx()
+            # Store mmap address immediately
+            var_name = node.variable if hasattr(node, 'variable') else pool_name
+            resolved_name = self.compiler.resolve_acronym_identifier(var_name)
+            if resolved_name not in self.compiler.variables:
+                offset = self.compiler.stack_size
+                self.compiler.variables[resolved_name] = offset
+                self.compiler.stack_size += 8
+                print(f"DEBUG: Allocated {resolved_name} at [rbp - {offset}]")
+            offset = self.compiler.variables[resolved_name]
+            if offset <= 0 or offset > self.compiler.stack_size:
+                print(f"ERROR: Invalid stack offset {offset} for {resolved_name}")
+                raise ValueError(f"Invalid stack offset {offset} for {resolved_name}")
+            self.asm.emit_bytes(0x48, 0x89, 0x85)
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+            self.asm.emit_push_rax()
+            self.asm.emit_print_number()  # Log mmap address
+            self.asm.emit_pop_rax()
+            print(f"DEBUG: Stored mmap address in {resolved_name} at [rbp - {offset}]")
             
-            self.asm.emit_bytes(0x48, 0x89, 0x08)
+            self.asm.emit_mov_rbx_rax()  # Save address in RBX
+            self.asm.emit_mov_rax_rsi()  # Restore size in RAX
+            self.asm.emit_bytes(0x48, 0x89, 0x03)  # Store size at [RBX]
+            self.asm.emit_lea_rax_rbx(8)  # RAX = RBX + 8
             
-            self.asm.emit_bytes(0x48, 0x8D, 0x43, 0x08)
             self.asm.emit_jump_to_label(success_label, "JMP")
             
             self.asm.mark_label(error_label)
             self.asm.emit_mov_rax_imm64(0)
+            print(f"DEBUG: mmap allocation failed for {pool_name}")
             
             self.asm.mark_label(success_label)
             print("DEBUG: PoolAllocate with size header completed")
             return True
-            
         except Exception as e:
             print(f"ERROR: PoolAllocate compilation failed: {str(e)}")
             raise

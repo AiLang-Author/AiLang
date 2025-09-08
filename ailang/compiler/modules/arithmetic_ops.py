@@ -153,3 +153,33 @@ class ArithmeticOps:
             return f"{arg.function}(...)"
         else:
             return type(arg).__name__
+
+    def compile_not_equal(self, node):
+        """Compile NotEqual(a, b) - returns 1 if not equal, 0 if equal"""
+        if len(node.arguments) < 2:
+            raise ValueError("NotEqual requires 2 arguments")
+        
+        print("Compiling NotEqual operation")
+        
+        # Compile first argument
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Compile second argument  
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rbx_rax()
+        
+        # Pop first argument
+        self.asm.emit_pop_rax()
+        
+        # Compare RAX and RBX
+        self.asm.emit_bytes(0x48, 0x39, 0xD8)  # CMP RAX, RBX
+        
+        # Set AL to 1 if not equal, 0 if equal (SETNE)
+        self.asm.emit_bytes(0x0F, 0x95, 0xC0)  # SETNE AL
+        
+        # Zero-extend AL to RAX
+        self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0xC0)  # MOVZX RAX, AL
+        
+        print("NotEqual operation completed")
+        return True

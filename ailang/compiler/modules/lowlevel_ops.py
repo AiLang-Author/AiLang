@@ -74,7 +74,7 @@ class LowLevelOps:
             raise
     
     def compile_dereference(self, node):
-        """Compile pointer dereference operation"""
+        """Compile pointer dereference operation (FunctionCall syntax)"""
         try:
             print(f"DEBUG: Compiling Dereference operation")
             
@@ -84,27 +84,23 @@ class LowLevelOps:
             # Compile pointer expression to get address in RAX
             self.compiler.compile_expression(node.arguments[0])
             
-            # Determine size hint (default to qword)
-            size_hint = "qword"
+            # Get size hint from second argument if present
+            size_hint = "qword"  # default
             if len(node.arguments) > 1:
                 if hasattr(node.arguments[1], 'value'):
-                    size_hint = str(node.arguments[1].value).lower()
+                    size_hint = str(node.arguments[1].value).lower().strip('"').strip("'")
             
             # Perform dereference based on size
             if size_hint == "byte":
                 self.asm.emit_dereference_byte()
-                print(f"DEBUG: Dereferenced as byte")
             elif size_hint == "word":
                 self.asm.emit_dereference_word()
-                print(f"DEBUG: Dereferenced as word")
             elif size_hint == "dword":
                 self.asm.emit_dereference_dword()
-                print(f"DEBUG: Dereferenced as dword")
-            else:  # qword or default
+            else:
                 self.asm.emit_dereference_qword()
-                print(f"DEBUG: Dereferenced as qword")
             
-            print("DEBUG: Dereference operation completed")
+            print(f"DEBUG: Dereferenced as {size_hint}")
             return True
             
         except Exception as e:
@@ -191,62 +187,83 @@ class LowLevelOps:
             raise
     
     def compile_allocate(self, node):
-        """Compile memory allocation (simplified using stack allocation)"""
+        """Compile memory allocation using mmap (heap allocation)"""
         try:
-            print(f"DEBUG: Compiling Allocate operation")
-            
+            print(f"DEBUG: Compiling Allocate operation (heap-based)")
+
             if len(node.arguments) < 1:
                 raise ValueError("Allocate requires 1 argument (size)")
-            
-            # Compile size expression
+
+            # size -> RAX
             self.compiler.compile_expression(node.arguments[0])
+
+            # RSI = size (use RAX directly so the scanner sees it)
+            # MOV RSI, RAX
+            self.asm.emit_bytes(0x48, 0x89, 0xC6)
+
+            # Keep a copy of size if you want it later
+            # MOV R12, RAX
+            self.asm.emit_bytes(0x49, 0x89, 0xC4)
+
+            # Prepare mmap syscall parameters:
+            # mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
+
+            self.asm.emit_mov_rax_imm64(9)               # sys_mmap
+            self.asm.emit_mov_rdi_imm64(0)               # addr = NULL
+            self.asm.emit_mov_rdx_imm64(3)               # prot = PROT_READ|PROT_WRITE
+            self.asm.emit_mov_r10_imm64(0x22)            # flags = MAP_PRIVATE|MAP_ANONYMOUS
+            self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)  # fd = -1
+            self.asm.emit_mov_r9_imm64(0)                # offset = 0
+
+            self.asm.emit_syscall()
+
             
-            # For simplicity, use stack allocation
-            # In a real implementation, this would call malloc or similar
-            print("DEBUG: Using simplified stack allocation")
             
-            # Save size in RBX
-            self.asm.emit_mov_rbx_rax()
             
-            # Allocate space on stack: SUB RSP, size
-            # Align to 16-byte boundary for performance
-            self.asm.emit_push_rax()  # Save original size
+            # Check for error (mmap returns -1 on error)
+            # For now, we'll just return the result
+            # RAX now contains the allocated address
             
-            # Align size to 16 bytes: size = (size + 15) & ~15
-            self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x0F)  # ADD RAX, 15
-            self.asm.emit_bytes(0x48, 0x83, 0xE0, 0xF0)  # AND RAX, ~15
-            
-            # SUB RSP, RAX (allocate aligned space)
-            self.asm.emit_bytes(0x48, 0x29, 0xC4)  # SUB RSP, RAX
-            
-            # Return stack pointer as allocated address
-            self.asm.emit_mov_rax_rsp()
-            
-            print("DEBUG: Allocate operation completed (stack-based)")
+            print("DEBUG: Heap allocation completed")
             return True
             
         except Exception as e:
             print(f"ERROR: Allocate compilation failed: {str(e)}")
             raise
-    
+
     def compile_deallocate(self, node):
-        """Compile memory deallocation (simplified - just return success)"""
+        """Compile memory deallocation using munmap"""
         try:
-            print(f"DEBUG: Compiling Deallocate operation")
+            print(f"DEBUG: Compiling Deallocate operation (heap-based)")
             
-            # In this simplified implementation, we can't actually free stack allocations
-            # In a real implementation, this would call free() or similar
+            if len(node.arguments) < 2:
+                raise ValueError("Deallocate requires 2 arguments (address, size)")
             
-            # For now, just return success (1)
-            self.asm.emit_mov_rax_imm64(1)
+            # Get address in RAX
+            self.compiler.compile_expression(node.arguments[0])
+            self.asm.emit_push_rax()  # Save address
             
-            print("DEBUG: Deallocate operation completed (simplified)")
+            # Get size in RAX
+            self.compiler.compile_expression(node.arguments[1])
+            self.asm.emit_bytes(0x48, 0x89, 0xC6)  # MOV RSI, RAX (size)
+            
+            # Get address back
+            self.asm.emit_pop_rdi()  # POP RDI (address)
+            
+            # RAX = 11 (munmap syscall)
+            self.asm.emit_mov_rax_imm64(11)
+            
+            # Make syscall
+            self.asm.emit_syscall()
+            
+            # Return result (0 on success)
+            print("DEBUG: Heap deallocation completed")
             return True
             
         except Exception as e:
             print(f"ERROR: Deallocate compilation failed: {str(e)}")
             raise
-    
+
     def compile_memory_copy(self, node):
         """Compile memory copy operation"""
         try:
@@ -421,92 +438,139 @@ class LowLevelOps:
             if len(node.arguments) < 2:
                 raise ValueError("StoreValue requires at least 2 arguments (address, value)")
             
-            # Compile value expression first (result in RAX)
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_push_rax()  # Save value on stack
-            
-            # Compile address expression (result in RAX)  
-            self.compiler.compile_expression(node.arguments[0])
-            self.asm.emit_mov_rbx_rax()  # Move address to RBX
-            
-            # Restore value to RAX
-            self.asm.emit_pop_rax()
-            
-            # Determine size (default to qword)
-            size_hint = "qword"
+            # Get size hint from third argument if present
+            size_hint = "qword"  # default
             if len(node.arguments) > 2:
                 if hasattr(node.arguments[2], 'value'):
-                    size_hint = str(node.arguments[2].value).lower()
+                    size_hint = str(node.arguments[2].value).lower().strip('"').strip("'")
             
-            # Swap registers: address to RAX, value to RBX
-            self.asm.emit_push_rax()  # Save value
-            self.asm.emit_mov_rax_rbx()  # Move address to RAX
-            self.asm.emit_pop_rbx()  # Pop value to RBX
+            # Compile address
+            self.compiler.compile_expression(node.arguments[0])
+            self.asm.emit_push_rax()  # Save address
             
+            # Compile value
+            self.compiler.compile_expression(node.arguments[1])
+            self.asm.emit_mov_rbx_rax()  # Value in RBX
+            
+            # Restore address
+            self.asm.emit_pop_rax()
+            
+            # Simple null check only
+            self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+            null_label = self.asm.create_label()
+            self.asm.emit_jump_to_label(null_label, "JZ")
+            
+            # Store based on size hint
             if size_hint == "byte":
-                self.asm.emit_store_to_pointer_byte("RBX")
+                self.asm.emit_bytes(0x88, 0x18)  # MOV [RAX], BL
             elif size_hint == "word":
-                self.asm.emit_bytes(0x66, 0x89, 0x18)  # MOV WORD PTR [RAX], BX
+                self.asm.emit_bytes(0x66, 0x89, 0x18)  # MOV [RAX], BX
             elif size_hint == "dword":
-                self.asm.emit_bytes(0x89, 0x18)  # MOV DWORD PTR [RAX], EBX
-            else:  # qword or default
-                self.asm.emit_store_to_pointer_qword("RBX")
+                self.asm.emit_bytes(0x89, 0x18)  # MOV [RAX], EBX
+            else:  # qword
+                self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX
             
-            print(f"DEBUG: Stored {size_hint} to memory")
-            self.asm.emit_mov_rax_imm64(1)
+            self.asm.emit_mov_rax_imm64(1)  # Success
             
-            print("DEBUG: StoreValue operation completed")
+            end_label = self.asm.create_label()
+            self.asm.emit_jump_to_label(end_label, "JMP")
+            
+            self.asm.mark_label(null_label)
+            self.asm.emit_mov_rax_imm64(0)  # Null pointer
+            
+            self.asm.mark_label(end_label)
+            print(f"DEBUG: StoreValue completed ({size_hint})")
             return True
             
         except Exception as e:
             print(f"ERROR: StoreValue compilation failed: {str(e)}")
             raise
     
-    def compile_port_operation(self, node):
-        """Compile port I/O operations"""
+        # In lowlevel_ops.py
+    def compile_operation(self, node):
         try:
-            print(f"DEBUG: Compiling {node.function} operation")
-            
-            if node.function == 'PortRead':
-                if len(node.arguments) < 2:
-                    raise ValueError("PortRead requires 2 arguments (port, size)")
-                
-                # Port number
-                self.compiler.compile_expression(node.arguments[0])
-                port = int(node.arguments[0].value) if hasattr(node.arguments[0], 'value') else 0x80
-                
-                # Size
-                size = "byte"  # default
-                if len(node.arguments) > 1 and hasattr(node.arguments[1], 'value'):
-                    size = str(node.arguments[1].value).lower()
-                
-                # Perform port read
-                self.asm.emit_port_read(port, size)
-                
-            elif node.function == 'PortWrite':
-                if len(node.arguments) < 3:
-                    raise ValueError("PortWrite requires 3 arguments (port, value, size)")
-                
-                # Port number
-                port = int(node.arguments[0].value) if hasattr(node.arguments[0], 'value') else 0x80
-                
-                # Value to write
-                self.compiler.compile_expression(node.arguments[1])
-                
-                # Size
-                size = "byte"  # default
-                if len(node.arguments) > 2 and hasattr(node.arguments[2], 'value'):
-                    size = str(node.arguments[2].value).lower()
-                
-                # Perform port write
-                self.asm.emit_port_write(port, size)
-            
-            print(f"DEBUG: {node.function} operation completed")
-            return True
-            
+            if hasattr(node, '__class__'):
+                node_type = node.__class__.__name__
+                if node_type == 'AddressOf':
+                    return self.compile_address_of_ast(node)
+                elif node_type == 'Dereference':
+                    return self.compile_dereference_ast(node)
+                elif node_type == 'SizeOf':
+                    return self.compile_sizeof_ast(node)
+                elif node_type == 'InterruptControl':
+                    return self.compile_interrupt_control(node)
+                elif node_type == 'InlineAssembly':
+                    return self.compile_inline_assembly(node)
+                elif node_type == 'SystemCall':
+                    return self.compile_system_call(node)
+            if hasattr(node, 'function'):
+                if node.function == 'Dereference':
+                    return self.compile_dereference(node)
+                elif node.function == 'AddressOf':
+                    return self.compile_address_of(node)
+                elif node.function == 'SizeOf':
+                    return self.compile_sizeof(node)
+                elif node.function == 'Allocate':
+                    return self.compile_allocate(node)
+                elif node.function == 'Deallocate':
+                    return self.compile_deallocate(node)
+                elif node.function == 'MemoryCopy':
+                    return self.compile_memory_copy(node)
+                elif node.function == 'MemorySet':
+                    return self.compile_memory_set(node)
+                elif node.function == 'StoreValue':
+                    return self.compile_store_value(node)
+            return False
         except Exception as e:
-            print(f"ERROR: {node.function} compilation failed: {str(e)}")
+            print(f"ERROR: Low-level operation compilation failed: {str(e)}")
             raise
+
+    def compile_store_value(self, node):
+        """Compile StoreValue(address, value)"""
+        print("DEBUG: Compiling StoreValue")
+        if len(node.arguments) < 2:
+            raise ValueError("StoreValue requires address and value")
+        
+        # Check if value is a small constant (byte-sized)
+        is_byte_value = False
+        if isinstance(node.arguments[1], Number):
+            val = int(node.arguments[1].value)
+            if 0 <= val <= 255:
+                is_byte_value = True
+        
+        # Compile address
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()  # Save address
+        
+        # Compile value
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rbx_rax()  # Value in RBX
+        
+        # Restore address
+        self.asm.emit_pop_rax()
+        
+        # Simple null check only
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        null_label = self.asm.create_label()
+        self.asm.emit_jump_to_label(null_label, "JZ")
+        
+        # Store based on value size
+        if is_byte_value:
+            self.asm.emit_bytes(0x88, 0x18)  # MOV [RAX], BL (byte)
+        else:
+            self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX (qword)
+        
+        self.asm.emit_mov_rax_imm64(1)  # Success
+        
+        end_label = self.asm.create_label()
+        self.asm.emit_jump_to_label(end_label, "JMP")
+        
+        self.asm.mark_label(null_label)
+        self.asm.emit_mov_rax_imm64(0)  # Null pointer
+        
+        self.asm.mark_label(end_label)
+        print(f"DEBUG: StoreValue completed ({'byte' if is_byte_value else 'qword'})")
+        return True
     
     def compile_atomic_operation(self, node):
         """Compile atomic operations"""
@@ -797,39 +861,36 @@ class LowLevelOps:
             # Compile pointer expression to get address in RAX
             self.compiler.compile_expression(node.pointer)
             
-            # Determine size hint
+            # Get size hint - default to qword for backward compatibility
             size_hint = getattr(node, 'size_hint', 'qword')
+            if size_hint is None or size_hint == '':
+                size_hint = 'qword'
+            
+            # Normalize size hint
+            size_hint = str(size_hint).lower().strip('"').strip("'")
             
             # Perform dereference based on size
             if size_hint == "byte":
                 self.asm.emit_dereference_byte()
-                print(f"DEBUG: Dereferenced as byte")
             elif size_hint == "word":
                 self.asm.emit_dereference_word()
-                print(f"DEBUG: Dereferenced as word")
             elif size_hint == "dword":
                 self.asm.emit_dereference_dword()
-                print(f"DEBUG: Dereferenced as dword")
-            else:  # qword or default
-                # Use byte dereference by default for string operations
-                # Default to byte dereference for string operations
-                if size_hint == "qword":
-                    self.asm.emit_dereference_qword()
-                    print("DEBUG: Dereferenced as qword (explicit)")
-                elif size_hint == "word":
-                    self.asm.emit_dereference_word()
-                    print("DEBUG: Dereferenced as word")
-                else:  # Default to byte, including when size_hint is None
-                    self.asm.emit_dereference_byte()
-                    print("DEBUG: Dereferenced as byte (default)")
-                print(f"DEBUG: Dereferenced as qword")
+            elif size_hint == "qword":
+                self.asm.emit_dereference_qword()
+            else:
+                # Default to qword for unknown hints
+                self.asm.emit_dereference_qword()
+                print(f"DEBUG: Unknown size hint '{size_hint}', defaulting to qword")
             
-            print("DEBUG: Dereference AST compilation completed")
+            print(f"DEBUG: Dereferenced as {size_hint}")
             return True
             
         except Exception as e:
             print(f"ERROR: Dereference AST compilation failed: {str(e)}")
             raise
+                
+        
     
     def compile_sizeof_ast(self, node):
         """Compile SizeOf AST node directly"""

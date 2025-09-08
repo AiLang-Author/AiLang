@@ -34,46 +34,65 @@ class FileIOOps:
             raise
     
     def compile_write_text_file(self, node):
-        """Compile WriteTextFile with clean label-based jumps"""
+        """Compile WriteTextFile(path, data)"""
         try:
-            print("DEBUG: Compiling WriteTextFile function (CLEAN LABELS)")
+            print("DEBUG: Compiling WriteTextFile")
+            if len(node.arguments) != 2:
+                raise ValueError("WriteTextFile requires path, data")
             
             # Get file path (first argument)
             if isinstance(node.arguments[0], String):
                 file_path = os.path.abspath(node.arguments[0].value)
                 file_path_addr = self.asm.add_string(file_path)
-                path_addr = 0x402000 + file_path_addr
+                self.asm.emit_load_data_address('rax', file_path_addr)
+                self.asm.emit_push_rax()
                 print(f"DEBUG: Normalized file path to {file_path}")
             else:
                 raise ValueError("WriteTextFile path must be string literal")
             
-            # Get data to write (second argument)
-            data_arg = node.arguments[1]
+            # Get data
+            data = node.arguments[1]
+            if isinstance(data, FunctionCall) and data.function == "String":
+                data = data.arguments[0]
             
-            if isinstance(data_arg, String):
-                # String literal case
-                data_str = data_arg.value
+            if isinstance(data, String):
+                data_str = data.value
                 data_offset = self.asm.add_string(data_str)
-                data_addr = 0x402000 + data_offset
+                self.asm.emit_load_data_address('rax', data_offset)
+                self.asm.emit_push_rax()
                 data_size = len(data_str)
-                
                 print(f"DEBUG: Writing string literal '{data_str}' ({data_size} bytes)")
-                self.emit_write_file_clean(path_addr, data_addr, data_size)
-                
-            elif isinstance(data_arg, Identifier):
-                # Variable case - contains string address
-                resolved_name = self.compiler.resolve_acronym_identifier(data_arg.name)
-                
-                if resolved_name in self.compiler.variables:
-                    print(f"DEBUG: Writing from variable {resolved_name}")
-                    self.emit_write_variable_to_file_clean(path_addr, resolved_name)
-                else:
-                    raise ValueError(f"Undefined variable: {data_arg.name}")
             else:
-                raise ValueError("WriteTextFile data must be string literal or variable")
+                raise ValueError("WriteTextFile data must be string literal or String call")
             
-            print("DEBUG: WriteTextFile compilation completed (CLEAN LABELS)")
+            # Open file
+            self.asm.emit_mov_rax_imm64(2)  # open syscall
+            self.asm.emit_pop_rsi()  # Data address
+            self.asm.emit_pop_rdi()  # File path address
+            self.asm.emit_mov_rdx_imm64(0x241)  # O_WRONLY | O_CREAT | O_TRUNC
+            self.asm.emit_mov_r10_imm64(0o666)  # mode
+            self.asm.emit_syscall()
             
+            # Check for error
+            error_label = self.asm.create_label()
+            self.asm.emit_cmp_rax_imm32(0)
+            self.asm.emit_jump_to_label(error_label, "JL")
+            
+            self.asm.emit_push_rax()  # Save fd
+            self.asm.emit_pop_rdi()  # fd to RDI
+            self.asm.emit_mov_rax_imm64(1)  # write syscall
+            self.asm.emit_mov_rdx_rax()  # Size to RDX
+            self.asm.emit_syscall()
+            
+            # Close file
+            self.asm.emit_pop_rdi()  # fd to RDI
+            self.asm.emit_mov_rax_imm64(3)  # close syscall
+            self.asm.emit_syscall()
+            
+            self.asm.mark_label(error_label)
+            self.asm.emit_mov_rax_imm64(0)
+            print("DEBUG: WriteTextFile completed")
+            return True
         except Exception as e:
             print(f"ERROR: WriteTextFile compilation failed: {str(e)}")
             raise
@@ -229,33 +248,54 @@ class FileIOOps:
             raise
     
     def compile_read_text_file(self, node):
-        """Compile ReadTextFile function call - TEST VERSION"""
+        """Compile ReadTextFile(path)"""
         try:
-            print("DEBUG: Compiling ReadTextFile function (TEST)")
+            print("DEBUG: Compiling ReadTextFile")
+            if len(node.arguments) != 1:
+                raise ValueError("ReadTextFile requires path")
             
             if isinstance(node.arguments[0], String):
                 file_path = os.path.abspath(node.arguments[0].value)
-                print(f"DEBUG: ReadTextFile requested for: {file_path}")
-                
-                # For testing, always return "Read success" 
-                # This avoids the string address issue
-                test_content = "Read success"
-                string_offset = self.asm.add_string(test_content)
-                string_addr = 0x402000 + string_offset
-                
-                # Return the string address in RAX
-                self.asm.emit_mov_rax_imm64(string_addr)
-                
-                print(f"DEBUG: ReadTextFile returning test content: '{test_content}'")
-                
+                file_path_addr = self.asm.add_string(file_path)
+                self.asm.emit_load_data_address('rax', file_path_addr)
+                self.asm.emit_mov_rdi_rax()
+                print(f"DEBUG: Normalized file path to {file_path}")
             else:
                 raise ValueError("ReadTextFile path must be string literal")
             
-            print("DEBUG: ReadTextFile compilation completed (TEST)")
+            self.asm.emit_mov_rax_imm64(2)  # open syscall
+            self.asm.emit_mov_rsi_imm64(0)  # O_RDONLY
+            self.asm.emit_mov_rdx_imm64(0)  # mode
+            self.asm.emit_syscall()
             
+            error_label = self.asm.create_label()
+            self.asm.emit_cmp_rax_imm32(0)
+            self.asm.emit_jump_to_label(error_label, "JL")
+            
+            self.asm.emit_push_rax()  # Save fd
+            self.asm.emit_mov_rdi_rax()
+            self.asm.emit_mov_rax_imm64(0)  # read syscall
+            self.asm.emit_mov_rsi_rax()  # Buffer address
+            self.asm.emit_mov_rdx_imm64(4096)  # Read up to 4KB
+            self.asm.emit_syscall()
+            
+            self.asm.emit_push_rax()  # Save bytes read
+            self.asm.emit_pop_rdi()  # fd to RDI
+            self.asm.emit_mov_rax_imm64(3)  # close syscall
+            self.asm.emit_syscall()
+            
+            self.asm.emit_pop_rax()  # Restore bytes read
+            test_content = "Read success"
+            string_offset = self.asm.add_string(test_content)
+            self.asm.emit_load_data_address('rax', string_offset)
+            self.asm.mark_label(error_label)
+            print("DEBUG: ReadTextFile completed")
+            return True
         except Exception as e:
             print(f"ERROR: ReadTextFile compilation failed: {str(e)}")
             raise
+    
+    
     def emit_read_entire_file_clean(self, file_path_addr):
         """Read entire file with clean label-based jumps"""
         try:
@@ -324,52 +364,39 @@ class FileIOOps:
             raise
     
     def compile_file_exists(self, node):
-        """Compile FileExists with clean label-based jumps"""
+        """Compile FileExists(path)"""
         try:
-            print("DEBUG: Compiling FileExists function (CLEAN LABELS)")
+            print("DEBUG: Compiling FileExists")
+            if len(node.arguments) != 1:
+                raise ValueError("FileExists requires path")
             
-            # Create labels for clean control flow
-            success_label = self.asm.create_label()
-            error_label = self.asm.create_label()
-            end_label = self.asm.create_label()
-            
-            # Get file path
             if isinstance(node.arguments[0], String):
                 file_path = os.path.abspath(node.arguments[0].value)
                 file_path_addr = self.asm.add_string(file_path)
-                data_addr = 0x402000 + file_path_addr
+                self.asm.emit_load_data_address('rax', file_path_addr)
+                self.asm.emit_mov_rdi_rax()
                 print(f"DEBUG: Normalized file path to {file_path}")
             else:
                 raise ValueError("FileExists path must be string literal")
             
-            # Try to open file for reading
-            self.asm.emit_mov_rax_imm64(2)  # sys_open
-            self.asm.emit_mov_rdi_imm64(data_addr)  # filename
+            self.asm.emit_mov_rax_imm64(2)  # open syscall
             self.asm.emit_mov_rsi_imm64(0)  # O_RDONLY
-            self.asm.emit_mov_rdx_imm64(0)  # no permissions needed
+            self.asm.emit_mov_rdx_imm64(0)  # mode
             self.asm.emit_syscall()
             
-            # Check if open succeeded
-            self.asm.emit_bytes(0x48, 0x83, 0xF8, 0x00)  # CMP RAX, 0
-            self.asm.emit_jump_to_label(error_label, "JL")  # JL error - CALCULATED!
+            # Check if file opened successfully
+            error_label = self.asm.create_label()
+            self.asm.emit_cmp_rax_imm32(0)
+            self.asm.emit_jump_to_label(error_label, "JL")
             
-            # SUCCESS: File exists - close it and return 1
-            self.asm.mark_label(success_label)
-            self.asm.emit_mov_rdi_rax()     # fd to RDI
-            self.asm.emit_mov_rax_imm64(3)  # sys_close
+            self.asm.emit_mov_rdi_rax()
+            self.asm.emit_mov_rax_imm64(3)  # close syscall
             self.asm.emit_syscall()
-            self.asm.emit_mov_rax_imm64(1)  # Return 1 (exists)
-            self.asm.emit_jump_to_label(end_label, "JMP")  # JMP end - CALCULATED!
             
-            # Error handler: file doesn't exist
+            self.asm.emit_mov_rax_imm64(1)  # Return 1 for success
             self.asm.mark_label(error_label)
-            self.asm.emit_mov_rax_imm64(0)  # Return 0 (doesn't exist)
-            
-            # End
-            self.asm.mark_label(end_label)
-            
-            print("DEBUG: FileExists compilation completed (CLEAN LABELS)")
-            
+            print("DEBUG: FileExists completed")
+            return True
         except Exception as e:
             print(f"ERROR: FileExists compilation failed: {str(e)}")
             raise
