@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 x86-64 Machine Code Generator - ENHANCED FOR SYSTEMS PROGRAMMING
 Generates raw machine code for AILANG compiler with low-level memory operations
@@ -7,47 +8,93 @@ Adds pointer operations, hardware access, and atomic operations
 
 import struct
 from typing import Dict, Union
+from ailang_compiler.jump_manager import JumpManager
+from ailang_compiler.modules.relocation_manager import RelocationManager
 
 class X64Assembler:
     """Raw x86-64 machine code generation with ENHANCED low-level operations"""
     
-    def __init__(self):
-        self.code = bytearray()
-        self.data = bytearray()
-        self.strings: Dict[str, int] = {}  # string -> offset
-        self.labels: Dict[str, int] = {}    # label -> code offset
-        self.variables: Dict[str, int] = {} # variable -> stack offset
-        self.stack_offset = 0
+    def set_base_addresses(self, code_addr, data_addr):
+        """Set base addresses - called by ELF generator after layout calculation"""
+        self.code_base_address = code_addr
+        self.data_base_address = data_addr
+        print(f"Dynamic addresses set - Code: 0x{code_addr:08x}, Data: 0x{data_addr:08x}")
         
-        # === NEW: Low-Level State Tracking ===
-        self.interrupt_handlers: Dict[int, str] = {}  # vector -> handler_name
-        self.device_registers: Dict[str, int] = {}    # device -> base_address
-        self.memory_maps: Dict[str, int] = {}         # name -> physical_address
+    def add_data_relocation(self, code_offset, data_offset):
+        """Mark a location that needs data address relocation"""
+        self.relocations.append({
+            'type': 'data',
+            'code_offset': code_offset,
+            'data_offset': data_offset
+        })
         
-    def emit_bytes(self, *bytes_vals: Union[int, bytes]):
-        """Emit raw bytes"""
-        try:
-            debug_bytes = []
-            for b in bytes_vals:
-                if isinstance(b, int):
-                    self.code.append(b)
-                    debug_bytes.append(hex(b))
-                elif isinstance(b, bytes):
-                    self.code.extend(b)
-                    debug_bytes.extend([hex(x) for x in b])
-                else:
-                    raise ValueError(f"Invalid byte type: {type(b)}")
-            print(f"DEBUG: Emitted bytes: {debug_bytes}")
-        except Exception as e:
-            print(f"ERROR: Failed to emit bytes: {str(e)}")
-            raise
+    def apply_relocations(self):
+        """Apply all address relocations after layout is known"""
+        if self.data_base_address is None:
+            raise ValueError("Cannot apply relocations - addresses not set!")
+            
+        import struct
+        for reloc in self.relocations:
+            if reloc['type'] == 'data':
+                # Calculate actual address
+                actual_addr = self.data_base_address + reloc['data_offset']
+                
+                # Patch it in the code (assuming MOV instruction with 64-bit immediate)
+                # The immediate starts 2 bytes after the MOV opcode
+                offset = reloc['code_offset']
+                addr_bytes = struct.pack('<Q', actual_addr)
+                
+                # Patch the code
+                for i in range(8):
+                    self.code[offset + i] = addr_bytes[i]
+                    
+        print(f"Applied {len(self.relocations)} relocations")
+        self.relocations = []  # Clear after applying
+
+    class X64Assembler:
+        """Raw x86-64 machine code generation with ENHANCED low-level operations"""
     
-    # === BASIC INSTRUCTIONS (preserved from original) ===
-    
+    def __init__(self, elf_generator=None):
+        self.code = bytearray()  # Changed from list to bytearray
+        self.data = []
+        self.data_offset = 0
+        self.strings = {}
+        self.elf = elf_generator
+        self.jump_manager = JumpManager()
+        self.relocation_manager = RelocationManager()
+        self.code_base_address = None
+        self.data_base_address = None  # NEW: Centralized jump management
+        # Dynamic addressing support
+        self.relocations = []  # Track address fixups
+        self.data_base_address = None  # Will be set by ELF generator
+        self.code_base_address = None  # Will be set by ELF generator
+    def emit_bytes(self, *bytes_to_emit):
+        """Emit bytes to the code buffer"""
+        for byte in bytes_to_emit:
+            if isinstance(byte, (list, bytearray)):
+                self.code.extend(byte)
+            else:
+                self.code.append(byte)
+        
+        # Debug output
+        if bytes_to_emit:
+            hex_str = [f'0x{b:x}' if isinstance(b, int) else str(b) 
+                      for b in bytes_to_emit]
+            print(f"DEBUG: Emitted bytes: {hex_str}")
+
     def emit_syscall(self):
         """SYSCALL instruction"""
         self.emit_bytes(0x0F, 0x05)
+
     
+    
+    def emit_sys_exit(self, status: int = 0):
+        """exit(status) -> RAX=60, RDI=status, SYSCALL"""
+        self.emit_mov_rax_imm64(60)      # __NR_exit
+        self.emit_mov_rdi_imm64(status)  # exit status
+        self.emit_syscall()
+
+
     def emit_ret(self):
         """RET instruction"""
         self.emit_bytes(0xC3)
@@ -55,6 +102,35 @@ class X64Assembler:
     def emit_nop(self):
         """NOP instruction"""
         self.emit_bytes(0x90)
+    
+    
+    def emit_call_to_label(self, label):
+        """Emit CALL to a label"""
+        current_pos = len(self.code)
+        
+        # Emit CALL opcode
+        self.emit_bytes(0xE8)
+        
+        # Calculate and emit offset if label is already known
+        if label in self.labels:
+            target_pos = self.labels[label]
+            offset = target_pos - (current_pos + 5)  # CALL uses next instruction address
+            self.emit_bytes(*struct.pack('<i', offset))
+        else:
+            # Emit placeholder - will be fixed in resolve phase
+            self.emit_bytes(0x00, 0x00, 0x00, 0x00)
+            # Add to pending jumps for resolution
+            if not hasattr(self, 'pending_calls'):
+                self.pending_calls = []
+            self.pending_calls.append((current_pos, label))
+        
+        print(f"DEBUG: Emitted CALL to label {label}")
+
+    def get_position(self):
+        """Get current position in code buffer"""
+        return len(self.code)       
+    
+    
     
     # === REGISTER MOVEMENT INSTRUCTIONS (preserved) ===
     
@@ -84,6 +160,24 @@ class X64Assembler:
                 self.emit_bytes(*struct.pack('<Q', safe_value))
                 
         print(f"DEBUG: MOV RAX, {value}")
+    
+    def emit_lea_rax_rbx(self, offset):
+        """Emit LEA RAX, [RBX + offset]"""
+        self.emit_bytes(0x48, 0x8D, 0x43, offset)
+        print(f"DEBUG: Emitted LEA RAX, [RBX + {offset}]")
+        
+    def emit_mov_rax_rsi(self):
+        """Emit MOV RAX, RSI"""
+        self.emit_bytes(0x48, 0x89, 0xF0)
+        print("DEBUG: Emitted MOV RAX, RSI")
+    
+    
+    def emit_mov_rbx_imm64(self, value: int):
+        """MOV RBX, imm64"""
+        self.emit_bytes(0x48, 0xBB)
+        self.emit_bytes(*struct.pack('<Q', value))
+        print(f"DEBUG: MOV RBX, {value}")
+       
     
     def emit_mov_rdi_imm64(self, value: int):
         """MOV RDI, imm64"""
@@ -650,6 +744,34 @@ class X64Assembler:
                 print(f"WARNING: Unrecognized assembly instruction: {line}")
                 # For unknown instructions, emit NOP as placeholder
                 self.emit_nop()
+    # === SCHEDULING PRIMITIVES FOR LOOP SUB ROUTINE ======
+    
+    def emit_sub_rsp_imm32(self, value):
+        """SUB RSP, imm32 - Allocate stack space"""
+        self.emit_bytes(0x48, 0x81, 0xEC)
+        self.emit_bytes(*struct.pack('<I', value))
+        print(f"DEBUG: SUB RSP, {value}")
+
+    def emit_mov_rbx_from_stack(self, offset):
+        """MOV RBX, [RSP + offset]"""
+        if offset == 0:
+            self.emit_bytes(0x48, 0x8B, 0x1C, 0x24)
+        else:
+            self.emit_bytes(0x48, 0x8B, 0x9C, 0x24)
+            self.emit_bytes(*struct.pack('<I', offset))
+        print(f"DEBUG: MOV RBX, [RSP + {offset}]")
+
+    def emit_cmp_rax_imm8(self, value):
+        """CMP RAX, imm8"""
+        self.emit_bytes(0x48, 0x83, 0xF8, value & 0xFF)
+        print(f"DEBUG: CMP RAX, {value}")
+
+    def emit_mov_rsp_rax(self):
+        """MOV RSP, RAX"""
+        self.emit_bytes(0x48, 0x89, 0xC4)
+        print("DEBUG: MOV RSP, RAX")
+    
+    
     
     # === BITWISE OPERATIONS (preserved) ===
     
@@ -800,24 +922,63 @@ class X64Assembler:
             print(f"ERROR: Failed to add string '{s}': {str(e)}")
             raise
     
-    def emit_print_string(self, s: str):
-        """Emit code to print a string via syscall"""
-        try:
-            offset = self.add_string(s)
-            byte_length = len(s.encode('utf-8'))
+    
+
+    def emit_load_data_address(self, register, data_offset):
+        """Emit instruction to load data address into register with relocation"""
+        # Map register names to encoding
+        reg_map = {
+            'rax': 0xB8, 'rcx': 0xB9, 'rdx': 0xBA, 'rbx': 0xBB,
+            'rsp': 0xBC, 'rbp': 0xBD, 'rsi': 0xBE, 'rdi': 0xBF
+        }
         
+        if register not in reg_map:
+            raise ValueError(f"Unsupported register: {register}")
+        
+        # Emit MOV register, imm64 with placeholder
+        self.emit_bytes(0x48, reg_map[register])
+        
+        # Add placeholder for address (will be patched later)
+        current_offset = len(self.code)
+        self.emit_bytes(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+        
+        # Register relocation for this address
+        self.add_data_relocation(current_offset, data_offset)
+        
+        print(f"DEBUG: Emitted load data address to {register} for offset {data_offset}")
+
+
+    def emit_print_string(self, s: str):
+        """Print string with full relocation support"""
+        try:
+            # Add string to data section
+            string_offset = self.add_string(s)
+            byte_length = len(s.encode('utf-8'))
+            
+            # sys_write(1, string_addr, length)
             self.emit_mov_rax_imm64(1)  # sys_write
             self.emit_mov_rdi_imm64(1)  # stdout
-            data_addr = 0x402000 + offset
-            self.emit_mov_rsi_imm64(data_addr)
+            
+            # Load string address with relocation
+            self.emit_load_data_address('rsi', string_offset)
+            
             self.emit_mov_rdx_imm64(byte_length)
             self.emit_syscall()
-            self.emit_print_string_raw("\n")
-            print(f"DEBUG: Printed string '{s}', byte length {byte_length}")
+            
+            # Print newline
+            newline_offset = self.add_string("\n")
+            self.emit_mov_rax_imm64(1)
+            self.emit_mov_rdi_imm64(1)
+            self.emit_load_data_address('rsi', newline_offset)
+            self.emit_mov_rdx_imm64(1)
+            self.emit_syscall()
+            
+            print(f"Emitted print for '{s[:30]}...' with relocations")
+        
         except Exception as e:
-            print(f"ERROR: Failed to print string '{s}': {str(e)}")
+            print(f"ERROR in emit_print_string: {e}")
             raise
-    
+        
     def emit_print_string_raw(self, s: str):
         """Emit code to print a string without adding to data section"""
         try:
@@ -826,7 +987,7 @@ class X64Assembler:
         
             self.emit_mov_rax_imm64(1)
             self.emit_mov_rdi_imm64(1)
-            data_addr = 0x402000 + offset
+            data_addr = self.data_base_address + offset
             self.emit_mov_rsi_imm64(data_addr)
             self.emit_mov_rdx_imm64(byte_length)
             self.emit_syscall()
@@ -836,139 +997,64 @@ class X64Assembler:
             raise
     
     def emit_print_number(self):
-        """Professional 64-bit number printing with proper stack management"""
-        try:
-            print("DEBUG: Professional number printing - 64-bit stack management")
-            
-            # === FUNCTION PROLOGUE ===
-            # Save the number we're printing (in RAX)
-            self.emit_push_rax()
-            
-            # Save all registers we'll modify (following x86-64 ABI)
-            self.emit_push_rbx()
-            self.emit_push_rcx()
-            self.emit_push_rdx()
-            self.emit_push_rsi()
-            self.emit_push_rdi()
-            self.emit_push_r8()
-            self.emit_push_r9()
-            
-            # Allocate buffer space (64 bytes, 16-byte aligned)
-            buffer_size = 64
-            self.emit_bytes(0x48, 0x83, 0xEC, buffer_size)  # SUB RSP, 64
-            
-            # Get the number to print (now at [RSP + 64 + 56] = [RSP + 120])
-            self.emit_bytes(0x48, 0x8B, 0x84, 0x24)  # MOV RAX, [RSP + offset]
-            self.emit_bytes(*struct.pack('<I', buffer_size + 56))  # +56 for 7 saved registers
-            
-            # === CONVERSION LOGIC ===
-            
-            # Set up buffer pointer (end of buffer)
-            self.emit_bytes(0x48, 0x89, 0xE6)          # MOV RSI, RSP (buffer start)
-            self.emit_bytes(0x48, 0x83, 0xC6, 0x3F)    # ADD RSI, 63 (point to end)
-            self.emit_bytes(0xC6, 0x06, 0x00)          # MOV BYTE PTR [RSI], 0 (null term)
-            
-            # Handle zero case
-            self.emit_bytes(0x48, 0x83, 0xF8, 0x00)    # CMP RAX, 0
-            
-            # Mark position for the JNZ instruction
-            jnz_pos = len(self.code)
-            self.emit_bytes(0x75, 0x00)                # JNZ skip_zero (placeholder)
-            
-            # Zero case: put '0' in buffer
-            self.emit_bytes(0x48, 0xFF, 0xCE)          # DEC RSI
-            self.emit_bytes(0xC6, 0x06, 0x30)          # MOV BYTE PTR [RSI], '0'
-            
-            # Mark position for JMP to output
-            jmp_to_output_pos = len(self.code)
-            self.emit_bytes(0xEB, 0x00)                # JMP to_print (placeholder)
-            
-            # Mark where skip_zero jumps to (start of conversion loop)
-            skip_zero_target = len(self.code)
-            
-            # Fix the JNZ offset (jump to skip_zero_target)
-            jnz_offset = skip_zero_target - (jnz_pos + 2)
-            self.code[jnz_pos + 1] = jnz_offset & 0xFF
-            
-            # Conversion loop for non-zero numbers
-            loop_start = len(self.code)
-            
-            # Divide by 10
-            self.emit_bytes(0x48, 0x31, 0xD2)          # XOR RDX, RDX
-            self.emit_bytes(0x48, 0xB9, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RCX, 10
-            self.emit_bytes(0x48, 0xF7, 0xF1)          # DIV RCX (quotient in RAX, remainder in RDX)
-            
-            # Convert remainder to ASCII and store
-            self.emit_bytes(0x48, 0x83, 0xC2, 0x30)    # ADD RDX, '0'
-            self.emit_bytes(0x48, 0xFF, 0xCE)          # DEC RSI
-            self.emit_bytes(0x88, 0x16)                # MOV [RSI], DL
-            
-            # Continue if quotient is not zero
-            self.emit_bytes(0x48, 0x83, 0xF8, 0x00)    # CMP RAX, 0
-            
-            # Calculate and emit loop jump
-            current_pos = len(self.code) + 2
-            loop_offset = (loop_start - current_pos) & 0xFF
-            self.emit_bytes(0x75, loop_offset)         # JNZ loop_start
-            
-            # === OUTPUT THE STRING (to_print label here) ===
-            output_start = len(self.code)
-            
-            # Fix the JMP offset from zero case
-            jmp_offset = output_start - (jmp_to_output_pos + 2)
-            self.code[jmp_to_output_pos + 1] = jmp_offset & 0xFF
-            
-            # Calculate string length
-            self.emit_bytes(0x48, 0x89, 0xE0)          # MOV RAX, RSP (buffer start)
-            self.emit_bytes(0x48, 0x83, 0xC0, 0x3F)    # ADD RAX, 63 (buffer end)
-            self.emit_bytes(0x48, 0x29, 0xF0)          # SUB RAX, RSI (length in RAX)
-            
-            # Print the number
-            self.emit_bytes(0x48, 0x89, 0xC2)          # MOV RDX, RAX (length)
-            self.emit_mov_rax_imm64(1)                 # sys_write
-            self.emit_mov_rdi_imm64(1)                 # stdout
-            # RSI already points to the string
-            self.emit_syscall()
-            
-            # Print newline
-            newline_offset = self.add_string("\n")
-            self.emit_mov_rax_imm64(1)                 # sys_write
-            self.emit_mov_rdi_imm64(1)                 # stdout
-            self.emit_mov_rsi_imm64(0x402000 + newline_offset)  # newline string
-            self.emit_mov_rdx_imm64(1)                 # length
-            self.emit_syscall()
-            
-            # === FUNCTION EPILOGUE ===
-            
-            # Restore stack
-            self.emit_bytes(0x48, 0x83, 0xC4, buffer_size)  # ADD RSP, 64
-            
-            # Restore registers (reverse order)
-            self.emit_pop_r9()
-            self.emit_pop_r8()
-            self.emit_pop_rdi()
-            self.emit_pop_rsi()
-            self.emit_pop_rdx()
-            self.emit_pop_rcx()
-            self.emit_pop_rbx()
-            self.emit_pop_rax()  # Restore original value
-            
-            print("DEBUG: Professional number printing completed")
-            
-        except Exception as e:
-            print(f"ERROR: Professional number printing failed: {str(e)}")
-            # Emergency cleanup
-            try:
-                self.emit_bytes(0x48, 0x83, 0xC4, 64)  # ADD RSP, 64
-                # Pop all registers
-                for _ in range(8):  # 8 registers saved
-                    self.emit_bytes(0x58)  # POP RAX (generic pop)
-            except:
-                pass
-            raise
-    
-    # === COMPLETE JUMP SYSTEM METHODS (preserved) ===
-    
+        """Print number - with correct immediate jumps"""
+        print("DEBUG: Number printing with corrected jumps")
+        
+        # Save registers
+        self.emit_bytes(0x50)  # PUSH RAX
+        self.emit_bytes(0x53)  # PUSH RBX  
+        self.emit_bytes(0x52)  # PUSH RDX
+        self.emit_bytes(0x56)  # PUSH RSI
+        self.emit_bytes(0x57)  # PUSH RDI
+        
+        # Allocate buffer
+        self.emit_bytes(0x48, 0x83, 0xEC, 0x20)  # SUB RSP, 32
+        
+        # Point RSI to end of buffer
+        self.emit_bytes(0x48, 0x8D, 0x74, 0x24, 0x1F)  # LEA RSI, [RSP+31]
+        self.emit_bytes(0xC6, 0x06, 0x00)  # MOV BYTE [RSI], 0
+        
+        # Restore RAX from stack  
+        self.emit_bytes(0x48, 0x8B, 0x44, 0x24, 0x40)  # MOV RAX, [RSP+64]
+        
+        # Set divisor
+        self.emit_bytes(0x48, 0xBB, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RBX, 10
+        
+        # Check if zero
+        self.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        self.emit_bytes(0x75, 0x08)  # JNE +8 (skip zero case)
+        
+        # Zero case
+        self.emit_bytes(0x48, 0xFF, 0xCE)  # DEC RSI
+        self.emit_bytes(0xC6, 0x06, 0x30)  # MOV BYTE [RSI], '0'
+        self.emit_bytes(0xEB, 0x14)  # JMP +20 (to print)
+        
+        # Conversion loop
+        self.emit_bytes(0x48, 0x31, 0xD2)  # XOR RDX, RDX
+        self.emit_bytes(0x48, 0xF7, 0xF3)  # DIV RBX
+        self.emit_bytes(0x48, 0x83, 0xC2, 0x30)  # ADD RDX, '0'
+        self.emit_bytes(0x48, 0xFF, 0xCE)  # DEC RSI
+        self.emit_bytes(0x88, 0x16)  # MOV [RSI], DL
+        self.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        self.emit_bytes(0x75, 0xEC)  # JNE -20 (loop back)
+        
+        # Print section - calculate length
+        self.emit_bytes(0x48, 0x8D, 0x54, 0x24, 0x1F)  # LEA RDX, [RSP+31]
+        self.emit_bytes(0x48, 0x29, 0xF2)  # SUB RDX, RSI
+        
+        # Write syscall
+        self.emit_bytes(0x48, 0xB8, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RAX, 1
+        self.emit_bytes(0x48, 0xBF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RDI, 1
+        self.emit_bytes(0x0F, 0x05)  # SYSCALL
+        
+        # Clean up
+        self.emit_bytes(0x48, 0x83, 0xC4, 0x20)  # ADD RSP, 32
+        self.emit_bytes(0x5F)  # POP RDI
+        self.emit_bytes(0x5E)  # POP RSI
+        self.emit_bytes(0x5A)  # POP RDX
+        self.emit_bytes(0x5B)  # POP RBX
+        self.emit_bytes(0x58)  # POP RAX
+
     def create_label(self):
         """Generate unique label name"""
         if not hasattr(self, '_label_counter'):
@@ -976,93 +1062,57 @@ class X64Assembler:
         self._label_counter += 1
         return f"L{self._label_counter}"
     
-    def mark_label(self, label_name):
-        """Mark current position as label"""
+    def mark_label(self, label_name, is_local=False):
+        """Mark a label at current position"""
+        position = len(self.code)
+        self.jump_manager.add_label(label_name, position, is_local)
+        
+        # Initialize labels dict if needed (don't reset it!)
         if not hasattr(self, 'labels'):
             self.labels = {}
         if not hasattr(self, 'pending_jumps'):
             self.pending_jumps = []
-        self.labels[label_name] = len(self.code)
-        print(f"DEBUG: Marked label {label_name} at position {len(self.code)}")
+            
+        self.labels[label_name] = position
+        print(f"DEBUG: Marked label {label_name} at position {position}")
     
-    def emit_jump_to_label(self, label_name, jump_type="JE"):
-        """Emit jump with ENHANCED 32-bit range (±2GB)"""
-        if not hasattr(self, 'pending_jumps'):
-            self.pending_jumps = []
-            
-        # Use 32-bit jumps for virtually unlimited range
-        if jump_type == "JE":
-            # JE with 32-bit offset: 0x0F 0x84 + 4-byte offset
+    # In x64_assembler.py
+    def emit_jump_to_label(self, label_name, jump_type, is_local=True):
+        """Emit conditional or direct jump with proper jump management"""
+        position = len(self.code)
+        
+        # Emit the opcode(s) with placeholder offset
+        if jump_type == "JE" or jump_type == "JZ":
             self.emit_bytes(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
+        elif jump_type == "JNE" or jump_type == "JNZ":
+            self.emit_bytes(0x0F, 0x85, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JMP":
-            # JMP with 32-bit offset: 0xE9 + 4-byte offset  
             self.emit_bytes(0xE9, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
         elif jump_type == "JL":
-            # JL with 32-bit offset: 0x0F 0x8C + 4-byte offset
             self.emit_bytes(0x0F, 0x8C, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
-        elif jump_type == "JG":
-            # JG with 32-bit offset: 0x0F 0x8F + 4-byte offset
-            self.emit_bytes(0x0F, 0x8F, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
-        elif jump_type == "JGE":  # ADD THIS
-            # JGE with 32-bit offset: 0x0F 0x8D + 4-byte offset
+        elif jump_type == "JGE":
             self.emit_bytes(0x0F, 0x8D, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
-        elif jump_type == "JZ":  # ADD THIS TOO (same as JE but clearer intent)
-            # JZ with 32-bit offset: 0x0F 0x84 + 4-byte offset
-            self.emit_bytes(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
-        elif jump_type == "JNE":
-            # JNE with 32-bit offset: 0x0F 0x85 + 4-byte offset
-            self.emit_bytes(0x0F, 0x85, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4
-        elif jump_type == "JNZ":
-            # JNZ with 32-bit offset: 0x0F 0x85 + 4-byte offset (same as JNE)
-            self.emit_bytes(0x0F, 0x85, 0x00, 0x00, 0x00, 0x00)
-            jump_pos = len(self.code) - 4    
+        elif jump_type == "JG":
+            self.emit_bytes(0x0F, 0x8F, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JLE":
+            self.emit_bytes(0x0F, 0x8E, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JNS":
+            self.emit_bytes(0x0F, 0x89, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JB":
+            self.emit_bytes(0x0F, 0x82, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JA":
+            self.emit_bytes(0x0F, 0x87, 0x00, 0x00, 0x00, 0x00)
         else:
-            raise ValueError(f"Unsupported jump type: {jump_type}")
+            raise ValueError(f"Unknown jump type: {jump_type}")
         
-        # Record for later fixup
-        self.pending_jumps.append((jump_pos, label_name, jump_type))
-        print(f"DEBUG: Emitted 32-bit {jump_type} to {label_name} at position {jump_pos}")
-
+        # Register with jump manager
+        self.jump_manager.add_jump(position, label_name, jump_type, is_local)
+        print(f"DEBUG: Emitted 32-bit {jump_type} to {label_name} at position {position}")
+    
     def resolve_jumps(self):
-        """Fix all jump offsets - ENHANCED for 32-bit jumps (±2GB range)"""
-        if not hasattr(self, 'pending_jumps'):
-            return
-        if not hasattr(self, 'labels'):
-            self.labels = {}
-            
-        print(f"DEBUG: Resolving {len(self.pending_jumps)} pending 32-bit jumps...")
-        
-        for jump_pos, label_name, jump_type in self.pending_jumps:
-            if label_name in self.labels:
-                target_addr = self.labels[label_name]
-                current_addr = jump_pos + 4  # Address after the 32-bit jump instruction
-                offset = target_addr - current_addr
-                
-                # 32-bit signed offset range: ±2GB (virtually unlimited)
-                if -2147483648 <= offset <= 2147483647:
-                    # Update the 4-byte offset
-                    import struct
-                    offset_bytes = struct.pack('<i', offset)
-                    self.code[jump_pos:jump_pos+4] = offset_bytes
-                    print(f"DEBUG: Fixed 32-bit {jump_type} to {label_name}: offset {offset}")
-                else:
-                    print(f"ERROR: Jump offset {offset} exceeds ±2GB limit for {label_name}")
-                    # This should never happen in practice
-                    import struct
-                    self.code[jump_pos:jump_pos+4] = struct.pack('<i', 0)
-            else:
-                print(f"ERROR: Undefined label: {label_name}")
-                import struct
-                self.code[jump_pos:jump_pos+4] = struct.pack('<i', 0)
-        
-        # Clear pending jumps
-        resolved_count = len(self.pending_jumps)
-        self.pending_jumps = []
-        print(f"DEBUG: Successfully resolved {resolved_count} 32-bit jumps")
+        """Resolve all global jumps"""
+        jump_count = len(self.jump_manager.global_jumps)
+        if jump_count > 0:
+            self.jump_manager.resolve_global_jumps(self.code)
+            print(f"DEBUG: Successfully resolved {jump_count} global jumps")
+    
