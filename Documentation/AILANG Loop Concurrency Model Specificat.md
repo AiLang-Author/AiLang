@@ -196,7 +196,6 @@ producer = LoopSpawn(LoopActor.Producer)
 consumer = LoopSpawn(LoopActor.Consumer)
 
 LoopFlow.Send(consumer, data_chunk, pressure: "adaptive")
-yaml
-Copy code
 
----
+
+
