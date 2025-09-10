@@ -57,11 +57,11 @@ Cache.Flush(level="L2", address=buffer_addr)
 TLB.Invalidate(address=0x1000)
 MemoryBarrier.Full()
 ```
-
-/Direct hardware control — No syscall overhead
-/Dual-mode compilation — User mode (safe) or kernel mode (privileged)
-/Memory barriers — Lock-free synchronization primitives
-
+```
+Direct hardware control — No syscall overhead
+Dual-mode compilation — User mode (safe) or kernel mode (privileged)
+Memory barriers — Lock-free synchronization primitives
+```
 ```
 🎯 Deep Built-in Operations (100+ Primitives)
 Core Operations
@@ -88,27 +88,30 @@ Concurrency (Zero-Context-Switch)
     -}
 -}
 ```
-
+```
 Actor model — Message passing, no shared state
 Lock-free primitives — Memory barriers, not mutexes
 Deterministic scheduling — Predictable execution order
-
-
+```
+```
 🔧 Compiler & Tooling
 Compilation
 bash# Standard compilation
 python3 main.py program.ailang          # Creates program_exec
-
+```
+```
 # Debug builds
 python3 main.py -D program.ailang       # Debug level 1
 python3 main.py -D2 program.ailang      # Debug level 2 (verbose)
 python3 main.py -D3 program.ailang      # Debug level 3 (all)
-
+```
+```
 # VM modes
 python3 main.py --vm-mode kernel program.ailang  # Kernel mode (privileged)
 Testing
 bash./run_function_tests.sh   # 30/30 tests passing
-
+```
+```
 🧬 Why AILANG?
 What You Escape
 ❌ Garbage collector pauses — No GC, no surprises
@@ -122,7 +125,8 @@ What You Get
 ✅ Hardware sympathy — Cache-aware, TLB-optimized
 ✅ Debug-first design — Assertions and traces in the syntax
 ✅ Zero overhead — Compiles to raw x86-64, no runtime
-
+```
+```
 📊 Performance Metrics
 
 Binary size: 8-12KB typical executables for simple programs
@@ -130,8 +134,8 @@ Context switch: 0ns (actor model, no OS threads) (highly optomisitic test cases 
 Debug overhead: 0 bytes in production builds ( huge benefit from gdb and other botl on debuggers)
 Memory overhead: No runtime, no GC, no allocator (will build librarys for use for application development some already roughed in psuedo code and working)
 Cache efficiency: Explicit L1/L2/L3 placement (long term feature development not currently implmented)
-
-
+```
+```
 🎯 Use Cases
 Operating Systems — Kernels, drivers, bootloaders
 Application developement -GUI, User facing, Machine Controls, Aerospace where explicit logic is mandatory and code reliability must be 100% non ambigious !!!!
@@ -139,7 +143,8 @@ Embedded Systems — Predictable timing, minimal footprint
 AI Agent Runtimes — Cache-aware FSMs, zero-context actors (in development)
 High-Performance Services — Redis-class throughput (rewriting redis server currently)
 Research Systems — VM experiments, hardware simulation (good for teaching and learning programming no implicit behavoir)
-
+```
+```
 🗺️ Roadmap
 Complete ✅
 
@@ -151,27 +156,29 @@ Memory pools (Fixed, Dynamic, Temporal)
 String operations
 Array operations
 x86-64 code generation
-
+```
+```
 In Progress 🚧
 
 Progressive shorthand VSCode plugin
 Agent FSM system (cache-aware actors)
 LoopMain (RTOS-style program structure)
 Extended VM operations
-
+```
+```
 Planned 📋
 
 Self-hosting compiler
 RISC-V backend
 Kernel module demos
 Redis subset implementation
-
-
+```
+```
 🚀 Quick Start
 bash# Clone repository
 git clone https://github.com/yourusername/AILANG.git
 cd AILANG
-
+```
 ```
 # Write your first program
 cat > hello.ailang << 'EOF'
@@ -182,21 +189,24 @@ Debug("values", level=1) {
 }
 EOF
 ```
-
+```
 # Compile and run
 python3 main.py hello.ailang
 ./hello_exec
-
+```
+```
 # With debug output
 python3 main.py -D hello.ailang
 ./hello_exec
+```
 
 📝 License
 
+```
 Open source for personal, academic, research use
 Commercial licensing available for production
 See LICENSE for details
-
+```
 
 Built for Comprehension,Performance and Quality control. Join the Project or try AILang today !
 ---
