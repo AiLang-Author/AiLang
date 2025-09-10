@@ -19,7 +19,7 @@ improving logic following, and preventing vast classes of bugs through intention
 
 
 🚀 What is AiLang?
-AiLang is a new programming language where debugging is a primitive, cache placement is explicit, and every operation states its intent. It compiles to 8KB executables with zero runtime overhead, offering revolutionary features.
+AiLang is a new programming language where debugging is a primitive, cache placement is explicit, and every operation states its intent. It compiles to tiny executables , often smaller than 8kb for a calculator, with extremly runtime overhead, offering compelling features and deep primitives and core functionality unseen in other languages that operate at such a low level.
 ---
 ```
 ✅ Native Debug Primitives
