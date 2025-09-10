@@ -5,11 +5,11 @@ A programming language built for the next era of AI agents, bare-metal systems, 
 🚀 What is AILANG?
 AILANG is a systems programming language where debugging is a language primitive, cache placement is explicit, and every operation states its intent. Compiles to 8KB executables with zero runtime overhead.
 Revolutionary Features
-```plaintext
+
 ✅ Native Debug Primitives
 ailangDebug("cache critical", level=2) {
-    DebugPerf.CacheStats()
-    DebugMemory.Dump(buffer, 64)
+DebugPerf.CacheStats()
+DebugMemory.Dump(buffer, 64)
 }
 DebugAssert(NotEqual(ptr, Null), "Null check")
 Zero overhead when disabled — Debug code doesn't exist in production binaries
@@ -18,16 +18,16 @@ Built-in profiling — Cache misses, TLB stats, branch predictions
 ✅ Progressive Shorthand Mode (VSCode Plugin) ( in development )
 ailang// Level 0: Verbose (on disk)
 Function.Calculate {
-    Input: (a: Integer, b: Integer)
-    Body: {
-        result = Multiply(a, b)
-        ReturnValue(result)
-    }
+Input: (a: Integer, b: Integer)
+Body: {
+result = Multiply(a, b)
+ReturnValue(result)
 }
-// Level 3: Structural (your view)
+}
+-// Level 3: Structural (your view)
 fn Calculate(a: i64, b: i64) -> i64 {
-    let result = a * b
-    return result
+let result = a * b
+return result
 }
 Always verbose on disk — No style wars, clean diffs
 Personal preference — Each developer chooses their comfort level (0-4)
@@ -35,12 +35,11 @@ Instant debugging — Hit F11 to snap to verbose mode
 Perfect bijection — Every shorthand maps exactly to one verbose form
 ✅ Cache-Aware Memory Pools ( in development )
 ailangFixedPool.HotData {
-    "buffer": Initialize=0, CacheLevel="L1", Alignment=64
+"buffer": Initialize=0, CacheLevel="L1", Alignment=64
 }
 DynamicPool.ColdStorage {
-    "archive": Initialize=0, CacheLevel="L3"
+"archive": Initialize=0, CacheLevel="L3"
 }
-'''
 
 Explicit cache placement — L1/L2/L3 affinity control
 Pool-based allocation — No malloc chaos
