@@ -50,13 +50,13 @@ Explicit cache placement — L1/L2/L3 affinity control
 Pool-based allocation — No malloc chaos
 Compile-time layout — Predictable memory patterns
 ```
-
+```
 ✅ VM Operations as Language Features ( in development )
 ailangPageTable.Map(virtual_addr=0x1000, physical_addr=0x2000, flags="RW")
 Cache.Flush(level="L2", address=buffer_addr)
 TLB.Invalidate(address=0x1000)
 MemoryBarrier.Full()
-
+```
 
 Direct hardware control — No syscall overhead
 Dual-mode compilation — User mode (safe) or kernel mode (privileged)
