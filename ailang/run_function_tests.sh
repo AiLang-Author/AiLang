@@ -1,3 +1,7 @@
+#Test runner for Ailang programs place test programs in the "program_here" below to run tests
+# remove the ailang extension from file name when adding files typical bahs rules apply to remove or block a test comment with # on each line
+
+
 #!/bin/bash
 
 # run_function_tests.sh - Run all function tests and track results
