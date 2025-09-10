@@ -32,7 +32,7 @@ AiLang is a new programming language where debugging is a primitive, cache place
 
 
 
-Please check our documentation!!!it is being updated regualry we have a fully flehed out specification and BNF grammar that are currently undergoing tweaks alongside compiler development to ensure consistency in Code and clarity in documentation and expected behavoir.If you encounter erros or inconsistency please report bugs thank you !!!
+Please check our documentation!!! Updated regualry we have a complete specification and BNF grammar that are currently undergoing tweaks alongside compiler development to ensure consistency in Code and clarity in documentation and expected behavoir. If you encounter errors or inconsistency please report bugs thank you !!!
 ---
 
 A few Code and syntax samples 
