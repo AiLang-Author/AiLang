@@ -1,0 +1,91 @@
+compile command run from AILANG root directory
+
+WSL enviroment or Linux with python3 
+
+your computer /mnt/your computer/AILANG$ python3 main.py -D3 -P test_string_perf.ailang
+
+=== COMPILATION COMPLETE (12702 bytes) ===
+📁 Writing to: /mnt/your computer/AILANG/test_string_perf_exec
+✅ Wrote 12702 bytes
+✅ Made executable
+✅ Compiled to test_string_perf_exec (12702 bytes)
+🎉 SUCCESS! Compilation of test_string_perf.ailang completed successfully!
+your computer /mnt/your computer/AILANG$ ./test_string_perf_exec
+String Operations Performance Test
+===================================
+[PERF] string_equals: 288 cycles
+StringEquals tests completed
+[PERF] string_concat: 93564 cycles
+Concatenated result:
+HelloWorldTest123456789[PERF] string_length: 288 cycles
+Length of final string:
+23
+[PERF] number_conversion: 33588 cycles
+Conversion test:
+-12345-67890
+[PERF] bulk_string_ops: 171504 cycles
+Bulk result:
+StartXXXXXXXXXX
+Performance test complete!
+WSL windows 10 /mnt/your computer /AILANG$
+
+
+Save as test_string_per.ailang in your project root directory
+
+
+// test_string_perf.ailang
+// String operations with performance monitoring
+
+PrintMessage("String Operations Performance Test")
+PrintMessage("===================================")
+
+// Test 1: StringEquals performance
+DebugPerf.Start("string_equals")
+eq1 = StringEquals("Hello", "Hello")
+eq2 = StringEquals("Hello", "World")
+eq3 = StringEquals("LongStringTest123456", "LongStringTest123456")
+DebugPerf.End("string_equals")
+PrintMessage("StringEquals tests completed")
+
+// Test 2: StringConcat performance
+DebugPerf.Start("string_concat")
+str1 = StringConcat("Hello", "World")
+str2 = StringConcat(str1, "Test")
+str3 = StringConcat(str2, "123456789")
+DebugPerf.End("string_concat")
+PrintMessage("Concatenated result:")
+PrintMessage(str3)
+
+// Test 3: StringLength performance
+DebugPerf.Start("string_length")
+len1 = StringLength("A")
+len2 = StringLength("Hello World")
+len3 = StringLength(str3)
+DebugPerf.End("string_length")
+PrintMessage("Length of final string:")
+PrintNumber(len3)
+
+// Test 4: Number conversion performance
+DebugPerf.Start("number_conversion")
+str_num = NumberToString(-12345)
+num_str = StringToNumber("-67890")
+DebugPerf.End("number_conversion")
+PrintMessage("Conversion test:")
+PrintMessage(str_num)
+PrintNumber(num_str)
+
+// Test 5: Bulk operations
+DebugPerf.Start("bulk_string_ops")
+i = 0
+result = "Start"
+WhileLoop LessThan(i, 10) {
+    result = StringConcat(result, "X")
+    i = Add(i, 1)
+}
+DebugPerf.End("bulk_string_ops")
+PrintMessage("Bulk result:")
+PrintMessage(result)
+
+PrintMessage("")
+PrintMessage("Performance test complete!")
+
