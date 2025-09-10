@@ -1,6 +1,17 @@
-
 # visitor.py
-from ailang_ast import ASTNode, Program, Library, Pool, ResourceItem, Loop, SubRoutine, Function, RunTask, PrintMessage, ReturnValue, If, While, ForEvery, Assignment, MathExpression, FunctionCall, Identifier, Number, String, Boolean, ArrayLiteral, TypeExpression, ChoosePath, Try, SendMessage, ReceiveMessage, EveryInterval, WithSecurity, BreakLoop, ContinueLoop, HaltProgram, Lambda, Combinator, MacroBlock, MacroDefinition, SecurityContext, SecurityLevel, ConstrainedType, Constant, Apply, RunMacro, MapLiteral, SubPool
+from ailang_ast import (
+    ASTNode, Program, Library, Pool, ResourceItem, Loop, SubRoutine, Function, 
+    RunTask, PrintMessage, ReturnValue, If, While, ForEvery, Assignment, 
+    MathExpression, FunctionCall, Identifier, Number, String, Boolean, 
+    ArrayLiteral, TypeExpression, ChoosePath, Try, SendMessage, ReceiveMessage, 
+    EveryInterval, WithSecurity, BreakLoop, ContinueLoop, HaltProgram, Lambda, 
+    Combinator, MacroBlock, MacroDefinition, SecurityContext, SecurityLevel, 
+    ConstrainedType, Constant, Apply, RunMacro, MapLiteral, SubPool, 
+    AcronymDefinitions, RecordTypeDefinition, Fork, Branch,
+    # Low-level nodes
+    InterruptHandler, DeviceDriver, Dereference, AddressOf, SizeOf, InterruptControl, SystemCall,
+    SystemCall, InlineAssembly, BootloaderCode ,  KernelEntry 
+)
 
 class ASTVisitor:
     """Base class for AST visitors"""
@@ -162,7 +173,53 @@ class ASTPrinter(ASTVisitor):
             self.indent_level -= 1
             result += self.indent() + "}"
         return result
-    
+        
+    def visit_Fork(self, node: Fork) -> str:
+        """Pretty print a Fork node."""
+        result = f"Fork {self.visit(node.condition)} {{\n"
+        
+        # True block
+        self.indent_level += 1
+        for stmt in node.true_block:
+            result += self.indent() + self.visit(stmt) + "\n"
+        self.indent_level -= 1
+        
+        result += self.indent() + "} {\n"
+        
+        # False block
+        self.indent_level += 1
+        for stmt in node.false_block:
+            result += self.indent() + self.visit(stmt) + "\n"
+        self.indent_level -= 1
+        
+        result += self.indent() + "}"
+        return result
+
+    def visit_Branch(self, node: Branch) -> str:
+        """Pretty print a Branch node."""
+        result = f"Branch {self.visit(node.expression)} {{\n"
+        self.indent_level += 1
+
+        for case_value, case_body in node.cases:
+            result += self.indent() + f"Case {self.visit(case_value)} {{\n"
+            self.indent_level += 1
+            for stmt in case_body:
+                result += self.indent() + self.visit(stmt) + "\n"
+            self.indent_level -= 1
+            result += self.indent() + "}\n"
+
+        if node.default:
+            result += self.indent() + "Default {\n"
+            self.indent_level += 1
+            for stmt in node.default:
+                result += self.indent() + self.visit(stmt) + "\n"
+            self.indent_level -= 1
+            result += self.indent() + "}\n"
+
+        self.indent_level -= 1
+        result += self.indent() + "}"
+        return result
+
     def visit_ChoosePath(self, node: ChoosePath) -> str:
         result = f"ChoosePath({self.visit(node.expression)}) {{\n"
         self.indent_level += 1
@@ -303,6 +360,7 @@ class ASTPrinter(ASTVisitor):
             params = ', '.join(self.visit(p) for p in node.parameters)
             return f"{node.base_type}[{params}]"
         return node.base_type
+        
     def visit_AcronymDefinitions(self, node: AcronymDefinitions) -> str:
         """Pretty print acronym definitions"""
         result = "AcronymDefinitions {\n"
@@ -315,6 +373,94 @@ class ASTPrinter(ASTVisitor):
         result += self.indent() + "}"
         return result
 
-
     def visit_RecordTypeDefinition(self, node) -> str:
         return f"{node.name} = {self.visit(node.record_type)}"
+
+    # --- Low-Level Node Visitors ---
+
+    def visit_InterruptHandler(self, node: InterruptHandler) -> str:
+        """Pretty print an InterruptHandler node."""
+        vector_str = self.visit(node.vector)
+        result = f"InterruptHandler.{node.handler_name}(vector={vector_str}) {{\n"
+        self.indent_level += 1
+        for stmt in node.body:
+            result += self.indent() + self.visit(stmt) + "\n"
+        self.indent_level -= 1
+        result += self.indent() + "}"
+        return result
+    
+    def visit_DeviceDriver(self, node: DeviceDriver) -> str:
+        """Pretty print a DeviceDriver node."""
+        result = f"DeviceDriver.{node.driver_name}: {node.device_type} {{\n"
+        self.indent_level += 1
+        for op_name, op_node in node.operations.items():
+            result += self.indent() + f"{op_name}: {self.visit(op_node)}\n"
+        self.indent_level -= 1
+        result += self.indent() + "}"
+        return result
+    
+    def visit_Dereference(self, node: Dereference) -> str:
+        """Pretty print a Dereference node."""
+        size_hint = f", hint={node.size_hint}" if node.size_hint else ""
+        return f"Dereference(*{self.visit(node.pointer)}{size_hint})"
+
+    def visit_AddressOf(self, node: AddressOf) -> str:
+        """Pretty print an AddressOf node."""
+        return f"AddressOf(&{self.visit(node.variable)})"
+
+    def visit_SizeOf(self, node: SizeOf) -> str:
+        """Pretty print a SizeOf node."""
+        return f"SizeOf({self.visit(node.target)})"
+
+    def visit_InterruptControl(self, node: InterruptControl) -> str:
+        """Pretty print an InterruptControl node."""
+        # The operation is 'enable' or 'disable', so we can make the output match the keyword
+        return "EnableInterrupts" if node.operation == "enable" else "DisableInterrupts"
+
+    def visit_SystemCall(self, node: SystemCall) -> str:
+        """Pretty print a SystemCall node."""
+        call_num_str = self.visit(node.call_number)
+        args_str = ', '.join(self.visit(arg) for arg in node.arguments)
+        return f"SystemCall({call_num_str}, args=[{args_str}])"
+    
+    def visit_InlineAssembly(self, node: InlineAssembly) -> str:
+        """Pretty print an InlineAssembly node."""
+        parts = [f'"{node.assembly_code}"']
+        
+        if node.inputs:
+            inputs_str = ', '.join(f'"{constraint}": {self.visit(val)}' for constraint, val in node.inputs)
+            parts.append(f"inputs: [{inputs_str}]")
+            
+        if node.outputs:
+            outputs_str = ', '.join(f'"{constraint}": {self.visit(val)}' for constraint, val in node.outputs)
+            parts.append(f"outputs: [{outputs_str}]")
+
+        if node.clobbers:
+            clobbers_str = ', '.join(f'"{c}"' for c in node.clobbers)
+            parts.append(f"clobbers: [{clobbers_str}]")
+            
+        if node.volatile:
+            parts.append("volatile: True")
+
+        return f"InlineAssembly({', '.join(parts)})"
+    
+    def visit_BootloaderCode(self, node: BootloaderCode) -> str:
+        """Pretty print a BootloaderCode node."""
+        result = f"BootloaderCode.{node.stage} {{\n"
+        self.indent_level += 1
+        for stmt in node.body:
+            result += self.indent() + self.visit(stmt) + "\n"
+        self.indent_level -= 1
+        result += self.indent() + "}"
+        return result
+    
+    def visit_KernelEntry(self, node: KernelEntry) -> str:
+        """Pretty print a KernelEntry node."""
+        params_str = ', '.join(f"{name}: {self.visit(ptype)}" for name, ptype in node.parameters)
+        result = f"KernelEntry.{node.entry_name}({params_str}) {{\n"
+        self.indent_level += 1
+        for stmt in node.body:
+            result += self.indent() + self.visit(stmt) + "\n"
+        self.indent_level -= 1
+        result += self.indent() + "}"
+        return result

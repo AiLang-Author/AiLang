@@ -27,16 +27,6 @@ class TokenType(Enum):
     EVERYINTERVAL = auto()
     BREAKLOOP = auto()
     HALTPROGRAM = auto()
-
-    # Debug Operations
-    DEBUG = auto()
-    DEBUGASSERT = auto()
-    DEBUGTRACE = auto()
-    DEBUGBREAK = auto()
-    DEBUGMEMORY = auto()
-    DEBUGPERF = auto()
-    DEBUGINSPECT = auto()
-    DEBUGCONTROL = auto()
     CONTINUELOOP = auto()
 
 
@@ -496,15 +486,6 @@ class Lexer:
             'EveryInterval': TokenType.EVERYINTERVAL,
             'BreakLoop': TokenType.BREAKLOOP,
             'HaltProgram': TokenType.HALTPROGRAM,
-
-            'Debug': TokenType.DEBUG,
-            'DebugAssert': TokenType.DEBUGASSERT,
-            'DebugTrace': TokenType.DEBUGTRACE,
-            'DebugBreak': TokenType.DEBUGBREAK,
-            'DebugMemory': TokenType.DEBUGMEMORY,
-            'DebugPerf': TokenType.DEBUGPERF,
-            'DebugInspect': TokenType.DEBUGINSPECT,
-            'DebugControl': TokenType.DEBUGCONTROL,
             'ContinueLoop': TokenType.CONTINUELOOP,
             'FixedPool': TokenType.FIXEDPOOL,
             'DynamicPool': TokenType.DYNAMICPOOL,
@@ -1043,40 +1024,35 @@ class Lexer:
 
     def tokenize(self) -> List[Token]:
         self.tokens = []
-        while self.position < len(self.source):
-            self.skip_whitespace()
-            if not self.current_char():
-                break
+        while self.current_char() is not None:
             line_start = self.line
             col_start = self.column
-            if self.current_char() == '\n':
-                self.tokens.append(Token(TokenType.NEWLINE, '\n', line_start, col_start))
-                self.advance()
-                continue
-            if self.current_char() == '/' and self.peek_char() == '/':
-                comment_type, value = self.read_comment()
-                self.tokens.append(Token(comment_type, value, line_start, col_start))
-                continue
+
+            self.skip_whitespace()
+            self.skip_comments()
+
+            if self.current_char() is None:
+                break
+
+            # Handle string literals
             if self.current_char() == '"':
                 value = self.read_string()
-                self.tokens.append(Token(TokenType.STRING, value, line_start, col_start))
+                self.tokens.append(Token(TokenType.STRING, value, line_start, col_start, len(value) + 2))
                 continue
-            if self.current_char().isdigit() or (self.current_char() == '-' and self.peek_char() and self.peek_char().isdigit()):
-                value = ''
-                if self.current_char() == '-':
-                    value = self.current_char()
+
+            # Handle multi-character operators and special cases
+            if self.current_char() == ':':
+                if self.peek_char() == '=':
                     self.advance()
-                value += self.read_number().value
-                self.tokens.append(Token(TokenType.NUMBER, value, line_start, col_start, len(value)))
-                continue
-            two_char = self.source[self.position:self.position+2]
-            if two_char == '->':
-                self.advance()
-                self.advance()
-                self.tokens.append(Token(TokenType.ARROW, '->', line_start, col_start))
-                continue
+                    self.advance()
+                    self.tokens.append(Token(TokenType.ASSIGN, ':=', line_start, col_start, 2))
+                    continue
+                else:
+                    self.advance()
+                    self.tokens.append(Token(TokenType.COLON, ':', line_start, col_start, 1))
+                    continue
+
             single_char_tokens = {
-                '=': TokenType.EQUALS,
                 '{': TokenType.LBRACE,
                 '}': TokenType.RBRACE,
                 '(': TokenType.LPAREN,
@@ -1084,7 +1060,6 @@ class Lexer:
                 '[': TokenType.LBRACKET,
                 ']': TokenType.RBRACKET,
                 ',': TokenType.COMMA,
-                ':': TokenType.COLON,
                 ';': TokenType.SEMICOLON,
                 '.': TokenType.DOT,
                 '-': TokenType.DASH,
@@ -1098,6 +1073,17 @@ class Lexer:
                     self.advance()
                     self.tokens.append(Token(token_type, value, line_start, col_start, 1))
                     continue
+
+            # Handle numbers (including negative numbers)
+            if self.current_char().isdigit() or (self.current_char() == '-' and self.peek_char() and self.peek_char().isdigit()):
+                value = ''
+                if self.current_char() == '-':
+                    value = self.current_char()
+                    self.advance()
+                value += self.read_number()
+                self.tokens.append(Token(TokenType.NUMBER, value, line_start, col_start, len(value)))
+                continue
+
             if self.current_char().isalpha() or self.current_char() == '_':
                 value = self.read_identifier()
                 token_type = self.keywords.get(value, TokenType.IDENTIFIER)
@@ -1112,10 +1098,12 @@ class Lexer:
                     value = '.'.join(parts)
                 self.tokens.append(Token(TokenType.IDENTIFIER, value, line_start, col_start, len(value)))
                 continue
+
             if self.current_char() == '.':
                 self.advance()
                 self.tokens.append(Token(TokenType.DOT, '.', line_start, col_start, 1))
                 continue
+
             self.error(f"Unknown character '{self.current_char()}'")
         self.tokens.append(Token(TokenType.EOF, None, self.line, self.column))
         return self.tokens

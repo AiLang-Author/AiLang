@@ -239,7 +239,7 @@ class Parser:
         # Handle first attribute - can be Initialize OR ElementType
         if self.match(TokenType.INITIALIZE):
             self.consume(TokenType.INITIALIZE)
-            self.consume(TokenType.DASH)
+            self.consume(TokenType.EQUALS)
             value = self.parse_primary()
         elif self.match(TokenType.ELEMENTTYPE):
             self.consume(TokenType.ELEMENTTYPE)
@@ -423,7 +423,7 @@ class Parser:
             column=start_token.column
         )
 
-    def parse_loop(self) -> Loop:
+    def parse_loop(self) -> ASTNode:  # Note: return type is now ASTNode, not Loop
         loop_type_token = self.current_token
         loop_type = loop_type_token.value
         self.advance()
@@ -441,13 +441,30 @@ class Parser:
             self.skip_newlines()
         self.consume(TokenType.RBRACE)
         self.skip_newlines()
-        end_name = None
-        if self.match(TokenType.LOOPEND):
-            self.consume(TokenType.LOOPEND)
-            self.consume(TokenType.DOT)
-            end_name = self.consume(TokenType.IDENTIFIER).value
+        
         self.pop_context()
-        return Loop(loop_type=loop_type, name=name, body=body, end_name=end_name,
+        
+        # Create the correct AST node type based on loop_type
+        if loop_type == 'LoopActor':
+            return LoopActor(name=name, body=body, 
+                            line=loop_type_token.line, column=loop_type_token.column)
+        elif loop_type == 'LoopMain':
+            return LoopMain(name=name, body=body,
+                        line=loop_type_token.line, column=loop_type_token.column)
+        elif loop_type == 'LoopStart':
+            return LoopStart(name=name, body=body,
+                            line=loop_type_token.line, column=loop_type_token.column)
+        elif loop_type == 'LoopShadow':
+            return LoopShadow(name=name, body=body,
+                            line=loop_type_token.line, column=loop_type_token.column)
+        else:
+            # Fallback for any other loop types
+            end_name = None
+            if self.match(TokenType.LOOPEND):
+                self.consume(TokenType.LOOPEND)
+                self.consume(TokenType.DOT)
+                end_name = self.consume(TokenType.IDENTIFIER).value
+            return Loop(loop_type=loop_type, name=name, body=body, end_name=end_name,
                     line=loop_type_token.line, column=loop_type_token.column)
 
     def parse_subroutine(self) -> SubRoutine:
@@ -685,6 +702,11 @@ class Parser:
             return self.parse_runtask()
         elif self.match(TokenType.PRINTMESSAGE):
             return self.parse_printmessage()
+        # Check for Debug statements
+        elif self.current_token and hasattr(self.current_token, "value") and self.current_token.value == "Debug":
+            return self.parse_debug_block()
+        elif self.current_token and hasattr(self.current_token, "value") and self.current_token.value == "DebugAssert":
+            return self.parse_debug_assert()           
         elif self.match(TokenType.RETURNVALUE):
             return self.parse_returnvalue()
         elif self.match(TokenType.IFCONDITION):
@@ -1276,20 +1298,27 @@ class Parser:
         self.skip_newlines()
         if self.match(TokenType.LPAREN):
             return self.parse_parenthesized_expression()
-        if self.match(TokenType.ADD, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.SUBTRACT, 
+        if self.match(TokenType.ADD, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.SUBTRACT,
                     TokenType.POWER, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
                     TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
                     TokenType.AND, TokenType.OR, TokenType.NOT,
+                    # ADD BITWISE OPERATIONS (with correct names):
+                    TokenType.BITWISEAND, TokenType.BITWISEOR, TokenType.BITWISEXOR,
+                    TokenType.BITWISENOT, TokenType.LEFTSHIFT, TokenType.RIGHTSHIFT,
+                    # Continue with existing:
                     TokenType.READINPUT, TokenType.READINPUTNUMBER, TokenType.GETUSERCHOICE,
                     TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGCONCAT,
                     TokenType.STRINGLENGTH, TokenType.STRINGTONUMBER, TokenType.NUMBERTOSTRING,
                     TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
             return self.parse_math_function()
+    # ... rest stays the same
         # === NEW: Low-Level Function Parsing ===
         elif self.match(TokenType.DEREFERENCE, TokenType.ADDRESSOF, TokenType.SIZEOF,
                     TokenType.ALLOCATE, TokenType.DEALLOCATE, TokenType.MEMORYCOPY,
                     TokenType.PORTREAD, TokenType.PORTWRITE, TokenType.HARDWAREREGISTER,
-                    TokenType.ATOMICREAD, TokenType.ATOMICWRITE, TokenType.MMIOREAD, TokenType.MMIOWRITE, TokenType.STOREVALUE):
+                    TokenType.ATOMICREAD, TokenType.ATOMICWRITE, TokenType.MMIOREAD, TokenType.MMIOWRITE, TokenType.STOREVALUE,
+                    # ADD ATOMIC OPERATIONS HERE
+                    TokenType.ATOMICADD, TokenType.ATOMICSUBTRACT, TokenType.ATOMICCOMPARESWAP, TokenType.ATOMICEXCHANGE):
             return self.parse_lowlevel_function()
         # === NEW: Virtual Memory Expression Parsing ===
         elif self.match(TokenType.PAGETABLE, TokenType.VIRTUALMEMORY, TokenType.CACHE, 
@@ -1495,7 +1524,8 @@ class Parser:
             return self.parse_array_literal()
         
         elif self.match(TokenType.LBRACE):
-            return self.parse_map_literal()
+        # Map literals not implemented yet
+            return None
         
         elif self.match(TokenType.PI):
             token = self.current_token
@@ -1691,6 +1721,16 @@ class Parser:
             self.error(f"Unexpected token in expression: {self.current_token.value if self.current_token else 'EOF'}")
 
 
+    def parse_type(self):
+        """Parse type annotations"""
+        # Simple implementation - just consume the type name
+        if self.current_token.type == TokenType.IDENTIFIER:
+            type_name = self.current_token.value
+            self.advance()
+            return type_name
+        return "Any"  # Default type
+
+
     def parse_lowlevel_type(self) -> LowLevelType:
         """Parse low-level type literals"""
         token = self.current_token
@@ -1769,10 +1809,99 @@ class Parser:
                 line=identifier.line,
                 column=identifier.column
             )
-        else:
-            # Just a variable reference
-            return Identifier(
-                name=identifier.value,
-                line=identifier.line,
-                column=identifier.column
-            )
+        # Handle BitwiseAnd and BitwiseOr as function calls
+        elif identifier.value in ['BitwiseAnd', 'BitwiseOr']:
+            if self.match(TokenType.LPAREN):
+                self.consume(TokenType.LPAREN)
+                arguments = []
+                
+                if not self.match(TokenType.RPAREN):
+                    arguments.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.consume(TokenType.COMMA)
+                        arguments.append(self.parse_expression())
+                
+                self.consume(TokenType.RPAREN)
+                return FunctionCall(
+                    function=identifier.value,
+                    arguments=arguments,
+                    line=identifier.line,
+                    column=identifier.column
+                )
+        # Just a variable reference
+        return Identifier(
+            name=identifier.value,
+            line=identifier.line,
+            column=identifier.column)
+
+    def parse_debug_block(self):
+        """Parse Debug("label", level=N) { ... }"""
+        self.advance()  # consume 'Debug'
+        
+        # Default values
+        label = "debug"
+        level = 1
+        
+        if self.match(TokenType.LPAREN):
+            self.consume(TokenType.LPAREN)
+            
+            # Get label if it's a string
+            if self.match(TokenType.STRING):
+                label = self.current_token.value
+                self.advance()
+                
+                # Check for level parameter
+                if self.match(TokenType.COMMA):
+                    self.advance()
+                    # Skip 'level' identifier if present
+                    if self.current_token and self.current_token.value == 'level':
+                        self.advance()
+                        if self.match(TokenType.EQUALS):
+                            self.advance()
+                    if self.match(TokenType.NUMBER):
+                        level = int(self.current_token.value)
+                        self.advance()
+            
+            self.consume(TokenType.RPAREN)
+        
+        # Parse the block
+        body = []
+        if self.match(TokenType.LBRACE):
+            self.consume(TokenType.LBRACE)
+            self.skip_newlines()
+            
+            while not self.match(TokenType.RBRACE) and self.current_token:
+                stmt = self.parse_statement()
+                if stmt:
+                    body.append(stmt)
+                self.skip_newlines()
+            
+            self.consume(TokenType.RBRACE)
+        
+        return DebugBlock(label=label, level=level, body=body,
+                         line=self.current_token.line if self.current_token else 0,
+                         column=self.current_token.column if self.current_token else 0)
+    
+    def parse_debug_assert(self):
+        """Parse DebugAssert(condition, "message")"""
+        self.advance()  # consume 'DebugAssert'
+        
+        self.consume(TokenType.LPAREN)
+        
+        # Parse condition
+        condition = self.parse_expression()
+        
+        # Get message
+        message = "Assertion failed"
+        if self.match(TokenType.COMMA):
+            self.advance()
+            if self.match(TokenType.STRING):
+                message = self.current_token.value
+                self.advance()
+        
+        self.consume(TokenType.RPAREN)
+        
+        return DebugAssert(condition=condition, message=message,
+                          line=self.current_token.line if self.current_token else 0,
+                          column=self.current_token.column if self.current_token else 0)
+        

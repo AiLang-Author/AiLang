@@ -2,17 +2,310 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict, Tuple
 
+# --- Base Node ---
+
 @dataclass
 class ASTNode:
     line: int
     column: int
 
+# --- Expressions and Literals ---
+# Moved TypeExpression here to resolve the NameError
+
+@dataclass
+class TypeExpression(ASTNode):
+    base_type: str
+    parameters: List[ASTNode] = field(default_factory=list)
+    constraints: Optional[ASTNode] = None
+
+@dataclass
+class MathExpression(ASTNode):
+    expression: ASTNode
+
+@dataclass
+class FunctionCall(ASTNode):
+    function: str
+    arguments: List[ASTNode]
+
+@dataclass
+class Apply(ASTNode):
+    function: ASTNode
+    arguments: List[ASTNode]
+
+@dataclass
+class RunMacro(ASTNode):
+    macro_path: str
+    arguments: List[ASTNode]
+
+@dataclass
+class Identifier(ASTNode):
+    name: str
+
+@dataclass
+class Number(ASTNode):
+    value: Union[int, float]
+
+@dataclass
+class String(ASTNode):
+    value: str
+
+@dataclass
+class Boolean(ASTNode):
+    value: bool
+
+@dataclass
+class ArrayLiteral(ASTNode):
+    elements: List[ASTNode]
+
+@dataclass
+class MapLiteral(ASTNode):
+    pairs: List[Tuple[ASTNode, ASTNode]]
+
+
+# --- Program Structure ---
+
+@dataclass
+class Program(ASTNode):
+    declarations: List[ASTNode]
+
+@dataclass
+class Library(ASTNode):
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class AcronymDefinitions(ASTNode):
+    """AST node for acronym definition blocks"""
+    definitions: Dict[str, str]  # acronym -> full_name mapping
+
+# --- Pool Definitions ---
+
+@dataclass
+class Pool(ASTNode):
+    pool_type: str
+    name: str
+    body: List[ASTNode]
+
+@dataclass
+class SubPool(ASTNode):
+    name: str
+    items: Dict[str, 'ResourceItem']
+
+@dataclass
+class ResourceItem(ASTNode):
+    key: str
+    value: Optional[ASTNode]
+    attributes: Dict[str, ASTNode] = field(default_factory=dict)
+
+# --- File I/O AST Nodes ---
+
+@dataclass
+class FilePool(ASTNode):
+    """Represents a FilePool declaration for managing file handles"""
+    name: str
+    handles: Dict[str, 'FileHandle']
+
+@dataclass
+class FileHandle(ASTNode):
+    """Represents a file handle with path and mode"""
+    handle_name: str
+    file_path: ASTNode  # Usually a String node
+    mode: str          # "read", "write", "append", "readwrite", etc.
+    options: Dict[str, ASTNode] = field(default_factory=dict)
+
+@dataclass
+class FileOperation(ASTNode):
+    """Generic file operation node"""
+    operation: str              # "open", "read", "write", "close", etc.
+    file_argument: ASTNode      # File path or handle
+    mode: Optional[str] = None  # File mode for open operations
+    data: Optional[ASTNode] = None      # Data for write operations
+    position: Optional[ASTNode] = None  # Position for seek operations
+    buffer_size: Optional[ASTNode] = None  # Buffer size for buffered operations
+
+# --- Loop and Subroutine Definitions (Legacy/High-Level) ---
+
+@dataclass
+class Loop(ASTNode):
+    loop_type: str
+    name: str
+    body: List[ASTNode]
+    end_name: Optional[str] = None
 
 @dataclass
 class SubRoutine(ASTNode):
-    """SubRoutine declaration"""
     name: str
     body: List[ASTNode]
+
+# --- Functional Programming and Macros ---
+
+@dataclass
+class Function(ASTNode):
+    name: str
+    input_params: List[Tuple[str, ASTNode]]
+    output_type: Optional[ASTNode]
+    body: List[ASTNode]
+
+@dataclass
+class Lambda(ASTNode):
+    params: List[str]
+    body: ASTNode
+
+@dataclass
+class Combinator(ASTNode):
+    name: str
+    definition: ASTNode
+
+@dataclass
+class MacroBlock(ASTNode):
+    name: str
+    macros: Dict[str, 'MacroDefinition']
+
+@dataclass
+class MacroDefinition(ASTNode):
+    name: str
+    params: List[str]
+    body: ASTNode
+
+# --- Security and Typing ---
+
+@dataclass
+class SecurityContext(ASTNode):
+    name: str
+    levels: Dict[str, 'SecurityLevel']
+
+@dataclass
+class SecurityLevel(ASTNode):
+    name: str
+    allowed_operations: List[str]
+    denied_operations: List[str]
+    memory_limit: Optional[ASTNode]
+    cpu_quota: Optional[ASTNode]
+
+@dataclass
+class ConstrainedType(ASTNode):
+    name: str
+    base_type: ASTNode
+    constraints: ASTNode
+
+@dataclass
+class Constant(ASTNode):
+    name: str
+    value: ASTNode
+
+@dataclass
+class RecordTypeDefinition(ASTNode):
+    """Type definition for a Record structure"""
+    name: str
+    record_type: TypeExpression
+
+# --- Core Statements ---
+
+@dataclass
+class RunTask(ASTNode):
+    task_name: str
+    arguments: List[Tuple[str, ASTNode]]
+
+@dataclass
+class PrintMessage(ASTNode):
+    message: ASTNode
+
+@dataclass
+class ReturnValue(ASTNode):
+    value: ASTNode
+
+@dataclass
+class Assignment(ASTNode):
+    target: str
+    value: ASTNode
+
+@dataclass
+class SendMessage(ASTNode):
+    target: str
+    parameters: Dict[str, ASTNode]
+
+@dataclass
+class ReceiveMessage(ASTNode):
+    message_type: str
+    body: List[ASTNode]
+
+@dataclass
+class HaltProgram(ASTNode):
+    message: Optional[str] = None
+
+# --- Control Flow Structures ---
+
+@dataclass
+class If(ASTNode):
+    """If-then-else statement"""
+    condition: ASTNode
+    then_body: List[ASTNode]
+    else_body: Optional[List[ASTNode]] = None
+
+@dataclass
+class While(ASTNode):
+    """While loop statement"""
+    condition: ASTNode
+    body: List[ASTNode]
+
+@dataclass
+class ForEvery(ASTNode):
+    """ForEvery loop statement"""
+    variable: str
+    collection: ASTNode
+    body: List[ASTNode]
+
+@dataclass
+class ChoosePath(ASTNode):
+    """Switch/case-like statement"""
+    expression: ASTNode
+    cases: List[Tuple[str, List[ASTNode]]]
+    default: Optional[List[ASTNode]] = None
+
+@dataclass
+class Try(ASTNode):
+    """Try-catch-finally statement"""
+    body: List[ASTNode]
+    catch_clauses: List[Tuple[str, List[ASTNode]]]
+    finally_body: Optional[List[ASTNode]] = None
+
+@dataclass
+class Fork(ASTNode):
+    """Fork construct for conditional branching"""
+    condition: ASTNode
+    true_block: List[ASTNode]
+    false_block: List[ASTNode]
+
+@dataclass
+class Branch(ASTNode):
+    """Branch construct for multi-way branching"""
+    expression: ASTNode
+    cases: List[Tuple[ASTNode, List[ASTNode]]]  # (value, statements)
+    default: Optional[List[ASTNode]] = None
+
+@dataclass
+class EveryInterval(ASTNode):
+    """Interval-based execution"""
+    interval_type: str
+    interval_value: Union[int, float]
+    body: List[ASTNode]
+
+@dataclass
+class WithSecurity(ASTNode):
+    """Security context statement"""
+    context: str
+    body: List[ASTNode]
+
+@dataclass
+class BreakLoop(ASTNode):
+    pass
+
+@dataclass
+class ContinueLoop(ASTNode):
+    pass
+
+# --- Actor Model Loop Nodes (Legacy) ---
+# Note: These appear to be part of a separate high-level model.
 
 @dataclass
 class LoopMain(ASTNode):
@@ -72,12 +365,6 @@ class LoopContinue(ASTNode):
     body: List[ASTNode]
 
 @dataclass
-class RunTask(ASTNode):
-    """Call a subroutine"""
-    task_name: str
-    arguments: List[ASTNode]
-
-@dataclass
 class LoopSpawn(ASTNode):
     """Spawn a new actor instance"""
     actor_reference: ASTNode
@@ -121,60 +408,7 @@ class LoopInterrupt(ASTNode):
     handle: ASTNode
     signal: ASTNode
 
-
-@dataclass
-class Program(ASTNode):
-    declarations: List[ASTNode]
-
-@dataclass
-class Library(ASTNode):
-    name: str
-    body: List[ASTNode]
-
-@dataclass 
-class Pool(ASTNode):
-    pool_type: str
-    name: str
-    body: List[ASTNode]
-
-@dataclass
-class SubPool(ASTNode):
-    name: str
-    items: Dict[str, 'ResourceItem']
-
-@dataclass
-class ResourceItem(ASTNode):
-    key: str
-    value: Optional[ASTNode]
-    attributes: Dict[str, ASTNode] = field(default_factory=dict)
-
-# === FILE I/O AST NODES ===
-
-@dataclass
-class FilePool(ASTNode):
-    """Represents a FilePool declaration for managing file handles"""
-    name: str
-    handles: Dict[str, 'FileHandle']
-
-@dataclass
-class FileHandle(ASTNode):
-    """Represents a file handle with path and mode"""
-    handle_name: str
-    file_path: ASTNode  # Usually a String node
-    mode: str          # "read", "write", "append", "readwrite", etc.
-    options: Dict[str, ASTNode] = field(default_factory=dict)
-
-@dataclass
-class FileOperation(ASTNode):
-    """Generic file operation node"""
-    operation: str              # "open", "read", "write", "close", etc.
-    file_argument: ASTNode      # File path or handle
-    mode: Optional[str] = None  # File mode for open operations
-    data: Optional[ASTNode] = None      # Data for write operations
-    position: Optional[ASTNode] = None  # Position for seek operations
-    buffer_size: Optional[ASTNode] = None  # Buffer size for buffered operations
-
-# === NEW: LOW-LEVEL SYSTEMS PROGRAMMING AST NODES ===
+# --- Low-Level Systems Programming AST Nodes ---
 
 @dataclass
 class PointerOperation(ASTNode):
@@ -203,7 +437,7 @@ class SizeOf(ASTNode):
 class MemoryAllocation(ASTNode):
     """Allocate memory"""
     size: ASTNode = None  # Size to allocate
-    alignment: Optional[ASTNode] = None  # Memory alignment  # Memory alignment
+    alignment: Optional[ASTNode] = None  # Memory alignment
 
 @dataclass
 class MemoryDeallocation(ASTNode):
@@ -338,23 +572,6 @@ class KernelEntry(ASTNode):
     body: List[ASTNode] = field(default_factory=list)
 
 @dataclass
-class PageTableOperation(ASTNode):
-    """Page table management"""
-    operation: str  # "create", "map", "unmap", "switch"
-    virtual_address: Optional[ASTNode] = None
-    physical_address: Optional[ASTNode] = None
-    page_table: Optional[ASTNode] = None
-    flags: Optional[ASTNode] = None  # Page flags (readable, writable, executable, etc.)
-
-@dataclass
-class VirtualMemoryOperation(ASTNode):
-    """Virtual memory management"""
-    operation: str  # "allocate", "free", "protect", "map"
-    address: Optional[ASTNode] = None
-    size: ASTNode = None
-    protection: Optional[ASTNode] = None  # Protection flags
-
-@dataclass
 class TaskSwitch(ASTNode):
     """Context/task switching"""
     operation: str  # "save", "restore", "switch"
@@ -367,238 +584,29 @@ class ProcessContext(ASTNode):
     process_id: Optional[ASTNode] = None
     context_data: Optional[ASTNode] = None
 
-# === END LOW-LEVEL AST NODES ===
-
-@dataclass
-class Loop(ASTNode):
-    loop_type: str
-    name: str
-    body: List[ASTNode]
-    end_name: Optional[str] = None
-
-@dataclass
-class SubRoutine(ASTNode):
-    name: str
-    body: List[ASTNode]
-
-@dataclass
-class Function(ASTNode):
-    name: str
-    input_params: List[Tuple[str, ASTNode]]
-    output_type: Optional[ASTNode]
-    body: List[ASTNode]
-
-@dataclass
-class Lambda(ASTNode):
-    params: List[str]
-    body: ASTNode
-
-@dataclass
-class Combinator(ASTNode):
-    name: str
-    definition: ASTNode
-
-@dataclass
-class MacroBlock(ASTNode):
-    name: str
-    macros: Dict[str, 'MacroDefinition']
-
-@dataclass
-class MacroDefinition(ASTNode):
-    name: str
-    params: List[str]
-    body: ASTNode
-
-@dataclass
-class SecurityContext(ASTNode):
-    name: str
-    levels: Dict[str, 'SecurityLevel']
-
-@dataclass
-class SecurityLevel(ASTNode):
-    name: str
-    allowed_operations: List[str]
-    denied_operations: List[str]
-    memory_limit: Optional[ASTNode]
-    cpu_quota: Optional[ASTNode]
-
-@dataclass
-class ConstrainedType(ASTNode):
-    name: str
-    base_type: ASTNode
-    constraints: ASTNode
-
-@dataclass
-class Constant(ASTNode):
-    name: str
-    value: ASTNode
-
-@dataclass
-class RunTask(ASTNode):
-    task_name: str
-    arguments: List[Tuple[str, ASTNode]]
-
-@dataclass
-class PrintMessage(ASTNode):
-    message: ASTNode
-
-@dataclass
-class ReturnValue(ASTNode):
-    value: ASTNode
-
-@dataclass
-class Fork(ASTNode):
-    """Fork construct for conditional branching"""
-    condition: ASTNode
-    true_block: List[ASTNode]
-    false_block: List[ASTNode]
-
-@dataclass
-class Branch(ASTNode):
-    """Branch construct for multi-way branching"""
-    expression: ASTNode
-    cases: List[Tuple[ASTNode, List[ASTNode]]]  # (value, statements)
-    default: Optional[List[ASTNode]] = None
-
-
-@dataclass
-class ChoosePath(ASTNode):
-    expression: ASTNode
-    cases: List[Tuple[str, List[ASTNode]]]
-    default: Optional[List[ASTNode]] = None
-
-@dataclass
-class While(ASTNode):
-    condition: ASTNode
-    body: List[ASTNode]
-
-@dataclass
-class ForEvery(ASTNode):
-    variable: str
-    collection: ASTNode
-    body: List[ASTNode]
-
-@dataclass
-class Try(ASTNode):
-    body: List[ASTNode]
-    catch_clauses: List[Tuple[str, List[ASTNode]]]
-    finally_body: Optional[List[ASTNode]] = None
-
-@dataclass
-class SendMessage(ASTNode):
-    target: str
-    parameters: Dict[str, ASTNode]
-
-@dataclass
-class ReceiveMessage(ASTNode):
-    message_type: str
-    body: List[ASTNode]
-
-@dataclass
-class EveryInterval(ASTNode):
-    interval_type: str
-    interval_value: Union[int, float]
-    body: List[ASTNode]
-
-@dataclass
-class WithSecurity(ASTNode):
-    context: str
-    body: List[ASTNode]
-
-@dataclass
-class Assignment(ASTNode):
-    target: str
-    value: ASTNode
-
-@dataclass
-class BreakLoop(ASTNode):
-    pass
-
-@dataclass
-class ContinueLoop(ASTNode):
-    pass
-
-@dataclass
-class HaltProgram(ASTNode):
-    message: Optional[str] = None
-
-@dataclass
-class MathExpression(ASTNode):
-    expression: ASTNode
-
-@dataclass
-class FunctionCall(ASTNode):
-    function: str
-    arguments: List[ASTNode]
-
-@dataclass
-class Apply(ASTNode):
-    function: ASTNode
-    arguments: List[ASTNode]
-
-@dataclass
-class RunMacro(ASTNode):
-    macro_path: str
-    arguments: List[ASTNode]
-
-@dataclass
-class Identifier(ASTNode):
-    name: str
-
-@dataclass
-class Number(ASTNode):
-    value: Union[int, float]
-
-@dataclass
-class String(ASTNode):
-    value: str
-
-@dataclass
-class Boolean(ASTNode):
-    value: bool
-
-@dataclass
-class ArrayLiteral(ASTNode):
-    elements: List[ASTNode]
-
-@dataclass
-class MapLiteral(ASTNode):
-    pairs: List[Tuple[ASTNode, ASTNode]]
-
-@dataclass
-class TypeExpression(ASTNode):
-    base_type: str
-    parameters: List[ASTNode] = field(default_factory=list)
-    constraints: Optional[ASTNode] = None
-
-@dataclass
-class AcronymDefinitions(ASTNode):
-    """AST node for acronym definition blocks"""
-    definitions: Dict[str, str]  # acronym -> full_name mapping
-
-# === NEW: Low-Level Type Nodes ===
+# --- Low-Level Type Nodes ---
 
 @dataclass
 class PointerType(ASTNode):
     """Pointer type declaration"""
     pointed_type: ASTNode  # Type being pointed to
-    
+
 @dataclass
 class LowLevelType(ASTNode):
     """Low-level primitive types"""
     type_name: str  # "byte", "word", "dword", "qword", "uint8", etc.
     signed: bool = False  # Whether type is signed
-    size: int = 1  # Size in bytes (give it a default)  # Whether type is signed
-    
-# === VIRTUAL MEMORY MANAGEMENT AST NODES ===
+    size: int = 1  # Size in bytes
+
+# --- Virtual Memory Management AST Nodes ---
 
 @dataclass
 class PageTableOperation(ASTNode):
-    """Page table operations - core virtual memory management"""
+    """Page table management"""
     operation: str  # "create", "map", "unmap", "switch", "get_entry"
     page_table: Optional[ASTNode] = None  # Page table identifier
     virtual_addr: Optional[ASTNode] = None  # Virtual address
-    physical_addr: Optional[ASTNode] = None  # Physical address  
+    physical_addr: Optional[ASTNode] = None  # Physical address
     size: Optional[ASTNode] = None  # Size in bytes
     flags: Optional[ASTNode] = None  # Protection flags
     levels: Optional[ASTNode] = None  # Page table levels (4 for x86-64)
@@ -635,98 +643,72 @@ class TLBOperation(ASTNode):
     global_pages: Optional[ASTNode] = None  # Include global pages
 
 @dataclass
-class CacheOperation(ASTNode):
-    """Cache management operations"""
-    operation: str  # "flush", "invalidate", "prefetch", "flush_range"
-    cache_level: Optional[ASTNode] = None  # L1, L2, L3
-    cache_type: Optional[ASTNode] = None  # "data", "instruction", "unified"
-    address: Optional[ASTNode] = None  # Address for range operations
-    size: Optional[ASTNode] = None  # Size for range operations
-
-@dataclass
 class MemoryBarrierOperation(ASTNode):
     """Memory barrier and ordering operations"""
     barrier_type: str  # "read", "write", "full", "acquire", "release"
     scope: Optional[ASTNode] = None  # "local", "global", "device"
-    ordering: Optional[ASTNode] = None  # Memory ordering semantics    
-# === MISSING CONTROL FLOW NODES ===
+    ordering: Optional[ASTNode] = None  # Memory ordering semantics
+
+
+# Debug AST Nodes
+@dataclass
+class DebugBlock:
+    """Debug code block - compiled conditionally"""
+    label: str
+    level: int
+    body: list
+    line: int
+    column: int
 
 @dataclass
-class If(ASTNode):
-    """If-then-else statement"""
-    condition: ASTNode
-    then_body: List[ASTNode]
-    else_body: Optional[List[ASTNode]] = None
+class DebugAssert:
+    """Debug assertion"""
+    condition: object
+    message: str
+    line: int
+    column: int
+
+@dataclass  
+class DebugTrace:
+    """Debug trace point"""
+    trace_type: str  # "Entry", "Exit", "Point"
+    label: str
+    values: list
+    line: int
+    column: int
 
 @dataclass
-class While(ASTNode):
-    """While loop statement"""
-    condition: ASTNode
-    body: List[ASTNode]
+class DebugBreak:
+    """Debug breakpoint"""
+    break_type: str  # "Simple", "Conditional", "Count", "Data"
+    label: str
+    condition: object = None
+    count: int = None
+    line: int = 0
+    column: int = 0
 
 @dataclass
-class ForEvery(ASTNode):
-    """ForEvery loop statement"""
-    variable: str
-    collection: ASTNode
-    body: List[ASTNode]
+class DebugMemory:
+    """Memory debugging operation"""
+    operation: str  # "Dump", "Watch", "LeakStart", "LeakCheck", "Pattern"
+    address: object = None
+    size: int = None
+    pattern: int = None
+    label: str = None
+    line: int = 0
+    column: int = 0
 
 @dataclass
-class ChoosePath(ASTNode):
-    """Switch/case-like statement"""
-    expression: ASTNode
-    cases: List[Tuple[str, List[ASTNode]]]
-    default: Optional[List[ASTNode]] = None
+class DebugPerf:
+    """Performance debugging"""
+    operation: str  # "Start", "End", "CacheStats", "TLBStats"
+    label: str = None
+    line: int = 0
+    column: int = 0
 
 @dataclass
-class Try(ASTNode):
-    """Try-catch-finally statement"""
-    body: List[ASTNode]
-    catch_clauses: List[Tuple[str, List[ASTNode]]]
-    finally_body: Optional[List[ASTNode]] = None
-
-@dataclass
-class SendMessage(ASTNode):
-    """Send message statement"""
-    target: str
-    parameters: Dict[str, ASTNode]
-
-@dataclass
-class ReceiveMessage(ASTNode):
-    """Receive message statement"""
-    message_type: str
-    body: List[ASTNode]
-
-@dataclass
-class EveryInterval(ASTNode):
-    """Interval-based execution"""
-    interval_type: str
-    interval_value: Union[int, float]
-    body: List[ASTNode]
-
-@dataclass
-class WithSecurity(ASTNode):
-    """Security context statement"""
-    context: str
-    body: List[ASTNode]
-
-@dataclass
-class BreakLoop(ASTNode):
-    """Break loop statement"""
-    pass
-
-@dataclass
-class ContinueLoop(ASTNode):
-    """Continue loop statement"""
-    pass
-
-@dataclass
-class HaltProgram(ASTNode):
-    """Halt program statement"""
-    message: Optional[str] = None
-
-@dataclass
-class RecordTypeDefinition(ASTNode):
-    """Type definition for a Record structure"""
-    name: str
-    record_type: TypeExpression
+class DebugInspect:
+    """State inspection"""
+    target: str  # "Variables", "Stack", "Pools", "Agents"
+    line: int = 0
+    column: int = 0
