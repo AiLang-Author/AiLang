@@ -12,6 +12,7 @@ ailangDebug("cache critical", level=2) {
 DebugPerf.CacheStats()
 DebugMemory.Dump(buffer, 64)
 }
+
 DebugAssert(NotEqual(ptr, Null), "Null check")
 Zero overhead when disabled — Debug code doesn't exist in production binaries
 Multi-level debugging — -D, -D2, -D3 for progressive detail
@@ -32,6 +33,7 @@ fn Calculate(a: i64, b: i64) -> i64 {
 let result = a * b
 return result
 }
+
 Always verbose on disk — No style wars, clean diffs
 Personal preference — Each developer chooses their comfort level (0-4)
 Instant debugging — Hit F11 to snap to verbose mode
@@ -79,7 +81,8 @@ Data Structures
 Arrays: ArrayCreate(), ArrayGet(), ArraySet(), ArrayLength()
 Strings: StringConcat(), StringEquals(), StringLength(), NumberToString()
 Files: ReadTextFile(), WriteFile(), FileExists(), OpenFile(), CloseFile()
-
+```
+```
 Concurrency (Zero-Context-Switch)
 -ailangLoopActor.Worker {
     -LoopReceive message {
