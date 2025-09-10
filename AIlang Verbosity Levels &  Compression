@@ -43,6 +43,73 @@ AILang's verbose, verb-first syntax provides exceptional debuggability and compr
     │ "fn Add(a,b)"   │
     └─────────────────┘
 
+Core Architecture: Editor-Only Transform
+┌─────────────────────────────────────────┐
+│  .ailang file (ALWAYS verbose on disk)  │
+└────────────┬────────────────────────────┘
+             │
+    ┌────────▼────────┐
+    │ VSCode Plugin   │
+    │  ┌───────────┐  │
+    │  │ Transform │  │ 
+    │  │  Level 3  │  │ ← User preference
+    │  └───────────┘  │
+    └────────┬────────┘
+             │
+    ┌────────▼────────┐
+    │ Editor Display  │ (shorthand view)
+    │ "fn Add(a,b)"   │
+    └─────────────────┘
+Benefits:
+1. Zero File Pollution
+
+Git diffs are always readable verbose
+Code reviews see canonical form
+No "style wars" in PRs
+
+2. Personal Preference
+json// Bob's VSCode settings
+"ailang.shorthandLevel": 3  // likes concise
+
+// Alice's VSCode settings  
+"ailang.shorthandLevel": 1  // prefers verbose
+Same file, different views!
+3. Tool Simplicity
+
+Compiler only knows verbose
+Debugger only knows verbose
+LSP only knows verbose
+No tool needs updating
+
+4. Instant Debugging
+
+Hit F11 → snap to Level 0
+See exactly what compiler sees
+No "what sugar is this?" confusion
+
+5. Team Harmony
+
+Junior dev: Level 0-1
+Senior dev: Level 2-3
+AI/bots: Level 4
+All editing the same file
+
+Implementation (dead simple):
+typescript// VSCode extension
+function onDocumentOpen(doc) {
+  if (settings.shorthandLevel > 0) {
+    const verbose = doc.getText();
+    const shorthand = transform(verbose, settings.shorthandLevel);
+    showVirtualDocument(shorthand);
+  }
+}
+
+function onDocumentSave(shorthandText) {
+  const verbose = reverseTransform(shorthandText, settings.shorthandLevel);
+  writeToFile(verbose);  // Always saves verbose
+}
+
+
 
 
 #### Five-Level Progressive System
