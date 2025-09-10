@@ -1,9 +1,14 @@
-🧠 AILANG
-Verb-first. Cache-aware. Systems-native.
-A programming language built for the next era of AI agents, bare-metal systems, and zero-overhead debugging.
+Why make AiLang????: A Verb-First, Low-Level Programming Language for Next-Generation Computing
+
+AiLang is the first verb-first, low-level programming language, designed with built-in libraries, abstractions, and a direct-to-metal compiler. Unlike traditional compilers like GCC, LLVM, or Clang, which rely on implicit constructs, AiLang features its own x86_64 compiler, eliminating workarounds and enabling a modular backend easily portable to new processor instruction sets. This reduces boilerplate code—no headers are needed with its import model—and offers rich primitive functions for streamlined development. The language includes built-in debugging features, a comprehensive predefined keyword set, and cache-aware memory pools, replacing traditional memory allocation methods like malloc for optimized performance.
+
+
+Current programming languages often suffer from excessive implicitness, forcing developers to repeatedly implement basic functions and depend on incompatible libraries, frameworks, and third-party tools. This leads to code fragility and long-term debugging challenges, especially in AI and low-level system development. AiLang addresses these issues by eliminating ambiguity with a strict PEMDAS rule—incorrectly formatted code triggers compiler failures, a deliberate design choice to prevent bugs. It aligns closely with hardware, exposing memory and cache behavior to enhance performance, as shown in array-to-array data transfer tests using memory pools with cache affinity. Common pitfalls like C++ template issues and circular dependencies are avoided, with variables declared at the file top for readability. A VSCode plugin is in development to support progressive shorthand modes, allowing developers to choose their preferred level of verbosity.
+
+The inspiration for AiLang came from frustration with redundant coding and poorly documented third-party libraries, which often hide implicit compiler behaviors. As AI code generation tools struggled with syntax, implicit operators, and operator overloading during rapid prototyping and debugging in 2024-2025, the need for a better-structured language became clear. Terseness and syntactic sugar have often replaced logical design, leading to preventable bug classes. AiLang counters this by offering a hardware-aligned solution, reducing abstraction and cleverness to foster clearer, more reliable code. While bad code is still possible, AiLang makes it significantly harder by removing footguns wherever feasible.
 
 🚀 What is AILANG?
-AILANG is a systems programming language where debugging is a language primitive, cache placement is explicit, and every operation states its intent. Compiles to 8KB executables with zero runtime overhead.
+AILANG is a New programming language where debugging is a language primitive, cache placement is explicit, and every operation states its intent. Compiles to 8KB executables with zero runtime overhead.
 Revolutionary Features
 
 ```
