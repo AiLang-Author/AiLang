@@ -1,166 +1,202 @@
-AILANG Loop Concurrency Model Specification v1.0
-Core Philosophy
-AILANG's Loop model eliminates traditional concurrency problems by design:
+# AiLang Loop Concurrency Model — v1.1
 
-No shared mutable state - Data has a single owner
-Message passing - Communication through explicit channels
-Deterministic scheduling - Predictable execution order where possible
-Continuations - Non-blocking async without callback hell
-No locks - No mutexes, no semaphores, no deadlocks
+## 0. Scope
+This document specifies the **Loop Concurrency Model** for AiLang:
+- Entities
+- Messaging
+- Scheduling
+- Ownership
+- Synchronization
+- Timeouts and failure
+- Determinism
 
-Loop Types
-1. SubRoutine
-Simple callable code blocks with no concurrency
-ailangSubRoutine.ProcessData {
-    // Sequential code, callable via RunTask
-}
-RunTask.ProcessData()
-2. LoopMain
-Primary event loop - runs once, owns the main execution context
-ailangLoopMain.Application {
-    // Main program logic
-    // Spawns other loops
-    // Handles primary coordination
-}
-3. LoopActor
-Isolated actors with owned state and message handling
-ailangLoopActor.Counter {
-    // Owned state
-    count = 0
-    
-    // Message handler
-    LoopReceive message {
-        case "increment": count = Add(count, 1)
-        case "get": LoopReply(count)
-    }
-}
-4. LoopStart
-Initialization before main execution
-ailangLoopStart.SystemInit {
-    // Runs before LoopMain
-    // Sets up resources
-    // Initializes actors
-}
-5. LoopShadow
-Background continuous loops
-ailangLoopShadow.Monitor {
-    LoopContinue {
-        CheckSystemHealth()
-        LoopYield(1000)  // Yield for 1 second
-    }
-}
-Communication Primitives
-LoopSend / LoopReceive
-Asynchronous message passing between actors
-ailang// Send message
-LoopSend(TargetActor, message)
+It is language-level and implementation-independent. It does **not** define OS threads, kernel preemption, or distributed semantics.
 
-// Receive with pattern matching
-LoopReceive message {
-    case pattern: action
-}
-LoopReply
-Reply to the sender of the current message
-ailangLoopReply(response_data)
-LoopFlow
-Stream processing with backpressure
-ailangLoopFlow.Send(Consumer, data, pressure: "adaptive")
-LoopFlow.Receive(timeout: 5000)
-Control Flow
-LoopContinue
-Infinite loop with interruption points
-ailangLoopContinue {
-    // Runs until explicitly stopped
-    // Has implicit yield points
-}
-LoopYield
-Cooperative yielding with optional delay
-ailangresult = LoopYield(AsyncOperation())
-LoopYield(1000)  // Yield for 1000ms
-LoopSequence
-Deterministic ordered execution
-ailangLoopSequence.Pipeline {
-    Step1: ReadInput()
-    Step2: Process()
-    Step3: WriteOutput()
-}
-LoopTransaction
-Atomic operations with rollback
-ailangLoopTransaction {
-    // All operations succeed or all fail
-    UpdateRecord(A)
-    UpdateRecord(B)
+---
+
+## 1. Terms
+
+- **Loop** — Executable unit with owned state and a mailbox. Variants: `LoopMain`, `LoopActor`, `LoopStart`, `LoopShadow`, `SubRoutine`.  
+- **Message** — Value transferred between loops by copy or move (never shared).  
+- **Mailbox** — FIFO queue per loop with bounded capacity.  
+- **Continuation** — Suspended computation resumed by the scheduler.
+
+---
+
+## 2. Loop Types
+
+| Loop Type      | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| **SubRoutine** | No concurrency; callable via `RunTask`. No mailbox.           |
+| **LoopMain**   | Primary event loop; owns the main coordination context.       |
+| **LoopActor**  | Isolated state + message handler (`LoopReceive`).             |
+| **LoopStart**  | Runs once before `LoopMain` to initialize resources.          |
+| **LoopShadow** | Background loop (`LoopContinue`/`LoopYield`).                 |
+
+---
+
+## 3. Messaging Semantics
+
+### 3.1 Send / Receive / Reply
+- **Send**: `LoopSend(target, msg)` enqueues `msg` into `target`’s mailbox. Non-blocking.  
+- **Receive**: `LoopReceive x { case … }` dequeues and pattern-matches one message.  
+- **Reply**: `LoopReply(value)` sends `value` back to the implicit reply channel for the current message.
+
+### 3.2 Delivery Guarantees
+- **At-most-once** delivery.  
+- **Per-sender FIFO**: messages from the same sender arrive in order.  
+- **No sharing**: moved values MUST NOT be used by the sender after transfer.
+
+### 3.3 Backpressure & Capacity
+- Each mailbox has capacity `N` (default is implementation-defined).  
+- On overflow, the runtime applies a **pressure policy**:  
+  - `"reject"` (drop message, default)  
+  - `"block"` (cooperative wait)  
+  - `"adaptive"` (LoopFlow rate negotiation)  
+
+Example:
+```ailang
+LoopFlow.Send(consumer, data, pressure: "adaptive")
+4. Scheduling
+Cooperative within a worker thread; work-stealing MAY distribute loops across workers.
+
+A loop yields when:
+
+it executes LoopYield
+
+its message handler returns
+
+it blocks on LoopJoin, LoopSelect, or timeouts
+
+Fairness
+Implementations SHOULD provide local fairness: each runnable loop eventually runs.
+
+Deterministic Replay
+With the replay flag, the scheduler records (timestamp, source, payload hash) for each delivery and MUST replay them in the same order given identical inputs.
+
+5. Control Primitives
+LoopContinue — Run repeatedly until interrupted.
+
+LoopYield([delay]) — Cooperative yield; optional delay.
+
+LoopSequence — Step-wise sequential execution.
+
+LoopTransaction — Atomic block with OnFailure rollback.
+
+Example:
+
+ailang
+Copy code
+LoopTransaction {
+  Step1: ...
+  Step2: ...
 } OnFailure {
-    // Rollback handler
+  PrintMessage("Transaction rolled back")
 }
-Lifecycle Management
-LoopSpawn
-Dynamic loop creation
-ailangworker = LoopSpawn(LoopActor.Worker, initial_state)
-LoopJoin
-Wait for loop completion
-ailangresult = LoopJoin(worker, timeout: 5000)
-LoopInterrupt
-Interrupt a running loop
-ailangLoopInterrupt(target_loop, signal: "shutdown")
-Error Handling
-LoopCatch
-Error boundaries for loops
-ailangLoopCatch {
-    // Protected code
-} OnError error {
-    // Error handler
-    LoopRetry(max: 3, delay: 1000)
+6. Lifecycle
+LoopSpawn(Type, init?) — Create and start a loop.
+
+LoopJoin(loop, timeout?) — Cooperatively wait for completion.
+
+LoopInterrupt(loop, signal) — Request cancellation; observed at yield/message boundaries.
+
+7. Errors, Time & Selection
+LoopCatch { … } OnError e { … } — Error boundary.
+
+LoopTimeout(ms) { … } OnTimeout { … } — Executes with a deadline.
+
+LoopSelect { … } — Wait on multiple channels or timeout.
+
+Example:
+
+ailang
+Copy code
+LoopSelect {
+  case Ch1: Handle1()
+  case Ch2: Handle2()
+  timeout 500: HandleTimeout()
 }
-LoopTimeout
-Time-bounded operations
-ailangLoopTimeout(5000) {
-    // Must complete within 5 seconds
-} OnTimeout {
-    // Timeout handler
+8. Synchronization
+LoopBarrier — Waits for N participants; runs OnComplete once.
+
+9. Memory Model & Ownership
+Exactly one loop owns a datum at a time.
+
+Ownership transfer is explicit via messages.
+
+Borrowed references are read-only and MUST NOT escape scope.
+
+No global mutable state; wrap globals in pools.
+
+Large messages SHOULD use move semantics or buffer pools.
+
+10. Performance Guidance (Non-Normative)
+Prefer batching (LoopFlow) for high-rate producers.
+
+Co-locate chatty actors to reduce cross-core traffic.
+
+Use NUMA hints where available.
+
+Appendix A — Edge Cases
+Mailbox Full
+
+Default "reject": send fails; no partial enqueue.
+
+"block": sender yields until space available.
+
+"adaptive": producer slows/chunks.
+
+Reply Without Sender
+
+Compile-time error or runtime panic. Never silent.
+
+Timeout vs Interrupt
+
+If both trigger, interrupt wins.
+
+Transaction in Handler
+
+On failure, OnFailure executes, no message loss/duplication.
+
+Appendix B — Conformance Checklist
+ Per-sender FIFO preserved
+
+ At-most-once delivery
+
+ LoopJoin is cooperative
+
+ Timeout fires exactly once
+
+ Ownership transfer enforced
+
+ Replay mode deterministic
+
+Appendix C — Examples
+Actor Counter
+ailang
+Copy code
+LoopActor.Counter {
+  count = 0
+  LoopReceive m {
+    case "inc": count = Add(count, 1)
+    case "get": LoopReply(count)
+  }
 }
-Synchronization (Without Locks)
-LoopBarrier
-Coordination point for multiple loops
-ailangLoopBarrier.Ready {
-    participants: 4
-    OnComplete: StartProcessing()
+
+LoopMain.App {
+  a = LoopSpawn(LoopActor.Counter)
+  LoopSend(a, "inc")
+  r = LoopSend(a, "get")
+  PrintNumber(r)
 }
-LoopSelect
-Wait on multiple channels
-ailangLoopSelect {
-    case Channel1: ProcessMessage1(message)
-    case Channel2: ProcessMessage2(message)
-    timeout 5000: HandleTimeout()
-}
-Memory Model
-Ownership Rules
+Producer / Consumer with Backpressure
+ailang
+Copy code
+producer = LoopSpawn(LoopActor.Producer)
+consumer = LoopSpawn(LoopActor.Consumer)
 
-Data is owned by exactly one loop at a time
-Ownership transfer is explicit through messages
-Borrowed references are immutable
-No global mutable state
+LoopFlow.Send(consumer, data_chunk, pressure: "adaptive")
+yaml
+Copy code
 
-Message Passing Rules
-
-Messages are copied or moved, never shared
-Large messages use move semantics
-Message queues have configurable capacity
-Backpressure prevents queue overflow
-
-Implementation Notes
-Scheduling
-
-Cooperative multitasking within a thread
-Work-stealing for load balancing
-Priority hints (not guarantees)
-Deterministic replay capability
-
-Performance
-
-Zero-copy message passing where possible
-Lock-free queues for messages
-Cache-aware actor placement
-NUMA-aware scheduling hints
-
-This model eliminates entire classes of bugs while maintaining performance and expressiveness. No race conditions, no deadlocks, no priority inversion - just clean, predictable concurrent code.
+---
