@@ -15,7 +15,7 @@ textailangDebug("cache critical", level=2) {
     DebugMemory.Dump(buffer, 64)
 }
 DebugAssert(NotEqual(ptr, Null), "Null check")
-``
+```
 ```
 Zero overhead when disabled—debug code vanishes in production binaries.
 Multi-level debugging: -D, -D2, -D3 for progressive detail.
