@@ -19,21 +19,15 @@ class ArithmeticOps:
     
     def compile_operation(self, node):
         """
-        Compile arithmetic operations (Add, Subtract, Multiply, Divide)
+        Compile arithmetic operations (Add, Subtract, Multiply, Divide, BitwiseAnd, BitwiseOr)
         """
         try:
             if node.function == 'Add' and len(node.arguments) == 2:
                 print(f"DEBUG: Compiling Add({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
-                
-                # Evaluate first argument
                 self.compiler.compile_expression(node.arguments[0])
                 self.asm.emit_push_rax()
                 print("DEBUG: Pushed first argument")
-                
-                # Evaluate second argument
                 self.compiler.compile_expression(node.arguments[1])
-                
-                # Perform addition
                 self.asm.emit_mov_rbx_rax()
                 self.asm.emit_pop_rax()
                 self.asm.emit_add_rax_rbx()
@@ -42,16 +36,10 @@ class ArithmeticOps:
             
             elif node.function == 'Subtract' and len(node.arguments) == 2:
                 print(f"DEBUG: Compiling Subtract({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
-                
-                # Evaluate first argument
                 self.compiler.compile_expression(node.arguments[0])
                 self.asm.emit_push_rax()
                 print("DEBUG: Pushed first argument")
-                
-                # Evaluate second argument
                 self.compiler.compile_expression(node.arguments[1])
-                
-                # Perform subtraction
                 self.asm.emit_mov_rbx_rax()
                 self.asm.emit_pop_rax()
                 self.asm.emit_sub_rax_rbx()
@@ -60,16 +48,10 @@ class ArithmeticOps:
             
             elif node.function == 'Multiply' and len(node.arguments) == 2:
                 print(f"DEBUG: Compiling Multiply({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
-                
-                # Evaluate first argument
                 self.compiler.compile_expression(node.arguments[0])
                 self.asm.emit_push_rax()
                 print("DEBUG: Pushed first argument")
-                
-                # Evaluate second argument
                 self.compiler.compile_expression(node.arguments[1])
-                
-                # Perform multiplication
                 self.asm.emit_mov_rbx_rax()
                 self.asm.emit_pop_rax()
                 self.asm.emit_imul_rax_rbx()
@@ -78,24 +60,86 @@ class ArithmeticOps:
             
             elif node.function == 'Divide' and len(node.arguments) == 2:
                 print(f"DEBUG: Compiling Divide({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
-                
-                # Evaluate first argument
                 self.compiler.compile_expression(node.arguments[0])
                 self.asm.emit_push_rax()
                 print("DEBUG: Pushed first argument")
-                
-                # Evaluate second argument
                 self.compiler.compile_expression(node.arguments[1])
-                
-                # Perform division
                 self.asm.emit_mov_rbx_rax()
                 self.asm.emit_pop_rax()
-                self.asm.emit_xor_rdx_rdx()  # Clear RDX for division
+                self.asm.emit_xor_rdx_rdx()
                 self.asm.emit_bytes(0x48, 0xF7, 0xF3)  # DIV RBX
                 print("DEBUG: Divide operation completed")
                 return True
             
-            # Not an arithmetic operation
+            elif node.function == 'BitwiseAnd' and len(node.arguments) == 2:
+                print(f"DEBUG: Compiling BitwiseAnd({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
+                self.compiler.compile_expression(node.arguments[0])
+                self.asm.emit_push_rax()
+                print("DEBUG: Pushed first argument")
+                self.compiler.compile_expression(node.arguments[1])
+                self.asm.emit_mov_rbx_rax()
+                self.asm.emit_pop_rax()
+                self.asm.emit_bytes(0x48, 0x21, 0xD8)  # AND RAX, RBX
+                print("DEBUG: BitwiseAnd operation completed")
+                return True
+            
+            elif node.function == 'BitwiseOr' and len(node.arguments) == 2:
+                print(f"DEBUG: Compiling BitwiseOr({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
+                self.compiler.compile_expression(node.arguments[0])
+                self.asm.emit_push_rax()
+                print("DEBUG: Pushed first argument")
+                self.compiler.compile_expression(node.arguments[1])
+                self.asm.emit_mov_rbx_rax()
+                self.asm.emit_pop_rax()
+                self.asm.emit_bytes(0x48, 0x09, 0xD8)  # OR RAX, RBX
+                print("DEBUG: BitwiseOr operation completed")
+                return True
+            
+            
+            elif node.function == 'BitwiseXor' and len(node.arguments) == 2:
+                print(f"DEBUG: Compiling BitwiseXor({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
+                self.compiler.compile_expression(node.arguments[0])
+                self.asm.emit_push_rax()
+                print("DEBUG: Pushed first argument")
+                self.compiler.compile_expression(node.arguments[1])
+                self.asm.emit_mov_rbx_rax()
+                self.asm.emit_pop_rax()
+                self.asm.emit_bytes(0x48, 0x31, 0xD8)  # XOR RAX, RBX
+                print("DEBUG: BitwiseXor operation completed")
+                return True
+            
+            
+            elif node.function == 'LeftShift' and len(node.arguments) == 2:
+                print(f"DEBUG: Compiling LeftShift({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
+                self.compiler.compile_expression(node.arguments[0])
+                self.asm.emit_push_rax()
+                print("DEBUG: Pushed first argument")
+                self.compiler.compile_expression(node.arguments[1])
+                self.asm.emit_mov_rcx_rax()  # Shift amount goes in CL (low byte of RCX)
+                self.asm.emit_pop_rax()
+                self.asm.emit_bytes(0x48, 0xD3, 0xE0)  # SHL RAX, CL
+                print("DEBUG: LeftShift operation completed")
+                return True
+
+            elif node.function == 'RightShift' and len(node.arguments) == 2:
+                print(f"DEBUG: Compiling RightShift({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
+                self.compiler.compile_expression(node.arguments[0])
+                self.asm.emit_push_rax()
+                print("DEBUG: Pushed first argument")
+                self.compiler.compile_expression(node.arguments[1])
+                self.asm.emit_mov_rcx_rax()  # Shift amount goes in CL (low byte of RCX)
+                self.asm.emit_pop_rax()
+                self.asm.emit_bytes(0x48, 0xD3, 0xE8)  # SHR RAX, CL
+                print("DEBUG: RightShift operation completed")
+                return True
+            
+            
+            elif node.function in ['LessThan', 'LessEqual', 'GreaterThan', 'GreaterEqual', 'EqualTo']:
+                return self.compile_comparison(node)
+        
+            elif node.function == 'NotEqual':
+                return self.compile_not_equal(node)
+            
             return False
             
         except Exception as e:
@@ -107,7 +151,7 @@ class ArithmeticOps:
         Compile comparison operations (LessThan, GreaterThan, EqualTo)
         """
         try:
-            if node.function in ['LessThan', 'GreaterThan', 'EqualTo'] and len(node.arguments) == 2:
+            if node.function in ['LessThan', 'LessEqual', 'GreaterThan', 'GreaterEqual', 'EqualTo'] and len(node.arguments) == 2:
                 print(f"DEBUG: Compiling {node.function}({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
                 
                 # Evaluate first argument
@@ -126,8 +170,12 @@ class ArithmeticOps:
                 # Set result based on comparison
                 if node.function == 'LessThan':
                     self.asm.emit_bytes(0x0F, 0x9C, 0xC0)  # SETL AL
+                elif node.function == 'LessEqual':
+                    self.asm.emit_bytes(0x0F, 0x9E, 0xC0)  # SETLE AL
                 elif node.function == 'GreaterThan':
                     self.asm.emit_bytes(0x0F, 0x9F, 0xC0)  # SETG AL
+                elif node.function == 'GreaterEqual':
+                    self.asm.emit_bytes(0x0F, 0x9D, 0xC0)  # SETGE AL
                 elif node.function == 'EqualTo':
                     self.asm.emit_bytes(0x0F, 0x94, 0xC0)  # SETE AL
                 
@@ -183,3 +231,52 @@ class ArithmeticOps:
         
         print("NotEqual operation completed")
         return True
+    
+    def compile_bitwise_and(self, node):
+        """Compile BitwiseAnd(a, b)"""
+        if len(node.arguments) != 2:
+            raise ValueError("BitwiseAnd requires two arguments")
+        self.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        self.compile_expression(node.arguments[1])
+        self.asm.emit_pop_rbx()
+        self.asm.emit_bytes(0x48, 0x21, 0xD8)  # AND RAX, RBX
+        print("DEBUG: Emitted BitwiseAnd operation")
+
+    def compile_bitwise_or(self, node):
+        """Compile BitwiseOr(a, b)"""
+        if len(node.arguments) != 2:
+            raise ValueError("BitwiseOr requires two arguments")
+        self.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        self.compile_expression(node.arguments[1])
+        self.asm.emit_pop_rbx()
+        self.asm.emit_bytes(0x48, 0x09, 0xD8)  # OR RAX, RBX
+        print("DEBUG: Emitted BitwiseOr operation")
+
+    def compile_left_shift(self, node):
+        """Compile LeftShift(a, b)"""
+        if len(node.arguments) != 2:
+            raise ValueError("LeftShift requires two arguments")
+        self.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        self.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rcx_rax()  # Shift amount in CL
+        self.asm.emit_pop_rax()
+        self.asm.emit_bytes(0x48, 0xD3, 0xE0)  # SHL RAX, CL
+        print("DEBUG: Emitted LeftShift operation")
+
+    def compile_right_shift(self, node):
+        """Compile RightShift(a, b)"""
+        if len(node.arguments) != 2:
+            raise ValueError("RightShift requires two arguments")
+        self.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        self.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rcx_rax()  # Shift amount in CL
+        self.asm.emit_pop_rax()
+        self.asm.emit_bytes(0x48, 0xD3, 0xE8)  # SHR RAX, CL
+        print("DEBUG: Emitted RightShift operation")
+        
+        
+        

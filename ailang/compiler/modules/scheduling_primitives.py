@@ -7,35 +7,57 @@ Core building blocks for userland schedulers
 import struct
 
 class SchedulingPrimitives:
-    """Low-level scheduling primitives for the Loop model"""
+    """Handles task scheduling and actor model primitives"""
     
     # Actor states
-    STATE_READY = 0
-    STATE_RUNNING = 1
-    STATE_BLOCKED = 2
-    STATE_SUSPENDED = 3
+    STATE_EMPTY = 0
+    STATE_READY = 1
+    STATE_RUNNING = 2
+    STATE_BLOCKED = 3
     STATE_DEAD = 4
     
-    def __init__(self, compiler):
-        self.compiler = compiler
-        self.asm = compiler.asm
+    # ACB (Actor Control Block) layout - 128 bytes per actor
+    # Offset | Content
+    # -------|--------
+    # 0-7    | RAX
+    # 8-15   | RBX
+    # 16-23  | RCX
+    # 24-31  | RDX
+    # 32-39  | RSI
+    # 40-47  | RDI
+    # 48-55  | RBP
+    # 56-63  | RSP
+    # 64-71  | R8
+    # 72-79  | R9
+    # 80-87  | R10
+    # 88-95  | R11
+    # 96-103 | R12
+    # 104-111| R13
+    # 112-119| R14
+    # 120-127| R15
+    
+    def __init__(self, compiler_context):
+        self.compiler = compiler_context
+        self.asm = compiler_context.asm
+        self.max_actors = 16  # Start small for testing
+        self.acb_size = 128   # Bytes per actor
+        self.spawn_queue = []
+        self.current_actor = 0
+    
+    def compile_operation(self, node):
+        """Route scheduling operations to their handlers"""
+        op_map = {
+            'LoopSpawn': self.compile_loop_spawn,
+            'LoopYield': self.compile_loop_yield,
+            'LoopGetACB': self.compile_get_acb,
+            'LoopSetACB': self.compile_set_acb,
+            'LoopGetCurrentActor': self.compile_get_current_actor,
+            'LoopSetCurrentActor': self.compile_set_current_actor,
+        }
         
-        # Actor control blocks (simplified)
-        # In real implementation, these would be in a dedicated memory region
-        self.actor_table_base = None  # Will be allocated
-        self.max_actors = 256
-        self.actor_size = 256  # Bytes per actor control block
-        
-        # Actor control block layout:
-        # Offset 0:   State (8 bytes)
-        # Offset 8:   Priority (8 bytes)
-        # Offset 16:  Stack pointer (8 bytes)
-        # Offset 24:  Instruction pointer (8 bytes)
-        # Offset 32:  Parent handle (8 bytes)
-        # Offset 40:  Return value (8 bytes)
-        # Offset 48:  Saved registers (13 * 8 = 104 bytes)
-        # Offset 152: Message queue pointer (8 bytes)
-        # Offset 160: User data (96 bytes)
+        if node.function in op_map:
+            return op_map[node.function](node)
+        return False
         
     def initialize_actor_table(self):
         """Initialize the actor table in memory"""
@@ -52,56 +74,156 @@ class SchedulingPrimitives:
         
         print(f"DEBUG: Initialized actor table for {self.max_actors} actors")
         
-    def compile_loop_yield(self, node):
-        """Compile LoopYield - cooperative yielding"""
-        print("DEBUG: Compiling LoopYield primitive")
+    def compile_loop_actor(self, node):
+        """Compile LoopActor as a proper subroutine with skip jump"""
+        try:
+            actor_name = node.name
+            print(f"DEBUG: Compiling LoopActor.{actor_name} as subroutine")
+            
+            # Register as a subroutine
+            label = self.asm.create_label()
+            self.compiler.subroutines[f"Actor.{actor_name}"] = label
+            
+            # CRITICAL: Skip over actor code in main flow
+            skip_label = self.asm.create_label()
+            print(f"DEBUG: Emitting skip jump at position {len(self.asm.code)}")
+            self.asm.emit_jump_to_label(skip_label, "JMP")
+            print(f"DEBUG: Skip jump emitted, will jump to label {skip_label}")
+            
+            # Subroutine entry
+            self.asm.mark_label(label)
+            print(f"DEBUG: Actor code starts at position {len(self.asm.code)}")
+            
+            # DON'T create new stack frame - use caller's frame
+            # This allows actors to access main program variables
+            # Comment out: self.asm.emit_bytes(0x55)  # PUSH RBP
+            # Comment out: self.asm.emit_bytes(0x48, 0x89, 0xE5)  # MOV RBP, RSP
+            
+            # Compile actor body
+            for stmt in node.body:
+                self.compiler.compile_node(stmt)
+            
+            # No epilogue needed since we didn't create prologue  
+            # Comment out: self.asm.emit_bytes(0x48, 0x89, 0xEC)  # MOV RSP, RBP
+            # Comment out: self.asm.emit_bytes(0x5D)  # POP RBP
+            self.asm.emit_ret()
+            
+            # Mark where main flow continues
+            self.asm.mark_label(skip_label)
+            print(f"DEBUG: Skip label marked at position {len(self.asm.code)}")
+            
+            print(f"DEBUG: Actor.{actor_name} registered as subroutine")
+            return True
+            
+        except Exception as e:
+            print(f"ERROR: LoopActor compilation failed: {str(e)}")
+            raise
         
-        # Save current context
-        self._save_actor_context()
-        
-        # Mark actor as ready (not running)
-        self._set_current_actor_state(self.STATE_READY)
-        
-        # Call scheduler hook (if registered)
-        # This is where a userland scheduler would take over
-        self._call_scheduler_hook()
-        
-        # Restore context (scheduler should have picked next actor)
-        self._restore_actor_context()
-        
-        return True
         
     def compile_loop_spawn(self, node):
-        """Compile LoopSpawn - create new actor"""
-        print("DEBUG: Compiling LoopSpawn primitive")
+        """Register actor for execution"""
+        print("DEBUG: Compiling LoopSpawn")
         
-        # Find free actor slot
-        self._find_free_actor_slot()  # Returns slot in RAX
-        self.asm.emit_push_rax()  # Save handle
-        
-        # Initialize actor control block
-        self.asm.emit_mov_rbx_rax()  # Actor handle in RBX
-        
-        # Set initial state to READY
-        self._set_actor_state(self.STATE_READY)
-        
-        # Set up actor stack (each actor gets its own)
-        self._allocate_actor_stack()
-        
-        # Set initial instruction pointer
-        # (Points to the actor's code)
-        actor_ref = node.actor_reference
-        if hasattr(actor_ref, 'name'):
-            actor_name = f"LoopActor.{actor_ref.name}"
-            if actor_name in self.compiler.loops:
-                label = self.compiler.loops[f"{actor_name}.label"]
-                # Store the label for later resolution
-                self._set_actor_ip(label)
-        
-        # Return handle in RAX
-        self.asm.emit_pop_rax()
+        if len(node.arguments) > 0 and hasattr(node.arguments[0], 'value'):
+            actor_name = node.arguments[0].value
+            subroutine_name = f"Actor.{actor_name}"
+            
+            if subroutine_name in self.compiler.subroutines:
+                self.spawn_queue.append(subroutine_name)
+                handle = len(self.spawn_queue)
+                print(f"DEBUG: Added {subroutine_name} to spawn_queue (handle {handle})")
+                self.asm.emit_mov_rax_imm64(handle)
+            else:
+                print(f"DEBUG: Actor {subroutine_name} not found")
+                self.asm.emit_mov_rax_imm64(0)
+        else:
+            self.asm.emit_mov_rax_imm64(0)
         
         return True
+
+    def compile_loop_yield(self, node):
+        """Execute next spawned actor in round-robin"""
+        print("DEBUG: Compiling LoopYield")
+        
+        # Check if we have actors to run
+        if hasattr(self, 'spawn_queue') and self.spawn_queue:
+            # Initialize counter if needed
+            if not hasattr(self, 'current_actor'):
+                self.current_actor = 0
+                
+            # Get next actor in round-robin order
+            actor_index = self.current_actor % len(self.spawn_queue)
+            actor_name = self.spawn_queue[actor_index]
+            
+            print(f"DEBUG: Yielding to {actor_name} (index {actor_index})")
+            
+            # Call the actor if it exists
+            if actor_name in self.compiler.subroutines:
+                label = self.compiler.subroutines[actor_name]
+                self.asm.emit_call_to_label(label)
+            else:
+                print(f"WARNING: Actor {actor_name} not found in subroutines")
+                
+            # Move to next actor for next yield
+            self.current_actor += 1
+        else:
+            print("DEBUG: No actors in spawn queue")
+            self.asm.emit_nop()
+        
+        return True
+    
+    
+    def compile_get_acb(self, node):
+        """Get ACB table base address"""
+        print("DEBUG: Compiling LoopGetACB")
+        if 'system_acb_table' in self.compiler.variables:
+            offset = self.compiler.variables['system_acb_table']
+            self.asm.emit_bytes(0x48, 0x8B, 0x85)  # MOV RAX, [RBP-offset]
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+        else:
+            self.asm.emit_mov_rax_imm64(0)
+        return True
+
+    def compile_get_current_actor(self, node):
+        """Get current actor ID"""
+        print("DEBUG: Compiling LoopGetCurrentActor")
+        if 'system_current_actor' in self.compiler.variables:
+            offset = self.compiler.variables['system_current_actor']
+            self.asm.emit_bytes(0x48, 0x8B, 0x85)  # MOV RAX, [RBP-offset]
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+        else:
+            self.asm.emit_mov_rax_imm64(0)
+        return True
+    
+    def compile_set_current_actor(self, node):
+        """Set current actor ID"""
+        print("DEBUG: Compiling LoopSetCurrentActor")
+        
+        # Get the actor ID to set
+        if len(node.arguments) > 0:
+            self.compiler.compile_expression(node.arguments[0])
+        
+        if 'system_current_actor' in self.compiler.variables:
+            offset = self.compiler.variables['system_current_actor']
+            self.asm.emit_bytes(0x48, 0x89, 0x85)  # MOV [RBP-offset], RAX
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+        
+        return True
+        
+    def compile_set_acb(self, node):
+        """Set ACB table base address"""
+        print("DEBUG: Compiling LoopSetACB")
+        
+        # Get the address to set
+        if len(node.arguments) > 0:
+            self.compiler.compile_expression(node.arguments[0])
+        
+        if 'system_acb_table' in self.compiler.variables:
+            offset = self.compiler.variables['system_acb_table']
+            self.asm.emit_bytes(0x48, 0x89, 0x85)  # MOV [RBP-offset], RAX
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+        
+        return True   
         
     def compile_loop_join(self, node):
         """Compile LoopJoin - wait for actor completion"""
@@ -308,3 +430,7 @@ class SchedulingPrimitives:
         # This is where userland schedulers plug in
         # For now, just a NOP
         self.asm.emit_nop()
+        
+        
+        
+    

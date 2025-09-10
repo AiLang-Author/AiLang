@@ -19,19 +19,24 @@ class FileIOOps:
     
     def compile_operation(self, node):
         """Compile file I/O operation"""
-        try:
-            if node.function == 'WriteTextFile' and len(node.arguments) == 2:
-                self.compile_write_text_file(node)
-            elif node.function == 'ReadTextFile' and len(node.arguments) == 1:
-                self.compile_read_text_file(node)
-            elif node.function == 'FileExists' and len(node.arguments) == 1:
-                self.compile_file_exists(node)
-            else:
-                raise ValueError(f"Unsupported file I/O operation: {node.function}")
-                
-        except Exception as e:
-            print(f"ERROR: File I/O operation compilation failed: {str(e)}")
-            raise
+        # Map function names to the methods that handle them
+        op_map = {
+            'WriteTextFile': self.compile_write_text_file,
+            'ReadTextFile': self.compile_read_text_file,
+            'FileExists': self.compile_file_exists,
+        }
+
+        # Look up the function in our map
+        handler = op_map.get(node.function)
+
+        if handler:
+            # If we found a handler, call it and signal success to the main compiler
+            handler(node)
+            return True
+        
+        # If the function is not in our map, it's not our job.
+        # Signal this by returning False.
+        return False
     
     def compile_write_text_file(self, node):
         """Compile WriteTextFile(path, data)"""

@@ -26,13 +26,30 @@ class MemoryManager:
             print("DEBUG: Starting program compilation")
             self.calculate_stack_size(node)
             
+            # Pre-allocate system variables for actor system
+            if 'system_acb_table' not in self.compiler.variables:
+                self.compiler.stack_size += 8
+                offset = self.compiler.stack_size
+                self.compiler.variables['system_acb_table'] = offset
+                print(f"DEBUG: Allocated system_acb_table at stack offset {offset}")
+            
+            if 'system_current_actor' not in self.compiler.variables:
+                self.compiler.stack_size += 8
+                offset = self.compiler.stack_size
+                self.compiler.variables['system_current_actor'] = offset
+                print(f"DEBUG: Allocated system_current_actor at stack offset {offset}")
+            
             print_buffer_size = 64
             temp_space = 128
             red_zone = 128
             allocate_space = self.scan_allocate_sizes(node)
+            acb_table_size = 16 * 128  # 2048 bytes for 16 actors
+            
             print(f"DEBUG: Total Allocate space needed: {allocate_space}")
-            total_space = self.compiler.stack_size + print_buffer_size + temp_space + red_zone + allocate_space
-            print(f"DEBUG: Stack calculation - {len(self.compiler.variables)} vars = {self.compiler.stack_size} bytes, total allocated: {total_space}")
+            # Include ACB table size in total space calculation
+            total_space = self.compiler.stack_size + print_buffer_size + temp_space + red_zone + allocate_space + acb_table_size
+            print(f"DEBUG: Stack calculation - {len(self.compiler.variables)} vars = {self.compiler.stack_size} bytes, ACB table = {acb_table_size} bytes, total allocated: {total_space}")
+            
             self.compiler.codegen.emit_stack_frame_prologue(total_space)
             
             # Zero-initialize all stack variables
@@ -42,15 +59,37 @@ class MemoryManager:
                 self.asm.emit_bytes(*struct.pack('<i', -offset))
                 print(f"DEBUG: Zero-initialized {var_name} at [rbp - {offset}]")
             
+            # Initialize ACB table pointer to point to reserved stack space
+            # The ACB table starts after all variables and other reserved space
+            acb_table_offset = total_space - acb_table_size
+            self.asm.emit_bytes(0x48, 0x8D, 0x85)  # LEA RAX, [RBP - offset]
+            self.asm.emit_bytes(*struct.pack('<i', -acb_table_offset))
+            
+            # Store this address in system_acb_table variable
+            offset = self.compiler.variables['system_acb_table']
+            self.asm.emit_bytes(0x48, 0x89, 0x85)  # MOV [RBP - offset], RAX
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+            print(f"DEBUG: Initialized ACB table pointer at [RBP - {acb_table_offset}]")
+            
+            # Initialize current actor to 0
+            self.asm.emit_mov_rax_imm64(0)
+            offset = self.compiler.variables['system_current_actor']
+            self.asm.emit_bytes(0x48, 0x89, 0x85)
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+            print(f"DEBUG: Initialized current_actor to 0")
+            
+            # Save callee-saved registers
             self.asm.emit_push_rbx()
             self.asm.emit_push_r12()
             self.asm.emit_push_r13()
             self.asm.emit_push_r14()
             self.asm.emit_push_r15()
             
+            # Compile all declarations
             for decl in node.declarations:
                 self.compiler.compile_node(decl)
             
+            # Restore callee-saved registers
             self.asm.emit_pop_r15()
             self.asm.emit_pop_r14()
             self.asm.emit_pop_r13()
@@ -558,4 +597,114 @@ class MemoryManager:
             
         except Exception as e:
             print(f"ERROR: PoolGetSize compilation failed: {str(e)}")
-            raise
+
+    def compile_array_create(self, node):
+        """Create array with size - allocates (size * 8) + 8 bytes"""
+        print("DEBUG: Compiling ArrayCreate")
+        
+        # Get size argument
+        if len(node.arguments) > 0:
+            self.compiler.compile_expression(node.arguments[0])
+        else:
+            self.asm.emit_mov_rax_imm64(10)  # Default size
+        
+        # Save size for header
+        self.asm.emit_push_rax()
+        
+        # Calculate bytes needed: (size * 8) + 8 for header
+        self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x03)  # SHL RAX, 3 (multiply by 8)
+        self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x08)  # ADD RAX, 8
+        
+        # Allocate via mmap
+        self.asm.emit_mov_rdi_rax()  # Size in RDI
+        self.asm.emit_mov_rax_imm64(9)  # mmap syscall
+        self.asm.emit_mov_rsi_rax()  # Size
+        self.asm.emit_mov_rdi_imm64(0)  # addr = NULL
+        self.asm.emit_mov_rdx_imm64(3)  # PROT_READ|PROT_WRITE
+        self.asm.emit_mov_r10_imm64(0x22)  # MAP_PRIVATE|MAP_ANONYMOUS
+        self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)  # fd = -1
+        self.asm.emit_mov_r9_imm64(0)  # offset = 0
+        self.asm.emit_syscall()
+        
+        # Store size in first 8 bytes
+        self.asm.emit_mov_rbx_rax()  # Save array pointer
+        self.asm.emit_pop_rcx()  # Get size
+        self.asm.emit_bytes(0x48, 0x89, 0x0B)  # MOV [RBX], RCX
+        
+        # Return array pointer
+        self.asm.emit_mov_rax_rbx()
+        return True
+    
+    def compile_array_set(self, node):
+        """Set array[index] = value"""
+        print("DEBUG: Compiling ArraySet")
+        
+        if len(node.arguments) < 3:
+            raise ValueError("ArraySet needs array, index, value")
+        
+        # Get array pointer
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Get index
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_push_rax()
+        
+        # Get value
+        self.compiler.compile_expression(node.arguments[2])
+        
+        # Calculate offset: (index * 8) + 8
+        self.asm.emit_mov_rcx_rax()  # Value in RCX
+        self.asm.emit_pop_rax()  # Index
+        self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x03)  # SHL RAX, 3
+        self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x08)  # ADD RAX, 8
+        
+        # Add to array base
+        self.asm.emit_pop_rbx()  # Array pointer
+        self.asm.emit_bytes(0x48, 0x01, 0xD8)  # ADD RAX, RBX
+        
+        # Store value
+        self.asm.emit_bytes(0x48, 0x89, 0x08)  # MOV [RAX], RCX
+        return True
+    
+    def compile_array_get(self, node):
+        """Get array[index]"""
+        print("DEBUG: Compiling ArrayGet")
+        
+        if len(node.arguments) < 2:
+            raise ValueError("ArrayGet needs array, index")
+        
+        # Get array pointer
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Get index
+        self.compiler.compile_expression(node.arguments[1])
+        
+        # Calculate offset: (index * 8) + 8
+        self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x03)  # SHL RAX, 3
+        self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x08)  # ADD RAX, 8
+        
+        # Add to array base
+        self.asm.emit_pop_rbx()  # Array pointer
+        self.asm.emit_bytes(0x48, 0x01, 0xD8)  # ADD RAX, RBX
+        
+        # Load value
+        self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, [RAX]
+        return True
+    
+    def compile_array_length(self, node):
+        """Get array length from header"""
+        print("DEBUG: Compiling ArrayLength")
+        
+        if len(node.arguments) < 1:
+            raise ValueError("ArrayLength needs array")
+        
+        # Get array pointer
+        self.compiler.compile_expression(node.arguments[0])
+        
+        # Load size from first 8 bytes
+        self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, [RAX]
+        return True
+
+    

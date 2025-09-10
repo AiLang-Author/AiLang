@@ -15,6 +15,7 @@ class ControlFlow:
     def __init__(self, compiler_context):
         self.compiler = compiler_context
         self.asm = compiler_context.asm
+        self.loop_labels_stack = []
     
     def compile_condition(self, condition):
         """Compile different types of conditions"""
@@ -54,6 +55,9 @@ class ControlFlow:
             loop_start_label = self.asm.create_label()
             loop_end_label = self.asm.create_label()
             
+            # Push the labels onto the stack so break/continue can find them
+            self.loop_labels_stack.append((loop_start_label, loop_end_label))
+            
             # Mark the start of the loop
             self.asm.mark_label(loop_start_label)
             
@@ -73,6 +77,10 @@ class ControlFlow:
             
             # Mark the end of the loop, where the exit jump will land
             self.asm.mark_label(loop_end_label)
+            
+            # Pop the labels off the stack after the loop is done
+            self.loop_labels_stack.pop()
+            
             
             print("DEBUG: While loop compilation completed (label system)")
             
@@ -210,3 +218,25 @@ class ControlFlow:
         except Exception as e:
             print(f"ERROR: Branch compilation failed: {str(e)}")
             raise
+    
+        
+    def compile_break(self, node):
+        """
+        Handles BreakLoop nodes. Jumps to the end label of the current loop.
+        """
+        if not self.loop_labels_stack:
+            raise ValueError("Syntax Error: 'BreakLoop' used outside of a loop.")
+
+        end_label = self.loop_labels_stack[-1][1]
+        self.asm.emit_jump_to_label(end_label, "JMP")
+
+    def compile_continue(self, node):
+        """
+        Handles ContinueLoop nodes. Jumps to the start label (the condition check)
+        of the current loop.
+        """
+        if not self.loop_labels_stack:
+            raise ValueError("Syntax Error: 'ContinueLoop' used outside of a loop.")
+
+        start_label = self.loop_labels_stack[-1][0]
+        self.asm.emit_jump_to_label(start_label, "JMP")

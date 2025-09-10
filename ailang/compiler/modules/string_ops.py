@@ -25,6 +25,8 @@ class StringOps:
             'StringCopy': self.compile_string_copy,
             'StringToNumber': self.compile_string_to_number,
             'NumberToString': self.compile_number_to_string,
+            'StringEquals': self.compile_string_equals,
+            'ReadInput': self.compile_read_input,
         }
         
         handler = handlers.get(function)
@@ -460,6 +462,116 @@ class StringOps:
 
         self.asm.mark_label(copy_done)
         self.asm.emit_mov_rax_imm64(1)
+
+    def compile_string_equals(self, node):
+        """Compare two strings - returns 1 if equal, 0 if different"""
+        if len(node.arguments) < 2:
+            raise ValueError("StringEquals requires 2 arguments")
+        
+        print("DEBUG: Compiling StringEquals")
+        
+        # Save registers
+        self.asm.emit_push_rbx()
+        self.asm.emit_push_rcx()
+        self.asm.emit_push_rsi()
+        self.asm.emit_push_rdi()
+        
+        # Get string pointers
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_mov_rdi_rax()  # First string in RDI
+        
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rsi_rax()  # Second string in RSI
+        
+        # Compare loop
+        cmp_loop = self.asm.create_label()
+        equal = self.asm.create_label()
+        not_equal = self.asm.create_label()
+        
+        self.asm.mark_label(cmp_loop)
+        
+        # Load bytes
+        self.asm.emit_bytes(0x8A, 0x07)  # MOV AL, [RDI]
+        self.asm.emit_bytes(0x8A, 0x1E)  # MOV BL, [RSI]
+        
+        # Compare bytes
+        self.asm.emit_bytes(0x38, 0xD8)  # CMP AL, BL
+        self.asm.emit_jump_to_label(not_equal, "JNE")
+        
+        # Check for null terminator
+        self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL
+        self.asm.emit_jump_to_label(equal, "JZ")
+        
+        # Next character
+        self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
+        self.asm.emit_jump_to_label(cmp_loop, "JMP")
+        
+        self.asm.mark_label(equal)
+        self.asm.emit_mov_rax_imm64(1)  # Strings are equal
+        done = self.asm.create_label()
+        self.asm.emit_jump_to_label(done, "JMP")
+        
+        self.asm.mark_label(not_equal)
+        self.asm.emit_mov_rax_imm64(0)  # Strings are different
+        
+        self.asm.mark_label(done)
+        
+        # Restore registers
+        self.asm.emit_pop_rdi()
+        self.asm.emit_pop_rsi()
+        self.asm.emit_pop_rcx()
+        self.asm.emit_pop_rbx()
+        
+        print("DEBUG: StringEquals completed")
+        return True
+
+    def compile_read_input(self, node):
+        """Read input from stdin"""
+        print("DEBUG: Compiling ReadInput")
+        
+        # Allocate buffer for input (256 bytes)
+        buffer_size = 256
+        
+        # Use mmap to allocate buffer
+        self.asm.emit_mov_rax_imm64(9)  # sys_mmap
+        self.asm.emit_mov_rdi_imm64(0)  # addr = NULL
+        self.asm.emit_mov_rsi_imm64(buffer_size)  # length
+        self.asm.emit_mov_rdx_imm64(3)  # PROT_READ | PROT_WRITE
+        self.asm.emit_mov_r10_imm64(0x22)  # MAP_PRIVATE | MAP_ANONYMOUS
+        self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)  # fd = -1
+        self.asm.emit_mov_r9_imm64(0)  # offset = 0
+        self.asm.emit_syscall()
+        
+        # Save buffer address
+        self.asm.emit_push_rax()
+        
+        # Read from stdin
+        self.asm.emit_mov_rdi_imm64(0)  # fd = stdin
+        self.asm.emit_mov_rsi_rax()  # buffer
+        self.asm.emit_mov_rdx_imm64(buffer_size - 1)  # count (leave room for null)
+        self.asm.emit_mov_rax_imm64(0)  # sys_read
+        self.asm.emit_syscall()
+        
+        # Null terminate (replace newline if present)
+        self.asm.emit_pop_rsi()  # Get buffer address
+        self.asm.emit_mov_rdi_rsi()  # Copy to RDI
+        self.asm.emit_add_rdi_rax()  # Point to end of input
+        self.asm.emit_bytes(0x48, 0xFF, 0xCF)  # DEC RDI (back to last char)
+        
+        # Check if last char is newline
+        self.asm.emit_bytes(0x80, 0x3F, 0x0A)  # CMP BYTE [RDI], 0x0A
+        skip = self.asm.create_label()
+        self.asm.emit_jump_to_label(skip, "JNE")
+        self.asm.emit_bytes(0xC6, 0x07, 0x00)  # MOV BYTE [RDI], 0
+        self.asm.mark_label(skip)
+        
+        # Return buffer address
+        self.asm.emit_mov_rax_rsi()
+        
+        print("DEBUG: ReadInput completed")
+        return True
+
 
         self.asm.emit_pop_rdi()
         self.asm.emit_pop_rsi()

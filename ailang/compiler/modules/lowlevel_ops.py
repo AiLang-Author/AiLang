@@ -835,8 +835,20 @@ class LowLevelOps:
                     # Get stack offset for variable
                     offset = self.compiler.variables[resolved_name]
                     
-                    # Load effective address: LEA RAX, [RBP - offset]
-                    self.asm.emit_lea_rax("RBP", -offset)
+                    # Emit LEA RAX, [RBP - offset] directly with correct bytes
+                    # LEA RAX, [RBP + disp8] = 48 8D 45 disp8
+                    if -128 <= -offset <= 127:
+                        self.asm.emit_bytes(0x48, 0x8D, 0x45)
+                        # Two's complement for negative offset
+                        if offset > 0:
+                            self.asm.emit_bytes((256 - offset) & 0xFF)
+                        else:
+                            self.asm.emit_bytes((-offset) & 0xFF)
+                    else:
+                        # Use 32-bit displacement for larger offsets
+                        self.asm.emit_bytes(0x48, 0x8D, 0x85)
+                        self.asm.emit_bytes(*struct.pack('<i', -offset))
+                    
                     print(f"DEBUG: Got address of variable {resolved_name} at [RBP - {offset}]")
                 else:
                     raise ValueError(f"Undefined variable: {var_name} (resolved: {resolved_name})")

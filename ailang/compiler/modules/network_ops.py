@@ -61,52 +61,66 @@ class NetworkOps:
         return True
     
     def compile_socket_bind(self, node):
-        """Bind socket to port - bind(sockfd, addr, addrlen)"""
+        """Bind socket to address and port - bind(sockfd, addr, addrlen)"""
         print("DEBUG: Compiling SocketBind")
         
-        if len(node.arguments) < 2:
-            print("ERROR: SocketBind requires socket and port")
+        if len(node.arguments) < 3:
+            print("ERROR: SocketBind requires socket, address, port")
             self.asm.emit_mov_rax_imm64(-1)
             return True
         
         # Get socket fd
         self.compiler.compile_expression(node.arguments[0])
-        self.asm.emit_push_rax()  # Save socket fd
+        self.asm.emit_mov_rdi_rax()  # Socket fd in RDI
         
-        # Get port number
-        self.compiler.compile_expression(node.arguments[1])
-        # Don't push port, keep it in RAX for immediate use
+        # Build sockaddr_in on stack
+        # Total size: 16 bytes
+        # Layout: family(2) + port(2) + addr(4) + padding(8)
         
-        # Allocate 16 bytes on stack for sockaddr_in
+        # Allocate 16 bytes on stack
         self.asm.emit_bytes(0x48, 0x83, 0xEC, 0x10)  # SUB RSP, 16
         
-        # Fill structure
-        # sin_family = AF_INET (2)
+        # Set family (AF_INET = 2) at [RSP]
         self.asm.emit_bytes(0x66, 0xC7, 0x04, 0x24, 0x02, 0x00)  # MOV WORD [RSP], 2
         
-        # sin_port = htons(port) - port is already in RAX
-        self.asm.emit_bytes(0x86, 0xE0)  # XCHG AH, AL (byte swap for network order)
-        self.asm.emit_bytes(0x66, 0x89, 0x44, 0x24, 0x02)  # MOV WORD [RSP+2], AX
+        # Get port and convert to network byte order
+        self.compiler.compile_expression(node.arguments[2])
+        # Swap bytes for network order (e.g., 8080 = 0x1F90 -> 0x901F)
+        self.asm.emit_bytes(0x86, 0xC4)  # XCHG AH, AL (swap bytes in AX)
+        # Store at [RSP+2]
+        self.asm.emit_bytes(0x66, 0x89, 0x44, 0x24, 0x02)  # MOV [RSP+2], AX
         
-        # sin_addr = INADDR_ANY (0)
-        self.asm.emit_bytes(0xC7, 0x44, 0x24, 0x04, 0x00, 0x00, 0x00, 0x00)  # MOV DWORD [RSP+4], 0
+        # Get IP address - needs to be in network byte order too!
+        self.compiler.compile_expression(node.arguments[1])
         
-        # Now get the socket fd from where we saved it
-        # It's at RSP+16 because we allocated 16 bytes
-        self.asm.emit_bytes(0x48, 0x8B, 0x7C, 0x24, 0x10)  # MOV RDI, [RSP+16]
+        # Check if it's 0 (INADDR_ANY) - don't swap
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        no_swap_label = self.asm.create_label()
+        self.asm.emit_bytes(0x74, 0x07)  # JZ +7 (skip byte swap if 0)
         
-        # Call bind syscall
-        self.asm.emit_mov_rax_imm64(49)      # bind syscall
+        # For non-zero IP, convert to network byte order
+        # 127.0.0.1 = 0x7F000001 should become 0x0100007F in memory
+        self.asm.emit_bytes(0x0F, 0xC8)  # BSWAP EAX (reverse all 4 bytes)
+        
+        # Store at [RSP+4]
+        self.asm.emit_bytes(0x89, 0x44, 0x24, 0x04)  # MOV [RSP+4], EAX
+        
+        # Zero padding at [RSP+8] (8 bytes)
+        self.asm.emit_bytes(0x48, 0xC7, 0x44, 0x24, 0x08, 0x00, 0x00, 0x00, 0x00)  # MOV QWORD [RSP+8], 0
+        
+        # Set up bind syscall parameters
+        self.asm.emit_mov_rax_imm64(49)  # bind syscall
         # RDI already has socket fd
-        self.asm.emit_mov_rsi_rsp()          # Address of sockaddr_in
-        self.asm.emit_mov_rdx_imm64(16)      # Size of sockaddr_in
+        self.asm.emit_mov_rsi_rsp()  # RSI = pointer to sockaddr_in
+        self.asm.emit_mov_rdx_imm64(16)  # RDX = sizeof(sockaddr_in)
         self.asm.emit_syscall()
         
-        # Clean up stack (remove sockaddr_in AND the pushed socket fd)
-        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x18)  # ADD RSP, 24 (16 + 8)
+        # Clean up stack
+        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x10)  # ADD RSP, 16
         
         print("DEBUG: SocketBind completed")
         return True
+    
     def compile_socket_listen(self, node):
         """Listen for connections - listen(sockfd, backlog)"""
         print("DEBUG: Compiling SocketListen")
