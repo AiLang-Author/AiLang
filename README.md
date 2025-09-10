@@ -16,6 +16,7 @@ textailangDebug("cache critical", level=2) {
 }
 DebugAssert(NotEqual(ptr, Null), "Null check")
 ```
+
 ```
 Zero overhead when disabled—debug code vanishes in production binaries.
 Multi-level debugging: -D, -D2, -D3 for progressive detail.
@@ -37,12 +38,14 @@ fn Calculate(a: i64, b: i64) -> i64 {
     return result
 }
 ```
+
 ```
 Always verbose on disk—no style wars, clean diffs.
 Personal preference—choose comfort level (0-4).
 Instant debugging—hit F11 to snap to verbose mode.
 Perfect bijection—each shorthand maps to one verbose form.
 ```
+
 ```
 ✅ Cache-Aware Memory Pools (in development)
 textailangFixedPool.HotData {
@@ -51,11 +54,13 @@ textailangFixedPool.HotData {
 DynamicPool.ColdStorage {
     "archive": Initialize=0, CacheLevel="L3"
 }
-
+```
+```
 Explicit cache placement: L1/L2/L3 affinity control.
 Pool-based allocation: No malloc chaos.
 Compile-time layout: Predictable memory patterns.
 ```
+
 ```
 ✅ VM Operations as Language Features (in development)
 textailangPageTable.Map(virtual_addr=0x1000, physical_addr=0x2000, flags="RW")
@@ -63,6 +68,7 @@ Cache.Flush(level="L2", address=buffer_addr)
 TLB.Invalidate(address=0x1000)
 MemoryBarrier.Full()
 ```
+
 ```
 ✅Concurenccy as a labguage feature (in development and testing)
 textailangLoopActor.Worker {
@@ -72,11 +78,13 @@ textailangLoopActor.Worker {
     }
 }
 ```
+
 ```
 Direct hardware control: No syscall overhead.
 Dual-mode compilation: User mode (safe) or kernel mode (privileged).
 Memory barriers: Lock-free synchronization primitives.
 ```
+
 ```
 🎯 Deep Built-in Operations (100+ Primitives)
 textCore Operations
@@ -96,11 +104,13 @@ Strings: StringConcat(), StringEquals(), StringLength(), NumberToString()
 Files: ReadTextFile(), WriteFile(), FileExists(), OpenFile(), CloseFile()
 Concurrency (Zero-Context-Switch in development for specific use cases, LoopMain LoopActor,LoopSpawn,LoopYield and more)
 ```
-``
+
+```
 Actor model: Message passing, no shared state.
 Lock-free primitives: Memory barriers, not mutexes.
 Deterministic scheduling: Predictable execution order.
 ```
+
 ```
 🔧 Compiler & Tooling
 Compilation
@@ -113,12 +123,14 @@ python3 main.py -D program.ailang       # Debug level 1
 python3 main.py -D2 program.ailang      # Debug level 2 (verbose)
 python3 main.py -D3 program.ailang      # Debug level 3 (all)
 ```
+
 ```
 # VM modes
 python3 main.py --vm-mode kernel program.ailang  # Kernel mode (privileged)
 Testing
 text./run_function_tests.sh   # 30/30 tests passing
 ```
+
 ```
 🧬 Why AiLang?
 What You Escape
@@ -137,6 +149,7 @@ What You Get
 ✅ Debug-first design—assertions and traces in syntax.
 ✅ Zero overhead—compiles to raw x86-64, no runtime.
 ```
+
 ```
 📊 Performance Metrics
 
@@ -146,6 +159,7 @@ Debug overhead: 0 bytes in production builds (a significant advantage over GDB a
 Memory overhead: No runtime, no GC, no allocator (libraries in development, some roughed in pseudocode).
 Cache efficiency: Explicit L1/L2/L3 placement (long-term feature, not yet implemented).
 ```
+
 ```
 🎯 Use Cases
 
@@ -156,6 +170,7 @@ AI Agent Runtimes: Cache-aware FSMs, zero-context actors (in development).
 High-Performance Services: Redis-class throughput (rewriting Redis server currently).
 Research Systems: VM experiments, hardware simulation (ideal for teaching with no implicit behavior).
 ```
+
 ```
 🗺️ Roadmap
 Complete ✅
@@ -182,7 +197,8 @@ RISC-V backend.
 Kernel module demos.
 Redis subset implementation.
 ```
-``
+
+```
 🚀 Quick Start
 text# Clone repository
 git clone https://github.com/yourusername/AILANG.git
@@ -208,8 +224,7 @@ python3 main.py -D hello.ailang
 
 📝 License
 textOpen source for personal, academic, and research use.
-
-````````````````````Commercial licensing available for production.
+Commercial licensing available for production.
 See LICENSE for details.
 Built for comprehension, performance, and quality control. Join the project or try AiLang today!
 ---
