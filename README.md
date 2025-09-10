@@ -1,15 +1,24 @@
 Why make AiLang??? : A Verb-First,Easier to Reason About,  Programming Language for Next-Generation Computing
-
+---
 AiLang is the first verb-first, low-level programming language, crafted with built-in libraries, abstractions, and a direct-to-metal compiler. Unlike traditional compilers like GCC, LLVM, or Clang, which depend on implicit constructs, AiLang features its own x86_64 compiler. This eliminates workarounds, supports a modular backend portable to new processor instruction sets, and reduces boilerplate code with an import model that requires no headers. Rich primitive functions, built-in debugging, a comprehensive keyword set, and cache-aware memory pools (replacing malloc) optimize performance and development efficiency.
+---
 
-Existing programming languages often suffer from excessive implicitness, forcing developers to rewrite basic functions and rely on incompatible libraries, frameworks, and third-party tools. This creates code fragility and debugging headaches, particularly in AI and low-level system development. AiLang tackles these challenges with a strict PEMDAS rule—incorrectly formatted code triggers compiler failures, a deliberate design choice to eliminate bugs. By aligning with hardware and exposing memory/cache behavior (e.g., via array-to-array transfers with cache affinity), it avoids common pitfalls like C++ template issues and circular dependencies. Variables are declared at the file top for readability, and a VSCode plugin (in development) offers progressive shorthand modes for customizable verbosity.
+The idea for AiLang emerged from frustration with redundant coding and poorly documented libraries,
+---
+which often obscure implicit compiler behaviors. In 2024-2025, while using AI code generation tools for rapid prototyping and debugging, I noticed their struggles with syntax, implicit operators, and operator overloading. This revealed a deeper issue: terseness and syntactic sugar had overtaken logical design, introducing preventable bug classes. AiLang counters this with a hardware-aligned, clarity-focused approach, making bad code harder to write by removing footguns wherever possible.
 
-AiLang was designed with a core goal of enhancing readability, improving logic following, and preventing vast classes of bugs through intentional design choices. By prioritizing clear, explicit syntax and a verb-first structure, AiLang makes code reasoning and decoding straightforward, accelerating onboarding for new developers and reducing cognitive overhead. Its strict PEMDAS rule and hardware-aligned features eliminate ambiguity, preventing common errors like implicit behavior or memory mismanagement. Additionally, a VSCode plugin is in development to enable logic tracing, further empowering developers to visualize and debug code efficiently, aligning with AiLang’s mission to foster reliable, maintainable software.
+Existing programming languages often suffer from excessive implicitness,
+---
+forcing developers to rewrite basic functions and rely on incompatible libraries, frameworks, and third-party tools. This creates code fragility and debugging headaches, particularly in AI and low-level system development. AiLang tackles these challenges with a strict PEMDAS rule—incorrectly formatted code triggers compiler failures, a deliberate design choice to eliminate bugs. By aligning with hardware and exposing memory/cache behavior (e.g., via array-to-array transfers with cache affinity), it avoids common pitfalls like C++ template issues and circular dependencies. Variables are declared at the file top for readability, and a VSCode plugin (in development) offers progressive shorthand modes for customizable verbosity.
 
-The idea for AiLang emerged from frustration with redundant coding and poorly documented libraries, which often obscure implicit compiler behaviors. In 2024-2025, while using AI code generation tools for rapid prototyping and debugging, I noticed their struggles with syntax, implicit operators, and operator overloading. This revealed a deeper issue: terseness and syntactic sugar had overtaken logical design, introducing preventable bug classes. AiLang counters this with a hardware-aligned, clarity-focused approach, making bad code harder to write by removing footguns wherever possible.
+AiLang was designed with a core goal of enhancing readability,
+---
+improving logic following, and preventing vast classes of bugs through intentional design choices. By prioritizing clear, explicit syntax and a verb-first structure, AiLang makes code reasoning and decoding straightforward, accelerating onboarding for new developers and reducing cognitive overhead. Its strict PEMDAS rule and hardware-aligned features eliminate ambiguity, preventing common errors like implicit behavior or memory mismanagement. Additionally, a VSCode plugin is in development to enable logic tracing, further empowering developers to visualize and debug code efficiently, aligning with AiLang’s mission to foster reliable, maintainable software.
+
 
 🚀 What is AiLang?
 AiLang is a new programming language where debugging is a primitive, cache placement is explicit, and every operation states its intent. It compiles to 8KB executables with zero runtime overhead, offering revolutionary features.
+---
 ```
 ✅ Native Debug Primitives
 textailangDebug("cache critical", level=2) {
