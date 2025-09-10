@@ -26,6 +26,25 @@ AILang's verbose, verb-first syntax provides exceptional debuggability and compr
 
 ### Solution Architecture
 
+┌─────────────────────────────────────────┐
+│  .ailang file (ALWAYS verbose on disk)  │
+└────────────┬────────────────────────────┘
+             │
+    ┌────────▼────────┐
+    │ VSCode Plugin   │
+    │  ┌───────────┐  │
+    │  │ Transform │  │ 
+    │  │  Level 3  │  │ ← User preference
+    │  └───────────┘  │
+    └────────┬────────┘
+             │
+    ┌────────▼────────┐
+    │ Editor Display  │ (shorthand view)
+    │ "fn Add(a,b)"   │
+    └─────────────────┘
+
+
+
 #### Five-Level Progressive System
 
 ```
