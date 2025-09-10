@@ -58,9 +58,9 @@ TLB.Invalidate(address=0x1000)
 MemoryBarrier.Full()
 ```
 
-Direct hardware control — No syscall overhead
-Dual-mode compilation — User mode (safe) or kernel mode (privileged)
-Memory barriers — Lock-free synchronization primitives
+-Direct hardware control — No syscall overhead
+-Dual-mode compilation — User mode (safe) or kernel mode (privileged)
+-Memory barriers — Lock-free synchronization primitives
 
 ```
 🎯 Deep Built-in Operations (100+ Primitives)
