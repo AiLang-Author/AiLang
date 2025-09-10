@@ -1,0 +1,288 @@
+{
+  "version": "1.0",
+  "description": "AILang Progressive Shorthand Mode - Complete Mapping Specification",
+  
+  "levels": {
+    "1": {
+      "keywords": {
+        "Function": "Fn",
+        "Input": "In",
+        "Output": "Out",
+        "Body": "Body",
+        "ReturnValue": "Ret",
+        "PrintMessage": "Print",
+        "LocalVariable": "Var",
+        "GlobalVariable": "Global",
+        "IfCondition": "If",
+        "ThenBlock": "Then",
+        "ElseBlock": "Else",
+        "WhileLoop": "While",
+        "ForEvery": "For",
+        "BreakLoop": "Break",
+        "ContinueLoop": "Continue",
+        "HaltProgram": "Halt",
+        "RunTask": "Run",
+        "ChoosePath": "Choose",
+        "CaseOption": "Case",
+        "DefaultOption": "Default"
+      }
+    },
+    
+    "2": {
+      "inherits": "1",
+      "operators": {
+        "Add": "+",
+        "Subtract": "-",
+        "Multiply": "*",
+        "Divide": "/",
+        "Modulo": "%",
+        "Power": "**",
+        "GreaterThan": ">",
+        "LessThan": "<",
+        "GreaterEqual": ">=",
+        "LessEqual": "<=",
+        "EqualTo": "==",
+        "NotEqual": "!=",
+        "And": "&&",
+        "Or": "||",
+        "Not": "!",
+        "BitwiseAnd": "&",
+        "BitwiseOr": "|",
+        "BitwiseXor": "^",
+        "BitwiseNot": "~",
+        "ShiftLeft": "<<",
+        "ShiftRight": ">>"
+      },
+      "builtins": {
+        "StringLength": "len",
+        "ArrayLength": "len",
+        "MapSize": "len",
+        "StringConcat": "..",
+        "StringSplit": "split",
+        "StringJoin": "join",
+        "StringTrim": "trim",
+        "StringReplace": "replace",
+        "StringContains": "contains",
+        "TypeCast": "as",
+        "TypeOf": "typeof",
+        "IsNull": "isnull",
+        "Floor": "floor",
+        "Ceiling": "ceil",
+        "Round": "round",
+        "SquareRoot": "sqrt",
+        "AbsoluteValue": "abs",
+        "Minimum": "min",
+        "Maximum": "max"
+      }
+    },
+    
+    "3": {
+      "inherits": "2",
+      "types": {
+        "Integer": "i64",
+        "Int64": "i64",
+        "Int32": "i32",
+        "Int16": "i16",
+        "Int8": "i8",
+        "UInteger": "u64",
+        "UInt64": "u64",
+        "UInt32": "u32",
+        "UInt16": "u16",
+        "UInt8": "u8",
+        "FloatingPoint": "f64",
+        "Float64": "f64",
+        "Float32": "f32",
+        "Text": "str",
+        "String": "str",
+        "Character": "char",
+        "Boolean": "bool",
+        "Byte": "byte",
+        "Void": "void",
+        "Any": "any"
+      },
+      "structural": {
+        "Function.${name} {": "fn ${name} {",
+        "Input: (${params})": "(${params})",
+        "Output: ${type}": "-> ${type}",
+        "Body: {": "{",
+        "ReturnValue(${expr})": "return ${expr}",
+        "PrintMessage(${expr})": "print ${expr}",
+        "LocalVariable ${name} = ${value}": "let ${name} = ${value}",
+        "GlobalVariable ${name} = ${value}": "global ${name} = ${value}",
+        "IfCondition ${cond} ThenBlock": "if (${cond})",
+        "ElseBlock": "else",
+        "WhileLoop ${cond}": "while (${cond})",
+        "ForEvery ${item} in ${list}": "for ${item} in ${list}",
+        "ChoosePath(${expr})": "switch (${expr})",
+        "CaseOption ${value}:": "case ${value}:",
+        "DefaultOption:": "default:",
+        "Array[${type}, ${size}]": "${type}[${size}]",
+        "Array[${type}]": "${type}[]",
+        "Map[${key}, ${value}]": "{${key}: ${value}}",
+        "Tuple[${types}]": "(${types})",
+        "OptionalType[${type}]": "${type}?",
+        "Pointer[${type}]": "*${type}",
+        "Reference[${type}]": "&${type}"
+      },
+      "actors": {
+        "LoopMain.${name}": "main ${name}",
+        "LoopActor.${name}": "actor ${name}",
+        "LoopSend(${target}, ${msg})": "${target} <- ${msg}",
+        "LoopReceive ${var}": "receive ${var}",
+        "LoopReply(${value})": "reply ${value}",
+        "LoopYield(${ms})": "yield ${ms}",
+        "LoopSpawn(${actor}, ${init})": "spawn ${actor}(${init})",
+        "LoopJoin(${handle}, ${timeout})": "join(${handle}, ${timeout})",
+        "LoopSelect": "select",
+        "LoopTimeout(${ms})": "timeout ${ms}"
+      },
+      "memory": {
+        "MemoryAllocate(${size})": "alloc(${size})",
+        "MemoryFree(${ptr})": "free(${ptr})",
+        "MemoryRead(${ptr})": "*${ptr}",
+        "MemoryWrite(${ptr}, ${val})": "*${ptr} = ${val}",
+        "MemoryCopy(${dst}, ${src}, ${size})": "memcpy(${dst}, ${src}, ${size})",
+        "MemoryMove(${dst}, ${src}, ${size})": "memmove(${dst}, ${src}, ${size})",
+        "MemorySet(${ptr}, ${val}, ${size})": "memset(${ptr}, ${val}, ${size})",
+        "MemoryCompare(${a}, ${b}, ${size})": "memcmp(${a}, ${b}, ${size})"
+      },
+      "io": {
+        "ReadTextFile(${path})": "read(${path})",
+        "WriteTextFile(${path}, ${data})": "write(${path}, ${data})",
+        "AppendTextFile(${path}, ${data})": "append(${path}, ${data})",
+        "DeleteFile(${path})": "delete(${path})",
+        "FileExists(${path})": "exists(${path})",
+        "CreateDirectory(${path})": "mkdir(${path})",
+        "ListDirectory(${path})": "ls(${path})",
+        "GetInput()": "input()",
+        "GetInputLine()": "readline()"
+      },
+      "error": {
+        "TryCatch": "try",
+        "CatchError ${var}": "catch ${var}",
+        "FinallyBlock": "finally",
+        "ThrowError(${msg})": "throw ${msg}",
+        "AssertTrue(${cond}, ${msg})": "assert(${cond}, ${msg})",
+        "Panic(${msg})": "panic(${msg})"
+      }
+    },
+    
+    "4": {
+      "inherits": "3",
+      "ultra_keywords": {
+        "fn": "f",
+        "actor": "a",
+        "main": "m",
+        "loop": "l",
+        "return": "r",
+        "print": "p",
+        "let": "=",
+        "global": "g",
+        "if": "?",
+        "else": ":",
+        "while": "w",
+        "for": "@",
+        "switch": "s",
+        "case": "c",
+        "default": "d",
+        "break": "b",
+        "continue": "c",
+        "yield": "y",
+        "spawn": "s",
+        "receive": "v",
+        "reply": "r",
+        "throw": "t",
+        "catch": "c",
+        "try": "t",
+        "panic": "!"
+      },
+      "ultra_types": {
+        "i64": "i",
+        "i32": "i4",
+        "i16": "i2",
+        "i8": "i1",
+        "u64": "u",
+        "u32": "u4",
+        "u16": "u2",
+        "u8": "u1",
+        "f64": "f",
+        "f32": "f4",
+        "str": "s",
+        "char": "c",
+        "bool": "b",
+        "void": "v",
+        "any": "*"
+      },
+      "ultra_syntax": {
+        "ternary": "${cond} ? ${true} : ${false}",
+        "lambda": "\\${params} -> ${body}",
+        "pipe": "${value} |> ${func}",
+        "compose": "${f} . ${g}",
+        "range": "${start}..${end}",
+        "spread": "...${expr}",
+        "destructure": "[${a}, ${b}] = ${expr}",
+        "pattern": "${expr} match { ${patterns} }",
+        "guard": "${pattern} if ${cond}"
+      }
+    }
+  },
+  
+  "precedence": {
+    "levels": [
+      ["**"],
+      ["*", "/", "%"],
+      ["+", "-"],
+      ["<<", ">>"],
+      ["<", ">", "<=", ">="],
+      ["==", "!="],
+      ["&"],
+      ["^"],
+      ["|"],
+      ["&&"],
+      ["||"],
+      ["?", ":"],
+      ["=", "+=", "-=", "*=", "/="]
+    ]
+  },
+  
+  "transform_rules": {
+    "preserve": {
+      "comments": true,
+      "strings": true,
+      "whitespace": true,
+      "identifiers": true
+    },
+    "context_sensitive": {
+      "len": "polymorphic",
+      "as": "typecast_only",
+      "->": "function_return_only",
+      "<-": "actor_send_only"
+    },
+    "parenthesize": {
+      "mixed_precedence": true,
+      "nested_operators": false,
+      "function_calls": false
+    }
+  },
+  
+  "editor_config": {
+    "default_level": 0,
+    "toggle_key": "F12",
+    "debug_snap_level": 0,
+    "team_max_level": 3,
+    "show_level_indicator": true,
+    "level_colors": {
+      "0": "#00FF00",
+      "1": "#88FF00",
+      "2": "#FFFF00",
+      "3": "#FF8800",
+      "4": "#FF0000"
+    }
+  },
+  
+  "compatibility": {
+    "min_ailang_version": "1.0.0",
+    "max_ailang_version": "2.0.0",
+    "extension_version": "1.0.0"
+  }
+}
