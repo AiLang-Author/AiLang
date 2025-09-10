@@ -4,7 +4,7 @@ Why make AiLang??? : A Verb-First,Easier to Reason About,  Programming Language 
 
 AiLang is the first verb-first, low-level programming language with the capability for high level library abstraction.
 ---
-Ailang is crafted with built-in libraries to implment abstractions, and a deep set of key words and functions, differentiating it from traditional compilers like GCC, LLVM & Clang, that depend on implicit constructs and compiliation time resolution of many core primitives.  AiLang features its own x86_64 compiler reducing legacy dependency and allowing for a clean tight language that compiles 100% to spec everytime. This eliminates workarounds, supports a modular backend portable to new processor instruction sets, and reduces boilerplate code with an import model that requires no headers. Rich primitive functions, built-in debugging, a comprehensive keyword set, and cache-aware memory pools (replacing malloc) and many more 1st principles inclusions in the language allow for optimizing performance and development efficiency. This compiler can build small working demonstration programs and more now as of 9-10-2025.
+Ailang is crafted with built-in libraries to implment abstractions, and a deep set of key words and functions, differentiating it from traditional compilers like GCC, LLVM & Clang, that depend on implicit constructs and compiliation time resolution of many core primitives.  AiLang features its own x86_64 compiler reducing legacy dependency and allowing for a clean tight language that compiles 100% to spec everytime. This eliminates workarounds, supports a modular backend portable to new processor instruction sets, and reduces boilerplate code with an import model that requires no headers. Rich primitive functions, built-in debugging, a comprehensive keyword set, and cache-aware memory pools (replacing malloc) and many more 1st principle inclusions in the language allow for optimizing performance and development efficiency. This compiler can build small working demonstration programs and more now as of 9-10-2025.
 
 
 
@@ -28,7 +28,7 @@ improving logic following, and preventing vast classes of bugs through intention
 
 🚀 What is AiLang exactly?
 ---
-AiLang is a new programming language where debugging is a primitive, cache placement is explicit, and every operation states its intent. It make these operations easy with rich deep primitives and keywords and built in functions.It compiles to small efficient executables, often 20-30X smaller than C using GCC , often smaller than 8kb for a calculator, with extremly low runtime overhead, offering compelling features, deep primitives and core functionality unseen in other languages that operate at such a low level, while also allowing for complex application development with tracable understandbale behavior. 
+AiLang is a new programming language where debugging is a primitive, cache placement is explicit, and every operation states its intent. It make these operations easy with rich deep primitives and keywords and built in functions.It compiles to small efficient executables, often 20-30X smaller than C using GCC , often smaller than 8kb for a calculator, with extremly low runtime overhead, offering compelling features, deep primitives and core functionality unseen in other languages that operate at such a low level, while also allowing for complex application development with tracable understandable behavior. 
 
 
 
