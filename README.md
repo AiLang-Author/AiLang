@@ -62,7 +62,7 @@ Direct hardware control — No syscall overhead
 Dual-mode compilation — User mode (safe) or kernel mode (privileged)
 Memory barriers — Lock-free synchronization primitives
 
-
+```
 🎯 Deep Built-in Operations (100+ Primitives)
 Core Operations
 Arithmetic: Add(), Subtract(), Multiply(), Divide(), Power(), Modulo(), SquareRoot()
@@ -87,6 +87,7 @@ Concurrency (Zero-Context-Switch)
         -case "shutdown": LoopExit()
     -}
 -}
+```
 
 Actor model — Message passing, no shared state
 Lock-free primitives — Memory barriers, not mutexes
@@ -171,6 +172,7 @@ bash# Clone repository
 git clone https://github.com/yourusername/AILANG.git
 cd AILANG
 
+```
 # Write your first program
 cat > hello.ailang << 'EOF'
 PrintMessage("Hello, AILANG!")
@@ -179,6 +181,7 @@ Debug("values", level=1) {
     PrintMessage("Debug mode active")
 }
 EOF
+```
 
 # Compile and run
 python3 main.py hello.ailang
@@ -195,7 +198,7 @@ Commercial licensing available for production
 See LICENSE for details
 
 
-Built for Comprehension,Performance and Quality control, not abstractions. Join the Project or try AILang today !
+Built for Comprehension,Performance and Quality control. Join the Project or try AILang today !
 ---
 
 
