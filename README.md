@@ -81,9 +81,5 @@ If you think in actions, flows, or symbols — AiLang is for you.
 
 ---
 
-## 📚 Core Docs
-- [Loop Concurrency Model](docs/concurrency.md)  
-- [Pool Memory Model](docs/pool-model.md)  
-- [Progressive Shorthand](docs/shorthand.md)  
-- [Debug System Spec](docs/debug.md)  
+
 
