@@ -1,7 +1,9 @@
 Why make AiLang??? : A Verb-First,Easier to Reason About,  Programming Language for Next-Generation Computing
 ---
-AiLang is the first verb-first, low-level programming language, crafted with built-in libraries, abstractions, and a direct-to-metal compiler. Unlike traditional compilers like GCC, LLVM, or Clang, which depend on implicit constructs, AiLang features its own x86_64 compiler. This eliminates workarounds, supports a modular backend portable to new processor instruction sets, and reduces boilerplate code with an import model that requires no headers. Rich primitive functions, built-in debugging, a comprehensive keyword set, and cache-aware memory pools (replacing malloc) optimize performance and development efficiency.
+AiLang is the first verb-first, low-level programming language with the capability for high level library abstraction.
 ---
+Crafted with built-in librarie to implment abstractions, and a direct-to-metal compiler. Differentiating it from traditional compilers like GCC, LLVM, or Clang, that depend on implicit constructs, AiLang features its own x86_64 compiler. This eliminates workarounds, supports a modular backend portable to new processor instruction sets, and reduces boilerplate code with an import model that requires no headers. Rich primitive functions, built-in debugging, a comprehensive keyword set, and cache-aware memory pools (replacing malloc) optimize performance and development efficiency. this compiler can build small working demonstration programs and more now as of 9-10-2025.
+
 
 The idea for AiLang emerged from frustration with redundant coding and poorly documented libraries,
 ---
