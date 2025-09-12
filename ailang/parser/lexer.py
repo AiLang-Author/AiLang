@@ -145,7 +145,8 @@ class TokenType(Enum):
     STRINGTOSTRING = auto()
     NUMBERTOSTRING = auto()
     STRINGTONUMBER = auto()
-
+    CHARTOSTRING = auto()  
+    
     # === FILE I/O OPERATIONS ===
     OPENFILE = auto()
     CLOSEFILE = auto()
@@ -650,6 +651,7 @@ class Lexer:
             'StringToString': TokenType.STRINGTOSTRING,
             'NumberToString': TokenType.NUMBERTOSTRING,
             'StringToNumber': TokenType.STRINGTONUMBER,
+            'CharToString': TokenType.CHARTOSTRING,
 
             # File I/O (preserved)
             'OpenFile': TokenType.OPENFILE,

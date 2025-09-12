@@ -706,7 +706,9 @@ class Parser:
         elif self.current_token and hasattr(self.current_token, "value") and self.current_token.value == "Debug":
             return self.parse_debug_block()
         elif self.current_token and hasattr(self.current_token, "value") and self.current_token.value == "DebugAssert":
-            return self.parse_debug_assert()           
+            return self.parse_debug_assert()
+        elif self.match(TokenType.DEBUGPERF):
+            return self.parse_debug_perf()    
         elif self.match(TokenType.RETURNVALUE):
             return self.parse_returnvalue()
         elif self.match(TokenType.IFCONDITION):
@@ -862,23 +864,25 @@ class Parser:
         )
 
     def parse_runtask(self) -> RunTask:
+        """Parse RunTask with function call syntax for consistency"""
         start_token = self.consume(TokenType.RUNTASK)
-        self.consume(TokenType.DOT)
-        task_name = self.parse_dotted_name()
-        arguments = []
-        if self.match(TokenType.LPAREN):
-            self.consume(TokenType.LPAREN)
-            while not self.match(TokenType.RPAREN):
-                param_name = self.consume(TokenType.IDENTIFIER).value
-                self.consume(TokenType.DASH)
-                param_value = self.parse_expression()
-                arguments.append((param_name, param_value))
-                if self.match(TokenType.COMMA):
-                    self.consume(TokenType.COMMA)
-                    self.skip_newlines()
-            self.consume(TokenType.RPAREN)
-        return RunTask(task_name=task_name, arguments=arguments,
-                       line=start_token.line, column=start_token.column)
+        self.consume(TokenType.LPAREN)  # Change from DOT to LPAREN
+        
+        # Get task name as string literal
+        if self.match(TokenType.STRING):
+            task_name = self.consume(TokenType.STRING).value
+        else:
+            self.error("RunTask requires a task name string")
+        
+        # No additional arguments for now - just close paren
+        self.consume(TokenType.RPAREN)
+        
+        return RunTask(
+            task_name=task_name, 
+            arguments=[],
+            line=start_token.line, 
+            column=start_token.column
+        )
 
     def parse_printmessage(self) -> PrintMessage:
         start_token = self.consume(TokenType.PRINTMESSAGE)
@@ -1299,19 +1303,20 @@ class Parser:
         if self.match(TokenType.LPAREN):
             return self.parse_parenthesized_expression()
         if self.match(TokenType.ADD, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.SUBTRACT,
-                    TokenType.POWER, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
-                    TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
-                    TokenType.AND, TokenType.OR, TokenType.NOT,
-                    # ADD BITWISE OPERATIONS (with correct names):
-                    TokenType.BITWISEAND, TokenType.BITWISEOR, TokenType.BITWISEXOR,
-                    TokenType.BITWISENOT, TokenType.LEFTSHIFT, TokenType.RIGHTSHIFT,
-                    # Continue with existing:
-                    TokenType.READINPUT, TokenType.READINPUTNUMBER, TokenType.GETUSERCHOICE,
-                    TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGCONCAT,
-                    TokenType.STRINGLENGTH, TokenType.STRINGTONUMBER, TokenType.NUMBERTOSTRING,
-                    TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
+                TokenType.POWER, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
+                TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
+                TokenType.AND, TokenType.OR, TokenType.NOT,
+                # ADD BITWISE OPERATIONS (with correct names):
+                TokenType.BITWISEAND, TokenType.BITWISEOR, TokenType.BITWISEXOR,
+                TokenType.BITWISENOT, TokenType.LEFTSHIFT, TokenType.RIGHTSHIFT,
+                # Continue with existing:
+                TokenType.READINPUT, TokenType.READINPUTNUMBER, TokenType.GETUSERCHOICE,
+                TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGCONCAT,TokenType.STRINGSUBSTRING,
+                TokenType.STRINGLENGTH, TokenType.STRINGTONUMBER, TokenType.NUMBERTOSTRING,
+                TokenType.STRINGTOUPPER, TokenType.STRINGTOLOWER, TokenType.CHARTOSTRING,  # ADD THESE
+                TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
             return self.parse_math_function()
-    # ... rest stays the same
+   
         # === NEW: Low-Level Function Parsing ===
         elif self.match(TokenType.DEREFERENCE, TokenType.ADDRESSOF, TokenType.SIZEOF,
                     TokenType.ALLOCATE, TokenType.DEALLOCATE, TokenType.MEMORYCOPY,
@@ -1904,4 +1909,40 @@ class Parser:
         return DebugAssert(condition=condition, message=message,
                           line=self.current_token.line if self.current_token else 0,
                           column=self.current_token.column if self.current_token else 0)
+        
+    def parse_debug_perf(self):
+        """Parse DebugPerf.Start/End/Mark operations"""
+        self.consume(TokenType.DEBUGPERF)  # Consume 'DebugPerf' token (not IDENTIFIER)
+        self.consume(TokenType.DOT)
+        
+        operation = self.consume(TokenType.IDENTIFIER).value  # Start, End, Mark, etc.
+        
+        # Parse the label in parentheses
+        label = None
+        if self.match(TokenType.LPAREN):
+            self.consume(TokenType.LPAREN)
+            if self.match(TokenType.STRING):
+                label = self.consume(TokenType.STRING).value
+            self.consume(TokenType.RPAREN)
+        
+        # Handle block syntax for Start (optional)
+        body = []
+        if operation == "Start" and self.match(TokenType.LBRACE):
+            self.consume(TokenType.LBRACE)
+            self.skip_newlines()
+            while not self.match(TokenType.RBRACE):
+                stmt = self.parse_statement()
+                if stmt:
+                    body.append(stmt)
+                self.skip_newlines()
+            self.consume(TokenType.RBRACE)
+        
+        # Create a FunctionCall node that debug_ops can handle
+        from ailang_parser.ailang_ast import FunctionCall
+        return FunctionCall(
+            function=f"DebugPerf_{operation}",
+            arguments=[label] if label else [],
+            line=self.current_token.line if self.current_token else 0,
+            column=self.current_token.column if self.current_token else 0
+        )
         
