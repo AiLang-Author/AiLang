@@ -28,6 +28,19 @@ class DebugOps:
         """Main entry point for debug operations"""
         node_type = type(node).__name__
         
+        # Handle FunctionCall nodes for DebugPerf
+        if node_type == 'FunctionCall':
+            if node.function.startswith('DebugPerf_'):
+                operation = node.function.replace('DebugPerf_', '')
+                label = node.arguments[0] if node.arguments else None
+                # Create a simple object with the needed attributes
+                class PerfNode:
+                    pass
+                perf_node = PerfNode()
+                perf_node.operation = operation
+                perf_node.label = label
+                return self.compile_debug_perf(perf_node)
+        
         handlers = {
             'DebugBlock': self.compile_debug_block,
             'DebugAssert': self.compile_debug_assert,
@@ -150,22 +163,127 @@ class DebugOps:
         self.emit_debug_marker(f"mem_{node.operation}", "memory")
         
     def compile_debug_perf(self, node):
-        """Compile performance debugging"""
+        """Compile performance measurement operations"""
         if not self.debug_enabled:
             return
             
         if 'perf' not in self.debug_flags and 'all' not in self.debug_flags:
             return
             
-        print(f"DEBUG: Performance operation: {node.operation}")
-        
         if node.operation == "Start":
-            # Read timestamp counter
+            # Read timestamp counter at start
             self.asm.emit_bytes(0x0F, 0x31)  # RDTSC
-            # Save timestamp (would need to store somewhere)
+            self.asm.emit_bytes(0x48, 0xC1, 0xE2, 0x20)  # SHL RDX, 32
+            self.asm.emit_bytes(0x48, 0x09, 0xD0)  # OR RAX, RDX
+            
+            # Store start time in variable
+            var_name = f"__perf_start_{node.label}"
+            if var_name not in self.compiler.variables:
+                # Find the next available stack offset
+                if self.compiler.variables:
+                    max_offset = max(self.compiler.variables.values())
+                    new_offset = max_offset + 8
+                else:
+                    new_offset = 8
+                self.compiler.variables[var_name] = new_offset
+            
+            offset = self.compiler.variables[var_name]
+            self.asm.emit_bytes(0x48, 0x89, 0x85)
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+            
+            print(f"DEBUG: Started performance timer for '{node.label}' at offset {offset}")
+            
         elif node.operation == "End":
-            # Read timestamp again and compute delta
+            # Read timestamp counter at end
             self.asm.emit_bytes(0x0F, 0x31)  # RDTSC
+            self.asm.emit_bytes(0x48, 0xC1, 0xE2, 0x20)  # SHL RDX, 32
+            self.asm.emit_bytes(0x48, 0x09, 0xD0)  # OR RAX, RDX
+            
+            # Save end time in RBX
+            self.asm.emit_mov_rbx_rax()
+            
+            # Load start time
+            var_name = f"__perf_start_{node.label}"
+            if var_name not in self.compiler.variables:
+                # No start time - print error message
+                print(f"WARNING: No start time for perf label '{node.label}'")
+                dash_str = f"[PERF] {node.label}: - cycles\n"
+                dash_offset = self.asm.add_string(dash_str)
+                self.asm.emit_mov_rax_imm64(1)  # sys_write
+                self.asm.emit_mov_rdi_imm64(1)  # stdout
+                self.asm.emit_load_data_address('rsi', dash_offset)
+                self.asm.emit_mov_rdx_imm64(len(dash_str))
+                self.asm.emit_syscall()
+                return
+                
+            offset = self.compiler.variables[var_name]
+            
+            # Load start timestamp into RAX
+            self.asm.emit_bytes(0x48, 0x8B, 0x85)  # MOV RAX, [RBP-offset]
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
+            
+            # Calculate delta: RBX = end - start
+            self.asm.emit_bytes(0x48, 0x29, 0xC3)  # SUB RBX, RAX
+            
+            # Print label
+            label_str = f"[PERF] {node.label}: "
+            label_offset = self.asm.add_string(label_str)
+            self.asm.emit_mov_rax_imm64(1)  # sys_write
+            self.asm.emit_mov_rdi_imm64(1)  # stdout
+            self.asm.emit_load_data_address('rsi', label_offset)
+            self.asm.emit_mov_rdx_imm64(len(label_str))
+            self.asm.emit_syscall()
+            
+            # Print cycle count (in RBX)
+            self.asm.emit_mov_rax_rbx()  # Move cycles to RAX
+            self.asm.emit_print_number()
+            
+            # Print " cycles"
+            cycles_str = " cycles"
+            cycles_offset = self.asm.add_string(cycles_str)
+            self.asm.emit_mov_rax_imm64(1)  # sys_write
+            self.asm.emit_mov_rdi_imm64(1)  # stdout
+            self.asm.emit_load_data_address('rsi', cycles_offset)
+            self.asm.emit_mov_rdx_imm64(len(cycles_str))
+            self.asm.emit_syscall()
+            
+            # Print newline separately
+            newline_offset = self.asm.add_string("\n")
+            self.asm.emit_mov_rax_imm64(1)  # sys_write
+            self.asm.emit_mov_rdi_imm64(1)  # stdout
+            self.asm.emit_load_data_address('rsi', newline_offset)
+            self.asm.emit_mov_rdx_imm64(1)
+            self.asm.emit_syscall()
+            
+            print(f"DEBUG: Ended performance timer for '{node.label}'")
+        
+        elif node.operation == "Mark":
+            # Simple timestamp marker
+            self.asm.emit_bytes(0x0F, 0x31)  # RDTSC
+            print(f"DEBUG: Performance mark at '{node.label}'")
+
+    def emit_rdtsc(self):
+        """Helper method to emit RDTSC instruction"""
+        # RDTSC - Read Time Stamp Counter
+        self.emit_bytes(0x0F, 0x31)
+        # Result is in EDX:EAX (high 32 bits in EDX, low 32 bits in EAX)
+        print("DEBUG: Emitted RDTSC")
+
+    def emit_rdpmc(self, counter):
+        """Helper method to emit RDPMC instruction"""
+        # RDPMC - Read Performance Monitoring Counter
+        # ECX should contain the counter number
+        self.emit_mov_rcx_imm64(counter)
+        self.emit_bytes(0x0F, 0x33)
+        # Result is in EDX:EAX
+        print(f"DEBUG: Emitted RDPMC for counter {counter}")
+
+    def emit_cpuid(self):
+        """Helper method to emit CPUID instruction (for serialization)"""
+        # CPUID - CPU Identification
+        # Used as a serialization barrier before/after RDTSC for accuracy
+        self.emit_bytes(0x0F, 0xA2)
+        print("DEBUG: Emitted CPUID")
             
     def compile_debug_inspect(self, node):
         """Compile state inspection"""
