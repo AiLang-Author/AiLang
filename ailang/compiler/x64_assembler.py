@@ -165,62 +165,194 @@ class X64Assembler:
         """Emit LEA RAX, [RBX + offset]"""
         self.emit_bytes(0x48, 0x8D, 0x43, offset)
         print(f"DEBUG: Emitted LEA RAX, [RBX + {offset}]")
+     
+    def emit_add_rsp_imm32(self, value):
+        """ADD RSP, imm32 - Add 32-bit immediate to RSP"""
+        if value <= 127:
+            # Use 8-bit form if possible
+            self.emit_add_rsp_imm8(value)
+        else:
+            # ADD RSP, imm32: REX.W + 81 /0 id
+            self.emit_bytes(0x48, 0x81, 0xC4)
+            self.emit_bytes(*struct.pack('<I', value))
+            print(f"DEBUG: ADD RSP, {value}") 
+    
+    def emit_inc_rdi(self):
+        """INC RDI - Increment RDI by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC7)
+        print("DEBUG: INC RDI")
+        
+    def emit_mov_rsi_mem_offset(self, base_reg: str, offset: int):
+        """MOV RSI, [base_reg + offset] - Load with offset"""
+        if base_reg != 'RSP':
+            raise ValueError(f"emit_mov_rsi_mem_offset only supports RSP for now")
+        
+        # MOV RSI, [RSP + offset]: 48 8B 74 24 offset
+        self.emit_bytes(0x48, 0x8B, 0x74, 0x24, offset)
+        print(f"DEBUG: MOV RSI, [RSP+{offset}]")         
+        
+    def emit_mov_rdi_mem_offset(self, base_reg: str, offset: int):
+        """MOV RDI, [base_reg + offset] - Load with offset"""
+        if base_reg != 'RSP':
+            raise ValueError(f"emit_mov_rdi_mem_offset only supports RSP for now")
+        
+        # MOV RDI, [RSP + offset]: 48 8B 7C 24 offset
+        self.emit_bytes(0x48, 0x8B, 0x7C, 0x24, offset)
+        print(f"DEBUG: MOV RDI, [RSP+{offset}]")        
+        
+    def emit_mov_byte_mem_offset_imm(self, base_reg: str, index_reg, value: int):
+        """MOV BYTE [base_reg + index_reg], imm8 - Store byte immediate to memory"""
+        if base_reg != 'RAX':
+            raise ValueError(f"emit_mov_byte_mem_offset_imm only supports RAX for now")
+        
+        # MOV BYTE [RAX + RBX], 0: C6 04 18 00
+        self.emit_bytes(0xC6, 0x04, 0x18, value)
+        print(f"DEBUG: MOV BYTE [RAX+RBX], {value}")        
+        
+    def emit_mov_rdi_rbx(self):
+        """MOV RDI, RBX"""
+        self.emit_bytes(0x48, 0x89, 0xDF)
+        print("DEBUG: MOV RDI, RBX")
+        
+    def emit_xor_esi_esi(self):
+        """XOR ESI, ESI - zeros RSI (upper 32 bits cleared automatically)"""
+        self.emit_bytes(0x31, 0xF6)
+
+    def emit_xor_edx_edx(self):
+        """XOR EDX, EDX - zeros RDX (upper 32 bits cleared automatically)"""
+        self.emit_bytes(0x31, 0xD2)
+
+    def emit_xor_eax_eax(self):
+        """XOR EAX, EAX - zeros RAX (upper 32 bits cleared automatically)"""
+        self.emit_bytes(0x31, 0xC0)        
+    
+    def emit_test_rcx_rcx(self):
+        """TEST RCX, RCX"""
+        self.emit_bytes(0x48, 0x85, 0xC9)
         
     def emit_mov_rax_rsi(self):
         """Emit MOV RAX, RSI"""
         self.emit_bytes(0x48, 0x89, 0xF0)
         print("DEBUG: Emitted MOV RAX, RSI")
+        
+    def emit_mov_rdx_rbx(self):
+        """Move RBX to RDX"""
+        self.emit_bytes(0x48, 0x89, 0xDA)  # MOV RDX, RBX
+        print("DEBUG: Emitted MOV RDX, RBX")
+        
+    def emit_mov_rbx_rsi(self):
+        """Move RSI to RBX"""
+        self.emit_bytes(0x48, 0x89, 0xF3)  # MOV RBX, RSI
+        print("DEBUG: Emitted MOV RBX, RSI")
     
+    def emit_test_rax_imm8(self, value: int):
+        """Test the least significant byte of RAX with an 8-bit immediate"""
+        if not 0 <= value <= 0xFF:
+            raise ValueError(f"Immediate value {value} out of 8-bit range (0-255)")
+        self.emit_bytes(0xA8)  # TEST AL, imm8
+        self.emit_bytes(*struct.pack('<B', value))  # 8-bit immediate
+        print(f"DEBUG: Emitted TEST AL, {value:#x}")
+    
+    def emit_cmp_rax_imm64(self, value: int):
+        """Compare RAX with a 64-bit immediate using a register intermediate"""
+        # Convert negative value to unsigned 64-bit
+        value = value & 0xFFFFFFFFFFFFFFFF
+        self.emit_mov_rbx_imm64(value)  # Move immediate to RBX
+        self.emit_bytes(0x48, 0x39, 0xD8)  # CMP RAX, RBX
+        print(f"DEBUG: Emitted CMP RAX, {value:#x}")    
     
     def emit_mov_rbx_imm64(self, value: int):
         """MOV RBX, imm64"""
         self.emit_bytes(0x48, 0xBB)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV RBX, {value}")
-       
-    
+
     def emit_mov_rdi_imm64(self, value: int):
         """MOV RDI, imm64"""
         self.emit_bytes(0x48, 0xBF)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV RDI, {value}")
-    
+
     def emit_mov_rsi_imm64(self, value: int):
         """MOV RSI, imm64"""
         self.emit_bytes(0x48, 0xBE)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV RSI, {value}")
-    
+
     def emit_mov_rdx_imm64(self, value: int):
         """MOV RDX, imm64"""
         self.emit_bytes(0x48, 0xBA)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV RDX, {value}")
-    
+
     def emit_mov_rcx_imm64(self, value: int):
         """MOV RCX, imm64"""
         self.emit_bytes(0x48, 0xB9)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV RCX, {value}")
-    
+
     def emit_mov_r8_imm64(self, value: int):
         """MOV R8, imm64"""
         self.emit_bytes(0x49, 0xB8)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV R8, {value}")
 
     def emit_mov_r9_imm64(self, value: int):
         """MOV R9, imm64"""
         self.emit_bytes(0x49, 0xB9)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV R9, {value}")
-    
+
     def emit_mov_r10_imm64(self, value: int):
         """MOV R10, imm64"""
         self.emit_bytes(0x49, 0xBA)
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
         self.emit_bytes(*struct.pack('<Q', value))
         print(f"DEBUG: MOV R10, {value}")
+        
+        
+    def emit_xor_edi_edi(self):
+        """XOR EDI, EDI - zeros RDI"""
+        self.emit_bytes(0x31, 0xFF)
+        
+    def emit_mov_rcx_rax(self):
+        """MOV RCX, RAX"""
+        self.emit_bytes(0x48, 0x89, 0xC1)
+        print("DEBUG: MOV RCX, RAX")
+
+    def emit_mov_r10_imm64(self, value):
+        """MOV R10, imm64"""
+        self.emit_bytes(0x49, 0xBA)
+        self.emit_bytes(*struct.pack('<Q', value))
+
+    def emit_mov_r8_imm64(self, value):
+        """MOV R8, imm64"""
+        self.emit_bytes(0x49, 0xB8)
+        # Handle negative values by converting to unsigned representation
+        if value < 0:
+            value = value & 0xFFFFFFFFFFFFFFFF
+        self.emit_bytes(*struct.pack('<Q', value))
+
+    def emit_xor_r9_r9(self):
+        """XOR R9, R9"""
+        self.emit_bytes(0x4D, 0x31, 0xC9)
     
+        
     # === REGISTER-TO-REGISTER MOVES (preserved) ===
     
     def emit_mov_rax_rbx(self):
@@ -245,6 +377,11 @@ class X64Assembler:
         """MOV RAX, RDI"""
         self.emit_bytes(0x48, 0x89, 0xF8)
         print("DEBUG: MOV RAX, RDI")
+        
+    def emit_mov_rdi_rsp(self):
+        """MOV RDI, RSP"""
+        self.emit_bytes(0x48, 0x89, 0xE7)
+        print("DEBUG: MOV RDI, RSP")
     
     def emit_mov_rsi_rsp(self):
         """MOV RSI, RSP"""
@@ -285,8 +422,50 @@ class X64Assembler:
         """MOV RAX, RCX"""
         self.emit_bytes(0x48, 0x89, 0xC8)
         print("DEBUG: MOV RAX, RCX")
-     
+    
+    def emit_test_rdi_rdi(self):
+        """TEST RDI, RDI - Set flags based on RDI"""
+        self.emit_bytes(0x48, 0x85, 0xFF)
+        print("DEBUG: TEST RDI, RDI")
         
+    def emit_test_rsi_rsi(self):
+        """TEST RSI, RSI - Set flags based on RSI"""
+        self.emit_bytes(0x48, 0x85, 0xF6)
+        print("DEBUG: TEST RSI, RSI")
+        
+    def emit_mov_rsi_rdi(self):
+        """MOV RSI, RDI"""
+        self.emit_bytes(0x48, 0x89, 0xFE)
+        print("DEBUG: MOV RSI, RDI")
+        
+    def emit_test_rax_rax(self):
+        """TEST RAX, RAX - Set flags based on RAX"""
+        self.emit_bytes(0x48, 0x85, 0xC0)
+        print("DEBUG: TEST RAX, RAX")    
+
+    def emit_test_r10_r10(self):
+        """TEST R10, R10 - Set flags based on R10 (length/size check)"""
+        # Extended regs need REX.R and REX.B. REX = 0x4D (W=1,R=1,B=1)
+        # ModRM: 11 | reg=R10(2) | r/m=R10(2) -> 0xD2
+        self.emit_bytes(0x4D, 0x85, 0xD2)
+        print("DEBUG: TEST R10, R10")
+
+    def emit_mov_rdx_r10(self):
+        """MOV RDX, R10"""
+        # MOV r/m64, r64: 0x89 /r
+        # dst=RDX (r/m=2), src=R10 (reg=2 with REX.R=1) -> REX=0x4C, ModRM=0xD2
+        self.emit_bytes(0x4C, 0x89, 0xD2)
+        print("DEBUG: MOV RDX, R10")
+
+     
+    def emit_write_guarded_rdi_rsi_size_in_rdx(self):
+        """Guarded write(fd=RDI, buf=RSI, size=RDX). Skip if buf==NULL or size==0."""
+        skip = self.create_label(); cont = self.create_label()
+        self.emit_bytes(0x48, 0x85, 0xF6); self.emit_jump_to_label(skip, "JZ")  # TEST RSI,RSI
+        self.emit_bytes(0x48, 0x85, 0xD2); self.emit_jump_to_label(skip, "JZ")  # TEST RDX,RDX
+        self.emit_mov_rax_imm64(1); self.emit_syscall(); self.emit_jump_to_label(cont, "JMP")
+        self.mark_label(skip); self.emit_mov_rax_imm64(0); self.mark_label(cont)
+  
         
     
     # === NEW: ENHANCED MEMORY ACCESS OPERATIONS ===
@@ -414,10 +593,16 @@ class X64Assembler:
         self.emit_bytes(0x48, 0x83, 0xC4, value & 0xFF)
         print(f"DEBUG: ADD RSP, {value}")
 
-    def emit_test_rax_rax(self):
-        """TEST RAX, RAX - Set flags based on RAX (for NULL checks)"""
-        self.emit_bytes(0x48, 0x85, 0xC0)
-        print("DEBUG: TEST RAX, RAX")
+        
+    def emit_xor_rdx_rdx(self):
+        """Clear RDX by XORing it with itself"""
+        self.emit_bytes(0x48, 0x31, 0xD2)  # XOR RDX, RDX
+        print("DEBUG: Emitted XOR RDX, RDX")
+
+    def emit_xor_rbx_rbx(self):
+        """Clear RBX by XORing it with itself"""
+        self.emit_bytes(0x48, 0x31, 0xDB)  # XOR RBX, RBX
+        print("DEBUG: Emitted XOR RBX, RBX")
     
     
     
@@ -437,20 +622,83 @@ class X64Assembler:
             raise ValueError(f"Invalid register: {base_reg}")
         
         reg_code = reg_codes[base_reg]
-        rex_prefix = 0x48
+        rex_prefix = 0x48  # REX.W for 64-bit
         
-        if base_reg.startswith('R') and len(base_reg) > 2:
-            rex_prefix |= 0x01
+        # Handle R8-R15 registers
+        if base_reg.startswith('R') and len(base_reg) > 1:
+            rex_prefix |= 0x01  # REX.B bit for extended base register
         
-        if offset == 0:
+        # RBP always needs displacement
+        if base_reg == 'RBP':
+            if -128 <= offset <= 127:
+                # 8-bit displacement
+                self.emit_bytes(rex_prefix, 0x8D, 0x45)
+                if offset < 0:
+                    self.emit_bytes((offset + 256) & 0xFF)  # Two's complement
+                else:
+                    self.emit_bytes(offset & 0xFF)
+            else:
+                # 32-bit displacement
+                self.emit_bytes(rex_prefix, 0x8D, 0x85)
+                self.emit_bytes(*struct.pack('<i', offset))
+        elif base_reg == 'R13':  # R13 also needs special handling like RBP
+            if -128 <= offset <= 127:
+                self.emit_bytes(rex_prefix, 0x8D, 0x45)
+                if offset < 0:
+                    self.emit_bytes((offset + 256) & 0xFF)
+                else:
+                    self.emit_bytes(offset & 0xFF)
+            else:
+                self.emit_bytes(rex_prefix, 0x8D, 0x85)
+                self.emit_bytes(*struct.pack('<i', offset))
+        elif offset == 0 and base_reg not in ['RSP', 'R12']:
+            # No displacement (except RSP/R12 need SIB byte)
             self.emit_bytes(rex_prefix, 0x8D, 0x00 | reg_code)
         elif -128 <= offset <= 127:
-            self.emit_bytes(rex_prefix, 0x8D, 0x40 | reg_code, offset & 0xFF)
+            # 8-bit displacement
+            self.emit_bytes(rex_prefix, 0x8D, 0x40 | reg_code)
+            if offset < 0:
+                self.emit_bytes((offset + 256) & 0xFF)
+            else:
+                self.emit_bytes(offset & 0xFF)
         else:
+            # 32-bit displacement
             self.emit_bytes(rex_prefix, 0x8D, 0x80 | reg_code)
             self.emit_bytes(*struct.pack('<i', offset))
         
         print(f"DEBUG: LEA RAX, [{base_reg} + {offset}]")
+    
+    def emit_mov_rbp_rsp(self):
+        """MOV RBP, RSP - Set up stack frame"""
+        self.emit_bytes(0x48, 0x89, 0xE5)
+        print("DEBUG: MOV RBP, RSP")
+
+    def emit_mov_rsp_rbp(self):
+        """MOV RSP, RBP - Restore stack pointer"""
+        self.emit_bytes(0x48, 0x89, 0xEC)
+        print("DEBUG: MOV RSP, RBP") 
+        
+    def emit_mov_rdi_rsi(self):
+        """MOV RDI, RSI - Copy RSI to RDI"""
+        self.emit_bytes(0x48, 0x89, 0xF7)
+        
+    def emit_add_rdi_rax(self):
+        """ADD RDI, RAX - Add RAX to RDI"""
+        self.emit_bytes(0x48, 0x01, 0xC7)
+    
+    def emit_mov_byte_ptr_rdi_zero(self):
+        """MOV BYTE PTR [RDI], 0 - Store zero byte at [RDI]"""
+        self.emit_bytes(0xC6, 0x07, 0x00)
+        
+    def emit_dec_rdi(self):
+        """DEC RDI - Decrement RDI"""
+        self.emit_bytes(0x48, 0xFF, 0xCF)
+        
+    def emit_mov_rsi_rbx(self):
+        """MOV RSI, RBX"""
+        self.emit_bytes(0x48, 0x89, 0xDE)
+        print("DEBUG: MOV RSI, RBX")
+    
     
     def emit_dereference_byte(self):
         """Dereference RAX as byte pointer - MOVZX RAX, BYTE PTR [RAX]"""
@@ -765,6 +1013,27 @@ class X64Assembler:
         """CMP RAX, imm8"""
         self.emit_bytes(0x48, 0x83, 0xF8, value & 0xFF)
         print(f"DEBUG: CMP RAX, {value}")
+    
+    def emit_cmp_rax_imm32(self, value: int):
+        """CMP RAX, imm32 - Compare RAX with 32-bit immediate"""
+        self.emit_bytes(0x48, 0x3D)  # CMP RAX, imm32
+        self.emit_bytes(*struct.pack('<i', value))  # 32-bit signed immediate
+        print(f"DEBUG: CMP RAX, {value}")
+
+    def emit_mov_r10_rax(self):
+        """MOV R10, RAX"""
+        self.emit_bytes(0x49, 0x89, 0xC2)
+        print("DEBUG: MOV R10, RAX")
+
+    def emit_mov_rax_r10(self):
+        """MOV RAX, R10"""
+        self.emit_bytes(0x4C, 0x89, 0xD0)
+        print("DEBUG: MOV RAX, R10")
+
+    def emit_push_r10(self):
+        """PUSH R10 - Already exists but verify"""
+        self.emit_bytes(0x41, 0x52)
+        print("DEBUG: PUSH R10")
 
     def emit_mov_rsp_rax(self):
         """MOV RSP, RAX"""
@@ -795,7 +1064,67 @@ class X64Assembler:
         """IMUL RAX, RBX"""
         self.emit_bytes(0x48, 0x0F, 0xAF, 0xC3)
     
-    # === STACK OPERATIONS (preserved) ===
+    # === STACK OPERATIONS ) ===
+    
+    def emit_mov_r8_rdi(self):
+        """MOV R8, RDI"""
+        self.emit_bytes(0x49, 0x89, 0xF8)
+        print("DEBUG: MOV R8, RDI")
+
+    def emit_mov_r9_rsi(self):
+        """MOV R9, RSI"""
+        self.emit_bytes(0x49, 0x89, 0xF1)
+        print("DEBUG: MOV R9, RSI")
+
+    def emit_mov_r8_rax(self):
+        """MOV R8, RAX"""
+        self.emit_bytes(0x49, 0x89, 0xC0)
+        print("DEBUG: MOV R8, RAX")
+
+    def emit_mov_r9_rax(self):
+        """MOV R9, RAX"""
+        self.emit_bytes(0x49, 0x89, 0xC1)
+        print("DEBUG: MOV R9, RAX")
+
+    def emit_mov_rax_r8(self):
+        """MOV RAX, R8"""
+        self.emit_bytes(0x4C, 0x89, 0xC0)
+        print("DEBUG: MOV RAX, R8")
+
+    def emit_mov_rax_r9(self):
+        """MOV RAX, R9"""
+        self.emit_bytes(0x4C, 0x89, 0xC8)
+        print("DEBUG: MOV RAX, R9")
+
+    def emit_mov_rdi_r8(self):
+        """MOV RDI, R8"""
+        self.emit_bytes(0x4C, 0x89, 0xC7)
+        print("DEBUG: MOV RDI, R8")
+
+    def emit_mov_rsi_r9(self):
+        """MOV RSI, R9"""
+        self.emit_bytes(0x4C, 0x89, 0xCE)
+        print("DEBUG: MOV RSI, R9")    
+    
+    def emit_mov_r10_rax(self):
+        """MOV R10, RAX"""
+        self.emit_bytes(0x49, 0x89, 0xC2)
+        print("DEBUG: MOV R10, RAX")
+
+    def emit_mov_rax_r10(self):
+        """MOV RAX, R10"""
+        self.emit_bytes(0x4C, 0x89, 0xD0)
+        print("DEBUG: MOV RAX, R10")
+
+    def emit_push_r10(self):
+        """PUSH R10"""
+        self.emit_bytes(0x41, 0x52)
+        print("DEBUG: PUSH R10")
+
+    def emit_pop_r10(self):
+        """POP R10"""
+        self.emit_bytes(0x41, 0x5A)
+        print("DEBUG: POP R10")
     
     def emit_push_rax(self):
         """PUSH RAX"""
@@ -902,6 +1231,22 @@ class X64Assembler:
     def emit_pop_r9(self):
         """POP R9"""
         self.emit_bytes(0x41, 0x59)
+        
+    def emit_push_r10(self):
+        """PUSH R10"""
+        self.emit_bytes(0x41, 0x52)
+
+    def emit_pop_r10(self):
+        """POP R10"""
+        self.emit_bytes(0x41, 0x5A)
+
+    def emit_push_r11(self):
+        """PUSH R11"""
+        self.emit_bytes(0x41, 0x53)
+        
+    def emit_pop_r11(self):
+        """POP R11"""
+        self.emit_bytes(0x41, 0x5B)
     
     # === STRING OPERATIONS (preserved from original) ===
     
@@ -949,35 +1294,65 @@ class X64Assembler:
 
 
     def emit_print_string(self, s: str):
-        """Print string with full relocation support"""
+        """Emit code to print a string exactly as provided"""
         try:
-            # Add string to data section
-            string_offset = self.add_string(s)
+            # Store the string in data section
+            offset = self.add_string(s)
             byte_length = len(s.encode('utf-8'))
             
-            # sys_write(1, string_addr, length)
+            print(f"DEBUG: Printing string '{s[:30]}...', offset {offset}, length {byte_length}")
+            
+            # Print the string
             self.emit_mov_rax_imm64(1)  # sys_write
             self.emit_mov_rdi_imm64(1)  # stdout
-            
-            # Load string address with relocation
-            self.emit_load_data_address('rsi', string_offset)
-            
+            self.emit_load_data_address('rsi', offset)
             self.emit_mov_rdx_imm64(byte_length)
             self.emit_syscall()
             
-            # Print newline
-            newline_offset = self.add_string("\n")
-            self.emit_mov_rax_imm64(1)
-            self.emit_mov_rdi_imm64(1)
-            self.emit_load_data_address('rsi', newline_offset)
-            self.emit_mov_rdx_imm64(1)
-            self.emit_syscall()
+            # Add newline if the string doesn't end with one
+            if not s.endswith('\n'):
+                newline_offset = self.add_string("\n")
+                self.emit_mov_rax_imm64(1)  # sys_write
+                self.emit_mov_rdi_imm64(1)  # stdout
+                self.emit_load_data_address('rsi', newline_offset)
+                self.emit_mov_rdx_imm64(1)
+                self.emit_syscall()
+                print(f"Added newline after string")
             
-            print(f"Emitted print for '{s[:30]}...' with relocations")
-        
         except Exception as e:
             print(f"ERROR in emit_print_string: {e}")
             raise
+        
+    def emit_print_system_string(self, s: str):
+        """Emit code to print a system/debug string - bypasses any pool mechanism"""
+        try:
+            # Direct string storage and printing for system messages
+            offset = self.add_string(s)
+            byte_length = len(s.encode('utf-8'))
+            
+            # Save all registers to avoid interference
+            self.emit_push_rax()
+            self.emit_push_rdi()
+            self.emit_push_rsi()
+            self.emit_push_rdx()
+            
+            # Print the string
+            self.emit_mov_rax_imm64(1)  # sys_write
+            self.emit_mov_rdi_imm64(1)  # stdout
+            self.emit_load_data_address('rsi', offset)
+            self.emit_mov_rdx_imm64(byte_length)
+            self.emit_syscall()
+            
+            # Restore registers
+            self.emit_pop_rdx()
+            self.emit_pop_rsi()
+            self.emit_pop_rdi()
+            self.emit_pop_rax()
+            
+        except Exception as e:
+            print(f"ERROR in emit_print_system_string: {e}")
+            raise    
+        
         
     def emit_print_string_raw(self, s: str):
         """Emit code to print a string without adding to data section"""
@@ -997,27 +1372,57 @@ class X64Assembler:
             raise
     
     def emit_print_number(self):
-        """Print number - with correct immediate jumps"""
-        print("DEBUG: Number printing with corrected jumps")
+        """Print number in RAX with proper sign handling"""
+        print("DEBUG: Number printing with sign checking")
         
-        # Save registers
-        self.emit_bytes(0x50)  # PUSH RAX
-        self.emit_bytes(0x53)  # PUSH RBX  
-        self.emit_bytes(0x52)  # PUSH RDX
-        self.emit_bytes(0x56)  # PUSH RSI
-        self.emit_bytes(0x57)  # PUSH RDI
+        # Save all registers we'll use
+        self.emit_push_rax()
+        self.emit_push_rbx()
+        self.emit_push_rdx()
+        self.emit_push_rsi()
+        self.emit_push_rdi()
         
-        # Allocate buffer
+        # Check if negative
+        self.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        positive_label = self.create_label()
+        self.emit_jump_to_label(positive_label, "JNS")  # Jump if not signed (positive)
+        
+        # Negative number - print minus sign first
+        self.emit_push_rax()  # Save the negative value
+        
+        # Print '-' character
+        self.emit_mov_rax_imm64(1)  # sys_write
+        self.emit_mov_rdi_imm64(1)  # stdout  
+        minus_offset = self.add_string("-")
+        self.emit_load_data_address('rsi', minus_offset)
+        self.emit_mov_rdx_imm64(1)  # length = 1
+        self.emit_syscall()
+        
+        # Negate the value to make it positive
+        self.emit_pop_rax()  # Get value back
+        self.emit_bytes(0x48, 0xF7, 0xD8)  # NEG RAX (negate)
+        
+        self.mark_label(positive_label)
+        
+        # Now RAX has positive value - continue with digit conversion
+        # Allocate buffer on stack
         self.emit_bytes(0x48, 0x83, 0xEC, 0x20)  # SUB RSP, 32
         
         # Point RSI to end of buffer
         self.emit_bytes(0x48, 0x8D, 0x74, 0x24, 0x1F)  # LEA RSI, [RSP+31]
-        self.emit_bytes(0xC6, 0x06, 0x00)  # MOV BYTE [RSI], 0
+        self.emit_bytes(0xC6, 0x06, 0x00)  # MOV BYTE [RSI], 0 (null terminator)
         
-        # Restore RAX from stack  
+        # Restore RAX from stack (saved at beginning)
         self.emit_bytes(0x48, 0x8B, 0x44, 0x24, 0x40)  # MOV RAX, [RSP+64]
         
-        # Set divisor
+        # Check if already positive (from above) or needs another check
+        self.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        already_positive = self.create_label()
+        self.emit_jump_to_label(already_positive, "JNS")
+        self.emit_bytes(0x48, 0xF7, 0xD8)  # NEG RAX if still negative
+        self.mark_label(already_positive)
+        
+        # Set divisor to 10
         self.emit_bytes(0x48, 0xBB, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RBX, 10
         
         # Check if zero
@@ -1027,11 +1432,11 @@ class X64Assembler:
         # Zero case
         self.emit_bytes(0x48, 0xFF, 0xCE)  # DEC RSI
         self.emit_bytes(0xC6, 0x06, 0x30)  # MOV BYTE [RSI], '0'
-        self.emit_bytes(0xEB, 0x14)  # JMP +20 (to print)
+        self.emit_bytes(0xEB, 0x14)  # JMP to print section
         
-        # Conversion loop
+        # Conversion loop (for non-zero)
         self.emit_bytes(0x48, 0x31, 0xD2)  # XOR RDX, RDX
-        self.emit_bytes(0x48, 0xF7, 0xF3)  # DIV RBX
+        self.emit_bytes(0x48, 0xF7, 0xF3)  # DIV RBX (RAX/10, remainder in RDX)
         self.emit_bytes(0x48, 0x83, 0xC2, 0x30)  # ADD RDX, '0'
         self.emit_bytes(0x48, 0xFF, 0xCE)  # DEC RSI
         self.emit_bytes(0x88, 0x16)  # MOV [RSI], DL
@@ -1040,20 +1445,22 @@ class X64Assembler:
         
         # Print section - calculate length
         self.emit_bytes(0x48, 0x8D, 0x54, 0x24, 0x1F)  # LEA RDX, [RSP+31]
-        self.emit_bytes(0x48, 0x29, 0xF2)  # SUB RDX, RSI
+        self.emit_bytes(0x48, 0x29, 0xF2)  # SUB RDX, RSI (length)
         
         # Write syscall
         self.emit_bytes(0x48, 0xB8, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RAX, 1
         self.emit_bytes(0x48, 0xBF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)  # MOV RDI, 1
         self.emit_bytes(0x0F, 0x05)  # SYSCALL
         
-        # Clean up
+        # Clean up stack
         self.emit_bytes(0x48, 0x83, 0xC4, 0x20)  # ADD RSP, 32
-        self.emit_bytes(0x5F)  # POP RDI
-        self.emit_bytes(0x5E)  # POP RSI
-        self.emit_bytes(0x5A)  # POP RDX
-        self.emit_bytes(0x5B)  # POP RBX
-        self.emit_bytes(0x58)  # POP RAX
+        
+        # Restore registers
+        self.emit_pop_rdi()
+        self.emit_pop_rsi()
+        self.emit_pop_rdx()
+        self.emit_pop_rbx()
+        self.emit_pop_rax()
 
     def create_label(self):
         """Generate unique label name"""
@@ -1076,12 +1483,8 @@ class X64Assembler:
         self.labels[label_name] = position
         print(f"DEBUG: Marked label {label_name} at position {position}")
     
-    # In x64_assembler.py
-    def emit_jump_to_label(self, label_name, jump_type, is_local=True):
-        """Emit conditional or direct jump with proper jump management"""
+    def emit_jump_to_label(self, label_name, jump_type, is_local=False):
         position = len(self.code)
-        
-        # Emit the opcode(s) with placeholder offset
         if jump_type == "JE" or jump_type == "JZ":
             self.emit_bytes(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JNE" or jump_type == "JNZ":
@@ -1102,10 +1505,14 @@ class X64Assembler:
             self.emit_bytes(0x0F, 0x82, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JA":
             self.emit_bytes(0x0F, 0x87, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JAE":  # New: Jump if above or equal (unsigned >=)
+            self.emit_bytes(0x0F, 0x83, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JBE":  # Optional new: Jump if below or equal (unsigned <=)
+            self.emit_bytes(0x0F, 0x86, 0x00, 0x00, 0x00, 0x00)
         else:
             raise ValueError(f"Unknown jump type: {jump_type}")
         
-        # Register with jump manager
+        # Register with jump manager (unchanged)
         self.jump_manager.add_jump(position, label_name, jump_type, is_local)
         print(f"DEBUG: Emitted 32-bit {jump_type} to {label_name} at position {position}")
     

@@ -18,14 +18,23 @@ from ailang_compiler.modules.arithmetic_ops import ArithmeticOps
 from ailang_compiler.modules.fileio_ops import FileIOOps
 from ailang_compiler.modules.control_flow import ControlFlow
 from ailang_compiler.modules.memory_manager import MemoryManager
-from ailang_compiler.modules.string_ops import StringOps
-from ailang_compiler.modules.expression_compiler import ExpressionCompiler
+from ailang_compiler.modules.debug_ops import DebugOps
 from ailang_compiler.modules.code_generator import CodeGenerator
 from ailang_compiler.modules.lowlevel_ops import LowLevelOps
 from ailang_compiler.modules.virtual_memory import VirtualMemoryOps
 from ailang_compiler.modules.library_inliner import LibraryInliner
 from ailang_compiler.modules.hash_ops import HashOps
 from ailang_compiler.modules.network_ops import NetworkOps
+from ailang_compiler.modules.scheduling_primitives import SchedulingPrimitives
+from ailang_compiler.modules.atomic_ops import AtomicOps
+from ailang_compiler.modules.user_functions import UserFunctions
+from ailang_compiler.modules.string_ops import StringOps
+from ailang_compiler.modules.expression_compiler import ExpressionCompiler
+from ailang_compiler.modules.library_inliner import LibraryInliner
+from ailang_compiler.modules.user_functions import UserFunctions
+from ailang_compiler.modules.memory_pool import MemoryPool
+
+
 
 class AILANGToX64Compiler:
     """Main compiler orchestrator for AILANG to x86-64 compilation"""
@@ -49,10 +58,13 @@ class AILANGToX64Compiler:
         self.fileio = FileIOOps(self)
         self.control_flow = ControlFlow(self)
         self.memory = MemoryManager(self)
+        self.memory_pool = MemoryPool(self)
         self.strings = StringOps(self)
+        self.debug_ops = DebugOps(self)
         self.expressions = ExpressionCompiler(self)
         self.codegen = CodeGenerator(self)
         self.lowlevel = LowLevelOps(self)
+        self.user_functions = UserFunctions(self)
         
         # Loop model support
         self.subroutines = {}      # name -> label mapping
@@ -60,6 +72,7 @@ class AILANGToX64Compiler:
         self.actor_states = {}     # actor state storage
         self.task_fixups = []      # forward references to fix
         self.loop_starts = []      # LoopStart blocks to run first
+        self.actor_blocks = {}  # Maps actor names to their entry labels
         
         # VM mode handling
         if self.vm_mode == "kernel":
@@ -70,8 +83,10 @@ class AILANGToX64Compiler:
             self.virtual_memory = VirtualMemoryOpsUserMode(self)
         
         # IMPORTANT: Initialize HashOps BEFORE LibraryInliner
-        # LibraryInliner depends on HashOps existing
         self.hash_ops = HashOps(self)
+        self.scheduler = SchedulingPrimitives(self)
+        self.atomics = AtomicOps(self) # <-- ADD THIS LINE
+        
         self.network_ops = NetworkOps(self)
         
         # Initialize library inliner AFTER hash_ops
@@ -79,6 +94,47 @@ class AILANGToX64Compiler:
         
         # Keep track of loaded libraries to prevent circular imports
         self.loaded_libraries = set()
+        
+        self._node_dispatch = {
+        'Program': lambda n: self.memory.compile_program(n),
+        'Library': lambda n: self.compile_library(n),
+        'SubRoutine': lambda n: self.compile_subroutine(n),
+        'AcronymDefinitions': lambda n: self.memory.compile_acronym_definitions(n),
+        'Pool': lambda n: self.memory.compile_pool(n),
+        'SubPool': lambda n: self.memory.compile_subpool(n),
+        'RecordTypeDefinition': lambda n: self._compile_record_type(n),
+        'Loop': lambda n: self._compile_loop_body(n),
+        'LoopMain': lambda n: self.compile_loop_main(n),
+        'LoopActor': lambda n: (print(f"DISPATCH: LoopActor -> scheduler"), self.scheduler.compile_loop_actor(n))[1],
+        'LoopStart': lambda n: self.compile_loop_start(n),
+        'LoopShadow': lambda n: self.compile_loop_shadow(n),
+        'LoopContinue': lambda n: self.compile_loop_continue(n),
+        'LoopSpawn': lambda n: self.scheduler.compile_loop_spawn(n),
+        'LoopSend': lambda n: self.compile_loop_send(n),
+        'LoopReceive': lambda n: self.compile_loop_receive(n),
+        'LoopReply': lambda n: self.compile_loop_reply(n),
+        'LoopYield': lambda n: self.scheduler.compile_loop_yield(n),
+        'Fork': lambda n: self.control_flow.compile_fork(n),
+        'Branch': lambda n: self.control_flow.compile_branch(n),
+        'While': lambda n: self.control_flow.compile_while_loop(n),
+        'BreakLoop': lambda n: self.control_flow.compile_break(n),
+        'ContinueLoop': lambda n: self.control_flow.compile_continue(n),
+        'If': lambda n: self.control_flow.compile_if_condition(n),
+                    'DebugBlock': lambda n: self.debug_ops.compile_operation(n) if hasattr(self, 'debug_ops') else None,
+            'DebugAssert': lambda n: self.debug_ops.compile_operation(n) if hasattr(self, 'debug_ops') else None,
+            'Assignment': lambda n: self.memory.compile_assignment(n),
+        'PrintMessage': lambda n: self.strings.compile_print_message(n),
+        'RunTask': lambda n: self._compile_run_task_dispatch(n),
+        'FunctionCall': lambda n: self._compile_function_call_dispatch(n),
+        
+        # === User Functions Module ====
+        
+        'Function': lambda n: self.user_functions.compile_function_definition(n),
+        'FunctionDefinition': lambda n: self.user_functions.compile_function_definition(n),
+        'ReturnValue': lambda n: self.user_functions.compile_return(n.value if hasattr(n, 'value') else None),
+        
+        
+        }
 
 
     # --- NEW: Function to handle library compilation ---
@@ -135,63 +191,29 @@ class AILANGToX64Compiler:
     def compile_node(self, node):
         """Dispatch node compilation to appropriate module"""
         
-        # Initialize dispatch table if not exists
-        if not hasattr(self, '_node_dispatch'):
-            self._node_dispatch = {
-                # Core structures
-                'Program': lambda n: self.memory.compile_program(n),
-                'Library': lambda n: self.compile_library(n),
-                
-                # Declarations
-                'SubRoutine': lambda n: self.compile_subroutine(n),
-                'AcronymDefinitions': lambda n: self.memory.compile_acronym_definitions(n),
-                'Pool': lambda n: self.memory.compile_pool(n),
-                'SubPool': lambda n: self.memory.compile_subpool(n),
-                'RecordTypeDefinition': lambda n: self._compile_record_type(n),
-                
-                # Loop model structures
-                'Loop': lambda n: self._compile_loop_body(n),
-                'LoopMain': lambda n: self.compile_loop_main(n),
-                'LoopActor': lambda n: self.compile_loop_actor(n),
-                'LoopStart': lambda n: self.compile_loop_start(n),
-                'LoopShadow': lambda n: self.compile_loop_shadow(n),
-                'LoopContinue': lambda n: self.compile_loop_continue(n),
-                
-                # Loop communication
-                'LoopSend': lambda n: self.compile_loop_send(n),
-                'LoopReceive': lambda n: self.compile_loop_receive(n),
-                'LoopReply': lambda n: self.compile_loop_reply(n),
-                'LoopYield': lambda n: self.compile_loop_yield(n),
-                
-                # Control flow
-                'Fork': lambda n: self.control_flow.compile_fork(n),
-                'Branch': lambda n: self.control_flow.compile_branch(n),
-                'While': lambda n: self.control_flow.compile_while_loop(n),
-                'If': lambda n: self.control_flow.compile_if_condition(n),
-                
-                # Statements
-                'Assignment': lambda n: self.memory.compile_assignment(n),
-                'PrintMessage': lambda n: self.strings.compile_print_message(n),
-                'RunTask': lambda n: self._compile_run_task_dispatch(n),
-                'FunctionCall': lambda n: self._compile_function_call_dispatch(n),
-            }
-        
-        try:
-            node_type = type(node).__name__
+        node_type = type(node).__name__
             
-            if node_type in self._node_dispatch:
-                return self._node_dispatch[node_type](node)
-            else:
-                raise ValueError(f"Unsupported node type: {node_type}")
-                
-        except Exception as e:
-            print(f"ERROR: Compilation failed for node {type(node).__name__}: {str(e)}")
-            raise
+            # Handle dotted actor names like "LoopActor.TestActor"
+        if node_type == 'FunctionCall' and hasattr(node, 'function'):  # ADD THIS BLOCK
+            if node.function.startswith('LoopActor.'):
+                print(f"DEBUG: Found LoopActor.{node.function[10:]}")
+                # Create a proper actor node
+                class ActorNode:
+                    def __init__(self, name, body):
+                        self.name = name
+                        self.body = body
+                actor = ActorNode(node.function[10:], node.arguments if hasattr(node, 'arguments') else [])
+                return self.scheduler.compile_loop_actor(actor)
+            
+        if node_type in self._node_dispatch:
+            return self._node_dispatch[node_type](node)
 
     def _compile_loop_body(self, node):
         """Compile Loop body statements"""
         for stmt in node.body:
             self.compile_node(stmt)
+            
+     
 
     def _compile_record_type(self, node):
         """Register record type definition"""
@@ -212,20 +234,153 @@ class AILANGToX64Compiler:
         else:
             print(f"ERROR: Cannot handle task: {task_name}")
             self.asm.emit_mov_rax_imm64(0)
-
+            
+            
     def _compile_function_call_dispatch(self, node):
-        """Handle FunctionCall with special cases"""
-        if hasattr(node, "function") and node.function == "RunTask":
-            # Legacy RunTask as function call
-            if hasattr(node, "task_name") and hasattr(node, "arguments"):
-                if hasattr(self, "library_inliner"):
-                    self.library_inliner.compile_runtask(node)
+        """Handle FunctionCall with special cases including ReturnValue"""
+        if hasattr(node, "function"):
+            if node.function == "RunTask":
+                # Legacy RunTask as function call
+                if hasattr(node, "task_name") and hasattr(node, "arguments"):
+                    if hasattr(self, "library_inliner"):
+                        self.library_inliner.compile_runtask(node)
+                    else:
+                        print("WARNING: No library_inliner available")
+                        self.asm.emit_mov_rax_imm64(0)
+            elif node.function == "ReturnValue":
+                # Handle ReturnValue as a function call
+                value = node.arguments[0] if node.arguments else None
+                self.user_functions.compile_return(value)
+            elif node.function.startswith("DebugPerf_"):
+                # Handle DebugPerf functions
+                if hasattr(self, 'debug_ops'):
+                    self.debug_ops.compile_operation(node)
                 else:
-                    print("WARNING: No library_inliner available")
+                    print(f"WARNING: Debug ops not available for {node.function}")
                     self.asm.emit_mov_rax_imm64(0)
+            else:
+                # Regular function call
+                self.compile_function_call(node)
         else:
             # Regular function call
             self.compile_function_call(node)
+ 
+    def compile_comparison(self, node):
+        """Delegate comparison operations to arithmetic module"""
+        return self.arithmetic.compile_comparison(node)
+            
+
+    def compile_function_call(self, node):
+        """Compile function call with user-defined functions and enhanced module support."""
+        try:
+            print(f"DEBUG: Compiling function call: {node.function}")
+            
+            # Extract base function name (handles both "Category.Name" and "Name")
+            base_name = node.function
+            if '.' in node.function:
+                # Check full name first for user functions
+                if node.function in self.user_functions.user_functions:
+                    if self.user_functions.compile_function_call(node):
+                        return
+                
+                # Try without "Function." prefix if present
+                if node.function.startswith("Function."):
+                    clean_name = node.function[9:]
+                    if clean_name in self.user_functions.user_functions:
+                        import copy
+                        node_copy = copy.copy(node)
+                        node_copy.function = clean_name
+                        if self.user_functions.compile_function_call(node_copy):
+                            return
+                
+                # Check for pool operations
+                parts = node.function.split('.')
+                if len(parts) == 2 and parts[1] in ['Init', 'Alloc', 'Free', 'Reset', 'Status']:
+                    if hasattr(self, 'memory_pool') and self.memory_pool.compile_operation(node):
+                        return
+                
+                # Try base name for primitives
+                base_name = node.function.split('.')[-1]
+            
+            # Check user functions with base name
+            if base_name in self.user_functions.user_functions:
+                import copy
+                node_copy = copy.copy(node)
+                node_copy.function = base_name
+                if self.user_functions.compile_function_call(node_copy):
+                    return
+
+            # Check for pooled string operations
+            if node.function == 'StringConcatPooled':
+                if hasattr(self, 'strings') and self.strings.compile_operation(node):
+                    return
+
+            # Dispatch to modules
+            dispatch_modules = [
+                self.arithmetic, self.fileio, self.strings,
+                self.lowlevel, self.hash_ops, self.network_ops,
+                self.virtual_memory, self.atomics
+            ]
+
+            # Try with original name first
+            for module in dispatch_modules:
+                if hasattr(module, 'compile_operation') and module.compile_operation(node):
+                    return
+            
+            # If dotted name failed, try with base name
+            if '.' in node.function:
+                import copy
+                node_copy = copy.copy(node)
+                node_copy.function = base_name
+                for module in dispatch_modules:
+                    if hasattr(module, 'compile_operation') and module.compile_operation(node_copy):
+                        return
+
+            # Special cases
+            if base_name == 'PrintNumber':
+                return self.strings.compile_print_number(node)
+                
+            # Memory pool operations
+            if base_name in ['PoolResize', 'PoolMove', 'PoolCompact',
+                            'PoolAllocate', 'PoolFree', 'PoolGetSize',
+                            'ArrayCreate', 'ArraySet', 'ArrayGet', 'ArrayLength']:
+                memory_ops = {
+                    'PoolResize': self.memory.compile_pool_resize,
+                    'PoolMove': self.memory.compile_pool_move,
+                    'PoolCompact': self.memory.compile_pool_compact,
+                    'PoolAllocate': self.memory.compile_pool_allocate,
+                    'PoolFree': self.memory.compile_pool_free,
+                    'PoolGetSize': self.memory.compile_pool_get_size,
+                    'ArrayCreate': self.memory.compile_array_create,
+                    'ArraySet': self.memory.compile_array_set,
+                    'ArrayGet': self.memory.compile_array_get,
+                    'ArrayLength': self.memory.compile_array_length,
+                }
+                if base_name in memory_ops:
+                    return memory_ops[base_name](node)
+
+            # Scheduling primitives
+            if self._is_scheduler_primitive(base_name):
+                return self._compile_scheduler_primitive(node)
+
+                 
+            
+            # Exit
+            if base_name == 'Exit':
+                self.asm.emit_mov_rax_imm64(60)
+                self.asm.emit_xor_rdi_rdi()
+                self.asm.emit_syscall()
+                return
+
+            # Unknown function
+            raise ValueError(f"Unknown function: {node.function}")
+            
+        except Exception as e:
+            print(f"ERROR: compile_function_call failed: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+    
 
     def compile_subroutine(self, node):
         """Compile SubRoutine as callable code"""
@@ -293,29 +448,7 @@ class AILANGToX64Compiler:
         for stmt in node.body:
             self.compile_node(stmt)
             
-    def compile_loop_actor(self, node):
-        """Compile LoopActor - isolated actor"""
-        print(f"DEBUG: Compiling LoopActor.{node.name}")
-        
-        # Store actor definition for spawn
-        self.loops[f"LoopActor.{node.name}"] = node
-        
-        # For now, compile inline (later: separate context)
-        # Skip definition in main flow
-        skip_label = self.asm.create_label()
-        self.asm.emit_jump_to_label(skip_label, "JMP")
-        
-        # Mark actor code
-        actor_label = self.asm.create_label()
-        self.loops[f"LoopActor.{node.name}.label"] = actor_label
-        self.asm.mark_label(actor_label)
-        
-        # Actor execution context
-        for stmt in node.body:
-            self.compile_node(stmt)
-            
-        self.asm.emit_ret()
-        self.asm.mark_label(skip_label)
+    
         
     def compile_loop_start(self, node):
         """Compile LoopStart - initialization"""
@@ -375,30 +508,72 @@ class AILANGToX64Compiler:
             self.asm.emit_nop()
             
     def compile_loop_send(self, node):
-        """Compile LoopSend - message passing"""
+        """Write message to target actor's mailbox"""
         print("DEBUG: Compiling LoopSend")
         
-        # For MVP: store message in global queue
-        # Later: proper actor mailboxes
-        self.compile_expression(node.target)
-        self.asm.emit_push_rax()
-        self.compile_expression(node.message)
-        self.asm.emit_pop_rbx()
+        # Get target actor handle
+        if len(node.arguments) >= 2:
+            # First arg: target handle
+            self.compile_expression(node.arguments[0])
+            self.asm.emit_push_rax()  # Save target
+            
+            # Second arg: message value
+            self.compile_expression(node.arguments[1])
+            
+            # Calculate mailbox address: ACB_base + (handle * 128) + 120
+            # Using offset 120 in the ACB for mailbox (last 8 bytes)
+            self.asm.emit_mov_rbx_rax()  # Message in RBX
+            self.asm.emit_pop_rax()      # Target handle in RAX
+            
+            # Multiply handle by 128 (ACB size)
+            self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x07)  # SHL RAX, 7
+            
+            # Add ACB base address
+            if 'system_acb_table' in self.variables:
+                offset = self.variables['system_acb_table']
+                self.asm.emit_bytes(0x48, 0x03, 0x85)  # ADD RAX, [RBP-offset]
+                self.asm.emit_bytes(*struct.pack('<i', -offset))
+            
+            # Add mailbox offset (120)
+            self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x78)  # ADD RAX, 120
+            
+            # Store message at mailbox address
+            self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX
+            
+            print("DEBUG: Message sent to mailbox")
         
-        # Store in message queue (simplified)
-        # Real implementation needs proper queue structure
-        
+        return True
     def compile_loop_receive(self, node):
-        """Compile LoopReceive - message reception"""
+        """Read message from current actor's mailbox"""
         print("DEBUG: Compiling LoopReceive")
         
-        # For MVP: simple pattern matching
-        # Later: proper message queue handling
-        for case in node.cases:
-            # Compare message with pattern
-            # Jump to action if match
-            pass
+        # Get current actor handle
+        if 'system_current_actor' in self.variables:
+            offset = self.variables['system_current_actor']
+            self.asm.emit_bytes(0x48, 0x8B, 0x85)  # MOV RAX, [RBP-offset]
+            self.asm.emit_bytes(*struct.pack('<i', -offset))
             
+            # Calculate mailbox address
+            self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x07)  # SHL RAX, 7
+            
+            # Add ACB base
+            if 'system_acb_table' in self.variables:
+                acb_offset = self.variables['system_acb_table']
+                self.asm.emit_bytes(0x48, 0x03, 0x85)  # ADD RAX, [RBP-offset]
+                self.asm.emit_bytes(*struct.pack('<i', -acb_offset))
+            
+            # Add mailbox offset
+            self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x78)  # ADD RAX, 120
+            
+            # Load message from mailbox
+            self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, [RAX]
+            
+            print("DEBUG: Message received from mailbox")
+        else:
+            # No current actor, return 0
+            self.asm.emit_mov_rax_imm64(0)
+        
+        return True
     def compile_loop_reply(self, node):
         """Compile LoopReply - reply to sender"""
         print("DEBUG: Compiling LoopReply")
@@ -413,7 +588,10 @@ class AILANGToX64Compiler:
         
         print(f"DEBUG: Fixing {len(self.task_fixups)} forward references")
         print(f"DEBUG: Available subroutines: {self.subroutines}")
-        print(f"DEBUG: Available labels in asm: {self.asm.labels}")
+        if hasattr(self.asm, 'jump_manager') and hasattr(self.asm.jump_manager, 'labels'):
+            print(f"DEBUG: Available labels in asm: {self.asm.jump_manager.labels}")
+        else:
+            print("DEBUG: No labels available in asm")
         
         for item in self.task_fixups:
             if len(item) == 2:
@@ -446,75 +624,50 @@ class AILANGToX64Compiler:
             else:
                 print(f"DEBUG: ERROR - Label {label} not found in asm.labels!")
         
-
-
-    def compile_function_call(self, node):
-        """Compile function call with enhanced module support"""
-        try:
-            print(f"DEBUG: Compiling function call: {node.function}")
-
-            # Handle RunTask
-            if hasattr(node, 'task_name'):
-                if hasattr(self, 'library_inliner'):
-                    self.library_inliner.compile_runtask(node)
+        # Fix user function forward references
+        if hasattr(self, 'user_function_fixups'):
+            print(f"DEBUG: Fixing {len(self.user_function_fixups)} user function references")
+            for func_name, call_pos in self.user_function_fixups:
+                print(f"DEBUG: Fixing call to user function {func_name} at position {call_pos}")
+                
+                if func_name in self.user_functions.user_functions:
+                    func_info = self.user_functions.user_functions[func_name]
+                    label = func_info['label']
+                    
+                    if label in self.asm.labels:
+                        target_pos = self.asm.labels[label]
+                        offset = target_pos - (call_pos + 5)
+                        
+                        # Patch the CALL instruction
+                        offset_bytes = struct.pack('<i', offset)
+                        for i in range(4):
+                            self.asm.code[call_pos + 1 + i] = offset_bytes[i]
+                        
+                        print(f"DEBUG: Fixed call to {func_name}: offset={offset}")
+                    else:
+                        print(f"ERROR: Label {label} not found for function {func_name}")
                 else:
-                    print("WARNING: No library_inliner for RunTask")
-                    self.asm.emit_mov_rax_imm64(0)
-                return
-
-            # Arithmetic operations
-            if node.function in ['Add', 'Subtract', 'Multiply', 'Divide']:
-                return self.arithmetic.compile_operation(node)
-
-            # Comparison operations
-            if node.function in ['LessThan', 'GreaterThan', 'EqualTo', 'NotEqual']:
-                if node.function == 'NotEqual':
-                    return self.arithmetic.compile_not_equal(node)
-                else:
-                    return self.arithmetic.compile_comparison(node)
-
-            # File I/O operations
-            if node.function in ['WriteTextFile', 'ReadTextFile', 'FileExists']:
-                return self.fileio.compile_operation(node)
-
-            # String operations
-            if node.function in ['StringConcat', 'StringCompare', 'StringLength',
-                            'StringCopy', 'StringToNumber', 'NumberToString']:
-                return self.strings.compile_operation(node)
-
-
-            # Print operations
-            if node.function == 'PrintNumber':
-                return self.strings.compile_print_number(node)
-            # Memory pool operations
-            if node.function in ['PoolResize', 'PoolMove', 'PoolCompact',
-                            'PoolAllocate', 'PoolFree', 'PoolGetSize']:
-                memory_ops = {
-                    'PoolResize': self.memory.compile_pool_resize,
-                    'PoolMove': self.memory.compile_pool_move,
-                    'PoolCompact': self.memory.compile_pool_compact,
-                    'PoolAllocate': self.memory.compile_pool_allocate,
-                    'PoolFree': self.memory.compile_pool_free,
-                    'PoolGetSize': self.memory.compile_pool_get_size
-                }
-                return memory_ops[node.function](node)
-
-            # Specialized operations
-            if self.lowlevel.compile_operation(node):
-                return
-            if self.hash_ops.compile_operation(node):
-                return
-            if self.network_ops.compile_operation(node):
-                return
-            if self.virtual_memory.compile_operation(node):
-                return
-
-            raise ValueError(f"Unsupported function: {node.function}")
-
-        except Exception as e:
-            print(f"ERROR: Function call compilation failed: {str(e)}")
-            raise
+                    print(f"ERROR: User function {func_name} not found")
     
+    def _is_scheduler_primitive(self, func_name):
+        """Check if a function is a scheduling primitive."""
+        primitives = [
+            'LoopYield', 'LoopSpawn', 'LoopJoin', 'LoopGetState',
+            'LoopSetPriority', 'LoopGetCurrent', 'LoopSuspend', 'LoopResume'
+        ]
+        return func_name in primitives
+
+    def _compile_scheduler_primitive(self, node):
+        """Route to the correct scheduling primitive handler."""
+        # Converts CamelCase (LoopYield) to snake_case (compile_loopyield)
+        handler_name = "compile_" + ''.join(['_' + i.lower() if i.isupper() else i for i in node.function]).lstrip('_')
+        handler = getattr(self.scheduler, handler_name, None)
+        if handler:
+            return handler(node)
+        else:
+            raise NotImplementedError(f"Scheduling primitive handler '{handler_name}' not found in scheduler module.")        
+
+       
     def compile_expression(self, expr):
         return self.expressions.compile_expression(expr)
     
@@ -522,12 +675,17 @@ class AILANGToX64Compiler:
         return self.memory.resolve_acronym_identifier(identifier_name)
     
     def compile(self, ast) -> bytes:
-        """Compile AST to executable with full dynamic addressing"""
-        # --- START OF SURGICAL REPLACEMENT ---
+        """Compile AST to executable with user-defined function support"""
         print("\n=== COMPILATION STARTING ===")
+        
+        # NEW: First pass - register all user-defined functions
+        print("Phase 0: Registering user-defined functions...")
+        self.user_functions.process_all_functions(ast)
+        
         print("Phase 1: Generating machine code with placeholders...")
         self.compile_node(ast)
         self.fixup_forward_references()  # Fix SubRoutine calls
+        
         print("Phase 2: Resolving internal jump offsets...")
         self.asm.resolve_jumps()
 
@@ -540,4 +698,6 @@ class AILANGToX64Compiler:
         
         print(f"\n=== COMPILATION COMPLETE ({len(executable)} bytes) ===")
         return executable
-        # --- END OF SURGICAL REPLACEMENT ---
+        
+        
+    
