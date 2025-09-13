@@ -417,51 +417,86 @@
 <vm_argument> ::= IDENTIFIER "-" <expression>
 
 # ==============================================
-# EXPRESSIONS
+# EXPRESSIONS WITH INFIX NOTATION
 # ==============================================
 
 <expression> ::= <logical_expression>
 
 <logical_expression> ::= <relational_expression> { <logical_operator> <relational_expression> }
 
-<logical_operator> ::= "And" | "Or" | "Xor" | "Implies"
-
 <relational_expression> ::= <arithmetic_expression> { <relational_operator> <arithmetic_expression> }
-
-<relational_operator> ::= "GreaterThan" | "LessThan" | "GreaterEqual" | "LessEqual" | "EqualTo" | "NotEqual"
 
 <arithmetic_expression> ::= <term> { <additive_operator> <term> }
 
-<additive_operator> ::= "Add" | "Subtract"
-
 <term> ::= <factor> { <multiplicative_operator> <factor> }
-
-<multiplicative_operator> ::= "Multiply" | "Divide" | "Modulo"
 
 <factor> ::= <unary_expression> | <power_expression> | <primary>
 
 <unary_expression> ::= <unary_operator> <primary>
 
-<unary_operator> ::= "Not" | "AbsoluteValue" | "SquareRoot" | "BitwiseNot"
-
-<power_expression> ::= <primary> "Power" <factor>
+<power_expression> ::= <primary> "Power" <factor> | <primary> "^" <factor>
 
 <primary> ::= <literal>
             | <identifier>
             | <function_call>
             | <lambda_expression>
-            | <apply_expression>
+            | <parenthesized_expression>
             | <array_literal>
             | <map_literal>
-            | <tuple_literal>
-            | <parenthesized_expression>
-            | <lowlevel_operation>
-            | <string_operation>
-            | <file_operation>
-            | <mathematical_constant>
 
+# Infix Notation Support
 <parenthesized_expression> ::= "(" <expression> ")"
+                             | "(" <expression> <infix_operator> <expression> ")"
+                             | "(" <unary_operator> <expression> ")"
 
+<infix_operator> ::= <arithmetic_operator> | <relational_operator> | <logical_operator> | <bitwise_operator>
+
+# Named and Symbol Operators
+<arithmetic_operator> ::= "Add" | "+" 
+                        | "Subtract" | "-"
+                        | "Multiply" | "*"
+                        | "Divide" | "/"
+                        | "Modulo" | "%"
+                        | "Power" | "^"
+
+<relational_operator> ::= "GreaterThan" | ">"
+                        | "LessThan" | "<"
+                        | "GreaterEqual" | ">="
+                        | "LessEqual" | "<="
+                        | "EqualTo" | "=="
+                        | "NotEqual" | "!="
+
+<logical_operator> ::= "And" | "&&"
+                     | "Or" | "||"
+                     | "Not" | "!"
+                     | "Xor"
+                     | "Implies"
+
+<bitwise_operator> ::= "BitwiseAnd" | "&"
+                     | "BitwiseOr" | "|"
+                     | "BitwiseXor"
+                     | "BitwiseNot" | "~"
+                     | "LeftShift" | "<<"
+                     | "RightShift" | ">>"
+
+<unary_operator> ::= "Not" | "!" 
+                   | "AbsoluteValue"
+                   | "SquareRoot"
+                   | "BitwiseNot" | "~"
+
+# Function Call Notation
+<function_call> ::= <function_name> "(" [ <argument_list> ] ")"
+
+<function_name> ::= <identifier> | <dotted_name> | <named_operator>
+
+# Examples of valid expressions:
+# (2 + 3)              - Symbol infix
+# (2 Add 3)            - Named infix  
+# Add(2, 3)            - Function call
+# ((2 + 3) * 4)        - Nested infix
+# (Not x)              - Unary infix
+# (!x)                 - Symbol unary infix
+# (x > 5 && y < 10)    - Complex boolean with symbols
 # ==============================================
 # FUNCTION CALLS
 # ==============================================
