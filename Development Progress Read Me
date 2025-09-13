@@ -111,6 +111,65 @@ Basic Ops: 18/18 ✅
 Strings: 3/8 ⚠️
 Concurrency: 5/10 🔄
 
+Debugging Infrastructure (Recently Added)
+Debug Primitives
+
+DebugAssert: Runtime assertions with messages ✅
+DebugTrace: Entry/Exit/Point tracing ✅
+DebugBreak: Breakpoints (simple/conditional) ✅
+DebugMemory: Memory operations ✅
+
+Dump, Watch, LeakCheck, Pattern
+
+
+DebugPerf: Performance measurement ✅
+
+Start/End timing with RDTSC
+Cycle-accurate profiling
+
+
+DebugInspect: State inspection ✅
+
+Variables, Stack, Pools, Agents
+
+
+DebugBlock: Conditional debug code ✅
+
+Multi-level debug (1-5)
+Stripped in release builds
+
+
+
+Debug Features
+Compile-Time Options
+
+Debug enable/disable flag
+Debug level control (0-5)
+Debug category flags (assert, trace, mem, perf)
+
+Runtime Features
+
+RDTSC timestamp counters
+Assertion failures with messages
+Memory pattern detection
+Performance timer blocks
+State dumps to stderr
+
+Example Usage
+ailangDebugPerf.Start("critical_section")
+DebugTrace.Entry("Process", pid)
+DebugAssert(NotNull(ptr), "Null pointer!")
+DebugMemory.Watch(buffer, "buffer_change")
+DebugPerf.End("critical_section")
+Implementation
+
+x86-64 native instructions (RDTSC, INT3)
+Debug markers as multi-byte NOPs
+Conditional compilation based on flags
+Zero overhead when disabled
+
+
+
 Roadmap
 Phase 1 ✅ Core Language
 
