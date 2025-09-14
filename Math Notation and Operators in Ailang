@@ -46,7 +46,7 @@ Operations are evaluated in standard mathematical order:
 ```ailang
 // Standard math notation works as expected
 energy = (mass * (c^2))                    // E=mc²
-force = (G * ((m1 * m2) / r^2))            // Newton's law of gravitation
+force = ((G * (m1 * m2)) / r^2)            // Newton's law of gravitation
 quadratic = (-b + sqrt((b^2) - (4*a*c))) / (2*a)  // Quadratic formula
 
 // No surprises for scientists and engineers
