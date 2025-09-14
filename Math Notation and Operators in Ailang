@@ -45,10 +45,12 @@ Operations are evaluated in standard mathematical order:
 ### Examples
 ```ailang
 // Standard math notation works as expected
-energy = (mass * c^2)                    // E=mc²
-force = (G * (m1 * m2) / r^2)            // Newton's law of gravitation
-quadratic = (-b + sqrt(b^2 - 4*a*c)) / (2*a)  // Quadratic formula
+energy = (mass * (c^2))                    // E=mc²
+force = (G * ((m1 * m2) / r^2))            // Newton's law of gravitation
+quadratic = (-b + sqrt((b^2) - (4*a*c))) / (2*a)  // Quadratic formula
 
 // No surprises for scientists and engineers
-result = (2^3 + 4 * 5)                   // = 8 + 20 = 28 (not 160!)
+result = ((2^3) + (4 * 5))                   // = 8 + 20 = 28 (not 160!)
 voltage = (current * resistance)         // Ohm's law
+
+HARD PEMDAS RULES PREVENT BUGS AND ERRORS !!!!
