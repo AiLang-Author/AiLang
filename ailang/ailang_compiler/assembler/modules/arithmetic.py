@@ -70,3 +70,65 @@ class ArithmeticOperations:
         """
         self.emit_bytes(0x48, 0x31, 0xD2)
         print("DEBUG: XOR RDX, RDX - cleared RDX")
+        
+    def emit_cmovl_rax_rbx(self):
+        """CMOVL RAX, RBX - Move if less"""
+        self.emit_bytes(0x48, 0x0F, 0x4C, 0xC3)
+
+    def emit_cmovg_rax_rbx(self):
+        """CMOVG RAX, RBX - Move if greater"""
+        self.emit_bytes(0x48, 0x0F, 0x4F, 0xC3)
+
+    def emit_cmovs_rax_rbx(self):
+        """CMOVS RAX, RBX - Move if sign flag set"""
+        self.emit_bytes(0x48, 0x0F, 0x48, 0xC3)
+        
+    def emit_cmovs_rax_rcx(self):
+        """CMOVS RAX, RCX - Conditional move if sign flag"""
+        self.emit_bytes(0x48, 0x0F, 0x48, 0xC1)
+        print("DEBUG: CMOVS RAX, RCX")
+
+    def emit_mov_rax_rcx(self):
+        """MOV RAX, RCX"""
+        self.emit_bytes(0x48, 0x89, 0xC8)
+
+    def emit_mov_rcx_rax(self):
+        """MOV RCX, RAX"""
+        self.emit_bytes(0x48, 0x89, 0xC1)
+        
+    # Add to x64_assembler.py or arithmetic.py
+
+# Quick fix - add alias for the missing method
+def emit_xor_rdi_rdi(self):
+    """XOR RDI, RDI - Zero RDI register (alias for edi version)"""
+    # XOR EDI, EDI zeros the entire RDI due to zero extension
+    self.emit_xor_edi_edi()
+
+# Or if you want the actual 64-bit version:
+def emit_xor_rdi_rdi_proper(self):
+    """XOR RDI, RDI - Zero RDI register (64-bit)"""
+    # REX.W prefix for 64-bit operation
+    self.emit_bytes(0x48, 0x31, 0xFF)  # XOR RDI, RDI
+    print("DEBUG: XOR RDI, RDI")
+
+# The existing method (32-bit but zeros entire 64-bit register)
+def emit_xor_edi_edi(self):
+    """XOR EDI, EDI - Zero EDI/RDI register"""
+    self.emit_bytes(0x31, 0xFF)  # XOR EDI, EDI
+    print("DEBUG: XOR EDI, EDI (zeros RDI)")
+
+# Add both RDI methods for completeness:
+def emit_xor_rdi_rdi(self):
+    self.emit_xor_edi_edi()  # Same effect, shorter encoding
+
+def emit_xor_rsi_rsi(self):
+    """XOR RSI, RSI - Zero RSI register"""
+    self.emit_bytes(0x48, 0x31, 0xF6)  # XOR RSI, RSI
+    
+def emit_xor_rdx_rdx(self):
+    """XOR RDX, RDX - Zero RDX register"""
+    self.emit_bytes(0x48, 0x31, 0xD2)  # XOR RDX, RDX
+    
+def emit_xor_rcx_rcx(self):
+    """XOR RCX, RCX - Zero RCX register"""
+    self.emit_bytes(0x48, 0x31, 0xC9)  # XOR RCX, RCX

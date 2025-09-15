@@ -302,6 +302,18 @@ class RegisterOperations:
         self.emit_bytes(0xA8)  # TEST AL, imm8
         self.emit_bytes(*struct.pack('<B', value))
         print(f"DEBUG: Emitted TEST AL, {value:#x}")
+        
+        
+    def emit_mov_rcx_rbx(self):
+        """MOV RCX, RBX - Move RBX to RCX"""
+        self.emit_bytes(0x48, 0x89, 0xD9)
+        print("DEBUG: MOV RCX, RBX")
+
+    # Also add the reverse operation for completeness:
+    def emit_mov_rbx_rcx(self):
+        """MOV RBX, RCX - Move RCX to RBX"""
+        self.emit_bytes(0x48, 0x89, 0xCB)
+        print("DEBUG: MOV RBX, RCX")    
     
     # === COMPARE OPERATIONS ===
     
