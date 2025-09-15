@@ -1,7 +1,0 @@
-
-store = HashCreate(16)  // Bigger table, less collision chance
-HashSet(store, "key1", 42)
-PrintMessage("First set done")
-HashSet(store, "zzzz", 100)  // Very different hash
-PrintMessage("Second set done")
-
