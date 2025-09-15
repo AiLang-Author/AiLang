@@ -100,7 +100,7 @@ class ParserDeclarationsMixin:
         self.consume(TokenType.DOT)
         # --- END OF FIX ---
         
-        name = self.consume(TokenType.IDENTIFIER).value # Now correctly finds the name
+        name = self.parse_dotted_name()
         self.skip_newlines()
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
@@ -145,55 +145,33 @@ class ParserDeclarationsMixin:
         self.consume(TokenType.COLON)
         value = None
         attributes = {}
-        
-        # Handle first attribute - can be Initialize OR ElementType
-        if self.match(TokenType.INITIALIZE):
-            self.consume(TokenType.INITIALIZE)
-            self.consume(TokenType.EQUALS)
-            value = self.parse_primary()
-        elif self.match(TokenType.ELEMENTTYPE):
-            self.consume(TokenType.ELEMENTTYPE)
-            self.consume(TokenType.DASH)
-            attributes['ElementType'] = self.parse_type()  # Use parse_type() for type names
-        
-        # Handle comma-separated additional attributes
-        while self.match(TokenType.COMMA):
-            self.consume(TokenType.COMMA)
-            self.skip_newlines()
-            
-            if self.match(TokenType.CANCHANGE):
-                self.consume(TokenType.CANCHANGE)
-                self.consume(TokenType.DASH)
-                attributes['CanChange'] = self.parse_primary()
-            elif self.match(TokenType.CANBENULL):
-                self.consume(TokenType.CANBENULL)
-                self.consume(TokenType.DASH)
-                attributes['CanBeNull'] = self.parse_primary()
-            elif self.match(TokenType.RANGE):
-                self.consume(TokenType.RANGE)
-                self.consume(TokenType.DASH)
-                attributes['Range'] = self.parse_array_literal()
-            elif self.match(TokenType.MAXIMUMLENGTH):
-                self.consume(TokenType.MAXIMUMLENGTH)
-                self.consume(TokenType.DASH)
-                attributes['MaximumLength'] = self.parse_primary()
-            elif self.match(TokenType.MINIMUMLENGTH):
-                self.consume(TokenType.MINIMUMLENGTH)
-                self.consume(TokenType.DASH)
-                attributes['MinimumLength'] = self.parse_primary()
-            elif self.match(TokenType.ELEMENTTYPE):
-                # ElementType can also appear as additional attribute
-                self.consume(TokenType.ELEMENTTYPE)
-                self.consume(TokenType.DASH)
-                attributes['ElementType'] = self.parse_type()  # Use parse_type() here too
+
+        # --- REWRITE: Handle attributes consistently with '=' ---
+        # This loop handles one or more comma-separated attributes.
+        has_attributes = True
+        while has_attributes:
+            # The attribute name is always an identifier-like keyword
+            attr_token = self.current_token
+            if not self.match(TokenType.INITIALIZE, TokenType.ELEMENTTYPE, TokenType.CANCHANGE, TokenType.CANBENULL, TokenType.MAXIMUMLENGTH, TokenType.MINIMUMLENGTH, TokenType.RANGE):
+                self.error(f"Expected a pool attribute keyword (like Initialize, ElementType), but got {attr_token.type.name}")
+
+            attr_name = self.consume(attr_token.type).value
+            self.consume(TokenType.EQUALS) # All attributes now use '='
+
+            if attr_name == 'Initialize':
+                value = self.parse_primary()
+            elif attr_name == 'ElementType':
+                attributes[attr_name] = self.parse_type()
+            elif attr_name == 'Range':
+                attributes[attr_name] = self.parse_array_literal()
+            else: # For CanChange, CanBeNull, MaximumLength, etc.
+                attributes[attr_name] = self.parse_primary()
+
+            if self.match(TokenType.COMMA):
+                self.consume(TokenType.COMMA)
+                self.skip_newlines()
             else:
-                # Generic attribute handling
-                if self.match(TokenType.IDENTIFIER):
-                    attr_name = self.consume(TokenType.IDENTIFIER).value
-                    self.consume(TokenType.DASH)
-                    attributes[attr_name] = self.parse_expression()
-                else:
-                    break
+                has_attributes = False
         
         return ResourceItem(key=key, value=value, attributes=attributes,
                             line=self.current_token.line, column=self.current_token.column)
@@ -280,8 +258,10 @@ class ParserDeclarationsMixin:
                     self.consume(TokenType.LPAREN)
                     while not self.match(TokenType.RPAREN):
                         param_name = self.consume(TokenType.IDENTIFIER).value
-                        self.consume(TokenType.COLON)
-                        param_type = self.parse_type()
+                        param_type = "Any"  # Default type
+                        if self.match(TokenType.COLON):
+                            self.consume(TokenType.COLON)
+                            param_type = self.parse_type()
                         input_params.append((param_name, param_type))
                         if self.match(TokenType.COMMA):
                             self.consume(TokenType.COMMA)
@@ -289,8 +269,10 @@ class ParserDeclarationsMixin:
                     self.consume(TokenType.RPAREN)
                 else:
                     param_name = self.consume(TokenType.IDENTIFIER).value
-                    self.consume(TokenType.COLON)
-                    param_type = self.parse_type()
+                    param_type = "Any"  # Default type
+                    if self.match(TokenType.COLON):
+                        self.consume(TokenType.COLON)
+                        param_type = self.parse_type()
                     input_params.append((param_name, param_type))
             elif self.match(TokenType.OUTPUT):
                 self.consume(TokenType.OUTPUT)

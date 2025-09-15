@@ -18,17 +18,21 @@ class ParserExpressionsMixin:
         if self.match(TokenType.LPAREN):
             return self.parse_parenthesized_expression()
         if self.match(TokenType.ADD, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.SUBTRACT,
-                TokenType.POWER, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
-                TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
-                TokenType.AND, TokenType.OR, TokenType.NOT,
+            TokenType.POWER, TokenType.MODULO, TokenType.SQUAREROOT, TokenType.GREATERTHAN, TokenType.LESSTHAN,
+            TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, TokenType.LESSEQUAL,
+            TokenType.AND, TokenType.OR, TokenType.NOT,
                 # ADD BITWISE OPERATIONS (with correct names):
                 TokenType.BITWISEAND, TokenType.BITWISEOR, TokenType.BITWISEXOR,
                 TokenType.BITWISENOT, TokenType.LEFTSHIFT, TokenType.RIGHTSHIFT,
-                # Continue with existing:
+                # String and I/O functions
                 TokenType.READINPUT, TokenType.READINPUTNUMBER, TokenType.GETUSERCHOICE,
-                TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGCONCAT,TokenType.STRINGSUBSTRING,
+                TokenType.STRINGEQUALS, TokenType.STRINGCONTAINS, TokenType.STRINGSTARTSWITH,
+                TokenType.STRINGENDSWITH, TokenType.STRINGCONCAT, TokenType.STRINGSUBSTRING,
                 TokenType.STRINGLENGTH, TokenType.STRINGTONUMBER, TokenType.NUMBERTOSTRING,
-                TokenType.STRINGTOUPPER, TokenType.STRINGTOLOWER, TokenType.CHARTOSTRING,  # ADD THESE
+                TokenType.STRINGTOUPPER, TokenType.STRINGTOLOWER, TokenType.CHARTOSTRING, TokenType.STRINGINDEXOF,
+                TokenType.STRINGSPLIT,
+                TokenType.STRINGTRIM, TokenType.STRINGREPLACE, TokenType.STRINGTOSTRING,
+                TokenType.STRINGEXTRACT, TokenType.STRINGCHARAT, TokenType.STRINGEXTRACTUNTIL,
                 TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
             return self.parse_math_function()
    
@@ -58,27 +62,101 @@ class ParserExpressionsMixin:
         expr = self.parse_expression()
         self.skip_newlines()
         
-        # Check for infix notation (e.g., "(2 Multiply 3)")
+        # Check for infix notation (e.g., "(2 Multiply 3)" or "(2 * 3)")
         if isinstance(expr, (Number, Identifier, FunctionCall)):
             self.skip_newlines()
+            
+            # First check for NAMED operators (existing code)
             if self.match(TokenType.ADD, TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.SUBTRACT, 
-                         TokenType.POWER, TokenType.GREATERTHAN, TokenType.LESSTHAN,
-                         TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, 
-                         TokenType.LESSEQUAL, TokenType.AND, TokenType.OR):
+                        TokenType.POWER, TokenType.MODULO,
+                        TokenType.GREATERTHAN, TokenType.LESSTHAN,
+                        TokenType.EQUALTO, TokenType.NOTEQUAL, TokenType.GREATEREQUAL, 
+                        TokenType.LESSEQUAL, TokenType.AND, TokenType.OR, TokenType.NOT):
                 op_token = self.current_token
                 op_name = op_token.value
+                
+                # Special handling for unary NOT
+                if op_token.type == TokenType.NOT:
+                    self.advance()
+                    self.skip_newlines()
+                    operand = self.parse_expression()
+                    self.skip_newlines()
+                    self.consume(TokenType.RPAREN)
+                    return FunctionCall(function='Not', arguments=[operand],
+                                    line=start_token.line, column=start_token.column)
+                
+                # Binary operators
                 self.advance()
                 self.skip_newlines()
                 second_operand = self.parse_expression()
                 self.skip_newlines()
                 self.consume(TokenType.RPAREN)
                 return FunctionCall(function=op_name, arguments=[expr, second_operand],
-                                   line=start_token.line, column=start_token.column)
+                                line=start_token.line, column=start_token.column)
+            
+            #  Check for SYMBOL operators (only valid in parentheses!)
+            elif self.match(TokenType.PLUS_SIGN, TokenType.STAR_SIGN, TokenType.SLASH_SIGN,
+                TokenType.DASH, TokenType.PERCENT_SIGN, TokenType.CARET_SIGN,
+                TokenType.GREATER_SIGN, TokenType.LESS_SIGN, TokenType.BANG_SIGN,
+                TokenType.AMPERSAND_SIGN, TokenType.PIPE_SIGN,
+                TokenType.EQUALTO, TokenType.NOTEQUAL,  
+                TokenType.GREATEREQUAL, TokenType.LESSEQUAL,  
+                TokenType.AND_AND, TokenType.PIPE_PIPE,
+                TokenType.LESS_LESS, TokenType.GREATER_GREATER):
+                
+                symbol_token = self.current_token
+                
+                # Map symbols to operator function names
+                symbol_map = {
+                TokenType.PLUS_SIGN: 'Add',
+                TokenType.DASH: 'Subtract',
+                TokenType.STAR_SIGN: 'Multiply',
+                TokenType.SLASH_SIGN: 'Divide',
+                TokenType.PERCENT_SIGN: 'Modulo',
+                TokenType.CARET_SIGN: 'Power',
+                TokenType.GREATER_SIGN: 'GreaterThan',
+                TokenType.LESS_SIGN: 'LessThan',
+                TokenType.EQUALTO: 'EqualTo',           # Changed from EQUAL_EQUAL
+                TokenType.NOTEQUAL: 'NotEqual',         # Changed from BANG_EQUAL
+                TokenType.GREATEREQUAL: 'GreaterEqual', # Changed from GREATER_EQUAL_SIGN
+                TokenType.LESSEQUAL: 'LessEqual',       # Changed from LESS_EQUAL_SIGN
+                TokenType.BANG_SIGN: 'Not',
+                TokenType.AMPERSAND_SIGN: 'BitwiseAnd',
+                TokenType.PIPE_SIGN: 'BitwiseOr',
+                TokenType.AND_AND: 'And',
+                TokenType.PIPE_PIPE: 'Or',
+                TokenType.LESS_LESS: 'LeftShift',
+                TokenType.GREATER_GREATER: 'RightShift',
+            }
+                
+                op_name = symbol_map.get(symbol_token.type)
+                if not op_name:
+                    self.error(f"Unknown operator symbol: {symbol_token.value}")
+                
+                # Handle unary ! (Not)
+                if symbol_token.type == TokenType.BANG_SIGN:
+                    self.advance()
+                    self.skip_newlines()
+                    operand = self.parse_expression()
+                    self.skip_newlines()
+                    self.consume(TokenType.RPAREN)
+                    return FunctionCall(function='Not', arguments=[operand],
+                                    line=start_token.line, column=start_token.column)
+                
+                # Binary operators
+                self.advance()
+                self.skip_newlines()
+                second_operand = self.parse_expression()
+                self.skip_newlines()
+                self.consume(TokenType.RPAREN)
+                return FunctionCall(function=op_name, arguments=[expr, second_operand],
+                                line=start_token.line, column=start_token.column)
         
         self.skip_newlines()
         self.consume(TokenType.RPAREN)
         return expr
-
+    
+    
     def parse_math_function(self) -> ASTNode:
         op_token = self.current_token
         op_name = op_token.value
@@ -99,6 +177,23 @@ class ParserExpressionsMixin:
 
     def parse_primary(self) -> ASTNode:
         self.skip_newlines()
+        
+        # Handle prefix ! operator (unary NOT)
+        if self.match(TokenType.BANG_SIGN):
+            token = self.current_token
+            self.advance()
+            operand = self.parse_primary()  # Recursively parse what comes after !
+            return FunctionCall(function='Not', arguments=[operand],
+                            line=token.line if token else 0, 
+                            column=token.column if token else 0)
+            
+        if self.match(TokenType.TILDE_SIGN):
+            token = self.current_token
+            self.advance()
+            operand = self.parse_primary()
+            return FunctionCall(function='BitwiseNot', arguments=[operand],
+                            line=token.line if token else 0, 
+                            column=token.column if token else 0)
         
         if self.match(TokenType.NUMBER):
             token = self.current_token
@@ -123,7 +218,7 @@ class ParserExpressionsMixin:
         elif self.match(TokenType.NULL):
             token = self.current_token
             self.advance()
-            return Identifier(name='Null', line=token.line, column=token.column)
+            return Number(value=0, line=token.line, column=token.column)
         
         elif self.match(TokenType.LAMBDA):
             return self.parse_lambda()
@@ -137,10 +232,10 @@ class ParserExpressionsMixin:
         elif self.match(TokenType.RUNMACRO):
             return self.parse_runmacro()
         
-        elif self.match(TokenType.RECORD):
-            return self.parse_record_type()
-        
-        elif self.match(TokenType.IDENTIFIER):
+        elif self.match(TokenType.IDENTIFIER, TokenType.FIXEDPOOL, TokenType.DYNAMICPOOL,
+                       TokenType.TEMPORALPOOL, TokenType.NEURALPOOL, TokenType.KERNELPOOL,
+                       TokenType.ACTORPOOL, TokenType.SECURITYPOOL, TokenType.CONSTRAINEDPOOL,
+                       TokenType.FILEPOOL):
             return self.parse_identifier()
         
         elif self.match(TokenType.LPAREN):
@@ -343,6 +438,36 @@ class ParserExpressionsMixin:
                 self.consume(TokenType.RPAREN, "Expected ')'")
             return FunctionCall(line, column, "SocketClose", args)
         
+        elif self.match(TokenType.SOCKETCONNECT):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketConnect", args)
+        
+        elif self.match(TokenType.SOCKETSETOPTION):
+            line = self.current_token.line
+            column = self.current_token.column
+            self.advance()
+            args = []
+            if self.match(TokenType.LPAREN):
+                self.advance()
+                if not self.check(TokenType.RPAREN):
+                    args.append(self.parse_expression())
+                    while self.match(TokenType.COMMA):
+                        self.advance()
+                        args.append(self.parse_expression())
+                self.consume(TokenType.RPAREN, "Expected ')'")
+            return FunctionCall(line, column, "SocketSetOption", args)
+        
         else:
             self.error(f"Unexpected token in expression: {self.current_token.value if self.current_token else 'EOF'}")
 
@@ -381,14 +506,15 @@ class ParserExpressionsMixin:
 
     def parse_identifier(self) -> ASTNode:
         """Parse an identifier, which might be a variable or function call"""
-        identifier = self.consume(TokenType.IDENTIFIER)
+        start_token = self.current_token
+        name = self.parse_qualified_name()
         
         # Check if this is a function call
         if self.match(TokenType.LPAREN):
             self.consume(TokenType.LPAREN)
             arguments = []
             
-            if not self.match(TokenType.RPAREN):
+            if not self.check(TokenType.RPAREN):
                 arguments.append(self.parse_expression())
                 while self.match(TokenType.COMMA):
                     self.consume(TokenType.COMMA)
@@ -396,35 +522,16 @@ class ParserExpressionsMixin:
             
             self.consume(TokenType.RPAREN)
             return FunctionCall(
-                function=identifier.value,
+                function=name,
                 arguments=arguments,
-                line=identifier.line,
-                column=identifier.column
+                line=start_token.line,
+                column=start_token.column
             )
-        # Handle BitwiseAnd and BitwiseOr as function calls
-        elif identifier.value in ['BitwiseAnd', 'BitwiseOr']:
-            if self.match(TokenType.LPAREN):
-                self.consume(TokenType.LPAREN)
-                arguments = []
-                
-                if not self.match(TokenType.RPAREN):
-                    arguments.append(self.parse_expression())
-                    while self.match(TokenType.COMMA):
-                        self.consume(TokenType.COMMA)
-                        arguments.append(self.parse_expression())
-                
-                self.consume(TokenType.RPAREN)
-                return FunctionCall(
-                    function=identifier.value,
-                    arguments=arguments,
-                    line=identifier.line,
-                    column=identifier.column
-                )
         # Just a variable reference
         return Identifier(
-            name=identifier.value,
-            line=identifier.line,
-            column=identifier.column)
+            name=name,
+            line=start_token.line,
+            column=start_token.column)
 
     def parse_array_literal(self):
         """Parse array literal [...]"""

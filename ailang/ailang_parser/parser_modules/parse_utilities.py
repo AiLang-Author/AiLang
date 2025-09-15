@@ -15,10 +15,44 @@ class ParserUtilitiesMixin:
             parts.append(self.consume(TokenType.IDENTIFIER).value)
         return '.'.join(parts)
 
+    def parse_qualified_name(self) -> str:
+        """
+        Parses a name that can start with a keyword or identifier, 
+        e.g., FixedPool.Name or MyVar.field
+        """
+        allowed_first_tokens = [
+            TokenType.IDENTIFIER, TokenType.FIXEDPOOL, TokenType.DYNAMICPOOL, 
+            TokenType.TEMPORALPOOL, TokenType.NEURALPOOL, TokenType.KERNELPOOL, 
+            TokenType.ACTORPOOL, TokenType.SECURITYPOOL, TokenType.CONSTRAINEDPOOL, 
+            TokenType.FILEPOOL
+        ]
+
+        if not self.match(*allowed_first_tokens):
+            self.error("Expected an identifier or pool type to start a qualified name.")
+
+        parts = [self.current_token.value]
+        self.advance()
+
+        while self.match(TokenType.DOT) and self.peek() and self.peek().type == TokenType.IDENTIFIER:
+            self.consume(TokenType.DOT)
+            parts.append(self.consume(TokenType.IDENTIFIER).value)
+        return '.'.join(parts)
+
     def parse_type(self):
         """Parse type annotations"""
-        # Simple implementation - just consume the type name
-        if self.current_token.type == TokenType.IDENTIFIER:
+        # A type can be a named keyword (Integer, Address, etc.) or a custom identifier
+        type_tokens = [
+            TokenType.IDENTIFIER, TokenType.INTEGER, TokenType.FLOATINGPOINT,
+            TokenType.TEXT, TokenType.BOOLEAN, TokenType.ADDRESS, TokenType.ARRAY,
+            TokenType.MAP, TokenType.TUPLE, TokenType.RECORD, TokenType.OPTIONALTYPE,
+            TokenType.CONSTRAINEDTYPE, TokenType.ANY, TokenType.VOID,
+            # Low-level types
+            TokenType.BYTE, TokenType.WORD, TokenType.DWORD, TokenType.QWORD,
+            TokenType.UINT8, TokenType.UINT16, TokenType.UINT32, TokenType.UINT64,
+            TokenType.INT8, TokenType.INT16, TokenType.INT32, TokenType.INT64,
+            TokenType.POINTER
+        ]
+        if self.match(*type_tokens):
             type_name = self.current_token.value
             self.advance()
             return type_name

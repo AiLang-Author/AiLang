@@ -86,11 +86,13 @@ class ParserDebugMixin:
         operation = self.consume(TokenType.IDENTIFIER).value  # Start, End, Mark, etc.
         
         # Parse the label in parentheses
-        label = None
+        label_node = None
         if self.match(TokenType.LPAREN):
             self.consume(TokenType.LPAREN)
             if self.match(TokenType.STRING):
-                label = self.consume(TokenType.STRING).value
+                label_token = self.consume(TokenType.STRING)
+                from ..ailang_ast import String
+                label_node = String(value=label_token.value, line=label_token.line, column=label_token.column)
             self.consume(TokenType.RPAREN)
         
         # Handle block syntax for Start (optional)
@@ -109,7 +111,7 @@ class ParserDebugMixin:
         from ailang_parser.ailang_ast import FunctionCall
         return FunctionCall(
             function=f"DebugPerf_{operation}",
-            arguments=[label] if label else [],
+            arguments=[label_node] if label_node else [],
             line=self.current_token.line if self.current_token else 0,
             column=self.current_token.column if self.current_token else 0
         )

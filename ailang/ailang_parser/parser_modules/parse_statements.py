@@ -69,16 +69,26 @@ class ParserStatementsMixin:
         elif self.match(TokenType.PAGETABLE, TokenType.VIRTUALMEMORY, TokenType.CACHE, 
                     TokenType.TLB, TokenType.MEMORYBARRIER):
             return self.parse_vm_operation()
-        elif self.match(TokenType.IDENTIFIER):
-            if self.peek() and self.peek().type == TokenType.EQUALS:
-                return self.parse_assignment()
-            else:
-                expr = self.parse_expression()
-                return expr
         else:
+            # This branch handles both expression statements (like function calls)
+            # and assignments. We parse the left-hand side as an expression.
             expr = self.parse_expression()
+
+            # If the next token is '=', it's an assignment.
+            if self.match(TokenType.EQUALS):
+                if not isinstance(expr, Identifier):
+                    self.error(f"Invalid assignment target. Cannot assign to a {type(expr).__name__}.")
+                
+                self.consume(TokenType.EQUALS)
+                value = self.parse_expression()
+                return Assignment(target=expr.name, value=value, line=expr.line, column=expr.column)
+            
+            # Otherwise, it's just an expression statement.
             if expr:
                 return expr
+            
+            # If parsing an expression returned nothing and we're not at EOF,
+            # advance to avoid getting stuck.
             if self.current_token and self.current_token.type != TokenType.EOF:
                 self.advance()
             return None
@@ -89,10 +99,10 @@ class ParserStatementsMixin:
         self.consume(TokenType.LPAREN)  # Change from DOT to LPAREN
         
         # Get task name as string literal
-        if self.match(TokenType.STRING):
-            task_name = self.consume(TokenType.STRING).value
+        if self.match(TokenType.IDENTIFIER):
+            task_name = self.consume(TokenType.IDENTIFIER).value
         else:
-            self.error("RunTask requires a task name string")
+            self.error("RunTask requires a task name (identifier)")
         
         # No additional arguments for now - just close paren
         self.consume(TokenType.RPAREN)
@@ -167,22 +177,39 @@ class ParserStatementsMixin:
         while not self.match(TokenType.RBRACE):
             if self.match(TokenType.CASEOPTION):
                 self.consume(TokenType.CASEOPTION)
-                case_value = self.consume(TokenType.STRING).value
+                if self.match(TokenType.STRING):
+                    case_value = self.consume(TokenType.STRING).value
+                elif self.match(TokenType.NUMBER):
+                    case_value = self.consume(TokenType.NUMBER).value
+                else:
+                    self.error("CaseOption requires a string or number literal")
                 self.consume(TokenType.COLON)
+                self.skip_newlines()
+                self.consume(TokenType.LBRACE)
+                self.skip_newlines()
                 case_body = []
-                stmt = self.parse_statement()
-                if stmt:
-                    case_body.append(stmt)
+                while not self.match(TokenType.RBRACE):
+                    stmt = self.parse_statement()
+                    if stmt:
+                        case_body.append(stmt)
+                    self.skip_newlines()
+                self.consume(TokenType.RBRACE)
                 cases.append((case_value, case_body))
             elif self.match(TokenType.DEFAULTOPTION):
                 self.consume(TokenType.DEFAULTOPTION)
                 self.consume(TokenType.COLON)
+                self.skip_newlines()
+                self.consume(TokenType.LBRACE)
+                self.skip_newlines()
                 default = []
-                stmt = self.parse_statement()
-                if stmt:
-                    default.append(stmt)
+                while not self.match(TokenType.RBRACE):
+                    stmt = self.parse_statement()
+                    if stmt:
+                        default.append(stmt)
+                    self.skip_newlines()
+                self.consume(TokenType.RBRACE)
             else:
-                self.advance()
+                self.error(f"Expected CaseOption or DefaultOption, but got {self.current_token.type.name}")
             self.skip_newlines()
         self.consume(TokenType.RBRACE)
         self.pop_context()
@@ -376,7 +403,7 @@ class ParserStatementsMixin:
         while self.match(TokenType.CATCHERROR):
             self.consume(TokenType.CATCHERROR)
             self.consume(TokenType.DOT)
-            error_type = self.consume(TokenType.IDENTIFIER).value
+            error_type = self.parse_type()
             self.skip_newlines()
             self.consume(TokenType.LBRACE)
             self.skip_newlines()
@@ -503,10 +530,3 @@ class ParserStatementsMixin:
                 message = self.consume(TokenType.STRING).value
             self.consume(TokenType.RPAREN)
         return HaltProgram(message=message, line=start_token.line, column=start_token.column)
-
-    def parse_assignment(self) -> Assignment:
-        target = self.consume(TokenType.IDENTIFIER).value
-        self.consume(TokenType.EQUALS)
-        value = self.parse_expression()
-        return Assignment(target=target, value=value,
-                          line=self.current_token.line, column=self.current_token.column)
