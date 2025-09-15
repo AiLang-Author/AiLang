@@ -180,6 +180,13 @@ def get_keyword_mapping():
         'StringToString': TokenType.STRINGTOSTRING,
         'NumberToString': TokenType.NUMBERTOSTRING,
         'StringToNumber': TokenType.STRINGTONUMBER,
+        # === NEW: Add missing string utilities ===
+        'StringExtract': TokenType.STRINGEXTRACT,
+        'StringCharAt': TokenType.STRINGCHARAT,
+        'StringExtractUntil': TokenType.STRINGEXTRACTUNTIL,
+        # From new test harness
+        'StringIndexOf': TokenType.STRINGINDEXOF,
+        'StringSplit': TokenType.STRINGSPLIT,
         'CharToString': TokenType.CHARTOSTRING,
 
         # File I/O (preserved)
@@ -242,6 +249,8 @@ def get_keyword_mapping():
         'SocketRead': TokenType.SOCKETREAD,
         'SocketWrite': TokenType.SOCKETWRITE,
         'SocketClose': TokenType.SOCKETCLOSE,
+        'SocketConnect': TokenType.SOCKETCONNECT,
+        'SocketSetOption': TokenType.SOCKETSETOPTION,
         'Deallocate': TokenType.DEALLOCATE,
         'MemoryCopy': TokenType.MEMORYCOPY,
         'MemorySet': TokenType.MEMORYSET,

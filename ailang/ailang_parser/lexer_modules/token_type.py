@@ -84,6 +84,8 @@ class TokenType(Enum):
     SOCKETREAD = auto()
     SOCKETWRITE = auto()
     SOCKETCLOSE = auto()
+    SOCKETCONNECT = auto()
+    SOCKETSETOPTION = auto()
     POOLFREE = auto()
 
     # Math Operators (Named)
@@ -95,6 +97,33 @@ class TokenType(Enum):
     MODULO = auto()
     SQUAREROOT = auto()
     ABSOLUTEVALUE = auto()
+    
+    # Add these to the TokenType enum:
+
+    # Add these NEW tokens to TokenType enum (avoiding duplicates):
+
+    # Symbol punctuation (not operators until parser decides)
+    PLUS_SIGN = auto()         # + symbol
+    STAR_SIGN = auto()         # * symbol  
+    SLASH_SIGN = auto()        # / symbol
+    PERCENT_SIGN = auto()      # % symbol (PERCENT already exists for units)
+    CARET_SIGN = auto()        # ^ symbol
+    GREATER_SIGN = auto()      # > symbol (GREATERTHAN already exists)
+    LESS_SIGN = auto()         # < symbol (LESSTHAN already exists)
+    BANG_SIGN = auto()         # ! symbol (NOT already exists)
+    AMPERSAND_SIGN = auto()    # & symbol (AND already exists)
+    PIPE_SIGN = auto()         # | symbol (OR already exists) 
+    TILDE_SIGN = auto()        # ~ symbol
+
+    # Two-character symbols
+    EQUAL_EQUAL = auto()       # ==
+    BANG_EQUAL = auto()        # !=
+    GREATER_EQUAL_SIGN = auto() # >= (GREATEREQUAL already exists)
+    LESS_EQUAL_SIGN = auto()   # <= (LESSEQUAL already exists)
+    AND_AND = auto()           # &&
+    PIPE_PIPE = auto()         # ||
+    LESS_LESS = auto()         # 
+    GREATER_GREATER = auto()   # >>
 
     # Comparison Operators (Named)
     GREATERTHAN = auto()
@@ -142,6 +171,14 @@ class TokenType(Enum):
     STRINGTOSTRING = auto()
     NUMBERTOSTRING = auto()
     STRINGTONUMBER = auto()
+    # === NEW: Add missing string utilities ===
+    STRINGEXTRACT = auto()
+    STRINGCHARAT = auto()
+    STRINGEXTRACTUNTIL = auto()
+    # From new test harness
+    STRINGINDEXOF = auto()
+    STRINGSPLIT = auto()
+
     CHARTOSTRING = auto()  
     
     # === FILE I/O OPERATIONS ===

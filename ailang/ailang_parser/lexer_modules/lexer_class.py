@@ -216,18 +216,26 @@ class Lexer:
                 break
             line_start = self.line
             col_start = self.column
+            
+            # Newlines
             if self.current_char() == '\n':
                 self.tokens.append(Token(TokenType.NEWLINE, '\n', line_start, col_start))
                 self.advance()
                 continue
+                
+            # Comments
             if self.current_char() == '/' and self.peek_char() == '/':
                 comment_type, value = self.read_comment()
                 self.tokens.append(Token(comment_type, value, line_start, col_start))
                 continue
+                
+            # Strings
             if self.current_char() == '"':
                 value = self.read_string()
                 self.tokens.append(Token(TokenType.STRING, value, line_start, col_start))
                 continue
+                
+            # Numbers (including negative)
             if self.current_char().isdigit() or (self.current_char() == '-' and self.peek_char() and self.peek_char().isdigit()):
                 value = ''
                 if self.current_char() == '-':
@@ -236,12 +244,56 @@ class Lexer:
                 value += self.read_number().value
                 self.tokens.append(Token(TokenType.NUMBER, value, line_start, col_start, len(value)))
                 continue
+                
+            # Two-character operators (recognized but not made into operator tokens yet)
             two_char = self.source[self.position:self.position+2]
             if two_char == '->':
                 self.advance()
                 self.advance()
                 self.tokens.append(Token(TokenType.ARROW, '->', line_start, col_start))
                 continue
+            elif two_char == '==':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.EQUALTO, 'EqualTo', line_start, col_start))  # Changed value to 'EqualTo'
+                continue
+            elif two_char == '!=':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.NOTEQUAL, 'NotEqual', line_start, col_start))  # Changed value to 'NotEqual'
+                continue
+            elif two_char == '>=':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.GREATEREQUAL, 'GreaterEqual', line_start, col_start))  # Changed value to 'GreaterEqual'
+                continue
+            elif two_char == '<=':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.LESSEQUAL, 'LessEqual', line_start, col_start))  # Changed value to 'LessEqual'
+                continue
+            elif two_char == '&&':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.AND_AND, 'And', line_start, col_start))  # Changed value to 'And'
+                continue
+            elif two_char == '||':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.PIPE_PIPE, 'Or', line_start, col_start))  # Changed value to 'Or'
+                continue
+            elif two_char == '<<':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.LESS_LESS, 'LeftShift', line_start, col_start))  # Changed value to 'LeftShift'
+                continue
+            elif two_char == '>>':
+                self.advance()
+                self.advance()
+                self.tokens.append(Token(TokenType.GREATER_GREATER, 'RightShift', line_start, col_start))  # Changed value to 'RightShift'
+                continue
+                
+            # In tokenize(), update the single_char_tokens dictionary:
             single_char_tokens = {
                 '=': TokenType.EQUALS,
                 '{': TokenType.LBRACE,
@@ -255,22 +307,41 @@ class Lexer:
                 ';': TokenType.SEMICOLON,
                 '.': TokenType.DOT,
                 '-': TokenType.DASH,
+                # Math symbols (with _SIGN suffix to avoid conflicts)
+                '+': TokenType.PLUS_SIGN,
+                '*': TokenType.STAR_SIGN,
+                '/': TokenType.SLASH_SIGN,
+                '%': TokenType.PERCENT_SIGN,
+                '^': TokenType.CARET_SIGN,
+                # Comparison symbols
+                '>': TokenType.GREATER_SIGN,
+                '<': TokenType.LESS_SIGN,
+                # Logical/bitwise symbols
+                '!': TokenType.BANG_SIGN,
+                '&': TokenType.AMPERSAND_SIGN,
+                '|': TokenType.PIPE_SIGN,
+                '~': TokenType.TILDE_SIGN,
             }
+            
             if self.current_char() in single_char_tokens:
+                # Special case: dot followed by identifier (for dotted names)
                 if self.current_char() == '.' and self.peek_char() and self.peek_char().isalpha():
-                    pass
+                    pass  # Let identifier handling take care of it
                 else:
                     token_type = single_char_tokens[self.current_char()]
                     value = self.current_char()
                     self.advance()
                     self.tokens.append(Token(token_type, value, line_start, col_start, 1))
                     continue
+                    
+            # Identifiers and keywords
             if self.current_char().isalpha() or self.current_char() == '_':
                 value = self.read_identifier()
                 token_type = self.keywords.get(value, TokenType.IDENTIFIER)
                 if token_type != TokenType.IDENTIFIER:
                     self.tokens.append(Token(token_type, value, line_start, col_start, len(value)))
                     continue
+                # Handle dotted identifiers
                 if self.current_char() == '.' and self.peek_char() and self.peek_char().isalpha():
                     parts = [value]
                     while self.current_char() == '.' and self.peek_char() and self.peek_char().isalpha():
@@ -279,10 +350,15 @@ class Lexer:
                     value = '.'.join(parts)
                 self.tokens.append(Token(TokenType.IDENTIFIER, value, line_start, col_start, len(value)))
                 continue
+                
+            # Standalone dot
             if self.current_char() == '.':
                 self.advance()
                 self.tokens.append(Token(TokenType.DOT, '.', line_start, col_start, 1))
                 continue
+                
+            # Unknown character
             self.error(f"Unknown character '{self.current_char()}'")
+            
         self.tokens.append(Token(TokenType.EOF, None, self.line, self.column))
         return self.tokens
