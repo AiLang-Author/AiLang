@@ -15,6 +15,7 @@ from ailang_parser.ailang_ast import *
 from ailang_compiler.assembler import X64Assembler
 from ailang_compiler.elf_generator import ELFGenerator
 from ailang_compiler.modules.arithmetic_ops import ArithmeticOps
+from ailang_compiler.modules.math_ops import MathOperations
 from ailang_compiler.modules.fileio_ops import FileIOOps
 from ailang_compiler.modules.control_flow import ControlFlow
 from ailang_compiler.modules.memory_manager import MemoryManager
@@ -56,6 +57,7 @@ class AILANGToX64Compiler:
         # Initialize core modules first
         self.arithmetic = ArithmeticOps(self)
         self.fileio = FileIOOps(self)
+        self.math_ops = MathOperations(self)
         self.control_flow = ControlFlow(self)
         self.memory = MemoryManager(self)
         self.memory_pool = MemoryPool(self)
@@ -139,48 +141,77 @@ class AILANGToX64Compiler:
 
     # --- NEW: Function to handle library compilation ---
     def compile_library(self, library_node):
-        """Finds, parses, and compiles an AILANG library."""
+        """Finds, parses, and compiles an AILANG library with 2-pass support."""
         try:
-            # The library name will be like "Core.DataStructures"
             library_path_parts = library_node.name.split('.')
             
-            # Check if this library has already been processed to avoid infinite loops
             if library_node.name in self.loaded_libraries:
                 return
 
-            # Construct the file path: AILANG/Libraries/Core/Library.DataStructures.ailang
+            # Try current directory first, then Libraries subdirectory
             file_name = f"Library.{library_path_parts[-1]}.ailang"
+            library_file_path = file_name
             
-            # Start search in the 'Libraries' directory
-            search_path_parts = ['Libraries'] + library_path_parts[:-1] + [file_name]
-            library_file_path = os.path.join(*search_path_parts)
-
+            if not os.path.exists(library_file_path):
+                search_path_parts = ['Libraries'] + library_path_parts[:-1] + [file_name]
+                library_file_path = os.path.join(*search_path_parts)
 
             if not os.path.exists(library_file_path):
                 raise FileNotFoundError(f"Library file not found: {library_file_path}")
 
+            print(f"  Loading library: {library_file_path}")
+
             with open(library_file_path, 'r') as f:
                 library_source = f.read()
 
-            # Recursively call the parser for the library's source code
-            parser = AILANGCompiler() # This is the parser from ailang_parser
+            parser = AILANGCompiler()
             library_ast = parser.compile(library_source)
 
-            # Mark this library as loaded *before* compiling its content
             self.loaded_libraries.add(library_node.name)
 
-            # Compile the declarations from the library into the current context
+            # Extract library prefix (e.g., "RESP" from "Library.RESP")
+            lib_prefix = library_path_parts[-1]
+            
+            # PASS 1: Register all library functions BEFORE compiling any
+            print(f"  Pass 1: Registering {lib_prefix} library functions...")
+            for decl in library_ast.declarations:
+                if type(decl).__name__ in ('Function', 'FunctionDefinition'):
+                    # Fix function name to include library prefix
+                    if '.' in decl.name:
+                        # Already has dots - parse it properly
+                        parts = decl.name.split('.')
+                        if parts[0] == lib_prefix:
+                            # Already prefixed correctly
+                            full_name = decl.name
+                        else:
+                            # Add library prefix
+                            full_name = f"{lib_prefix}.{decl.name}"
+                    else:
+                        # Simple name - add library prefix
+                        full_name = f"{lib_prefix}.{decl.name}"
+                    
+                    # Update the node's name
+                    original_name = decl.name
+                    decl.name = full_name
+                    
+                    # Register with user_functions module
+                    self.user_functions.register_function(decl)
+                    
+                    print(f"    Registered: {full_name}")
+
+            # PASS 2: Now compile all declarations
+            print(f"  Pass 2: Compiling {lib_prefix} library functions...")
             for decl in library_ast.declarations:
                 self.compile_node(decl)
-            
 
         except FileNotFoundError as e:
             print(f"ERROR: Could not import library '{library_node.name}'. {e}")
             raise
         except Exception as e:
             print(f"ERROR: Failed during compilation of library '{library_node.name}': {e}")
+            import traceback
+            traceback.print_exc()
             raise
-
 
     def get_label(self):
         # ... (keep this method as is) ...
@@ -275,15 +306,45 @@ class AILANGToX64Compiler:
         try:
             print(f"DEBUG: Compiling function call: {node.function}")
             
+            # === NEW: Check if this is a registered library function first ===
+            # This handles forward references from the 2-pass registration
+            if hasattr(self.user_functions, 'is_function_registered'):
+                if self.user_functions.is_function_registered(node.function):
+                    print(f"DEBUG: Found registered function: {node.function}")
+                    if self.user_functions.compile_function_call(node):
+                        return
+            
             # Extract base function name (handles both "Category.Name" and "Name")
             base_name = node.function
             if '.' in node.function:
-                # Check full name first for user functions
+                parts = node.function.split('.')
+                
+                # === NEW: Check for library function patterns (e.g., RESP.ParseInteger) ===
+                if len(parts) == 2:
+                    lib_name, func_name = parts
+                    
+                    # Try as registered library function
+                    if hasattr(self.user_functions, 'is_function_registered'):
+                        # Try full name first
+                        if self.user_functions.is_function_registered(node.function):
+                            print(f"DEBUG: Found library function: {node.function}")
+                            if self.user_functions.compile_function_call(node):
+                                return
+                        
+                        # Try with "Function." prefix removed if present
+                        if lib_name == "Function" and self.user_functions.is_function_registered(func_name):
+                            import copy
+                            node_copy = copy.copy(node)
+                            node_copy.function = func_name
+                            if self.user_functions.compile_function_call(node_copy):
+                                return
+                
+                # Check full name first for user functions (existing code)
                 if node.function in self.user_functions.user_functions:
                     if self.user_functions.compile_function_call(node):
                         return
                 
-                # Try without "Function." prefix if present
+                # Try without "Function." prefix if present (existing code)
                 if node.function.startswith("Function."):
                     clean_name = node.function[9:]
                     if clean_name in self.user_functions.user_functions:
@@ -293,8 +354,7 @@ class AILANGToX64Compiler:
                         if self.user_functions.compile_function_call(node_copy):
                             return
                 
-                # Check for pool operations
-                parts = node.function.split('.')
+                # Check for pool operations (existing code)
                 if len(parts) == 2 and parts[1] in ['Init', 'Alloc', 'Free', 'Reset', 'Status']:
                     if hasattr(self, 'memory_pool') and self.memory_pool.compile_operation(node):
                         return
@@ -302,7 +362,7 @@ class AILANGToX64Compiler:
                 # Try base name for primitives
                 base_name = node.function.split('.')[-1]
             
-            # Check user functions with base name
+            # Check user functions with base name (existing code)
             if base_name in self.user_functions.user_functions:
                 import copy
                 node_copy = copy.copy(node)
@@ -310,40 +370,57 @@ class AILANGToX64Compiler:
                 if self.user_functions.compile_function_call(node_copy):
                     return
 
-            # Check for pooled string operations
+            # Check for pooled string operations (existing code)
             if node.function == 'StringConcatPooled':
                 if hasattr(self, 'strings') and self.strings.compile_operation(node):
                     return
 
-            # Dispatch to modules
+            # Dispatch to modules (existing code)
             dispatch_modules = [
-                self.arithmetic, self.fileio, self.strings,
+                self.math_ops,      # Try math operations first
+                self.arithmetic,    # Then basic arithmetic
+                self.fileio, self.strings,
                 self.lowlevel, self.hash_ops, self.network_ops,
                 self.virtual_memory, self.atomics
             ]
 
+            print(f"DEBUG: Dispatching {node.function} to modules...")
+
             # Try with original name first
             for module in dispatch_modules:
-                if hasattr(module, 'compile_operation') and module.compile_operation(node):
-                    return
-            
+                module_name = module.__class__.__name__ if hasattr(module, '__class__') else str(module)
+                print(f"DEBUG: Trying module {module_name}")
+                if hasattr(module, 'compile_operation'):
+                    result = module.compile_operation(node)
+                    print(f"DEBUG: {module_name}.compile_operation returned {result}")
+                    if result:
+                        return
+                else:
+                    print(f"DEBUG: {module_name} has no compile_operation method")
+
             # If dotted name failed, try with base name
             if '.' in node.function:
                 import copy
                 node_copy = copy.copy(node)
                 node_copy.function = base_name
+                print(f"DEBUG: Trying base name {base_name}")
                 for module in dispatch_modules:
-                    if hasattr(module, 'compile_operation') and module.compile_operation(node_copy):
-                        return
+                    module_name = module.__class__.__name__ if hasattr(module, '__class__') else str(module)
+                    print(f"DEBUG: Trying module {module_name} with base name")
+                    if hasattr(module, 'compile_operation'):
+                        result = module.compile_operation(node_copy)
+                        print(f"DEBUG: {module_name}.compile_operation returned {result}")
+                        if result:
+                            return
 
-            # Special cases
+            # Special cases (existing code)
             if base_name == 'PrintNumber':
                 return self.strings.compile_print_number(node)
                 
-            # Memory pool operations
+            # Memory pool operations (existing code)
             if base_name in ['PoolResize', 'PoolMove', 'PoolCompact',
                             'PoolAllocate', 'PoolFree', 'PoolGetSize',
-                            'ArrayCreate', 'ArraySet', 'ArrayGet', 'ArrayLength']:
+                            'ArrayCreate', 'ArraySet', 'ArrayGet', 'ArrayLength','ArrayDestroy']:
                 memory_ops = {
                     'PoolResize': self.memory.compile_pool_resize,
                     'PoolMove': self.memory.compile_pool_move,
@@ -355,20 +432,19 @@ class AILANGToX64Compiler:
                     'ArraySet': self.memory.compile_array_set,
                     'ArrayGet': self.memory.compile_array_get,
                     'ArrayLength': self.memory.compile_array_length,
+                    'ArrayDestroy': self.memory.compile_array_destroy, 
                 }
                 if base_name in memory_ops:
                     return memory_ops[base_name](node)
 
-            # Scheduling primitives
+            # Scheduling primitives (existing code)
             if self._is_scheduler_primitive(base_name):
                 return self._compile_scheduler_primitive(node)
 
-                 
-            
-            # Exit
+            # Exit (existing code)
             if base_name == 'Exit':
                 self.asm.emit_mov_rax_imm64(60)
-                self.asm.emit_xor_rdi_rdi()
+                self.asm.emit_xor_edi_edi()
                 self.asm.emit_syscall()
                 return
 
@@ -400,9 +476,23 @@ class AILANGToX64Compiler:
         # Save registers we might use
         self.asm.emit_push_rbx()
         
+        # Create return label for this subroutine
+        return_label = self.asm.create_label()
+        
+        # Set context for ReturnValue
+        self.compiling_subroutine = True
+        self.subroutine_return_label = return_label
+        
         # Compile body
         for stmt in node.body:
             self.compile_node(stmt)
+        
+        # Mark return point
+        self.asm.mark_label(return_label)
+        
+        # Clear context
+        self.compiling_subroutine = False
+        self.subroutine_return_label = None
         
         # Restore registers and return
         self.asm.emit_pop_rbx()
@@ -675,29 +765,42 @@ class AILANGToX64Compiler:
         return self.memory.resolve_acronym_identifier(identifier_name)
     
     def compile(self, ast) -> bytes:
-        """Compile AST to executable with user-defined function support"""
+        """Compile AST to executable with 2-pass function registration"""
         print("\n=== COMPILATION STARTING ===")
         
-        # NEW: First pass - register all user-defined functions
-        print("Phase 0: Registering user-defined functions...")
-        self.user_functions.process_all_functions(ast)
+        # PASS 1: Register ALL functions first (including in libraries)
+        print("Phase 0: Registering all functions...")
         
-        print("Phase 1: Generating machine code with placeholders...")
+        # Process top-level functions
+        for decl in ast.declarations:
+            if type(decl).__name__ in ('Function', 'FunctionDefinition'):
+                self.user_functions.register_function(decl)
+            elif type(decl).__name__ == 'Library':
+                # Libraries handle their own registration in compile_library
+                pass
+        
+        # Also let user_functions do its own scan if it has that method
+        if hasattr(self.user_functions, 'process_all_functions'):
+            self.user_functions.process_all_functions(ast)
+        
+        # PASS 2: Compile everything
+        print("Phase 1: Generating machine code...")
         self.compile_node(ast)
-        self.fixup_forward_references()  # Fix SubRoutine calls
+        
+        # Fix forward references
+        self.fixup_forward_references()
         
         print("Phase 2: Resolving internal jump offsets...")
         self.asm.resolve_jumps()
 
-        print("Phase 3: Building executable and applying relocations...")
+        print("Phase 3: Building executable...")
         code_bytes = bytes(self.asm.code)
         data_bytes = bytes(self.asm.data)
         
-        # The ELF generator now orchestrates the final address calculation and patching.
         executable = self.elf.generate(code_bytes, data_bytes, self.asm)
         
         print(f"\n=== COMPILATION COMPLETE ({len(executable)} bytes) ===")
         return executable
-        
+            
         
     
