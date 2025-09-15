@@ -1,6 +1,6 @@
 """
-Hash Table Operations Module for AILANG Compiler - COMPLETE REWRITE
-Simple, working implementation using linear probing instead of chaining
+Hash Table Operations Module for AILANG Compiler - FIXED VERSION
+Uses string comparison instead of pointer comparison
 """
 
 import sys
@@ -8,7 +8,7 @@ import os
 from ailang_parser.ailang_ast import *
 
 class HashOps:
-    """Simple hash table using linear probing - no pointer chains!"""
+    """Hash table using linear probing with STRING COMPARISON"""
 
     def __init__(self, compiler_context):
         self.compiler = compiler_context
@@ -24,6 +24,62 @@ class HashOps:
                 if handler:
                     return handler(node)
         return False
+
+    def emit_string_compare(self):
+        """Compare string at R13 with string at [RBX+8]. Sets ZF if equal."""
+        
+        # Save registers
+        self.asm.emit_push_rsi()
+        self.asm.emit_push_rdi()
+        self.asm.emit_push_rax()
+        self.asm.emit_push_rcx()
+        
+        # RSI = R13 (search key)
+        self.asm.emit_bytes(0x4C, 0x89, 0xEE)      # MOV RSI, R13
+        # RDI = [RBX+8] (stored key)
+        self.asm.emit_bytes(0x48, 0x8B, 0x7B, 0x08) # MOV RDI, [RBX+8]
+        
+        # String comparison loop
+        compare_loop = self.asm.create_label()
+        strings_match = self.asm.create_label()
+        strings_differ = self.asm.create_label()
+        
+        self.asm.mark_label(compare_loop)
+        
+        # Load and compare bytes
+        self.asm.emit_bytes(0x8A, 0x06)            # MOV AL, [RSI]
+        self.asm.emit_bytes(0x8A, 0x0F)            # MOV CL, [RDI]
+        self.asm.emit_bytes(0x38, 0xC8)            # CMP AL, CL
+        self.asm.emit_jump_to_label(strings_differ, "JNE")
+        
+        # Check for null terminator
+        self.asm.emit_bytes(0x84, 0xC0)            # TEST AL, AL
+        self.asm.emit_jump_to_label(strings_match, "JZ")
+        
+        # Move to next character
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)      # INC RSI
+        self.asm.emit_bytes(0x48, 0xFF, 0xC7)      # INC RDI
+        self.asm.emit_jump_to_label(compare_loop, "JMP")
+        
+        self.asm.mark_label(strings_match)
+        # Set ZF by comparing equal values
+        self.asm.emit_bytes(0x48, 0x31, 0xC0)      # XOR RAX, RAX
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)      # TEST RAX, RAX (sets ZF)
+        end_label = self.asm.create_label()
+        self.asm.emit_jump_to_label(end_label, "JMP")
+        
+        self.asm.mark_label(strings_differ)
+        # Clear ZF by setting RAX to 1
+        self.asm.emit_bytes(0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x00)  # MOV RAX, 1
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)      # TEST RAX, RAX (clears ZF)
+        
+        self.asm.mark_label(end_label)
+        
+        # Restore registers
+        self.asm.emit_pop_rcx()
+        self.asm.emit_pop_rax()
+        self.asm.emit_pop_rdi()
+        self.asm.emit_pop_rsi()
 
     def compile_hash_create(self, node):
         """Create hash table with linear probing
@@ -78,7 +134,7 @@ class HashOps:
         return True
 
     def compile_hash_set(self, node):
-        """Simple HashSet using linear probing - no chains!"""
+        """HashSet with STRING COMPARISON for key matching"""
         if len(node.arguments) < 3:
             raise ValueError("HashSet requires 3 arguments")
 
@@ -88,23 +144,23 @@ class HashOps:
         self.asm.emit_push_rdx()
         self.asm.emit_push_rsi()
         self.asm.emit_push_rdi()
-        self.asm.emit_bytes(0x41, 0x56)  # PUSH R14
-        self.asm.emit_bytes(0x41, 0x57)  # PUSH R15
+        self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
+        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13
 
         # Get value first
         self.compiler.compile_expression(node.arguments[2])
-        self.asm.emit_bytes(0x49, 0x89, 0xC6)  # MOV R14, RAX (value)
+        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX (value)
 
         # Get key
         self.compiler.compile_expression(node.arguments[1])
-        self.asm.emit_bytes(0x49, 0x89, 0xC7)  # MOV R15, RAX (key addr)
+        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX (key addr)
 
         # Get table
         self.compiler.compile_expression(node.arguments[0])
         self.asm.emit_mov_rdi_rax()  # RDI = table
 
         # === HASH THE KEY ===
-        self.asm.emit_bytes(0x4C, 0x89, 0xFB)  # MOV RBX, R15 (key string)
+        self.asm.emit_bytes(0x4C, 0x89, 0xEB)  # MOV RBX, R13 (key string)
         self.asm.emit_mov_rax_imm64(5381)  # Initial hash
         
         hash_loop = self.asm.create_label()
@@ -161,9 +217,9 @@ class HashOps:
         self.asm.emit_jump_to_label(next_slot, "JMP")  # Try next slot
         
         self.asm.mark_label(check_key)
-        # Compare actual keys (simplified - just compare pointers)
-        self.asm.emit_bytes(0x4C, 0x3B, 0x7B, 0x08)  # CMP R15, [RBX+8]
-        self.asm.emit_jump_to_label(found_slot, "JE")  # Key matches, update
+        # STRING COMPARISON instead of pointer comparison
+        self.emit_string_compare()  # Compare R13 with [RBX+8]
+        self.asm.emit_jump_to_label(found_slot, "JE")  # Strings match, update
         
         self.asm.mark_label(next_slot)
         # Move to next slot (linear probing)
@@ -178,10 +234,8 @@ class HashOps:
         self.asm.emit_bytes(0x48, 0x39, 0xC3)  # CMP RBX, RAX
         wrap_around = self.asm.create_label()
         self.asm.emit_jump_to_label(probe_loop, "JL")  # If RBX < RAX, continue
-# Fall through to wrap if RBX >= RAX
-        self.asm.emit_jump_to_label(probe_loop, "JMP")  # Continue probing
         
-        self.asm.mark_label(wrap_around)
+        # Wrap to beginning
         self.asm.emit_bytes(0x48, 0x8D, 0x5F, 0x10)  # LEA RBX, [RDI+16] (first slot)
         self.asm.emit_jump_to_label(probe_loop, "JMP")
         
@@ -203,15 +257,15 @@ class HashOps:
         # Store the entry
         self.asm.emit_pop_rax()  # Get hash
         self.asm.emit_bytes(0x48, 0x89, 0x03)  # MOV [RBX], RAX (hash)
-        self.asm.emit_bytes(0x4C, 0x89, 0x7B, 0x08)  # MOV [RBX+8], R15 (key)
-        self.asm.emit_bytes(0x4C, 0x89, 0x73, 0x10)  # MOV [RBX+16], R14 (value)
+        self.asm.emit_bytes(0x4C, 0x89, 0x6B, 0x08)  # MOV [RBX+8], R13 (key)
+        self.asm.emit_bytes(0x4C, 0x89, 0x63, 0x10)  # MOV [RBX+16], R12 (value)
         
         # Return success
         self.asm.emit_mov_rax_imm64(1)
         
         # Restore registers
-        self.asm.emit_bytes(0x41, 0x5F)  # POP R15
-        self.asm.emit_bytes(0x41, 0x5E)  # POP R14
+        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
+        self.asm.emit_bytes(0x41, 0x5C)  # POP R12
         self.asm.emit_pop_rdi()
         self.asm.emit_pop_rsi()
         self.asm.emit_pop_rdx()
@@ -220,7 +274,7 @@ class HashOps:
         return True
 
     def compile_hash_get(self, node):
-        """Simple HashGet using linear probing"""
+        """HashGet with STRING COMPARISON for key matching"""
         if len(node.arguments) < 2:
             raise ValueError("HashGet requires 2 arguments")
 
@@ -230,18 +284,18 @@ class HashOps:
         self.asm.emit_push_rdx()
         self.asm.emit_push_rsi()
         self.asm.emit_push_rdi()
-        self.asm.emit_bytes(0x41, 0x57)  # PUSH R15
+        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13
 
         # Get key
         self.compiler.compile_expression(node.arguments[1])
-        self.asm.emit_bytes(0x49, 0x89, 0xC7)  # MOV R15, RAX (key)
+        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX (key)
 
         # Get table
         self.compiler.compile_expression(node.arguments[0])
         self.asm.emit_mov_rdi_rax()  # RDI = table
 
         # === HASH THE KEY ===
-        self.asm.emit_bytes(0x4C, 0x89, 0xFB)  # MOV RBX, R15
+        self.asm.emit_bytes(0x4C, 0x89, 0xEB)  # MOV RBX, R13
         self.asm.emit_mov_rax_imm64(5381)
         
         hash_loop = self.asm.create_label()
@@ -299,8 +353,8 @@ class HashOps:
         self.asm.emit_jump_to_label(next_slot, "JMP")
         
         self.asm.mark_label(check_key)
-        # Compare keys (simplified)
-        self.asm.emit_bytes(0x4C, 0x3B, 0x7B, 0x08)  # CMP R15, [RBX+8]
+        # STRING COMPARISON instead of pointer comparison
+        self.emit_string_compare()  # Compare R13 with [RBX+8]
         self.asm.emit_jump_to_label(found_entry, "JE")
         
         self.asm.mark_label(next_slot)
@@ -313,19 +367,15 @@ class HashOps:
         self.asm.emit_bytes(0x48, 0x8D, 0x44, 0x07, 0x10)  # LEA RAX, [RDI+RAX+16]
         
         self.asm.emit_bytes(0x48, 0x39, 0xC3)  # CMP RBX, RAX
-        wrap = self.asm.create_label()
         self.asm.emit_jump_to_label(probe_loop, "JL")
+        
+        # Wrap to beginning
+        self.asm.emit_bytes(0x48, 0x8D, 0x5F, 0x10)  # LEA RBX, [RDI+16]
         
         # Decrement counter and continue
         self.asm.emit_bytes(0x48, 0xFF, 0xC9)  # DEC RCX
         self.asm.emit_jump_to_label(probe_loop, "JNZ")
         self.asm.emit_jump_to_label(not_found, "JMP")  # Probed all slots
-        
-        self.asm.mark_label(wrap)
-        self.asm.emit_bytes(0x48, 0x8D, 0x5F, 0x10)  # LEA RBX, [RDI+16]
-        self.asm.emit_bytes(0x48, 0xFF, 0xC9)  # DEC RCX
-        self.asm.emit_jump_to_label(probe_loop, "JNZ")
-        self.asm.emit_jump_to_label(not_found, "JMP")
         
         # === FOUND ===
         self.asm.mark_label(found_entry)
@@ -343,7 +393,7 @@ class HashOps:
         self.asm.mark_label(done)
         
         # Restore registers
-        self.asm.emit_bytes(0x41, 0x5F)  # POP R15
+        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
         self.asm.emit_pop_rdi()
         self.asm.emit_pop_rsi()
         self.asm.emit_pop_rdx()

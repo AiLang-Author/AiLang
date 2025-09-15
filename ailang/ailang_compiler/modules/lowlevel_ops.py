@@ -20,7 +20,7 @@ class LowLevelOps:
     def compile_operation(self, node):
         """Compile low-level operations - handles both AST nodes and FunctionCalls"""
         try:
-            # Handle direct AST nodes (AddressOf, Dereference, SizeOf) - NEW FIX
+            # Handle direct AST nodes (AddressOf, Dereference, SizeOf)
             if hasattr(node, '__class__'):
                 node_type = node.__class__.__name__
                 if node_type == 'AddressOf':
@@ -36,7 +36,7 @@ class LowLevelOps:
                 elif node_type == 'SystemCall':
                     return self.compile_system_call(node)
             
-            # Handle FunctionCall nodes (original functionality)
+            # Handle FunctionCall nodes
             if hasattr(node, 'function'):
                 if node.function == 'Dereference':
                     return self.compile_dereference(node)
@@ -46,7 +46,7 @@ class LowLevelOps:
                     return self.compile_sizeof(node)
                 elif node.function == 'Allocate':
                     return self.compile_allocate(node)
-                elif node.function == 'Deallocate':
+                elif node.function in ['Deallocate', 'Free']:  # Handle both names
                     return self.compile_deallocate(node)
                 elif node.function == 'MemoryCopy':
                     return self.compile_memory_copy(node)
@@ -56,6 +56,10 @@ class LowLevelOps:
                     return self.compile_memory_compare(node)
                 elif node.function == 'StoreValue':
                     return self.compile_storevalue(node)
+                elif node.function == 'SetByte':  
+                    return self.compile_setbyte(node)
+                elif node.function == 'GetByte':  
+                    return self.compile_getbyte(node)
                 elif node.function in ['PortRead', 'PortWrite']:
                     return self.compile_port_operation(node)
                 elif node.function in ['AtomicRead', 'AtomicWrite', 'AtomicAdd', 'AtomicCompareSwap']:
@@ -64,14 +68,93 @@ class LowLevelOps:
                     return self.compile_mmio_operation(node)
                 elif node.function == 'HardwareRegister':
                     return self.compile_hardware_register(node)
-                else:
-                    return False  # Not a low-level operation
+                # If none match, return False so dispatch continues
             
-            return False  # Not a recognized low-level operation
+            return False  # Not a low-level operation
                 
         except Exception as e:
             print(f"ERROR: Low-level operation compilation failed: {str(e)}")
             raise
+        
+    # Add this method to the LowLevelOps class in lowlevel_ops.py:
+
+    def compile_setbyte(self, node):
+        """SetByte(address, offset, value) - Write a byte to memory"""
+        try:
+            print("DEBUG: Compiling SetByte operation")
+            
+            if len(node.arguments) != 3:
+                raise ValueError("SetByte requires 3 arguments (address, offset, value)")
+            
+            # Evaluate address -> push on stack
+            self.compiler.compile_expression(node.arguments[0])
+            self.asm.emit_push_rax()
+            
+            # Evaluate offset -> push on stack  
+            self.compiler.compile_expression(node.arguments[1])
+            self.asm.emit_push_rax()
+            
+            # Evaluate value -> stays in RAX
+            self.compiler.compile_expression(node.arguments[2])
+            
+            # Pop offset into RCX
+            self.asm.emit_pop_rcx()
+            
+            # Pop address into RDX
+            self.asm.emit_pop_rdx()
+            
+            # Add offset to address: RDX = address + offset
+            self.asm.emit_bytes(0x48, 0x01, 0xCA)  # ADD RDX, RCX
+            
+            # Store byte value (AL) at [RDX]
+            self.asm.emit_bytes(0x88, 0x02)  # MOV [RDX], AL
+            
+            # Return the value that was written (still in RAX)
+            print("DEBUG: SetByte completed")
+            return True
+            
+        except Exception as e:
+            print(f"ERROR: SetByte compilation failed: {str(e)}")
+            raise  
+        
+        
+    def compile_getbyte(self, node):
+        """GetByte(address, offset) - Read a byte from memory"""
+        try:
+            print("DEBUG: Compiling GetByte operation")
+            
+            if len(node.arguments) != 2:
+                raise ValueError("GetByte requires 2 arguments (address, offset)")
+            
+            # Evaluate the address into RAX
+            self.compiler.compile_expression(node.arguments[0])
+            
+            # Save address to RDX
+            self.asm.emit_push_rax()  # Save address
+            
+            # Evaluate the offset into RAX
+            self.compiler.compile_expression(node.arguments[1])
+            
+            # RAX = offset, [RSP] = address
+            # Move offset to RCX
+            self.asm.emit_mov_rcx_rax()  # RCX = offset
+            
+            # Restore address to RDX
+            self.asm.emit_pop_rdx()  # RDX = address
+            
+            # Add offset to address: RDX = RDX + RCX
+            self.asm.emit_bytes(0x48, 0x01, 0xCA)  # ADD RDX, RCX
+            
+            # Load byte from [RDX] into RAX (zero-extended)
+            self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0x02)  # MOVZX RAX, BYTE [RDX]
+            
+            print("DEBUG: GetByte completed")
+            return True
+            
+        except Exception as e:
+            print(f"ERROR: GetByte compilation failed: {str(e)}")
+            raise 
+        
     
     def compile_dereference(self, node):
         """Compile pointer dereference operation (FunctionCall syntax)"""
@@ -85,14 +168,15 @@ class LowLevelOps:
             self.compiler.compile_expression(node.arguments[0])
             
             # Get size hint from second argument if present
-            size_hint = "qword"  # default
+            size_hint = "byte"  # default
             if len(node.arguments) > 1:
                 if hasattr(node.arguments[1], 'value'):
                     size_hint = str(node.arguments[1].value).lower().strip('"').strip("'")
             
             # Perform dereference based on size
             if size_hint == "byte":
-                self.asm.emit_dereference_byte()
+                # MOVZX RAX, BYTE [RAX] - proper zero-extend
+                self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0x00)  # MOVZX RAX, BYTE [RAX]
             elif size_hint == "word":
                 self.asm.emit_dereference_word()
             elif size_hint == "dword":
@@ -187,42 +271,61 @@ class LowLevelOps:
             raise
     
     def compile_allocate(self, node):
-        """Compile memory allocation using mmap (heap allocation)"""
+        """Compile memory allocation using mmap (heap allocation)
+        
+        This function properly preserves callee-saved registers that might
+        be used by the compiler for special purposes (pools, frame pointers, etc.)
+        """
         try:
             print(f"DEBUG: Compiling Allocate operation (heap-based)")
 
             if len(node.arguments) < 1:
                 raise ValueError("Allocate requires 1 argument (size)")
 
-            # size -> RAX
+            # Save callee-saved registers that we might clobber
+            # We need to save:
+            # - RBX (often used for local state)
+            # - R12-R15 (often used for compiler-specific purposes like pools)
+            # We don't save RBP/RSP as they're handled by the function frame
+            self.asm.emit_push_rbx()
+            self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
+            self.asm.emit_bytes(0x41, 0x55)  # PUSH R13  
+            self.asm.emit_bytes(0x41, 0x56)  # PUSH R14
+            self.asm.emit_bytes(0x41, 0x57)  # PUSH R15
+            
+            # Evaluate size argument -> RAX
             self.compiler.compile_expression(node.arguments[0])
-
-            # RSI = size (use RAX directly so the scanner sees it)
-            # MOV RSI, RAX
-            self.asm.emit_bytes(0x48, 0x89, 0xC6)
-
-            # Keep a copy of size if you want it later
-            # MOV R12, RAX
-            self.asm.emit_bytes(0x49, 0x89, 0xC4)
-
-            # Prepare mmap syscall parameters:
+            
+            # Setup mmap parameters
             # mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
+            self.asm.emit_mov_rsi_rax()                       # RSI = size
+            self.asm.emit_mov_rax_imm64(9)                    # RAX = sys_mmap
+            self.asm.emit_mov_rdi_imm64(0)                    # RDI = NULL (let kernel choose address)
+            self.asm.emit_mov_rdx_imm64(3)                    # RDX = PROT_READ|PROT_WRITE
+            self.asm.emit_mov_r10_imm64(0x22)                 # R10 = MAP_PRIVATE|MAP_ANONYMOUS
+            self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)  # MOV R8, -1 (no fd)
+            self.asm.emit_mov_r9_imm64(0)                     # R9 = 0 (offset)
 
-            self.asm.emit_mov_rax_imm64(9)               # sys_mmap
-            self.asm.emit_mov_rdi_imm64(0)               # addr = NULL
-            self.asm.emit_mov_rdx_imm64(3)               # prot = PROT_READ|PROT_WRITE
-            self.asm.emit_mov_r10_imm64(0x22)            # flags = MAP_PRIVATE|MAP_ANONYMOUS
-            self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)  # fd = -1
-            self.asm.emit_mov_r9_imm64(0)                # offset = 0
-
+            # Make the syscall
             self.asm.emit_syscall()
-
             
+            # RAX now contains allocated address (or -1 on error)
+            # For production code, you'd want to check for errors here:
+            # cmp rax, -1
+            # je allocation_failed
             
+            # Save result before restoring registers
+            self.asm.emit_mov_rcx_rax()  # Save result in RCX temporarily
             
-            # Check for error (mmap returns -1 on error)
-            # For now, we'll just return the result
-            # RAX now contains the allocated address
+            # Restore callee-saved registers in reverse order
+            self.asm.emit_bytes(0x41, 0x5F)  # POP R15
+            self.asm.emit_bytes(0x41, 0x5E)  # POP R14
+            self.asm.emit_bytes(0x41, 0x5D)  # POP R13
+            self.asm.emit_bytes(0x41, 0x5C)  # POP R12
+            self.asm.emit_pop_rbx()
+            
+            # Move result back to RAX for return
+            self.asm.emit_mov_rax_rcx()
             
             print("DEBUG: Heap allocation completed")
             return True
@@ -230,12 +333,25 @@ class LowLevelOps:
         except Exception as e:
             print(f"ERROR: Allocate compilation failed: {str(e)}")
             raise
-
+    
+    
     def compile_deallocate(self, node):
-        """Compile memory deallocation using munmap"""
+        """Compile memory deallocation - handles both Free and Deallocate"""
         try:
-            print(f"DEBUG: Compiling Deallocate operation (heap-based)")
+            print(f"DEBUG: Compiling {node.function} operation")
             
+            # Free(ptr) only needs the pointer, size is tracked elsewhere
+            # For now, we'll use munmap with a default size or skip it
+            if node.function == 'Free':
+                # Simple free - just mark as successful
+                # In a real implementation, you'd track allocations
+                self.compiler.compile_expression(node.arguments[0])
+                # For now, just return success
+                self.asm.emit_mov_rax_imm64(0)  # Success
+                print("DEBUG: Free completed (simplified)")
+                return True
+            
+            # Deallocate(address, size) - full munmap
             if len(node.arguments) < 2:
                 raise ValueError("Deallocate requires 2 arguments (address, size)")
             
@@ -432,101 +548,7 @@ class LowLevelOps:
 
     def compile_storevalue(self, node):
         """Compile StoreValue operation - write value to memory address"""
-        try:
-            print(f"DEBUG: Compiling StoreValue operation")
-            
-            if len(node.arguments) < 2:
-                raise ValueError("StoreValue requires at least 2 arguments (address, value)")
-            
-            # Get size hint from third argument if present
-            size_hint = "qword"  # default
-            if len(node.arguments) > 2:
-                if hasattr(node.arguments[2], 'value'):
-                    size_hint = str(node.arguments[2].value).lower().strip('"').strip("'")
-            
-            # Compile address
-            self.compiler.compile_expression(node.arguments[0])
-            self.asm.emit_push_rax()  # Save address
-            
-            # Compile value
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_mov_rbx_rax()  # Value in RBX
-            
-            # Restore address
-            self.asm.emit_pop_rax()
-            
-            # Simple null check only
-            self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
-            null_label = self.asm.create_label()
-            self.asm.emit_jump_to_label(null_label, "JZ")
-            
-            # Store based on size hint
-            if size_hint == "byte":
-                self.asm.emit_bytes(0x88, 0x18)  # MOV [RAX], BL
-            elif size_hint == "word":
-                self.asm.emit_bytes(0x66, 0x89, 0x18)  # MOV [RAX], BX
-            elif size_hint == "dword":
-                self.asm.emit_bytes(0x89, 0x18)  # MOV [RAX], EBX
-            else:  # qword
-                self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX
-            
-            self.asm.emit_mov_rax_imm64(1)  # Success
-            
-            end_label = self.asm.create_label()
-            self.asm.emit_jump_to_label(end_label, "JMP")
-            
-            self.asm.mark_label(null_label)
-            self.asm.emit_mov_rax_imm64(0)  # Null pointer
-            
-            self.asm.mark_label(end_label)
-            print(f"DEBUG: StoreValue completed ({size_hint})")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: StoreValue compilation failed: {str(e)}")
-            raise
-    
-        # In lowlevel_ops.py
-    def compile_operation(self, node):
-        try:
-            if hasattr(node, '__class__'):
-                node_type = node.__class__.__name__
-                if node_type == 'AddressOf':
-                    return self.compile_address_of_ast(node)
-                elif node_type == 'Dereference':
-                    return self.compile_dereference_ast(node)
-                elif node_type == 'SizeOf':
-                    return self.compile_sizeof_ast(node)
-                elif node_type == 'InterruptControl':
-                    return self.compile_interrupt_control(node)
-                elif node_type == 'InlineAssembly':
-                    return self.compile_inline_assembly(node)
-                elif node_type == 'SystemCall':
-                    return self.compile_system_call(node)
-            if hasattr(node, 'function'):
-                if node.function == 'Dereference':
-                    return self.compile_dereference(node)
-                elif node.function == 'AddressOf':
-                    return self.compile_address_of(node)
-                elif node.function == 'SizeOf':
-                    return self.compile_sizeof(node)
-                elif node.function == 'Allocate':
-                    return self.compile_allocate(node)
-                elif node.function == 'Deallocate':
-                    return self.compile_deallocate(node)
-                elif node.function == 'MemoryCopy':
-                    return self.compile_memory_copy(node)
-                elif node.function == 'MemorySet':
-                    return self.compile_memory_set(node)
-                elif node.function == 'StoreValue':
-                    return self.compile_store_value(node)
-            return False
-        except Exception as e:
-            print(f"ERROR: Low-level operation compilation failed: {str(e)}")
-            raise
-
-    def compile_store_value(self, node):
-        """Compile StoreValue(address, value)"""
+        # --- REWRITE to be byte-aware by default ---
         print("DEBUG: Compiling StoreValue")
         if len(node.arguments) < 2:
             raise ValueError("StoreValue requires address and value")
@@ -549,28 +571,16 @@ class LowLevelOps:
         # Restore address
         self.asm.emit_pop_rax()
         
-        # Simple null check only
-        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
-        null_label = self.asm.create_label()
-        self.asm.emit_jump_to_label(null_label, "JZ")
-        
         # Store based on value size
         if is_byte_value:
             self.asm.emit_bytes(0x88, 0x18)  # MOV [RAX], BL (byte)
         else:
             self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX (qword)
         
-        self.asm.emit_mov_rax_imm64(1)  # Success
-        
-        end_label = self.asm.create_label()
-        self.asm.emit_jump_to_label(end_label, "JMP")
-        
-        self.asm.mark_label(null_label)
-        self.asm.emit_mov_rax_imm64(0)  # Null pointer
-        
-        self.asm.mark_label(end_label)
         print(f"DEBUG: StoreValue completed ({'byte' if is_byte_value else 'qword'})")
         return True
+    
+       
     
     def compile_atomic_operation(self, node):
         """Compile atomic operations"""
@@ -874,16 +884,17 @@ class LowLevelOps:
             self.compiler.compile_expression(node.pointer)
             
             # Get size hint - default to qword for backward compatibility
-            size_hint = getattr(node, 'size_hint', 'qword')
+            size_hint = getattr(node, 'size_hint', 'byte') # FIX: Default to byte
             if size_hint is None or size_hint == '':
-                size_hint = 'qword'
+                size_hint = 'byte' # FIX: Default to byte
             
             # Normalize size hint
             size_hint = str(size_hint).lower().strip('"').strip("'")
             
             # Perform dereference based on size
             if size_hint == "byte":
-                self.asm.emit_dereference_byte()
+                # MOVZX RAX, BYTE [RAX] - proper zero-extend
+                self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0x00)  # MOVZX RAX, BYTE [RAX]
             elif size_hint == "word":
                 self.asm.emit_dereference_word()
             elif size_hint == "dword":

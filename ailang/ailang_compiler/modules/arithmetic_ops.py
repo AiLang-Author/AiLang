@@ -66,6 +66,49 @@ class ArithmeticOps:
             elif node.function == 'Modulo' and len(node.arguments) == 2:
                 return self.compile_modulo(node)
             
+            elif node.function == 'AbsoluteValue' and len(node.arguments) == 1:
+                print(f"DEBUG: Compiling AbsoluteValue({self._get_arg_name(node.arguments[0])})")
+                
+                # Compile the argument
+                self.compiler.compile_expression(node.arguments[0])
+                
+                # Absolute value implementation:
+                # If negative (sign bit set), negate; otherwise keep as is
+                # Using the bit-twiddling trick: (x ^ (x >> 63)) - (x >> 63)
+                
+                # Save original in RBX
+                self.asm.emit_mov_rbx_rax()  # MOV RBX, RAX
+                
+                # Get sign bit (arithmetic shift right by 63)
+                self.asm.emit_bytes(0x48, 0xC1, 0xF8, 0x3F)  # SAR RAX, 63
+                
+                # XOR original with sign mask
+                self.asm.emit_bytes(0x48, 0x31, 0xC3)  # XOR RBX, RAX
+                
+                # Subtract sign mask (converts to positive)
+                self.asm.emit_bytes(0x48, 0x29, 0xC3)  # SUB RBX, RAX
+                
+                # Move result back to RAX
+                self.asm.emit_mov_rax_rbx()  # MOV RAX, RBX
+                
+                print("DEBUG: AbsoluteValue operation completed")
+                return True
+            
+            
+            elif node.function == 'And' and len(node.arguments) == 2:
+                return self.compile_and(node)
+                
+            elif node.function == 'Or' and len(node.arguments) == 2:
+                return self.compile_or(node)
+                
+            elif node.function == 'Not' and len(node.arguments) == 1:
+                return self.compile_not(node) 
+            
+            elif node.function == 'Power' and len(node.arguments) == 2:
+                return self.compile_power(node) 
+            
+            elif node.function == 'BitwiseNot' and len(node.arguments) == 1:
+                return self.compile_bitwise_not(node)     
             
             
             elif node.function == 'BitwiseAnd' and len(node.arguments) == 2:
@@ -126,7 +169,7 @@ class ArithmeticOps:
                 self.compiler.compile_expression(node.arguments[1])
                 self.asm.emit_mov_rcx_rax()  # Shift amount goes in CL (low byte of RCX)
                 self.asm.emit_pop_rax()
-                self.asm.emit_bytes(0x48, 0xD3, 0xE8)  # SHR RAX, CL
+                self.asm.emit_bytes(0x48, 0xD3, 0xF8)  # SAR RAX, CL (arithmetic)
                 print("DEBUG: RightShift operation completed")
                 return True
             
@@ -187,6 +230,173 @@ class ArithmeticOps:
         except Exception as e:
             print(f"ERROR: Comparison operation compilation failed: {str(e)}")
             raise
+        
+    # In arithmetic_ops.py, add these methods:
+
+    def compile_and(self, node):
+        """Compile logical And(a, b)"""
+        if len(node.arguments) != 2:
+            raise ValueError("And requires two arguments")
+        
+        # Compile first argument
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Compile second argument
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rbx_rax()
+        self.asm.emit_pop_rax()
+        
+        # Logical AND: both must be non-zero
+        # Test RAX
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        # Set AL to 1 if not zero
+        self.asm.emit_bytes(0x0F, 0x95, 0xC0)  # SETNE AL
+        # Test RBX
+        self.asm.emit_bytes(0x48, 0x85, 0xDB)  # TEST RBX, RBX
+        # Set BL to 1 if not zero
+        self.asm.emit_bytes(0x0F, 0x95, 0xC3)  # SETNE BL
+        # AND the results
+        self.asm.emit_bytes(0x20, 0xD8)  # AND AL, BL
+        # Zero-extend to RAX
+        self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0xC0)  # MOVZX RAX, AL
+        print("DEBUG: And operation completed")
+        return True
+    
+    
+    def compile_or(self, node):
+        """Compile logical Or(a, b) - returns 1 if either is non-zero"""
+        if len(node.arguments) != 2:
+            raise ValueError("Or requires two arguments")
+        
+        print("DEBUG: Compiling Or operation")
+        
+        # Compile first argument
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Compile second argument
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rbx_rax()
+        self.asm.emit_pop_rax()
+        
+        # Logical OR: either must be non-zero
+        # Test RAX
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        # Set AL to 1 if not zero
+        self.asm.emit_bytes(0x0F, 0x95, 0xC0)  # SETNE AL
+        # Test RBX
+        self.asm.emit_bytes(0x48, 0x85, 0xDB)  # TEST RBX, RBX
+        # Set BL to 1 if not zero
+        self.asm.emit_bytes(0x0F, 0x95, 0xC3)  # SETNE BL
+        # OR the results
+        self.asm.emit_bytes(0x08, 0xD8)  # OR AL, BL
+        # Zero-extend to RAX
+        self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0xC0)  # MOVZX RAX, AL
+        print("DEBUG: Or operation completed")
+        return True
+
+    def compile_not(self, node):
+        """Compile logical Not(a) - returns 1 if zero, 0 if non-zero"""
+        if len(node.arguments) != 1:
+            raise ValueError("Not requires one argument")
+        
+        print("DEBUG: Compiling Not operation")
+        
+        # Compile the argument
+        self.compiler.compile_expression(node.arguments[0])
+        
+        # Test if RAX is zero
+        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
+        # Set AL to 1 if zero (SETZ)
+        self.asm.emit_bytes(0x0F, 0x94, 0xC0)  # SETZ AL
+        # Zero-extend to RAX
+        self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0xC0)  # MOVZX RAX, AL
+        print("DEBUG: Not operation completed")
+        return True
+    
+    def compile_power(self, node):
+        """Compile Power(base, exponent) - integer exponentiation"""
+        if len(node.arguments) != 2:
+            raise ValueError("Power requires two arguments")
+        
+        print("DEBUG: Compiling Power operation")
+        
+        # Compile base
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Compile exponent
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rcx_rax()  # Exponent in RCX
+        
+        # Pop base into RBX
+        self.asm.emit_pop_rbx()
+        
+        # Integer power algorithm:
+        # Result = 1
+        # While exponent > 0:
+        #   if exponent is odd: result *= base
+        #   base *= base
+        #   exponent >>= 1
+        
+        # Initialize result to 1 in RAX
+        self.asm.emit_mov_rax_imm64(1)
+        
+        # Create loop label
+        loop_label = self.asm.create_label()
+        done_label = self.asm.create_label()
+        
+        # Loop start
+        self.asm.mark_label(loop_label)
+        
+        # Check if exponent (RCX) is 0
+        self.asm.emit_bytes(0x48, 0x85, 0xC9)  # TEST RCX, RCX
+        self.asm.emit_jump_to_label(done_label, "JZ")
+        
+        # Check if exponent is odd (test bit 0)
+        self.asm.emit_bytes(0xF6, 0xC1, 0x01)  # TEST CL, 1
+        
+        # Skip multiplication if even
+        skip_mult = self.asm.create_label()
+        self.asm.emit_jump_to_label(skip_mult, "JZ")
+        
+        # Multiply result by base (RAX *= RBX)
+        self.asm.emit_bytes(0x48, 0x0F, 0xAF, 0xC3)  # IMUL RAX, RBX
+        
+        self.asm.mark_label(skip_mult)
+        
+        # Square the base (RBX *= RBX)
+        self.asm.emit_bytes(0x48, 0x0F, 0xAF, 0xDB)  # IMUL RBX, RBX
+        
+        # Shift exponent right by 1
+        self.asm.emit_bytes(0x48, 0xD1, 0xE9)  # SHR RCX, 1
+        
+        # Jump back to loop start
+        self.asm.emit_jump_to_label(loop_label, "JMP")
+        
+        # Done
+        self.asm.mark_label(done_label)
+        
+        print("DEBUG: Power operation completed")
+        return True
+    
+    def compile_bitwise_not(self, node):
+        """Compile BitwiseNot(a) - bitwise complement"""
+        if len(node.arguments) != 1:
+            raise ValueError("BitwiseNot requires one argument")
+        
+        print("DEBUG: Compiling BitwiseNot operation")
+        
+        # Compile the argument
+        self.compiler.compile_expression(node.arguments[0])
+        
+        # NOT RAX (bitwise complement)
+        self.asm.emit_bytes(0x48, 0xF7, 0xD0)  # NOT RAX
+        
+        print("DEBUG: BitwiseNot operation completed")
+        return True
+            
     
     def _get_arg_name(self, arg):
         """Helper to get argument name for debugging"""
@@ -264,16 +474,18 @@ class ArithmeticOps:
         print("DEBUG: Emitted LeftShift operation")
 
     def compile_right_shift(self, node):
-        """Compile RightShift(a, b)"""
+        """Compile RightShift(a, b) - use arithmetic shift for sign preservation"""
         if len(node.arguments) != 2:
             raise ValueError("RightShift requires two arguments")
-        self.compile_expression(node.arguments[0])
+        self.compiler.compile_expression(node.arguments[0])
         self.asm.emit_push_rax()
-        self.compile_expression(node.arguments[1])
+        self.compiler.compile_expression(node.arguments[1])
         self.asm.emit_mov_rcx_rax()  # Shift amount in CL
         self.asm.emit_pop_rax()
-        self.asm.emit_bytes(0x48, 0xD3, 0xE8)  # SHR RAX, CL
-        print("DEBUG: Emitted RightShift operation")
+        # Use SAR (arithmetic shift) instead of SHR (logical shift)
+        self.asm.emit_bytes(0x48, 0xD3, 0xF8)  # SAR RAX, CL
+        print("DEBUG: Emitted RightShift operation (arithmetic)")
+        return True
         
     def compile_divide(self, node):
         """

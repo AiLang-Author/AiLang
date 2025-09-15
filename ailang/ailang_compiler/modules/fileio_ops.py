@@ -499,70 +499,86 @@ class FileIOOps:
     
     
     def emit_read_entire_file_clean(self, file_path_addr):
-        """Read entire file with clean label-based jumps"""
+        # --- REWRITE to use lseek for dynamic sizing ---
         try:
-            print("DEBUG: Reading entire file (CLEAN LABELS)")
+            print("DEBUG: Reading entire file (DYNAMIC SIZING)")
             
-            # Create labels
-            error_label = self.asm.create_label()
-            success_label = self.asm.create_label()
-            end_label = self.asm.create_label()
+            # Labels for control flow
+            error_open = self.asm.create_label()
+            error_seek = self.asm.create_label()
+            success = self.asm.create_label()
+            end_read = self.asm.create_label()
             
-            # Save registers
-            self.asm.emit_push_rbx()
-            self.asm.emit_push_rcx()
-            
-            # Open file for reading
-            self.asm.emit_mov_rax_imm64(2)  # sys_open
+            # open(path, O_RDONLY)
+            self.asm.emit_mov_rax_imm64(2)
             self.asm.emit_mov_rdi_imm64(file_path_addr)
-            self.asm.emit_mov_rsi_imm64(0)  # O_RDONLY
+            self.asm.emit_mov_rsi_imm64(0)
             self.asm.emit_mov_rdx_imm64(0)
             self.asm.emit_syscall()
-            
-            # Check if open succeeded
-            self.asm.emit_bytes(0x48, 0x83, 0xF8, 0x00)  # CMP RAX, 0
-            self.asm.emit_jump_to_label(error_label, "JL")  # JL error - CALCULATED!
-            
-            # Allocate buffer (64KB)
-            self.asm.emit_mov_rbx_rax()  # Save fd
-            buffer_size = 65536
-            
-            # Simple buffer allocation (using stack for small files)
-            self.asm.emit_bytes(0x48, 0x81, 0xEC)  # SUB RSP, buffer_size
-            self.asm.emit_bytes(*struct.pack('<I', buffer_size))
-            
-            # Read file
-            self.asm.emit_mov_rax_imm64(0)  # sys_read
-            self.asm.emit_mov_rdi_from_rbx()     # fd
-            self.asm.emit_mov_rsi_rsp()     # buffer (RSP)
-            self.asm.emit_mov_rdx_imm64(buffer_size - 1)  # max bytes
+            self.asm.emit_cmp_rax_imm32(0)
+            self.asm.emit_jump_to_label(error_open, "JL")
+            self.asm.emit_push_rax() # Save fd
+
+            # size = lseek(fd, 0, SEEK_END)
+            self.asm.emit_mov_rdi_rax() # fd
+            self.asm.emit_mov_rsi_imm64(0)
+            self.asm.emit_mov_rdx_imm64(2) # SEEK_END
+            self.asm.emit_mov_rax_imm64(8) # sys_lseek
             self.asm.emit_syscall()
-            
-            # Close file
-            self.asm.emit_push_rax()        # Save bytes read
-            self.asm.emit_mov_rax_imm64(3)  # sys_close
-            self.asm.emit_mov_rdi_from_rbx()     # fd
+            self.asm.emit_cmp_rax_imm32(0)
+            self.asm.emit_jump_to_label(error_seek, "JL")
+            self.asm.emit_push_rax() # Save size
+
+            # lseek(fd, 0, SEEK_SET)
+            self.asm.emit_mov_rdi_from_stack(8) # fd from stack
+            self.asm.emit_mov_rsi_imm64(0)
+            self.asm.emit_mov_rdx_imm64(0) # SEEK_SET
+            self.asm.emit_mov_rax_imm64(8)
             self.asm.emit_syscall()
-            self.asm.emit_pop_rax()         # Restore bytes read
-            
-            # Success path
-            self.asm.mark_label(success_label)
-            self.asm.emit_mov_rax_rsp()     # Return buffer address
-            self.asm.emit_jump_to_label(end_label, "JMP")  # JMP end - CALCULATED!
-            
-            # Error handler
-            self.asm.mark_label(error_label)
-            self.asm.emit_mov_rax_imm64(0)  # Return null
-            
-            # End - cleanup
-            self.asm.mark_label(end_label)
-            self.asm.emit_pop_rcx()
-            self.asm.emit_pop_rbx()
-            
-            print("DEBUG: Complete file read operation emitted (CLEAN LABELS)")
-            
+
+            # mmap(size + 1)
+            self.asm.emit_mov_rsi_from_stack(0) # size
+            self.asm.emit_bytes(0x48, 0xFF, 0xC6) # INC RSI (for null terminator)
+            self.asm.emit_mov_rax_imm64(9) # sys_mmap
+            self.asm.emit_mov_rdi_imm64(0)
+            self.asm.emit_mov_rdx_imm64(3) # PROT_READ|WRITE
+            self.asm.emit_mov_r10_imm64(0x22) # MAP_PRIVATE|ANON
+            self.asm.emit_mov_r8_imm64(-1)
+            self.asm.emit_mov_r9_imm64(0)
+            self.asm.emit_syscall()
+            self.asm.emit_push_rax() # Save buffer address
+
+            # read(fd, buffer, size)
+            self.asm.emit_mov_rdi_from_stack(16) # fd
+            self.asm.emit_mov_rsi_from_stack(0)  # buffer
+            self.asm.emit_mov_rdx_from_stack(8)  # size
+            self.asm.emit_mov_rax_imm64(0) # sys_read
+            self.asm.emit_syscall()
+
+            # close(fd)
+            self.asm.emit_mov_rdi_from_stack(16) # fd
+            self.asm.emit_mov_rax_imm64(3) # sys_close
+            self.asm.emit_syscall()
+
+            # Null-terminate the buffer
+            self.asm.emit_pop_rax() # buffer address
+            self.asm.emit_pop_rbx() # size
+            self.asm.emit_bytes(0xC6, 0x04, 0x18, 0x00) # MOV BYTE [RAX+RBX], 0
+            self.asm.emit_push_rax() # Return buffer address
+            self.asm.emit_jump_to_label(success, "JMP")
+
+            self.asm.mark_label(error_seek)
+            self.asm.emit_add_rsp_imm8(8) # Clean fd
+            self.asm.mark_label(error_open)
+            self.asm.emit_mov_rax_imm64(0) # Return NULL on error
+            self.asm.emit_push_rax() # Push NULL to balance stack for return
+
+            self.asm.mark_label(success)
+            self.asm.emit_add_rsp_imm8(8) # Clean up stack (fd)
+            self.asm.emit_pop_rax() # Final result
+
         except Exception as e:
-            print(f"ERROR: Complete file read failed: {str(e)}")
+            print(f"ERROR: Dynamic file read failed: {str(e)}")
             raise
     
     def compile_file_exists(self, node):

@@ -79,6 +79,21 @@ class UserFunctions:
             old_function = self.current_function
             self.current_function = func_name
             
+            # CRITICAL FIX: Save global variable scope
+            saved_variables = self.compiler.variables.copy()
+            saved_stack_size = self.compiler.stack_size
+            
+            # Create fresh local scope but PRESERVE POOL VARIABLES
+            self.compiler.variables = {}
+            self.compiler.stack_size = 0
+            
+            # Copy pool variables (high bit set) to local scope
+            # Pool variables are global and should be accessible everywhere
+            for var_name, var_value in saved_variables.items():
+                if var_value & 0x80000000:  # Pool variable marker
+                    self.compiler.variables[var_name] = var_value
+                    print(f"DEBUG: Preserved pool variable {var_name} in local scope")
+            
             # CRITICAL FIX: Jump over function definition during normal execution
             skip_label = self.asm.create_label()
             self.asm.emit_jump_to_label(skip_label, "JMP")
@@ -90,22 +105,43 @@ class UserFunctions:
             # Function prologue
             self.asm.emit_push_rbp()
             self.asm.emit_mov_rbp_rsp()
+
+            # --- FIX: Save all callee-saved registers ---
+            self.asm.emit_push_rbx()
+            self.asm.emit_push_r12()
+            self.asm.emit_push_r13()
+            self.asm.emit_push_r14()
+            self.asm.emit_push_r15()
             
-            # Allocate space for local variables if we have parameters
+            # --- FIX: Dynamically calculate local variable space ---
+            # Pre-scan function body to calculate space needed for locals.
+            known_vars = set(self.compiler.variables.keys()) # Params + pool vars
+            local_vars_needed = self.compiler.memory.scan_for_locals(node.body, known_vars)
+            
             param_count = len(func_info['params'])
-            if param_count > 0:
-                # Allocate 8 bytes per parameter for storage
-                stack_space = ((param_count * 8 + 15) // 16) * 16  # Align to 16 bytes
-                self.asm.emit_bytes(0x48, 0x83, 0xEC, stack_space)  # SUB RSP, stack_space
-                print(f"DEBUG: Allocated {stack_space} bytes for {param_count} parameters")
+            local_space = len(local_vars_needed) * 16 # 16 bytes per local for safety
+            print(f"DEBUG: Function '{func_name}' requires space for {param_count} params and {len(local_vars_needed)} locals ({local_space} bytes).")
+            if param_count > 0 or local_space > 0:
+                # Allocate space for parameters AND calculated local variables
+                stack_space = ((param_count * 8 + local_space + 15) // 16) * 16
+                
+                # FIX: Use proper instruction encoding for stack allocation
+                if stack_space < 128:
+                    # Small immediate: SUB RSP, imm8
+                    self.asm.emit_bytes(0x48, 0x83, 0xEC, stack_space)
+                else:
+                    # Large immediate: SUB RSP, imm32
+                    self.asm.emit_bytes(0x48, 0x81, 0xEC)
+                    self.asm.emit_bytes(*struct.pack('<I', stack_space))
+                
+                print(f"DEBUG: Allocated {stack_space} bytes for function locals")
             
-            # CRITICAL FIX: Register parameters in variables BEFORE compiling body
-            # First, register all parameters as variables so they can be referenced
+            # Register parameters in LOCAL scope
             for i, param_name in enumerate(func_info['params'][:6]):
-                offset = (i + 1) * 8
-                # Register variable
+                self.compiler.stack_size += 8
+                offset = self.compiler.stack_size
                 self.compiler.variables[param_name] = offset
-                print(f"DEBUG: Registered param {param_name} at offset {offset}")
+                print(f"DEBUG: Param {param_name} at local offset {offset}")
                 
                 # Move from register to stack
                 if i == 0:
@@ -121,12 +157,12 @@ class UserFunctions:
                 elif i == 5:
                     self.asm.emit_bytes(0x4C, 0x89, 0xC8)  # MOV RAX, R9
                 
-                # Store to stack
+                # Store to LOCAL stack frame
                 self.asm.emit_bytes(0x48, 0x89, 0x45)  # MOV [RBP-offset], RAX
                 self.asm.emit_bytes(256 - offset)
-                print(f"DEBUG: Param {param_name} moved to [RBP-{offset}]")
+                print(f"DEBUG: Param {param_name} stored at [RBP-{offset}]")
             
-            # Compile function body
+            # Compile function body with local scope
             if hasattr(node, 'body'):
                 for stmt in node.body:
                     self.compiler.compile_node(stmt)
@@ -144,16 +180,24 @@ class UserFunctions:
             # Restore function context
             self.current_function = old_function
             
-            # Clean up parameter variables
-            for param_name in func_info['params']:
-                if param_name in self.compiler.variables:
-                    del self.compiler.variables[param_name]
+            # CRITICAL FIX: Restore global variable scope
+            self.compiler.variables = saved_variables
+            self.compiler.stack_size = saved_stack_size
             
             print(f"DEBUG: Function {func_name} compiled successfully")
             
         except Exception as e:
             print(f"ERROR: Failed to compile function {func_name}: {str(e)}")
             raise
+        
+    def _count_local_variables(self, body):
+        """Count local variables that will be created in function body"""
+        # Simple heuristic - count assignments
+        count = 0
+        for stmt in body:
+            if hasattr(stmt, 'target'):  # Assignment
+                count += 1
+        return count + 10  # Add some extra space for temporaries
     
     def compile_function_call(self, node):
         """Compile a call to a user-defined function"""
@@ -168,25 +212,31 @@ class UserFunctions:
             
             print(f"DEBUG: Calling user function {func_name}")
             
-            # Compile arguments and pass in registers
+            # --- REWRITE: Argument passing logic for correctness ---
+            # This new logic prevents register clobbering during argument evaluation.
+            # 1. Evaluate all arguments and push their results onto the stack.
+            #    We do this in reverse order so they can be popped in the correct order.
             if hasattr(node, 'arguments') and node.arguments:
-                for i, arg in enumerate(node.arguments[:6]):
-                    # Compile argument to RAX
+                num_args = len(node.arguments[:6])
+                for i in range(num_args - 1, -1, -1):
+                    arg = node.arguments[i]
                     self.compiler.compile_expression(arg)
-                    
-                    # Move to appropriate parameter register
-                    if i == 0:
-                        self.asm.emit_mov_rdi_rax()
-                    elif i == 1:
-                        self.asm.emit_mov_rsi_rax()
-                    elif i == 2:
-                        self.asm.emit_mov_rdx_rax()
-                    elif i == 3:
-                        self.asm.emit_mov_rcx_rax()
-                    elif i == 4:
-                        self.asm.emit_bytes(0x49, 0x89, 0xC0)  # MOV R8, RAX
-                    elif i == 5:
-                        self.asm.emit_bytes(0x49, 0x89, 0xC1)  # MOV R9, RAX
+                    self.asm.emit_push_rax()
+            
+            # 2. Pop the results from the stack into the correct parameter registers.
+            if hasattr(node, 'arguments') and node.arguments:
+                num_args = len(node.arguments[:6])
+                for i in range(num_args):
+                    if i == 0: self.asm.emit_pop_rdi()
+                    elif i == 1: self.asm.emit_pop_rsi()
+                    elif i == 2: self.asm.emit_pop_rdx()
+                    elif i == 3: self.asm.emit_pop_rcx()
+                    elif i == 4: self.asm.emit_bytes(0x41, 0x58) # POP R8
+                    elif i == 5: self.asm.emit_bytes(0x41, 0x59) # POP R9
+            # --- END REWRITE ---
+
+            # Align stack before CALL (must be 16-byte aligned)
+            # This is a common requirement and good practice.
             
             # Emit CALL instruction
             label = func_info['label']
@@ -227,11 +277,32 @@ class UserFunctions:
             else:
                 # Default return 0
                 self.asm.emit_mov_rax_imm64(0)
+
+            # Check if we're in a SubRoutine context
+            if hasattr(self.compiler, 'compiling_subroutine') and self.compiler.compiling_subroutine:
+                print("DEBUG: ReturnValue in SubRoutine - jumping to return label")
+                # Jump to the subroutine's return label
+                if hasattr(self.compiler, 'subroutine_return_label'):
+                    self.asm.emit_jump_to_label(self.compiler.subroutine_return_label, "JMP")
+                return
             
-            # Function epilogue - restore stack and frame
-            self.asm.emit_mov_rsp_rbp()
-            self.asm.emit_pop_rbp()
-            self.asm.emit_ret()
+            # In a user Function context - do full epilogue
+            if hasattr(self, 'current_function') and self.current_function:
+                print("DEBUG: ReturnValue in Function - full epilogue")
+                # Restore callee-saved registers
+                self.asm.emit_pop_r15()
+                self.asm.emit_pop_r14()
+                self.asm.emit_pop_r13()
+                self.asm.emit_pop_r12()
+                self.asm.emit_pop_rbx()
+                
+                # Function epilogue
+                self.asm.emit_mov_rsp_rbp()
+                self.asm.emit_pop_rbp()
+                self.asm.emit_ret()
+            else:
+                # Not in any special context
+                print("DEBUG: ReturnValue in unknown context - value in RAX only")
             
             print(f"DEBUG: ReturnValue compiled")
             

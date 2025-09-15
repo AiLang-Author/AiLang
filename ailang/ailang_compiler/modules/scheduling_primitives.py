@@ -5,6 +5,12 @@ Core building blocks for userland schedulers
 """
 
 import struct
+import sys
+import os
+
+# Add ailang_parser to path to find AST nodes
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'ailang_parser')))
+from ailang_ast import LoopActor
 
 class SchedulingPrimitives:
     """Handles task scheduling and actor model primitives"""
@@ -39,11 +45,22 @@ class SchedulingPrimitives:
     def __init__(self, compiler_context):
         self.compiler = compiler_context
         self.asm = compiler_context.asm
-        self.max_actors = 16  # Start small for testing
+        self.max_actors = 0 # Will be calculated by discover_actors
         self.acb_size = 128   # Bytes per actor
         self.spawn_queue = []
         self.current_actor = 0
     
+    def discover_actors(self, node):
+        """A pre-pass to count all LoopActor declarations."""
+        if not hasattr(node, 'declarations'):
+            return
+
+        for decl in node.declarations:
+            if isinstance(decl, LoopActor):
+                self.max_actors += 1
+        
+        print(f"DEBUG: Discovered {self.max_actors} LoopActor declarations.")
+
     def compile_operation(self, node):
         """Route scheduling operations to their handlers"""
         op_map = {

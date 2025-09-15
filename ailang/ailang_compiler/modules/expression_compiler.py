@@ -19,7 +19,16 @@ class ExpressionCompiler:
     def compile_expression(self, expr):
         try:
             if isinstance(expr, Number):
-                self.asm.emit_mov_rax_imm64(int(float(expr.value)))
+                value_str = str(expr.value)
+                if value_str.startswith('0x') or value_str.startswith('0X'):
+                    self.asm.emit_mov_rax_imm64(int(value_str, 16))
+                elif value_str.startswith('0b') or value_str.startswith('0B'):
+                    self.asm.emit_mov_rax_imm64(int(value_str, 2))
+                elif '.' in value_str or 'e' in value_str.lower():
+                    self.asm.emit_mov_rax_imm64(int(float(value_str)))
+                else:
+                    self.asm.emit_mov_rax_imm64(int(value_str))
+                    
             elif isinstance(expr, Identifier):
                 resolved_name = self.compiler.resolve_acronym_identifier(expr.name)
                 
@@ -38,9 +47,20 @@ class ExpressionCompiler:
                             break
                 
                 if resolved_name in self.compiler.variables:
-                    offset = self.compiler.variables[resolved_name]
-                    self.asm.emit_bytes(0x48, 0x8b, 0x85)
-                    self.asm.emit_bytes(*struct.pack('<i', -offset))
+                    value = self.compiler.variables[resolved_name]
+                    
+                    # Check if this is a pool variable (high bit set)
+                    if value & 0x80000000:  # Pool variable marker
+                        pool_index = value & 0x7FFFFFFF  # Get actual index
+                        print(f"DEBUG: Loading pool var {resolved_name} from pool[{pool_index}]")
+                        # MOV RAX, [R15 + pool_index*8]
+                        self.asm.emit_bytes(0x49, 0x8B, 0x87)  # MOV RAX, [R15 + disp32]
+                        self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
+                    else:
+                        # Stack-relative access for local variables
+                        offset = value
+                        self.asm.emit_bytes(0x48, 0x8b, 0x85)
+                        self.asm.emit_bytes(*struct.pack('<i', -offset))
                 else:
                     raise ValueError(f"Undefined variable: '{resolved_name}'")
                     

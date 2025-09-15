@@ -32,7 +32,8 @@ class DebugOps:
         if node_type == 'FunctionCall':
             if node.function.startswith('DebugPerf_'):
                 operation = node.function.replace('DebugPerf_', '')
-                label = node.arguments[0] if node.arguments else None
+                label_node = node.arguments[0] if node.arguments else None
+                label = label_node.value if label_node and hasattr(label_node, 'value') else None
                 # Create a simple object with the needed attributes
                 class PerfNode:
                     pass
@@ -178,16 +179,14 @@ class DebugOps:
             
             # Store start time in variable
             var_name = f"__perf_start_{node.label}"
+            # The variable MUST have been pre-allocated by the memory manager's pre-scan.
+            # The old logic to dynamically allocate it here was buggy.
             if var_name not in self.compiler.variables:
-                # Find the next available stack offset
-                if self.compiler.variables:
-                    max_offset = max(self.compiler.variables.values())
-                    new_offset = max_offset + 8
-                else:
-                    new_offset = 8
-                self.compiler.variables[var_name] = new_offset
+                raise Exception(f"Internal Compiler Error: Performance timer variable '{var_name}' was not pre-allocated by the memory manager.")
             
             offset = self.compiler.variables[var_name]
+            if offset & 0x80000000: # Sanity check
+                raise Exception(f"Internal Compiler Error: Performance timer variable '{var_name}' is incorrectly marked as a pool variable.")
             self.asm.emit_bytes(0x48, 0x89, 0x85)
             self.asm.emit_bytes(*struct.pack('<i', -offset))
             
