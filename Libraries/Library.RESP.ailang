@@ -1,0 +1,417 @@
+// Library.RESP.ailang
+// Redis Serialization Protocol (RESP) Library
+// Provides parsing and building functions for RESP protocol
+
+// ============================================================================
+// RESP Parser Functions
+// ============================================================================
+
+// Parse a RESP array command from buffer
+// Returns an array of strings or 0 on error
+Function.RESP.ParseArray {
+    Input: buffer: Address
+    Input: size: Integer
+    Output: Array
+    Body: {
+        // Check for array marker '*'
+        IfCondition NotEqual(GetByte(buffer, 0), 42) ThenBlock {
+            ReturnValue(0)  // Not an array
+        }
+        
+        // Parse array count
+        count = RESP.ParseInteger(buffer, 1)
+        
+        // Create array to hold results
+        result = ArrayCreate(count)
+        
+        // Find start of first element
+        offset = 1
+        WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+            offset = Add(offset, 1)
+        }
+        offset = Add(offset, 1)  // Skip LF
+        
+        // Parse each element
+        i = 0
+        WhileLoop LessThan(i, count) {
+            element = RESP.ParseElement(buffer, offset, size)
+            ArraySet(result, i, element)
+            
+            // Move offset past this element
+            offset = RESP.SkipElement(buffer, offset, size)
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Parse a single RESP element starting at offset
+Function.RESP.ParseElement {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Address
+    Body: {
+        type_byte = GetByte(buffer, offset)
+        
+        // Bulk string ($)
+        IfCondition EqualTo(type_byte, 36) ThenBlock {
+            ReturnValue(RESP.ParseBulkString(buffer, offset, size))
+        }
+        
+        // Simple string (+)
+        IfCondition EqualTo(type_byte, 43) ThenBlock {
+            ReturnValue(RESP.ParseSimpleString(buffer, offset, size))
+        }
+        
+        // Integer (:)
+        IfCondition EqualTo(type_byte, 58) ThenBlock {
+            num = RESP.ParseInteger(buffer, Add(offset, 1))
+            ReturnValue(NumberToString(num))
+        }
+        
+        // Error (-)
+        IfCondition EqualTo(type_byte, 45) ThenBlock {
+            ReturnValue(RESP.ParseSimpleString(buffer, offset, size))
+        }
+        
+        ReturnValue(0)  // Unknown type
+    }
+}
+
+// Parse a bulk string from buffer
+Function.RESP.ParseBulkString {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Address
+    Body: {
+        // Skip '$'
+        offset = Add(offset, 1)
+        
+        // Parse length
+        length = RESP.ParseInteger(buffer, offset)
+        
+        // Check for null bulk string
+        IfCondition LessThan(length, 0) ThenBlock {
+            ReturnValue(0)
+        }
+        
+        // Find start of actual string (after \r\n)
+        WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+            offset = Add(offset, 1)
+        }
+        offset = Add(offset, 1)
+        
+        // Allocate and copy string
+        str = Allocate(Add(length, 1))
+        i = 0
+        WhileLoop LessThan(i, length) {
+            SetByte(str, i, GetByte(buffer, Add(offset, i)))
+            i = Add(i, 1)
+        }
+        SetByte(str, length, 0)  // Null terminate
+        
+        ReturnValue(str)
+    }
+}
+
+// Parse a simple string (ends with \r\n)
+Function.RESP.ParseSimpleString {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Address
+    Body: {
+        // Skip type marker
+        offset = Add(offset, 1)
+        
+        // Find end of string
+        start = offset
+        WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 13)) {
+            offset = Add(offset, 1)
+        }
+        
+        // Allocate and copy
+        length = Subtract(offset, start)
+        str = Allocate(Add(length, 1))
+        i = 0
+        WhileLoop LessThan(i, length) {
+            SetByte(str, i, GetByte(buffer, Add(start, i)))
+            i = Add(i, 1)
+        }
+        SetByte(str, length, 0)
+        
+        ReturnValue(str)
+    }
+}
+
+// Parse an integer from buffer (until \r)
+Function.RESP.ParseInteger {
+    Input: buffer: Address
+    Input: offset: Integer
+    Output: Integer
+    Body: {
+        result = 0
+        negative = 0
+        
+        // Check for negative
+        IfCondition EqualTo(GetByte(buffer, offset), 45) ThenBlock {  // '-'
+            negative = 1
+            offset = Add(offset, 1)
+        }
+        
+        // Parse digits
+        WhileLoop 1 {
+            byte = GetByte(buffer, offset)
+            
+            // Check for CR or non-digit
+            IfCondition Or(EqualTo(byte, 13), Or(LessThan(byte, 48), GreaterThan(byte, 57))) ThenBlock {
+                BreakLoop
+            }
+            
+            // Add digit
+            result = Multiply(result, 10)
+            result = Add(result, Subtract(byte, 48))
+            
+            offset = Add(offset, 1)
+        }
+        
+        IfCondition negative ThenBlock {
+            result = Subtract(0, result)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Skip past a RESP element, return new offset
+Function.RESP.SkipElement {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Integer
+    Body: {
+        type_byte = GetByte(buffer, offset)
+        
+        // Simple types - skip to \r\n
+        IfCondition Or(EqualTo(type_byte, 43), Or(EqualTo(type_byte, 45), EqualTo(type_byte, 58))) ThenBlock {
+            WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+                offset = Add(offset, 1)
+            }
+            ReturnValue(Add(offset, 1))  // Past \n
+        }
+        
+        // Bulk string - parse length then skip
+        IfCondition EqualTo(type_byte, 36) ThenBlock {
+            offset = Add(offset, 1)  // Skip '$'
+            length = RESP.ParseInteger(buffer, offset)
+            
+            // Skip to start of string
+            WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+                offset = Add(offset, 1)
+            }
+            offset = Add(offset, 1)  // Past \n
+            
+            // Skip string + \r\n
+            offset = Add(offset, Add(length, 2))
+            ReturnValue(offset)
+        }
+        
+        // Array - recursive skip
+        IfCondition EqualTo(type_byte, 42) ThenBlock {
+            offset = Add(offset, 1)  // Skip '*'
+            count = RESP.ParseInteger(buffer, offset)
+            
+            // Skip to first element
+            WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+                offset = Add(offset, 1)
+            }
+            offset = Add(offset, 1)
+            
+            // Skip each element
+            i = 0
+            WhileLoop LessThan(i, count) {
+                offset = RESP.SkipElement(buffer, offset, size)
+                i = Add(i, 1)
+            }
+            
+            ReturnValue(offset)
+        }
+        
+        ReturnValue(offset)
+    }
+}
+
+// ============================================================================
+// RESP Builder Functions
+// ============================================================================
+
+// Build a simple string response: +OK\r\n
+Function.RESP.SimpleString {
+    Input: str: Address
+    Output: Address
+    Body: {
+        len = StringLength(str)
+        response = Allocate(Add(len, 4))  // + str \r\n \0
+        
+        SetByte(response, 0, 43)  // '+'
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            SetByte(response, Add(i, 1), GetByte(str, i))
+            i = Add(i, 1)
+        }
+        
+        SetByte(response, Add(len, 1), 13)  // '\r'
+        SetByte(response, Add(len, 2), 10)  // '\n'
+        SetByte(response, Add(len, 3), 0)   // '\0'
+        
+        ReturnValue(response)
+    }
+}
+
+// Build a bulk string response: $<len>\r\n<data>\r\n
+Function.RESP.BulkString {
+    Input: str: Address
+    Output: Address
+    Body: {
+        // Handle null
+        IfCondition EqualTo(str, 0) ThenBlock {
+            ReturnValue("$-1\r\n")
+        }
+        
+        len = StringLength(str)
+        len_str = NumberToString(len)
+        len_str_len = StringLength(len_str)
+        
+        // Calculate total size: $ + len_str + \r\n + str + \r\n + \0
+        total = Add(Add(Add(len_str_len, len), 6), 1)
+        response = Allocate(total)
+        
+        pos = 0
+        
+        // Add '$'
+        SetByte(response, pos, 36)
+        pos = Add(pos, 1)
+        
+        // Add length
+        i = 0
+        WhileLoop LessThan(i, len_str_len) {
+            SetByte(response, pos, GetByte(len_str, i))
+            pos = Add(pos, 1)
+            i = Add(i, 1)
+        }
+        
+        // Add \r\n
+        SetByte(response, pos, 13)
+        pos = Add(pos, 1)
+        SetByte(response, pos, 10)
+        pos = Add(pos, 1)
+        
+        // Add string
+        i = 0
+        WhileLoop LessThan(i, len) {
+            SetByte(response, pos, GetByte(str, i))
+            pos = Add(pos, 1)
+            i = Add(i, 1)
+        }
+        
+        // Add final \r\n
+        SetByte(response, pos, 13)
+        pos = Add(pos, 1)
+        SetByte(response, pos, 10)
+        pos = Add(pos, 1)
+        SetByte(response, pos, 0)
+        
+        ReturnValue(response)
+    }
+}
+
+// Build an error response: -ERR <message>\r\n
+Function.RESP.Error {
+    Input: message: Address
+    Output: Address
+    Body: {
+        prefix = "ERR "
+        full_msg = StringConcat(prefix, message)
+        len = StringLength(full_msg)
+        
+        response = Allocate(Add(len, 4))
+        
+        SetByte(response, 0, 45)  // '-'
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            SetByte(response, Add(i, 1), GetByte(full_msg, i))
+            i = Add(i, 1)
+        }
+        
+        SetByte(response, Add(len, 1), 13)
+        SetByte(response, Add(len, 2), 10)
+        SetByte(response, Add(len, 3), 0)
+        
+        Deallocate(full_msg, 0)
+        
+        ReturnValue(response)
+    }
+}
+
+// Build an integer response: :<number>\r\n
+Function.RESP.Integer {
+    Input: num: Integer
+    Output: Address
+    Body: {
+        num_str = NumberToString(num)
+        len = StringLength(num_str)
+        
+        response = Allocate(Add(len, 4))
+        
+        SetByte(response, 0, 58)  // ':'
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            SetByte(response, Add(i, 1), GetByte(num_str, i))
+            i = Add(i, 1)
+        }
+        
+        SetByte(response, Add(len, 1), 13)
+        SetByte(response, Add(len, 2), 10)
+        SetByte(response, Add(len, 3), 0)
+        
+        Deallocate(num_str, 0)
+        
+        ReturnValue(response)
+    }
+}
+
+// Build an array response: *<count>\r\n<elements>
+Function.RESP.Array {
+    Input: elements: Array
+    Output: Address
+    Body: {
+        count = ArrayLength(elements)
+        
+        // Start with array header
+        count_str = NumberToString(count)
+        response = StringConcat("*", count_str)
+        response = StringConcat(response, "\r\n")
+        
+        // Add each element
+        i = 0
+        WhileLoop LessThan(i, count) {
+            element = ArrayGet(elements, i)
+            
+            // Assume elements are strings, build bulk strings
+            element_resp = RESP.BulkString(element)
+            response = StringConcat(response, element_resp)
+            
+            Deallocate(element_resp, 0)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(response)
+    }
+}

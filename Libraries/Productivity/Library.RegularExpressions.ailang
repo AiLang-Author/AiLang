@@ -1,0 +1,1082 @@
+// ============================================================================
+// AILANG Regular Expressions Library
+// High-Performance Cache-Aware Pattern Matching with JIT Compilation
+// Essential for AI Text Processing and Data Pipeline Validation
+// ============================================================================
+
+// Cache-Optimized Memory Pools for High-Performance Regex Operations
+Pool.Regex.Compilation = FixedPool {
+    "compiled_patterns": ElementType-CompiledPattern, MaximumLength-100000,
+    "nfa_states": ElementType-NFAState, MaximumLength-10000000,
+    "dfa_states": ElementType-DFAState, MaximumLength-1000000,
+    "pattern_cache": ElementType-Address, MaximumLength-100000,
+    "cache_alignment": Initialize-64, CanChange-False
+}
+
+Pool.Regex.Execution = DynamicPool {
+    "match_results": ElementType-MatchResult, MaximumLength-10000000,
+    "capture_groups": ElementType-CaptureGroup, MaximumLength-100000000,
+    "execution_state": ElementType-ExecutionState, MaximumLength-1000000,
+    "backtrack_stack": ElementType-Address, CanChange-True
+}
+
+Pool.Regex.JIT = FixedPool {
+    "jit_code": ElementType-Byte, MaximumLength-1073741824,  // 1GB for compiled code
+    "hot_patterns": ElementType-HotPattern, MaximumLength-10000,
+    "execution_counters": ElementType-UInt64, MaximumLength-100000,
+    "cache_policy": Initialize-"L1", CanChange-False  // JIT code needs L1 cache
+}
+
+Pool.Regex.Unicode = TemporalPool {
+    "unicode_tables": ElementType-UnicodeTable, MaximumLength-1000,
+    "normalization_cache": ElementType-Text, MaximumLength-1000000,
+    "character_classes": ElementType-CharacterClass, MaximumLength-100000,
+    "lifetime": Initialize-"session_scope", CanChange-False
+}
+
+Pool.Regex.Streaming = RingPool {
+    "stream_buffers": ElementType-Byte, MaximumLength-268435456,  // 256MB ring buffer
+    "partial_matches": ElementType-PartialMatch, MaximumLength-1000000,
+    "chunk_states": ElementType-ChunkState, MaximumLength-100000,
+    "cache_policy": Initialize-"L2", CanChange-False
+}
+
+Pool.Regex.Analytics = FixedPool {
+    "performance_metrics": ElementType-RegexMetrics, MaximumLength-100000,
+    "pattern_statistics": ElementType-PatternStats, MaximumLength-10000,
+    "optimization_hints": ElementType-OptimizationHint, MaximumLength-100000,
+    "backtracking_analysis": ElementType-BacktrackAnalysis, MaximumLength-10000
+}
+
+// ============================================================================
+// Core Regex Data Types
+// ============================================================================
+
+CompiledPattern = Record {
+    pattern_string: Text,
+    pattern_hash: UInt64,
+    flags: RegexFlags,
+    nfa_graph: Address,
+    dfa_graph: OptionalType[Address],
+    jit_code: OptionalType[Address],
+    optimization_level: Integer,
+    compilation_time_ns: UInt64,
+    usage_count: UInt64,
+    cache_hits: UInt64,
+    cache_misses: UInt64
+}
+
+RegexFlags = Record {
+    case_insensitive: Boolean,
+    multiline: Boolean,
+    dot_all: Boolean,
+    unicode: Boolean,
+    extended: Boolean,  // Allow whitespace and comments
+    global: Boolean,    // Find all matches
+    sticky: Boolean,    // Start matching at last index
+    compiled: Boolean
+}
+
+MatchResult = Record {
+    matched: Boolean,
+    full_match: Text,
+    start_position: Integer,
+    end_position: Integer,
+    capture_groups: Array[CaptureGroup],
+    named_groups: Map[Text, CaptureGroup],
+    execution_time_ns: UInt64,
+    backtrack_count: UInt64
+}
+
+CaptureGroup = Record {
+    group_number: Integer,
+    group_name: OptionalType[Text],
+    matched_text: Text,
+    start_position: Integer,
+    end_position: Integer,
+    is_named: Boolean
+}
+
+NFAState = Record {
+    state_id: UInt64,
+    is_final: Boolean,
+    transitions: Array[NFATransition],
+    epsilon_transitions: Array[UInt64],
+    accepting_groups: Array[Integer]
+}
+
+NFATransition = Record {
+    character_class: CharacterClass,
+    target_state: UInt64,
+    is_negated: Boolean,
+    is_epsilon: Boolean
+}
+
+DFAState = Record {
+    state_id: UInt64,
+    nfa_states: Array[UInt64],
+    is_final: Boolean,
+    transitions: Map[CharacterRange, UInt64],
+    failure_transition: OptionalType[UInt64]
+}
+
+// ============================================================================
+// Pattern Compilation Types
+// ============================================================================
+
+CharacterClass = Record {
+    class_type: Text,  // "literal", "range", "predefined", "unicode", "custom"
+    characters: Array[UInt32],  // Unicode code points
+    ranges: Array[CharacterRange],
+    unicode_categories: Array[Text],
+    is_negated: Boolean
+}
+
+CharacterRange = Record {
+    start_char: UInt32,
+    end_char: UInt32
+}
+
+UnicodeTable = Record {
+    category: Text,  // "Letter", "Number", "Punctuation", etc.
+    subcategory: Text,  // "Uppercase_Letter", "Decimal_Number", etc.
+    code_points: Array[CharacterRange],
+    case_mapping: Map[UInt32, UInt32]
+}
+
+PatternAST = Record {
+    node_type: Text,  // "sequence", "alternation", "repetition", "group", "anchor", "character_class"
+    children: Array[PatternAST],
+    quantifier: OptionalType[Quantifier],
+    character_class: OptionalType[CharacterClass],
+    group_number: OptionalType[Integer],
+    group_name: OptionalType[Text],
+    anchor_type: OptionalType[Text]  // "start", "end", "word_boundary", "lookahead", "lookbehind"
+}
+
+Quantifier = Record {
+    min_count: Integer,
+    max_count: OptionalType[Integer],  // Null for unlimited
+    is_greedy: Boolean,
+    is_possessive: Boolean
+}
+
+// ============================================================================
+// Execution Engine Types
+// ============================================================================
+
+ExecutionState = Record {
+    current_position: Integer,
+    input_text: Text,
+    input_length: Integer,
+    current_state: UInt64,
+    capture_stack: Array[CaptureFrame],
+    backtrack_stack: Array[BacktrackFrame],
+    match_found: Boolean,
+    execution_budget: Integer  // Prevent infinite loops
+}
+
+CaptureFrame = Record {
+    group_number: Integer,
+    start_position: Integer,
+    end_position: Integer,
+    active: Boolean
+}
+
+BacktrackFrame = Record {
+    state_id: UInt64,
+    input_position: Integer,
+    capture_state: Array[CaptureFrame],
+    alternative_path: UInt64
+}
+
+HotPattern = Record {
+    pattern: CompiledPattern,
+    execution_count: UInt64,
+    total_execution_time: UInt64,
+    average_input_length: FloatingPoint,
+    jit_compilation_benefit: FloatingPoint,
+    last_used: UInt64
+}
+
+// ============================================================================
+// Streaming and Large Text Types
+// ============================================================================
+
+StreamingMatcher = Record {
+    pattern: CompiledPattern,
+    buffer_size: Integer,
+    overlap_size: Integer,
+    current_state: UInt64,
+    partial_matches: Array[PartialMatch],
+    total_processed: UInt64
+}
+
+PartialMatch = Record {
+    start_offset: UInt64,
+    current_state: UInt64,
+    capture_state: Array[CaptureFrame],
+    confidence: FloatingPoint  // How likely this is a real match
+}
+
+ChunkState = Record {
+    chunk_id: UInt64,
+    start_offset: UInt64,
+    end_offset: UInt64,
+    final_state: UInt64,
+    partial_matches: Array[PartialMatch],
+    needs_continuation: Boolean
+}
+
+// ============================================================================
+// Performance and Analytics Types
+// ============================================================================
+
+RegexMetrics = Record {
+    pattern_hash: UInt64,
+    total_executions: UInt64,
+    total_execution_time_ns: UInt64,
+    average_execution_time_ns: UInt64,
+    cache_hit_rate: FloatingPoint,
+    backtrack_frequency: FloatingPoint,
+    input_size_distribution: Array[UInt64],
+    optimization_opportunities: Array[Text]
+}
+
+PatternStats = Record {
+    pattern: Text,
+    complexity_score: FloatingPoint,
+    estimated_worst_case: FloatingPoint,
+    backtrack_potential: Text,  // "low", "medium", "high", "catastrophic"
+    optimization_suggestions: Array[Text],
+    usage_frequency: UInt64
+}
+
+OptimizationHint = Record {
+    hint_type: Text,  // "jit_candidate", "dfa_conversion", "simplification", "anchor_optimization"
+    pattern_hash: UInt64,
+    estimated_benefit: FloatingPoint,
+    implementation_cost: FloatingPoint,
+    justification: Text
+}
+
+BacktrackAnalysis = Record {
+    pattern_hash: UInt64,
+    max_backtrack_depth: UInt64,
+    average_backtrack_count: FloatingPoint,
+    catastrophic_inputs: Array[Text],
+    suggested_rewrites: Array[Text]
+}
+
+// ============================================================================
+// Core Regex API
+// ============================================================================
+
+Function.Regex.Compile {
+    Input: (
+        pattern: Text,
+        flags: Text = "",
+        optimization_level: Integer = 2
+    )
+    Output: CompiledPattern
+    Body: {
+        // Check pattern cache first
+        pattern_hash = Hash.FNV1a(StringConcat(pattern, flags))
+        cached_pattern = Regex.FindCachedPattern(pattern_hash)
+        IfCondition NotEqual(cached_pattern, Null) ThenBlock {
+            cached_pattern.cache_hits = Add(cached_pattern.cache_hits, 1)
+            ReturnValue(cached_pattern)
+        }
+        
+        Pool.Regex.Compilation.Allocate(compiled_pattern)
+        
+        start_time = Time.GetHighResTimer()
+        
+        TryBlock: {
+            // Parse flags
+            regex_flags = Regex.ParseFlags(flags)
+            
+            // Parse pattern into AST
+            ast = Regex.ParsePattern(pattern, regex_flags)
+            
+            // Validate AST for potential issues
+            validation_result = Regex.ValidateAST(ast)
+            IfCondition Not(validation_result.is_valid) ThenBlock {
+                TryBlock: {} CatchError.InvalidRegexPattern {
+                    ErrorDetails: validation_result.error_message
+                }
+            }
+            
+            // Compile to NFA
+            nfa = Regex.CompileToNFA(ast, regex_flags)
+            
+            // Optimize based on optimization level
+            IfCondition GreaterEqual(optimization_level, 1) ThenBlock {
+                nfa = Regex.OptimizeNFA(nfa)
+            }
+            
+            // Convert to DFA if beneficial
+            dfa = Null
+            IfCondition GreaterEqual(optimization_level, 2) ThenBlock {
+                dfa_candidate = Regex.AnalyzeDFABenefit(nfa)
+                IfCondition dfa_candidate.is_beneficial ThenBlock {
+                    dfa = Regex.ConvertToDFA(nfa)
+                }
+            }
+            
+            // Set up compiled pattern
+            compiled_pattern.pattern_string = pattern
+            compiled_pattern.pattern_hash = pattern_hash
+            compiled_pattern.flags = regex_flags
+            compiled_pattern.nfa_graph = nfa
+            compiled_pattern.dfa_graph = dfa
+            compiled_pattern.jit_code = Null  // JIT compiled on demand
+            compiled_pattern.optimization_level = optimization_level
+            compiled_pattern.usage_count = 0
+            compiled_pattern.cache_hits = 1
+            compiled_pattern.cache_misses = 0
+        }
+        CatchError.RegexCompilationError {
+            TryBlock: {} CatchError.InvalidRegexSyntax {
+                ErrorDetails: GetErrorMessage()
+            }
+        }
+        
+        end_time = Time.GetHighResTimer()
+        compiled_pattern.compilation_time_ns = Subtract(end_time, start_time)
+        
+        // Cache the compiled pattern
+        Regex.CachePattern(compiled_pattern)
+        
+        PrintMessage(StringConcat("Compiled regex pattern: ", pattern, 
+                                 " (", NumberToString(compiled_pattern.compilation_time_ns), "ns)"))
+        
+        ReturnValue(compiled_pattern)
+    }
+}
+
+Function.Regex.Match {
+    Input: (
+        pattern: CompiledPattern,
+        input_text: Text,
+        start_position: Integer = 0
+    )
+    Output: MatchResult
+    Body: {
+        IfCondition LessThan(start_position, 0) ThenBlock {
+            start_position = 0
+        }
+        
+        IfCondition GreaterEqual(start_position, StringLength(input_text)) ThenBlock {
+            ReturnValue(Regex.CreateEmptyMatch())
+        }
+        
+        Pool.Regex.Execution.Allocate(result)
+        start_time = Time.GetHighResTimer()
+        
+        // Update usage statistics
+        pattern.usage_count = Add(pattern.usage_count, 1)
+        
+        // Choose execution engine based on pattern characteristics
+        execution_result = IfCondition NotEqual(pattern.jit_code, Null)
+            ThenExpression Regex.ExecuteJIT(pattern, input_text, start_position)
+            ElseIfCondition NotEqual(pattern.dfa_graph, Null)
+            ThenExpression Regex.ExecuteDFA(pattern, input_text, start_position)
+            ElseExpression Regex.ExecuteNFA(pattern, input_text, start_position)
+        
+        end_time = Time.GetHighResTimer()
+        execution_time = Subtract(end_time, start_time)
+        
+        result.matched = execution_result.matched
+        result.full_match = execution_result.full_match
+        result.start_position = execution_result.start_position
+        result.end_position = execution_result.end_position
+        result.capture_groups = execution_result.capture_groups
+        result.named_groups = execution_result.named_groups
+        result.execution_time_ns = execution_time
+        result.backtrack_count = execution_result.backtrack_count
+        
+        // Update performance metrics
+        Regex.UpdateMetrics(pattern, result, StringLength(input_text))
+        
+        // Consider JIT compilation for hot patterns
+        IfCondition And(EqualTo(pattern.jit_code, Null), GreaterThan(pattern.usage_count, 100)) ThenBlock {
+            IfCondition Regex.ShouldJITCompile(pattern) ThenBlock {
+                Async.Execute(function-Regex.JITCompilePattern, args-[pattern])
+            }
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Regex.MatchAll {
+    Input: (
+        pattern: CompiledPattern,
+        input_text: Text,
+        max_matches: Integer = 1000000
+    )
+    Output: Array[MatchResult]
+    Body: {
+        matches = Array.Create()
+        current_position = 0
+        input_length = StringLength(input_text)
+        
+        WhileLoop And(LessThan(current_position, input_length), LessThan(ArrayLength(matches), max_matches)) {
+            match_result = Regex.Match(pattern, input_text, current_position)
+            
+            IfCondition match_result.matched ThenBlock {
+                Array.Push(matches, match_result)
+                
+                // Move past the match (or 1 character if zero-width match)
+                next_position = match_result.end_position
+                IfCondition EqualTo(next_position, current_position) ThenBlock {
+                    next_position = Add(current_position, 1)  // Prevent infinite loop
+                }
+                current_position = next_position
+            } ElseBlock {
+                current_position = Add(current_position, 1)
+            }
+        }
+        
+        ReturnValue(matches)
+    }
+}
+
+Function.Regex.Replace {
+    Input: (
+        pattern: CompiledPattern,
+        input_text: Text,
+        replacement: Text,
+        max_replacements: Integer = -1
+    )
+    Output: Text
+    Body: {
+        IfCondition EqualTo(max_replacements, -1) ThenBlock {
+            max_replacements = 1000000  // Essentially unlimited
+        }
+        
+        result_parts = Array.Create()
+        current_position = 0
+        replacement_count = 0
+        input_length = StringLength(input_text)
+        
+        WhileLoop And(LessThan(current_position, input_length), LessThan(replacement_count, max_replacements)) {
+            match_result = Regex.Match(pattern, input_text, current_position)
+            
+            IfCondition match_result.matched ThenBlock {
+                // Add text before match
+                IfCondition GreaterThan(match_result.start_position, current_position) ThenBlock {
+                    before_text = StringSubstring(input_text, current_position, 
+                                                Subtract(match_result.start_position, current_position))
+                    Array.Push(result_parts, before_text)
+                }
+                
+                // Process replacement string (handle $1, $2, etc.)
+                processed_replacement = Regex.ProcessReplacementString(replacement, match_result)
+                Array.Push(result_parts, processed_replacement)
+                
+                current_position = match_result.end_position
+                replacement_count = Add(replacement_count, 1)
+                
+                // Prevent infinite loop with zero-width matches
+                IfCondition EqualTo(match_result.start_position, match_result.end_position) ThenBlock {
+                    IfCondition LessThan(current_position, input_length) ThenBlock {
+                        next_char = StringSubstring(input_text, current_position, 1)
+                        Array.Push(result_parts, next_char)
+                        current_position = Add(current_position, 1)
+                    }
+                }
+            } ElseBlock {
+                // No more matches, add remaining text
+                remaining_text = StringSubstring(input_text, current_position, 
+                                               Subtract(input_length, current_position))
+                Array.Push(result_parts, remaining_text)
+                Break
+            }
+        }
+        
+        // Add any remaining text after last match
+        IfCondition LessThan(current_position, input_length) ThenBlock {
+            remaining_text = StringSubstring(input_text, current_position, 
+                                           Subtract(input_length, current_position))
+            Array.Push(result_parts, remaining_text)
+        }
+        
+        ReturnValue(StringJoin(result_parts, ""))
+    }
+}
+
+Function.Regex.Split {
+    Input: (
+        pattern: CompiledPattern,
+        input_text: Text,
+        max_splits: Integer = -1,
+        include_empty: Boolean = False
+    )
+    Output: Array[Text]
+    Body: {
+        IfCondition EqualTo(max_splits, -1) ThenBlock {
+            max_splits = 1000000
+        }
+        
+        parts = Array.Create()
+        current_position = 0
+        split_count = 0
+        input_length = StringLength(input_text)
+        
+        WhileLoop And(LessThan(current_position, input_length), LessThan(split_count, max_splits)) {
+            match_result = Regex.Match(pattern, input_text, current_position)
+            
+            IfCondition match_result.matched ThenBlock {
+                // Extract part before the match
+                part_length = Subtract(match_result.start_position, current_position)
+                IfCondition Or(GreaterThan(part_length, 0), include_empty) ThenBlock {
+                    part_text = StringSubstring(input_text, current_position, part_length)
+                    Array.Push(parts, part_text)
+                }
+                
+                current_position = match_result.end_position
+                split_count = Add(split_count, 1)
+                
+                // Handle zero-width matches
+                IfCondition EqualTo(match_result.start_position, match_result.end_position) ThenBlock {
+                    IfCondition LessThan(current_position, input_length) ThenBlock {
+                        single_char = StringSubstring(input_text, current_position, 1)
+                        Array.Push(parts, single_char)
+                        current_position = Add(current_position, 1)
+                    }
+                }
+            } ElseBlock {
+                Break  // No more matches
+            }
+        }
+        
+        // Add remaining text as final part
+        IfCondition LessThan(current_position, input_length) ThenBlock {
+            remaining_text = StringSubstring(input_text, current_position, 
+                                           Subtract(input_length, current_position))
+            IfCondition Or(GreaterThan(StringLength(remaining_text), 0), include_empty) ThenBlock {
+                Array.Push(parts, remaining_text)
+            }
+        }
+        
+        ReturnValue(parts)
+    }
+}
+
+// ============================================================================
+// Pattern Validation and Analysis
+// ============================================================================
+
+Function.Regex.ValidatePattern {
+    Input: (pattern: Text)
+    Output: ValidationResult
+    Body: {
+        Pool.Regex.Compilation.Allocate(result)
+        result.is_valid = True
+        result.error_message = ""
+        result.warnings = Array.Create()
+        result.complexity_score = 0.0
+        result.estimated_performance = "good"
+        
+        TryBlock: {
+            // Basic syntax validation
+            ast = Regex.ParsePattern(pattern, Regex.GetDefaultFlags())
+            
+            // Analyze for performance issues
+            analysis = Regex.AnalyzePattern(ast)
+            result.complexity_score = analysis.complexity_score
+            result.estimated_performance = analysis.performance_category
+            
+            // Check for catastrophic backtracking patterns
+            backtrack_risk = Regex.AnalyzeBacktrackRisk(ast)
+            IfCondition EqualTo(backtrack_risk.risk_level, "high") ThenBlock {
+                Array.Push(result.warnings, 
+                    "Pattern may cause catastrophic backtracking on certain inputs")
+                Array.Push(result.warnings, 
+                    StringConcat("Problematic construct: ", backtrack_risk.problematic_part))
+            }
+            
+            // Check for common anti-patterns
+            antipatterns = Regex.DetectAntipatterns(pattern)
+            ForEach antipattern In antipatterns {
+                Array.Push(result.warnings, antipattern.description)
+            }
+            
+            // Suggest optimizations
+            optimizations = Regex.SuggestOptimizations(ast)
+            ForEach optimization In optimizations {
+                Array.Push(result.warnings, 
+                    StringConcat("Optimization suggestion: ", optimization.suggestion))
+            }
+        }
+        CatchError.InvalidRegexSyntax {
+            result.is_valid = False
+            result.error_message = GetErrorMessage()
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+ValidationResult = Record {
+    is_valid: Boolean,
+    error_message: Text,
+    warnings: Array[Text],
+    complexity_score: FloatingPoint,
+    estimated_performance: Text  // "excellent", "good", "fair", "poor", "catastrophic"
+}
+
+Function.Regex.BenchmarkPattern {
+    Input: (
+        pattern: Text,
+        test_inputs: Array[Text],
+        iterations: Integer = 1000
+    )
+    Output: BenchmarkResult
+    Body: {
+        compiled_pattern = Regex.Compile(pattern, "", 3)  // Maximum optimization
+        
+        Pool.Regex.Analytics.Allocate(benchmark)
+        benchmark.pattern = pattern
+        benchmark.total_iterations = Multiply(ArrayLength(test_inputs), iterations)
+        benchmark.execution_times = Array.Create()
+        benchmark.memory_usage = Array.Create()
+        benchmark.cache_performance = Array.Create()
+        
+        PrintMessage(StringConcat("Benchmarking regex pattern: ", pattern))
+        PrintMessage(StringConcat("Test inputs: ", NumberToString(ArrayLength(test_inputs))))
+        PrintMessage(StringConcat("Iterations per input: ", NumberToString(iterations)))
+        
+        ForEach test_input In test_inputs {
+            For i From 0 To iterations {
+                start_memory = Memory.GetUsageStats()
+                start_cache = Cache.GetStats()
+                start_time = Time.GetHighResTimer()
+                
+                match_result = Regex.Match(compiled_pattern, test_input)
+                
+                end_time = Time.GetHighResTimer()
+                end_cache = Cache.GetStats()
+                end_memory = Memory.GetUsageStats()
+                
+                execution_time = Subtract(end_time, start_time)
+                memory_used = Subtract(end_memory.allocated, start_memory.allocated)
+                cache_efficiency = Regex.CalculateCacheEfficiency(start_cache, end_cache)
+                
+                Array.Push(benchmark.execution_times, execution_time)
+                Array.Push(benchmark.memory_usage, memory_used)
+                Array.Push(benchmark.cache_performance, cache_efficiency)
+            }
+        }
+        
+        // Calculate statistics
+        benchmark.stats = Regex.CalculateBenchmarkStats(benchmark.execution_times)
+        benchmark.memory_stats = Regex.CalculateMemoryStats(benchmark.memory_usage)
+        benchmark.cache_stats = Regex.CalculateCacheStats(benchmark.cache_performance)
+        
+        Regex.PrintBenchmarkResults(benchmark)
+        
+        ReturnValue(benchmark)
+    }
+}
+
+BenchmarkResult = Record {
+    pattern: Text,
+    total_iterations: Integer,
+    execution_times: Array[UInt64],
+    memory_usage: Array[UInt64],
+    cache_performance: Array[FloatingPoint],
+    stats: BenchmarkStats,
+    memory_stats: MemoryStats,
+    cache_stats: CacheStatsAnalysis
+}
+
+BenchmarkStats = Record {
+    min_time_ns: UInt64,
+    max_time_ns: UInt64,
+    average_time_ns: FloatingPoint,
+    median_time_ns: UInt64,
+    std_deviation_ns: FloatingPoint,
+    percentile_95_ns: UInt64,
+    percentile_99_ns: UInt64
+}
+
+MemoryStats = Record {
+    min_memory_bytes: UInt64,
+    max_memory_bytes: UInt64,
+    average_memory_bytes: FloatingPoint,
+    total_allocations: UInt64
+}
+
+CacheStatsAnalysis = Record {
+    average_efficiency: FloatingPoint,
+    min_efficiency: FloatingPoint,
+    max_efficiency: FloatingPoint,
+    cache_friendly: Boolean
+}
+
+// ============================================================================
+// JIT Compilation Engine
+// ============================================================================
+
+Function.Regex.JITCompilePattern {
+    Input: (pattern: CompiledPattern)
+    Body: {
+        IfCondition NotEqual(pattern.jit_code, Null) ThenBlock {
+            ReturnValue()  // Already JIT compiled
+        }
+        
+        PrintMessage(StringConcat("JIT compiling hot pattern: ", pattern.pattern_string))
+        
+        start_time = Time.GetHighResTimer()
+        
+        TryBlock: {
+            // Analyze pattern for JIT suitability
+            jit_analysis = Regex.AnalyzeJITSuitability(pattern)
+            IfCondition Not(jit_analysis.is_suitable) ThenBlock {
+                PrintMessage(StringConcat("Pattern not suitable for JIT: ", jit_analysis.reason))
+                ReturnValue()
+            }
+            
+            // Generate optimized machine code
+            Pool.Regex.JIT.Allocate(jit_code_buffer)
+            code_generator = Regex.CreateCodeGenerator(jit_code_buffer)
+            
+            // Compile NFA/DFA to native code
+            IfCondition NotEqual(pattern.dfa_graph, Null) ThenBlock {
+                Regex.CompileDFAToJIT(pattern.dfa_graph, code_generator)
+            } ElseBlock {
+                Regex.CompileNFAToJIT(pattern.nfa_graph, code_generator)
+            }
+            
+            // Apply platform-specific optimizations
+            Regex.ApplyJITOptimizations(code_generator, jit_analysis.optimization_hints)
+            
+            // Finalize and link code
+            compiled_code = Regex.FinalizeJITCode(code_generator)
+            pattern.jit_code = compiled_code
+            
+            end_time = Time.GetHighResTimer()
+            compilation_time = Subtract(end_time, start_time)
+            
+            PrintMessage(StringConcat("JIT compilation completed in ", 
+                                     NumberToString(compilation_time), "ns"))
+            
+            // Register as hot pattern
+            Regex.RegisterHotPattern(pattern, compilation_time)
+        }
+        CatchError.JITCompilationError {
+            PrintMessage(StringConcat("JIT compilation failed: ", GetErrorMessage()))
+            // Pattern will continue to use interpreted execution
+        }
+    }
+}
+
+Function.Regex.ExecuteJIT {
+    Input: (
+        pattern: CompiledPattern,
+        input_text: Text,
+        start_position: Integer
+    )
+    Output: ExecutionResult
+    Body: {
+        // Execute JIT compiled native code
+        jit_function = pattern.jit_code
+        
+        // Prepare execution context
+        context = Regex.CreateJITContext(input_text, start_position)
+        
+        // Call native code
+        native_result = JIT.ExecuteNativeCode(jit_function, context)
+        
+        // Convert native result back to AILANG structures
+        execution_result = Regex.ConvertNativeResult(native_result, pattern.flags)
+        
+        ReturnValue(execution_result)
+    }
+}
+
+// ============================================================================
+// Streaming Support for Large Texts
+// ============================================================================
+
+Function.Regex.CreateStreamingMatcher {
+    Input: (
+        pattern: CompiledPattern,
+        buffer_size: Integer = 65536,  // 64KB default
+        overlap_size: Integer = 1024   // 1KB overlap
+    )
+    Output: StreamingMatcher
+    Body: {
+        Pool.Regex.Streaming.Allocate(matcher)
+        matcher.pattern = pattern
+        matcher.buffer_size = buffer_size
+        matcher.overlap_size = overlap_size
+        matcher.current_state = 0  // Initial NFA state
+        matcher.partial_matches = Array.Create()
+        matcher.total_processed = 0
+        
+        ReturnValue(matcher)
+    }
+}
+
+Function.Regex.StreamingMatch {
+    Input: (
+        matcher: StreamingMatcher,
+        chunk: Text,
+        is_final_chunk: Boolean = False
+    )
+    Output: Array[MatchResult]
+    Body: {
+        matches = Array.Create()
+        
+        // Combine with overlap from previous chunk
+        full_text = IfCondition GreaterThan(matcher.total_processed, 0)
+            ThenExpression Regex.GetOverlapText(matcher, chunk)
+            ElseExpression chunk
+        
+        // Process full text for matches
+        chunk_matches = Regex.MatchAll(matcher.pattern, full_text)
+        
+        ForEach match In chunk_matches {
+            // Adjust positions to global coordinates
+            global_match = Regex.AdjustMatchPosition(match, matcher.total_processed)
+            
+            // Check if match is complete or needs continuation
+            IfCondition Regex.IsCompleteMatch(match, full_text, is_final_chunk) ThenBlock {
+                Array.Push(matches, global_match)
+            } ElseBlock {
+                // Store as partial match for next chunk
+                Regex.StorePartialMatch(matcher, global_match)
+            }
+        }
+        
+        matcher.total_processed = Add(matcher.total_processed, StringLength(chunk))
+        
+        ReturnValue(matches)
+    }
+}
+
+// ============================================================================
+// Unicode Support
+// ============================================================================
+
+Function.Regex.NormalizeUnicode {
+    Input: (
+        text: Text,
+        normalization_form: Text = "NFC"  // NFC, NFD, NFKC, NFKD
+    )
+    Output: Text
+    Body: {
+        // Check cache first
+        cache_key = StringConcat(Hash.SHA256(text), "_", normalization_form)
+        cached_result = Regex.GetNormalizationCache(cache_key)
+        IfCondition NotEqual(cached_result, Null) ThenBlock {
+            ReturnValue(cached_result)
+        }
+        
+        normalized_text = Unicode.Normalize(text, normalization_form)
+        
+        // Cache result for future use
+        Regex.CacheNormalizedText(cache_key, normalized_text)
+        
+        ReturnValue(normalized_text)
+    }
+}
+
+Function.Regex.GetUnicodeProperty {
+    Input: (
+        character: UInt32,
+        property: Text  // "Category", "Script", "Block", etc.
+    )
+    Output: Text
+    Body: {
+        // Use cached Unicode tables for fast lookup
+        unicode_table = Regex.GetUnicodeTable(property)
+        IfCondition EqualTo(unicode_table, Null) ThenBlock {
+            TryBlock: {} CatchError.UnknownUnicodeProperty {}
+        }
+        
+        property_value = Unicode.LookupProperty(unicode_table, character)
+        ReturnValue(property_value)
+    }
+}
+
+// ============================================================================
+// AI-Friendly Pattern Generation and Analysis
+// ============================================================================
+
+Function.Regex.GeneratePatternFromExamples {
+    Input: (
+        positive_examples: Array[Text],
+        negative_examples: Array[Text] = Array.Create(),
+        complexity_limit: Integer = 50
+    )
+    Output: Text
+    Body: {
+        PrintMessage("Analyzing examples to generate regex pattern...")
+        
+        // Analyze common patterns in positive examples
+        common_features = Regex.ExtractCommonFeatures(positive_examples)
+        
+        // Generate candidate patterns
+        candidate_patterns = Regex.GenerateCandidatePatterns(common_features, complexity_limit)
+        
+        // Test patterns against examples
+        best_pattern = ""
+        best_score = -1.0
+        
+        ForEach pattern In candidate_patterns {
+            score = Regex.ScorePattern(pattern, positive_examples, negative_examples)
+            IfCondition GreaterThan(score, best_score) ThenBlock {
+                best_pattern = pattern
+                best_score = score
+            }
+        }
+        
+        IfCondition EqualTo(best_pattern, "") ThenBlock {
+            TryBlock: {} CatchError.PatternGenerationFailed {
+                ErrorDetails: "Could not generate pattern that matches all examples"
+            }
+        }
+        
+        PrintMessage(StringConcat("Generated pattern: ", best_pattern, " (score: ", NumberToString(best_score), ")"))
+        
+        ReturnValue(best_pattern)
+    }
+}
+
+Function.Regex.OptimizePattern {
+    Input: (
+        pattern: Text,
+        sample_inputs: Array[Text] = Array.Create()
+    )
+    Output: Text
+    Body: {
+        PrintMessage(StringConcat("Optimizing regex pattern: ", pattern))
+        
+        // Parse and analyze current pattern
+        ast = Regex.ParsePattern(pattern, Regex.GetDefaultFlags())
+        optimizations = Array.Create()
+        
+        // Apply various optimization techniques
+        optimized_ast = ast
+        
+        // 1. Anchor optimization
+        anchor_optimized = Regex.OptimizeAnchors(optimized_ast)
+        IfCondition Regex.ASTsAreDifferent(optimized_ast, anchor_optimized) ThenBlock {
+            optimized_ast = anchor_optimized
+            Array.Push(optimizations, "anchor_optimization")
+        }
+        
+        // 2. Character class simplification
+        charclass_optimized = Regex.SimplifyCharacterClasses(optimized_ast)
+        IfCondition Regex.ASTsAreDifferent(optimized_ast, charclass_optimized) ThenBlock {
+            optimized_ast = charclass_optimized
+            Array.Push(optimizations, "character_class_simplification")
+        }
+        
+        // 3. Quantifier optimization
+        quantifier_optimized = Regex.OptimizeQuantifiers(optimized_ast)
+        IfCondition Regex.ASTsAreDifferent(optimized_ast, quantifier_optimized) ThenBlock {
+            optimized_ast = quantifier_optimized
+            Array.Push(optimizations, "quantifier_optimization")
+        }
+        
+        // 4. Alternation reordering
+        alternation_optimized = Regex.ReorderAlternations(optimized_ast)
+        IfCondition Regex.ASTsAreDifferent(optimized_ast, alternation_optimized) ThenBlock {
+            optimized_ast = alternation_optimized
+            Array.Push(optimizations, "alternation_reordering")
+        }
+        
+        // Convert back to pattern string
+        optimized_pattern = Regex.ASTToPattern(optimized_ast)
+        
+        // Verify optimization didn't break functionality
+        IfCondition GreaterThan(ArrayLength(sample_inputs), 0) ThenBlock {
+            verification_result = Regex.VerifyOptimization(pattern, optimized_pattern, sample_inputs)
+            IfCondition Not(verification_result.is_equivalent) ThenBlock {
+                PrintMessage("Optimization verification failed, returning original pattern")
+                ReturnValue(pattern)
+            }
+        }
+        
+        IfCondition GreaterThan(ArrayLength(optimizations), 0) ThenBlock {
+            PrintMessage(StringConcat("Applied optimizations: ", StringJoin(optimizations, ", ")))
+            PrintMessage(StringConcat("Optimized pattern: ", optimized_pattern))
+        } ElseBlock {
+            PrintMessage("No optimizations applied - pattern is already optimal")
+        }
+        
+        ReturnValue(optimized_pattern)
+    }
+}
+
+// ============================================================================
+// Pattern Performance Monitoring
+// ============================================================================
+
+Function.Regex.StartPerformanceMonitoring {
+    Input: (
+        monitoring_interval_seconds: Integer = 60,
+        alert_threshold_ms: Integer = 1000
+    )
+    Body: {
+        monitor_thread = Thread.Create(
+            function-Regex.PerformanceMonitorLoop,
+            args-[monitoring_interval_seconds, alert_threshold_ms],
+            cache_policy-"L3"
+        )
+        Thread.SetName(monitor_thread, "RegexPerformanceMonitor")
+        
+        PrintMessage("Started regex performance monitoring")
+    }
+}
+
+Function.Regex.PerformanceMonitorLoop {
+    Input: (interval_seconds: Integer, alert_threshold_ms: Integer)
+    Body: {
+        monitor_logger = Logging.GetLogger("RegexMonitor", "INFO")
+        
+        WhileLoop True {
+            Thread.Sleep(Multiply(interval_seconds, 1000))
+            
+            // Collect performance metrics from all patterns
+            global_metrics = Regex.CollectGlobalMetrics()
+            
+            // Check for performance issues
+            ForEach pattern_hash, metrics In global_metrics {
+                avg_time_ms = Divide(metrics.average_execution_time_ns, 1000000)
+                
+                IfCondition GreaterThan(avg_time_ms, alert_threshold_ms) ThenBlock {
+                    pattern_info = Regex.GetPatternInfo(pattern_hash)
+                    alert_data = Map.Create()
+                    Map.Set(alert_data, "pattern", pattern_info.pattern_string)
+                    Map.Set(alert_data, "average_time_ms", avg_time_ms)
+                    Map.Set(alert_data, "usage_count", metrics.total_executions)
+                    Map.Set(alert_data, "backtrack_frequency", metrics.backtrack_frequency)
+                    
+                    Logging.Warn(monitor_logger, "Slow regex pattern detected", alert_data)
+                    
+                    // Suggest optimizations
+                    suggestions = Regex.GenerateOptimizationSuggestions(pattern_info)
+                    ForEach suggestion In suggestions {
+                        Logging.Info(monitor_logger, StringConcat("Optimization suggestion: ", suggestion))
+                    }
+                }
+            }
+            
+            // Log overall regex subsystem health
+            health_data = Map.Create()
+            Map.Set(health_data, "total_patterns", Regex.GetTotalPatternCount())
+            Map.Set(health_data, "jit_compiled_patterns", Regex.GetJITCompiledCount())
+            Map.Set(health_data, "cache_hit_rate", Regex.GetGlobalCacheHitRate())
+            Map.Set(health_data, "memory_usage_mb", Divide(Regex.GetTotalMemoryUsage(), 1048576))
+            
+            Logging.Info(monitor_logger, "Regex subsystem health check", health_data)
+        }
+    }
+}

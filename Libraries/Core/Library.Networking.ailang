@@ -1,0 +1,1431 @@
+// ============================================================================
+// AILANG Networking Library
+// High-Performance, Cache-Aware Network Programming
+// ============================================================================
+
+// Network buffer pools optimized for different scenarios
+Pool.Network.SmallBuffers = FixedPool {
+    "buffers": ElementType-Byte, MaximumLength-67108864,  // 64MB total
+    "buffer_size": Initialize-65536, CanChange-False,  // 64KB per buffer
+    "buffer_count": Initialize-1000, CanChange-True,
+    "cache_alignment": Initialize-64, CanChange-False
+}
+
+Pool.Network.LargeBuffers = DynamicPool {
+    "buffers": ElementType-Byte, MaximumLength-1073741824,  // 1GB total
+    "min_buffer_size": Initialize-1048576, CanChange-False,  // 1MB minimum
+    "allocation_count": Initialize-0, CanChange-True,
+    "numa_aware": Initialize-True, CanChange-False
+}
+
+Pool.Network.ConnectionPool = DynamicPool {
+    "active_connections": ElementType-SocketHandle, MaximumLength-100000,
+    "connection_states": ElementType-ConnectionState, MaximumLength-100000,
+    "keep_alive_connections": ElementType-SocketHandle, MaximumLength-10000
+}
+
+Pool.Network.HTTPServer = FixedPool {
+    "server_instances": ElementType-HTTPServerHandle, MaximumLength-100,
+    "request_contexts": ElementType-HTTPRequestContext, MaximumLength-100000,
+    "response_buffers": ElementType-Address, MaximumLength-100000
+}
+
+Pool.Network.DNSCache = TemporalPool {
+    "dns_entries": ElementType-DNSEntry, MaximumLength-10000,
+    "lifetime": Initialize-"5_minutes", CanChange-False
+}
+
+// ============================================================================
+// Core Data Types
+// ============================================================================
+
+SocketHandle = Record {
+    fd: Integer,
+    family: Text,  // "IPv4", "IPv6", "Unix"
+    type: Text,    // "TCP", "UDP"
+    connected: Boolean,
+    blocking: Boolean,
+    read_buffer: Address,
+    write_buffer: Address,
+    buffer_size: Integer,
+    local_address: Text,
+    local_port: Integer,
+    remote_address: Text,
+    remote_port: Integer,
+    keep_alive: Boolean,
+    timeout: Integer
+}
+
+ConnectionState = Record {
+    socket: SocketHandle,
+    state: Text,  // "connecting", "connected", "closing", "closed"
+    last_activity: UInt64,
+    bytes_sent: UInt64,
+    bytes_received: UInt64,
+    error_count: Integer
+}
+
+HTTPServerHandle = Record {
+    port: Integer,
+    running: Boolean,
+    listen_socket: SocketHandle,
+    thread_pool: ThreadPoolHandle,
+    routes: Map[Text, Function],
+    middleware: Array[Function],
+    max_connections: Integer,
+    current_connections: Integer,
+    connection_mutex: MutexHandle
+}
+
+HTTPClientHandle = Record {
+    connection_pool: Map[Text, Array[SocketHandle]],
+    max_connections_per_host: Integer,
+    timeout: Integer,
+    keep_alive: Boolean,
+    pool_mutex: MutexHandle,
+    user_agent: Text
+}
+
+HTTPRequest = Record {
+    method: Text,
+    url: Text,
+    headers: Map[Text, Text],
+    body: Array[Byte],
+    query_params: Map[Text, Text],
+    path: Text,
+    host: Text,
+    port: Integer
+}
+
+HTTPResponse = Record {
+    status_code: Integer,
+    status_text: Text,
+    headers: Map[Text, Text],
+    body: Array[Byte],
+    content_length: Integer
+}
+
+NetworkAddress = Record {
+    ip: Text,
+    port: Integer,
+    family: Text
+}
+
+DNSEntry = Record {
+    hostname: Text,
+    ip_addresses: Array[Text],
+    ttl: Integer,
+    cached_time: UInt64
+}
+
+// ============================================================================
+// Socket Management
+// ============================================================================
+
+Function.Network.Socket.Create {
+    Input: (
+        family: Text = "IPv4",  // "IPv4", "IPv6", "Unix"
+        type: Text = "TCP",     // "TCP", "UDP"
+        buffer_size: Integer = 65536
+    )
+    Output: SocketHandle
+    Body: {
+        socket = SocketHandle.Create()
+        socket.family = family
+        socket.type = type
+        socket.buffer_size = buffer_size
+        socket.connected = False
+        socket.blocking = True
+        socket.keep_alive = False
+        socket.timeout = 30000  // 30 second default
+        
+        // Create underlying socket
+        ChoosePath family {
+            CaseOption "IPv4": {
+                ChoosePath type {
+                    CaseOption "TCP": socket.fd = Hardware.Syscall.Socket(AF_INET, SOCK_STREAM, 0)
+                    CaseOption "UDP": socket.fd = Hardware.Syscall.Socket(AF_INET, SOCK_DGRAM, 0)
+                }
+            }
+            CaseOption "IPv6": {
+                ChoosePath type {
+                    CaseOption "TCP": socket.fd = Hardware.Syscall.Socket(AF_INET6, SOCK_STREAM, 0)
+                    CaseOption "UDP": socket.fd = Hardware.Syscall.Socket(AF_INET6, SOCK_DGRAM, 0)
+                }
+            }
+            CaseOption "Unix": {
+                ChoosePath type {
+                    CaseOption "TCP": socket.fd = Hardware.Syscall.Socket(AF_UNIX, SOCK_STREAM, 0)
+                    CaseOption "UDP": socket.fd = Hardware.Syscall.Socket(AF_UNIX, SOCK_DGRAM, 0)
+                }
+            }
+        }
+        
+        IfCondition LessThan(socket.fd, 0) ThenBlock {
+            TryBlock: {} CatchError.SocketCreationFailed {
+                PrintMessage("Failed to create socket")
+            }
+        }
+        
+        // Allocate cache-aligned buffers
+        IfCondition LessEqual(buffer_size, 65536) ThenBlock {
+            Pool.Network.SmallBuffers.Allocate(
+                socket.read_buffer, 
+                size-buffer_size,
+                alignment-64
+            )
+            Pool.Network.SmallBuffers.Allocate(
+                socket.write_buffer, 
+                size-buffer_size,
+                alignment-64
+            )
+        } ElseBlock {
+            Pool.Network.LargeBuffers.Allocate(
+                socket.read_buffer,
+                size-buffer_size
+            )
+            Pool.Network.LargeBuffers.Allocate(
+                socket.write_buffer,
+                size-buffer_size
+            )
+        }
+        
+        ReturnValue(socket)
+    }
+}
+
+Function.Network.Socket.SetNonBlocking {
+    Input: (socket: SocketHandle, non_blocking: Boolean = True)
+    Body: {
+        flags = Hardware.Syscall.Fcntl(socket.fd, F_GETFL, 0)
+        
+        IfCondition non_blocking ThenBlock {
+            new_flags = BitwiseOr(flags, O_NONBLOCK)
+        } ElseBlock {
+            new_flags = BitwiseAnd(flags, BitwiseNot(O_NONBLOCK))
+        }
+        
+        result = Hardware.Syscall.Fcntl(socket.fd, F_SETFL, new_flags)
+        IfCondition LessThan(result, 0) ThenBlock {
+            TryBlock: {} CatchError.SocketOptionFailed {}
+        }
+        
+        socket.blocking = Not(non_blocking)
+    }
+}
+
+Function.Network.Socket.SetReuseAddr {
+    Input: (socket: SocketHandle, reuse: Boolean = True)
+    Body: {
+        option_value = IfCondition reuse ThenBlock { 1 } ElseBlock { 0 }
+        
+        result = Hardware.Syscall.Setsockopt(
+            socket.fd,
+            SOL_SOCKET,
+            SO_REUSEADDR,
+            option_value,
+            4
+        )
+        
+        IfCondition LessThan(result, 0) ThenBlock {
+            TryBlock: {} CatchError.SocketOptionFailed {}
+        }
+    }
+}
+
+Function.Network.Socket.SetKeepAlive {
+    Input: (socket: SocketHandle, keep_alive: Boolean = True)
+    Body: {
+        option_value = IfCondition keep_alive ThenBlock { 1 } ElseBlock { 0 }
+        
+        result = Hardware.Syscall.Setsockopt(
+            socket.fd,
+            SOL_SOCKET,
+            SO_KEEPALIVE,
+            option_value,
+            4
+        )
+        
+        IfCondition LessThan(result, 0) ThenBlock {
+            TryBlock: {} CatchError.SocketOptionFailed {}
+        }
+        
+        socket.keep_alive = keep_alive
+    }
+}
+
+Function.Network.Socket.Bind {
+    Input: (socket: SocketHandle, address: Text, port: Integer)
+    Body: {
+        result = Hardware.Syscall.Bind(socket.fd, address, port)
+        
+        IfCondition LessThan(result, 0) ThenBlock {
+            TryBlock: {} CatchError.BindFailed {
+                PrintMessage("Failed to bind to " + address + ":" + ToString(port))
+            }
+        }
+        
+        socket.local_address = address
+        socket.local_port = port
+    }
+}
+
+Function.Network.Socket.Listen {
+    Input: (socket: SocketHandle, backlog: Integer = 128)
+    Body: {
+        IfCondition NotEqual(socket.type, "TCP") ThenBlock {
+            TryBlock: {} CatchError.InvalidOperation {
+                PrintMessage("Listen only supported for TCP sockets")
+            }
+        }
+        
+        result = Hardware.Syscall.Listen(socket.fd, backlog)
+        
+        IfCondition LessThan(result, 0) ThenBlock {
+            TryBlock: {} CatchError.ListenFailed {}
+        }
+    }
+}
+
+Function.Network.Socket.Connect {
+    Input: (
+        socket: SocketHandle,
+        address: Text,
+        port: Integer,
+        timeout: Integer = 30000  // 30 seconds
+    )
+    Output: Boolean
+    Body: {
+        // Set socket to non-blocking for timeout support
+        Network.Socket.SetNonBlocking(socket, True)
+        
+        // Attempt connection
+        result = Hardware.Syscall.Connect(socket.fd, address, port)
+        
+        IfCondition EqualTo(result, 0) ThenBlock {
+            // Immediate connection
+            socket.connected = True
+            socket.remote_address = address
+            socket.remote_port = port
+            Network.Socket.SetNonBlocking(socket, False)
+            ReturnValue(True)
+        } ElseBlock {
+            // Check if connection is in progress
+            errno = Hardware.Syscall.GetErrno()
+            IfCondition Or(EqualTo(errno, EINPROGRESS), EqualTo(errno, EWOULDBLOCK)) ThenBlock {
+                // Wait for connection with timeout
+                ready = Network.Poll.WaitWrite(socket.fd, timeout)
+                IfCondition ready ThenBlock {
+                    // Check connection status
+                    error = Network.Socket.GetError(socket)
+                    IfCondition EqualTo(error, 0) ThenBlock {
+                        socket.connected = True
+                        socket.remote_address = address
+                        socket.remote_port = port
+                        Network.Socket.SetNonBlocking(socket, False)
+                        ReturnValue(True)
+                    }
+                }
+            }
+            ReturnValue(False)
+        }
+    }
+}
+
+Function.Network.Socket.Accept {
+    Input: (socket: SocketHandle, timeout: OptionalType[Integer] = Null)
+    Output: OptionalType[SocketHandle]
+    Body: {
+        IfCondition NotEqual(timeout, Null) ThenBlock {
+            ready = Network.Poll.WaitRead(socket.fd, timeout)
+            IfCondition Not(ready) ThenBlock {
+                ReturnValue(Null)  // Timeout
+            }
+        }
+        
+        client_fd = Hardware.Syscall.Accept(socket.fd)
+        
+        IfCondition LessThan(client_fd, 0) ThenBlock {
+            ReturnValue(Null)
+        }
+        
+        // Create new socket handle for client
+        client_socket = SocketHandle.Create()
+        client_socket.fd = client_fd
+        client_socket.family = socket.family
+        client_socket.type = socket.type
+        client_socket.connected = True
+        client_socket.buffer_size = socket.buffer_size
+        
+        // Allocate buffers for client socket
+        IfCondition LessEqual(socket.buffer_size, 65536) ThenBlock {
+            Pool.Network.SmallBuffers.Allocate(
+                client_socket.read_buffer,
+                size-socket.buffer_size,
+                alignment-64
+            )
+            Pool.Network.SmallBuffers.Allocate(
+                client_socket.write_buffer,
+                size-socket.buffer_size,
+                alignment-64
+            )
+        } ElseBlock {
+            Pool.Network.LargeBuffers.Allocate(
+                client_socket.read_buffer,
+                size-socket.buffer_size
+            )
+            Pool.Network.LargeBuffers.Allocate(
+                client_socket.write_buffer,
+                size-socket.buffer_size
+            )
+        }
+        
+        // Get peer address
+        peer_info = Hardware.Syscall.GetPeerName(client_fd)
+        client_socket.remote_address = peer_info.address
+        client_socket.remote_port = peer_info.port
+        
+        ReturnValue(client_socket)
+    }
+}
+
+Function.Network.Socket.Send {
+    Input: (
+        socket: SocketHandle,
+        data: Array[Byte],
+        timeout: Integer = 5000
+    )
+    Output: Integer  // Bytes sent, -1 on error
+    Body: {
+        IfCondition Not(socket.connected) ThenBlock {
+            ReturnValue(-1)
+        }
+        
+        total_sent = 0
+        data_length = ArrayLength(data)
+        
+        WhileLoop LessThan(total_sent, data_length) {
+            // Wait for socket to be ready for writing
+            ready = Network.Poll.WaitWrite(socket.fd, timeout)
+            IfCondition Not(ready) ThenBlock {
+                ReturnValue(-1)  // Timeout
+            }
+            
+            // Calculate chunk size for this send
+            remaining = Subtract(data_length, total_sent)
+            chunk_size = Min(remaining, socket.buffer_size)
+            
+            // Copy data to write buffer
+            Memory.Copy(
+                ArrayGetPointer(data, total_sent),
+                socket.write_buffer,
+                chunk_size
+            )
+            
+            // Send chunk
+            sent = Hardware.Syscall.Send(
+                socket.fd,
+                socket.write_buffer,
+                chunk_size,
+                MSG_NOSIGNAL
+            )
+            
+            IfCondition LessEqual(sent, 0) ThenBlock {
+                errno = Hardware.Syscall.GetErrno()
+                IfCondition Or(EqualTo(errno, EAGAIN), EqualTo(errno, EWOULDBLOCK)) ThenBlock {
+                    ContinueLoop  // Try again
+                } ElseBlock {
+                    ReturnValue(-1)  // Error
+                }
+            }
+            
+            total_sent = Add(total_sent, sent)
+        }
+        
+        ReturnValue(total_sent)
+    }
+}
+
+Function.Network.Socket.Receive {
+    Input: (
+        socket: SocketHandle,
+        max_bytes: Integer,
+        timeout: Integer = 5000
+    )
+    Output: OptionalType[Array[Byte]]
+    Body: {
+        IfCondition Not(socket.connected) ThenBlock {
+            ReturnValue(Null)
+        }
+        
+        // Wait for data to be available
+        ready = Network.Poll.WaitRead(socket.fd, timeout)
+        IfCondition Not(ready) ThenBlock {
+            ReturnValue(Null)  // Timeout
+        }
+        
+        // Receive data
+        bytes_to_read = Min(max_bytes, socket.buffer_size)
+        received = Hardware.Syscall.Recv(
+            socket.fd,
+            socket.read_buffer,
+            bytes_to_read,
+            0
+        )
+        
+        IfCondition LessEqual(received, 0) ThenBlock {
+            IfCondition EqualTo(received, 0) ThenBlock {
+                socket.connected = False  // Connection closed
+            }
+            ReturnValue(Null)
+        }
+        
+        // Copy data to result array
+        result = Array.Create(received, Byte)
+        Memory.Copy(socket.read_buffer, ArrayGetPointer(result, 0), received)
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Network.Socket.Close {
+    Input: (socket: SocketHandle)
+    Body: {
+        IfCondition GreaterEqual(socket.fd, 0) ThenBlock {
+            Hardware.Syscall.Close(socket.fd)
+            socket.fd = -1
+            socket.connected = False
+        }
+        
+        // Free buffers
+        IfCondition NotEqual(socket.read_buffer, Null) ThenBlock {
+            Memory.Free(socket.read_buffer)
+            socket.read_buffer = Null
+        }
+        
+        IfCondition NotEqual(socket.write_buffer, Null) ThenBlock {
+            Memory.Free(socket.write_buffer)
+            socket.write_buffer = Null
+        }
+    }
+}
+
+// ============================================================================
+// Network Polling/Events
+// ============================================================================
+
+Function.Network.Poll.WaitRead {
+    Input: (fd: Integer, timeout_ms: Integer)
+    Output: Boolean
+    Body: {
+        poll_fd = PollFD.Create()
+        poll_fd.fd = fd
+        poll_fd.events = POLLIN
+        poll_fd.revents = 0
+        
+        result = Hardware.Syscall.Poll(poll_fd, 1, timeout_ms)
+        
+        IfCondition GreaterThan(result, 0) ThenBlock {
+            ReturnValue(BitwiseAnd(poll_fd.revents, POLLIN) != 0)
+        } ElseBlock {
+            ReturnValue(False)
+        }
+    }
+}
+
+Function.Network.Poll.WaitWrite {
+    Input: (fd: Integer, timeout_ms: Integer)
+    Output: Boolean
+    Body: {
+        poll_fd = PollFD.Create()
+        poll_fd.fd = fd
+        poll_fd.events = POLLOUT
+        poll_fd.revents = 0
+        
+        result = Hardware.Syscall.Poll(poll_fd, 1, timeout_ms)
+        
+        IfCondition GreaterThan(result, 0) ThenBlock {
+            ReturnValue(BitwiseAnd(poll_fd.revents, POLLOUT) != 0)
+        } ElseBlock {
+            ReturnValue(False)
+        }
+    }
+}
+
+Function.Network.Poll.WaitMultiple {
+    Input: (
+        sockets: Array[SocketHandle],
+        events: Array[Text],  // "read", "write", "both"
+        timeout_ms: Integer
+    )
+    Output: Array[Integer]  // Indices of ready sockets
+    Body: {
+        poll_fds = Array.Create(ArrayLength(sockets), PollFD)
+        
+        ForEvery i in Range(0, ArrayLength(sockets)) {
+            poll_fds[i].fd = sockets[i].fd
+            
+            ChoosePath events[i] {
+                CaseOption "read": poll_fds[i].events = POLLIN
+                CaseOption "write": poll_fds[i].events = POLLOUT
+                CaseOption "both": poll_fds[i].events = BitwiseOr(POLLIN, POLLOUT)
+                DefaultOption: poll_fds[i].events = POLLIN
+            }
+            
+            poll_fds[i].revents = 0
+        }
+        
+        result = Hardware.Syscall.Poll(
+            ArrayGetPointer(poll_fds, 0),
+            ArrayLength(poll_fds),
+            timeout_ms
+        )
+        
+        ready_indices = Array.Create()
+        
+        IfCondition GreaterThan(result, 0) ThenBlock {
+            ForEvery i in Range(0, ArrayLength(poll_fds)) {
+                IfCondition NotEqual(poll_fds[i].revents, 0) ThenBlock {
+                    Array.Push(ready_indices, i)
+                }
+            }
+        }
+        
+        ReturnValue(ready_indices)
+    }
+}
+
+// ============================================================================
+// HTTP Client
+// ============================================================================
+
+Function.Network.HTTP.Client.Create {
+    Input: (
+        max_connections_per_host: Integer = 10,
+        timeout: Integer = 30000,
+        keep_alive: Boolean = True,
+        user_agent: Text = "AILANG-HTTP/1.0"
+    )
+    Output: HTTPClientHandle
+    Body: {
+        client = HTTPClientHandle.Create()
+        client.connection_pool = Map.Create()
+        client.max_connections_per_host = max_connections_per_host
+        client.timeout = timeout
+        client.keep_alive = keep_alive
+        client.pool_mutex = Concurrency.Mutex.Create()
+        client.user_agent = user_agent
+        
+        ReturnValue(client)
+    }
+}
+
+Function.Network.HTTP.Client.Get {
+    Input: (
+        client: HTTPClientHandle,
+        url: Text,
+        headers: Map[Text, Text] = Map.Create()
+    )
+    Output: HTTPResponse
+    Body: {
+        request = HTTPRequest.Create()
+        request.method = "GET"
+        request.url = url
+        request.headers = headers
+        request.body = Array.Create()
+        
+        ReturnValue(Network.HTTP.Client.SendRequest(client, request))
+    }
+}
+
+Function.Network.HTTP.Client.Post {
+    Input: (
+        client: HTTPClientHandle,
+        url: Text,
+        body: Array[Byte],
+        headers: Map[Text, Text] = Map.Create()
+    )
+    Output: HTTPResponse
+    Body: {
+        request = HTTPRequest.Create()
+        request.method = "POST"
+        request.url = url
+        request.headers = headers
+        request.body = body
+        
+        // Set Content-Length if not provided
+        IfCondition Not(Map.HasKey(headers, "Content-Length")) ThenBlock {
+            Map.Set(headers, "Content-Length", ToString(ArrayLength(body)))
+        }
+        
+        ReturnValue(Network.HTTP.Client.SendRequest(client, request))
+    }
+}
+
+Function.Network.HTTP.Client.SendRequest {
+    Input: (client: HTTPClientHandle, request: HTTPRequest)
+    Output: HTTPResponse
+    Body: {
+        parsed_url = Network.URL.Parse(request.url)
+        request.host = parsed_url.host
+        request.port = IfCondition EqualTo(parsed_url.port, 0) ThenBlock {
+            IfCondition EqualTo(parsed_url.scheme, "https") ThenBlock { 443 } ElseBlock { 80 }
+        } ElseBlock { parsed_url.port }
+        request.path = parsed_url.path
+        
+        // Get or create connection
+        connection = Network.HTTP.Client.GetConnection(client, request.host, request.port)
+        
+        TryBlock: {
+            // Build and send HTTP request
+            request_data = Network.HTTP.BuildRequest(request, client.user_agent, client.keep_alive)
+            sent = Network.Socket.Send(connection, request_data, client.timeout)
+            
+            IfCondition LessEqual(sent, 0) ThenBlock {
+                TryBlock: {} CatchError.SendFailed {}
+            }
+            
+            // Receive and parse response
+            response = Network.HTTP.ReceiveResponse(connection, client.timeout)
+            
+            // Handle connection reuse
+            IfCondition And(client.keep_alive, Network.HTTP.ShouldKeepAlive(response)) ThenBlock {
+                Network.HTTP.Client.ReturnConnection(client, request.host, request.port, connection)
+            } ElseBlock {
+                Network.Socket.Close(connection)
+            }
+            
+            ReturnValue(response)
+        }
+        CatchError.Any {
+            Network.Socket.Close(connection)
+            
+            error_response = HTTPResponse.Create()
+            error_response.status_code = 0
+            error_response.status_text = "Network Error"
+            error_response.body = String.ToBytes(GetErrorMessage())
+            
+            ReturnValue(error_response)
+        }
+    }
+}
+
+Function.Network.HTTP.Client.GetConnection {
+    Input: (client: HTTPClientHandle, host: Text, port: Integer)
+    Output: SocketHandle
+    Body: {
+        host_key = StringConcat(host, ":", ToString(port))
+        
+        Concurrency.Mutex.Lock(client.pool_mutex)
+        
+        // Try to get existing connection
+        IfCondition Map.HasKey(client.connection_pool, host_key) ThenBlock {
+            connections = Map.Get(client.connection_pool, host_key)
+            
+            IfCondition GreaterThan(ArrayLength(connections), 0) ThenBlock {
+                connection = Array.Pop(connections)
+                Concurrency.Mutex.Unlock(client.pool_mutex)
+                
+                // Test if connection is still alive
+                IfCondition Network.Socket.IsConnected(connection) ThenBlock {
+                    ReturnValue(connection)
+                } ElseBlock {
+                    Network.Socket.Close(connection)
+                }
+            }
+        }
+        
+        Concurrency.Mutex.Unlock(client.pool_mutex)
+        
+        // Create new connection
+        socket = Network.Socket.Create("IPv4", "TCP", 65536)
+        Network.Socket.SetKeepAlive(socket, client.keep_alive)
+        
+        success = Network.Socket.Connect(socket, host, port, client.timeout)
+        IfCondition Not(success) ThenBlock {
+            Network.Socket.Close(socket)
+            TryBlock: {} CatchError.ConnectionFailed {}
+        }
+        
+        ReturnValue(socket)
+    }
+}
+
+Function.Network.HTTP.Client.ReturnConnection {
+    Input: (client: HTTPClientHandle, host: Text, port: Integer, connection: SocketHandle)
+    Body: {
+        host_key = StringConcat(host, ":", ToString(port))
+        
+        Concurrency.Mutex.Lock(client.pool_mutex)
+        
+        IfCondition Not(Map.HasKey(client.connection_pool, host_key)) ThenBlock {
+            Map.Set(client.connection_pool, host_key, Array.Create())
+        }
+        
+        connections = Map.Get(client.connection_pool, host_key)
+        
+        IfCondition LessThan(ArrayLength(connections), client.max_connections_per_host) ThenBlock {
+            Array.Push(connections, connection)
+        } ElseBlock {
+            Network.Socket.Close(connection)
+        }
+        
+        Concurrency.Mutex.Unlock(client.pool_mutex)
+    }
+}
+
+// ============================================================================
+// HTTP Server
+// ============================================================================
+
+Function.Network.HTTP.Server.Create {
+    Input: (
+        port: Integer,
+        worker_count: Integer = 8,
+        max_connections: Integer = 1000
+    )
+    Output: HTTPServerHandle
+    Body: {
+        Pool.Network.HTTPServer.Allocate(server)
+        server.port = port
+        server.running = False
+        server.max_connections = max_connections
+        server.current_connections = 0
+        server.connection_mutex = Concurrency.Mutex.Create()
+        
+        // Create listening socket
+        server.listen_socket = Network.Socket.Create("IPv4", "TCP", 65536)
+        Network.Socket.SetReuseAddr(server.listen_socket, True)
+        Network.Socket.SetNonBlocking(server.listen_socket, True)
+        
+        // Create thread pool for handling connections
+        server.thread_pool = ThreadPool.Create(worker_count, max_connections)
+        
+        // Create route table and middleware array
+        server.routes = Map.Create()
+        server.middleware = Array.Create()
+        
+        ReturnValue(server)
+    }
+}
+
+Function.Network.HTTP.Server.AddRoute {
+    Input: (
+        server: HTTPServerHandle,
+        method: Text,
+        path: Text,
+        handler: Function
+    )
+    Body: {
+        route_key = StringConcat(method, " ", path)
+        Map.Set(server.routes, route_key, handler)
+    }
+}
+
+Function.Network.HTTP.Server.AddMiddleware {
+    Input: (server: HTTPServerHandle, middleware: Function)
+    Body: {
+        Array.Push(server.middleware, middleware)
+    }
+}
+
+Function.Network.HTTP.Server.Start {
+    Input: (server: HTTPServerHandle)
+    Body: {
+        Network.Socket.Bind(server.listen_socket, "0.0.0.0", server.port)
+        Network.Socket.Listen(server.listen_socket, server.max_connections)
+        
+        server.running = True
+        
+        // Start accept loop in background thread
+        server.accept_thread = Thread.Create(
+            function-Network.HTTP.Server.AcceptLoop,
+            args-[server],
+            cache_policy-"L2"
+        )
+        
+        PrintMessage("HTTP Server listening on port " + ToString(server.port))
+    }
+}
+
+Function.Network.HTTP.Server.Stop {
+    Input: (server: HTTPServerHandle)
+    Body: {
+        server.running = False
+        Network.Socket.Close(server.listen_socket)
+        
+        Thread.Join(server.accept_thread)
+        ThreadPool.Shutdown(server.thread_pool, wait_for_completion-True)
+        
+        PrintMessage("HTTP Server stopped")
+    }
+}
+
+Function.Network.HTTP.Server.AcceptLoop {
+    Input: (server: HTTPServerHandle)
+    Body: {
+        WhileLoop server.running {
+            // Accept incoming connection with timeout
+            client_socket = Network.Socket.Accept(server.listen_socket, timeout-1000)
+            
+            IfCondition NotEqual(client_socket, Null) ThenBlock {
+                // Check connection limit
+                Concurrency.Mutex.Lock(server.connection_mutex)
+                IfCondition GreaterEqual(server.current_connections, server.max_connections) ThenBlock {
+                    Concurrency.Mutex.Unlock(server.connection_mutex)
+                    Network.Socket.Close(client_socket)
+                    ContinueLoop
+                }
+                server.current_connections = Add(server.current_connections, 1)
+                Concurrency.Mutex.Unlock(server.connection_mutex)
+                
+                // Handle connection in thread pool
+                task = Lambda() {
+                    Network.HTTP.Server.HandleConnection(server, client_socket)
+                    
+                    // Decrement connection count
+                    Concurrency.Mutex.Lock(server.connection_mutex)
+                    server.current_connections = Subtract(server.current_connections, 1)
+                    Concurrency.Mutex.Unlock(server.connection_mutex)
+                }
+                
+                ThreadPool.Submit(server.thread_pool, task)
+            }
+        }
+    }
+}
+
+Function.Network.HTTP.Server.HandleConnection {
+    Input: (server: HTTPServerHandle, client_socket: SocketHandle)
+    Body: {
+        TryBlock: {
+            // Receive HTTP request
+            request = Network.HTTP.ReceiveRequest(client_socket, timeout-30000)
+            
+            IfCondition EqualTo(request, Null) ThenBlock {
+                Network.Socket.Close(client_socket)
+                ReturnValue()
+            }
+            
+            // Apply middleware
+            ForEvery middleware in server.middleware {
+                request = Apply(middleware, request)
+                IfCondition EqualTo(request, Null) ThenBlock {
+                    // Middleware rejected request
+                    response = Network.HTTP.CreateErrorResponse(400, "Bad Request")
+                    Network.HTTP.SendResponse(client_socket, response)
+                    Network.Socket.Close(client_socket)
+                    ReturnValue()
+                }
+            }
+            
+            // Find and execute route handler
+            route_key = StringConcat(request.method, " ", request.path)
+            
+            IfCondition Map.HasKey(server.routes, route_key) ThenBlock {
+                handler = Map.Get(server.routes, route_key)
+                response = Apply(handler, request)
+            } ElseBlock {
+                // No route found
+                response = Network.HTTP.CreateErrorResponse(404, "Not Found")
+            }
+            
+            // Send response
+            Network.HTTP.SendResponse(client_socket, response)
+            
+            // Check if we should keep connection alive
+            IfCondition Not(Network.HTTP.ShouldKeepAlive(request, response)) ThenBlock {
+                Network.Socket.Close(client_socket)
+            }
+        }
+        CatchError.Any {
+            error_response = Network.HTTP.CreateErrorResponse(500, "Internal Server Error")
+            Network.HTTP.SendResponse(client_socket, error_response)
+            Network.Socket.Close(client_socket)
+        }
+    }
+}
+
+// ============================================================================
+// HTTP Protocol Implementation
+// ============================================================================
+
+Function.Network.HTTP.BuildRequest {
+    Input: (request: HTTPRequest, user_agent: Text, keep_alive: Boolean)
+    Output: Array[Byte]
+    Body: {
+        // Start with request line
+        request_line = StringConcat(
+            request.method, " ", request.path, " HTTP/1.1\r\n"
+        )
+        
+        // Add required headers
+        headers = StringConcat(request_line, "Host: ", request.host, "\r\n")
+        headers = StringConcat(headers, "User-Agent: ", user_agent, "\r\n")
+        
+        IfCondition keep_alive ThenBlock {
+            headers = StringConcat(headers, "Connection: keep-alive\r\n")
+        } ElseBlock {
+            headers = StringConcat(headers, "Connection: close\r\n")
+        }
+        
+        // Add custom headers
+        ForEvery header_name in Map.Keys(request.headers) {
+            header_value = Map.Get(request.headers, header_name)
+            headers = StringConcat(headers, header_name, ": ", header_value, "\r\n")
+        }
+        
+        // Add Content-Length for POST requests
+        IfCondition GreaterThan(ArrayLength(request.body), 0) ThenBlock {
+            headers = StringConcat(
+                headers, 
+                "Content-Length: ", 
+                ToString(ArrayLength(request.body)), 
+                "\r\n"
+            )
+        }
+        
+        // End headers
+        headers = StringConcat(headers, "\r\n")
+        
+        // Convert to bytes and append body
+        header_bytes = String.ToBytes(headers)
+        
+        IfCondition GreaterThan(ArrayLength(request.body), 0) ThenBlock {
+            result = Array.Create(Add(ArrayLength(header_bytes), ArrayLength(request.body)), Byte)
+            Memory.Copy(ArrayGetPointer(header_bytes, 0), ArrayGetPointer(result, 0), ArrayLength(header_bytes))
+            Memory.Copy(ArrayGetPointer(request.body, 0), ArrayGetPointer(result, ArrayLength(header_bytes)), ArrayLength(request.body))
+            ReturnValue(result)
+        } ElseBlock {
+            ReturnValue(header_bytes)
+        }
+    }
+}
+
+Function.Network.HTTP.ReceiveRequest {
+    Input: (socket: SocketHandle, timeout: Integer)
+    Output: OptionalType[HTTPRequest]
+    Body: {
+        // Read request line and headers
+        headers_data = Network.HTTP.ReadHeaders(socket, timeout)
+        IfCondition EqualTo(headers_data, Null) ThenBlock {
+            ReturnValue(Null)
+        }
+        
+        request = Network.HTTP.ParseRequest(headers_data)
+        IfCondition EqualTo(request, Null) ThenBlock {
+            ReturnValue(Null)
+        }
+        
+        // Read body if Content-Length is specified
+        IfCondition Map.HasKey(request.headers, "Content-Length") ThenBlock {
+            content_length_str = Map.Get(request.headers, "Content-Length")
+            content_length = StringToNumber(content_length_str)
+            
+            IfCondition GreaterThan(content_length, 0) ThenBlock {
+                body_data = Network.HTTP.ReadBody(socket, content_length, timeout)
+                IfCondition NotEqual(body_data, Null) ThenBlock {
+                    request.body = body_data
+                }
+            }
+        }
+        
+        ReturnValue(request)
+    }
+}
+
+Function.Network.HTTP.ReceiveResponse {
+    Input: (socket: SocketHandle, timeout: Integer)
+    Output: HTTPResponse
+    Body: {
+        // Read status line and headers
+        headers_data = Network.HTTP.ReadHeaders(socket, timeout)
+        IfCondition EqualTo(headers_data, Null) ThenBlock {
+            error_response = HTTPResponse.Create()
+            error_response.status_code = 0
+            error_response.status_text = "Read Error"
+            ReturnValue(error_response)
+        }
+        
+        response = Network.HTTP.ParseResponse(headers_data)
+        
+        // Read body based on Content-Length or Transfer-Encoding
+        IfCondition Map.HasKey(response.headers, "Content-Length") ThenBlock {
+            content_length_str = Map.Get(response.headers, "Content-Length")
+            content_length = StringToNumber(content_length_str)
+            
+            IfCondition GreaterThan(content_length, 0) ThenBlock {
+                body_data = Network.HTTP.ReadBody(socket, content_length, timeout)
+                IfCondition NotEqual(body_data, Null) ThenBlock {
+                    response.body = body_data
+                    response.content_length = content_length
+                }
+            }
+        } ElseBlock {
+            IfCondition Map.HasKey(response.headers, "Transfer-Encoding") ThenBlock {
+                encoding = Map.Get(response.headers, "Transfer-Encoding")
+                IfCondition StringEquals(encoding, "chunked") ThenBlock {
+                    body_data = Network.HTTP.ReadChunkedBody(socket, timeout)
+                    IfCondition NotEqual(body_data, Null) ThenBlock {
+                        response.body = body_data
+                        response.content_length = ArrayLength(body_data)
+                    }
+                }
+            }
+        }
+        
+        ReturnValue(response)
+    }
+}
+
+Function.Network.HTTP.ReadHeaders {
+    Input: (socket: SocketHandle, timeout: Integer)
+    Output: OptionalType[Array[Byte]]
+    Body: {
+        headers_buffer = Array.Create()
+        line_buffer = Array.Create()
+        
+        WhileLoop True {
+            // Read one byte at a time looking for \r\n\r\n
+            byte_data = Network.Socket.Receive(socket, 1, timeout)
+            IfCondition EqualTo(byte_data, Null) ThenBlock {
+                ReturnValue(Null)
+            }
+            
+            byte_val = byte_data[0]
+            Array.Push(headers_buffer, byte_val)
+            Array.Push(line_buffer, byte_val)
+            
+            // Check for end of headers (\r\n\r\n)
+            line_length = ArrayLength(line_buffer)
+            IfCondition GreaterEqual(line_length, 4) ThenBlock {
+                last_four = ArraySlice(line_buffer, Subtract(line_length, 4), 4)
+                IfCondition And(
+                    And(EqualTo(last_four[0], 13), EqualTo(last_four[1], 10)),
+                    And(EqualTo(last_four[2], 13), EqualTo(last_four[3], 10))
+                ) ThenBlock {
+                    ReturnValue(headers_buffer)
+                }
+            }
+        }
+    }
+}
+
+Function.Network.HTTP.ReadBody {
+    Input: (socket: SocketHandle, content_length: Integer, timeout: Integer)
+    Output: OptionalType[Array[Byte]]
+    Body: {
+        body_data = Array.Create()
+        bytes_read = 0
+        
+        WhileLoop LessThan(bytes_read, content_length) {
+            remaining = Subtract(content_length, bytes_read)
+            chunk_size = Min(remaining, 8192)  // Read in 8KB chunks
+            
+            chunk = Network.Socket.Receive(socket, chunk_size, timeout)
+            IfCondition EqualTo(chunk, Null) ThenBlock {
+                ReturnValue(Null)
+            }
+            
+            Array.Append(body_data, chunk)
+            bytes_read = Add(bytes_read, ArrayLength(chunk))
+        }
+        
+        ReturnValue(body_data)
+    }
+}
+
+Function.Network.HTTP.SendResponse {
+    Input: (socket: SocketHandle, response: HTTPResponse)
+    Body: {
+        // Build status line
+        status_line = StringConcat(
+            "HTTP/1.1 ",
+            ToString(response.status_code),
+            " ",
+            response.status_text,
+            "\r\n"
+        )
+        
+        // Build headers
+        headers = status_line
+        headers = StringConcat(headers, "Content-Length: ", ToString(response.content_length), "\r\n")
+        headers = StringConcat(headers, "Server: AILANG-HTTP/1.0\r\n")
+        
+        ForEvery header_name in Map.Keys(response.headers) {
+            header_value = Map.Get(response.headers, header_name)
+            headers = StringConcat(headers, header_name, ": ", header_value, "\r\n")
+        }
+        
+        headers = StringConcat(headers, "\r\n")
+        
+        // Send headers
+        header_bytes = String.ToBytes(headers)
+        Network.Socket.Send(socket, header_bytes, 5000)
+        
+        // Send body
+        IfCondition GreaterThan(ArrayLength(response.body), 0) ThenBlock {
+            Network.Socket.Send(socket, response.body, 30000)
+        }
+    }
+}
+
+Function.Network.HTTP.CreateErrorResponse {
+    Input: (status_code: Integer, status_text: Text)
+    Output: HTTPResponse
+    Body: {
+        response = HTTPResponse.Create()
+        response.status_code = status_code
+        response.status_text = status_text
+        response.headers = Map.Create()
+        
+        body_text = StringConcat("<html><body><h1>", ToString(status_code), " ", status_text, "</h1></body></html>")
+        response.body = String.ToBytes(body_text)
+        response.content_length = ArrayLength(response.body)
+        
+        Map.Set(response.headers, "Content-Type", "text/html")
+        
+        ReturnValue(response)
+    }
+}
+
+// ============================================================================
+// URL Parsing
+// ============================================================================
+
+Function.Network.URL.Parse {
+    Input: (url: Text)
+    Output: URLComponents
+    Body: {
+        components = URLComponents.Create()
+        
+        // Simple URL parsing - can be enhanced
+        IfCondition StringStartsWith(url, "http://") ThenBlock {
+            components.scheme = "http"
+            url = StringSubstring(url, 7)
+        } ElseBlock {
+            IfCondition StringStartsWith(url, "https://") ThenBlock {
+                components.scheme = "https"
+                url = StringSubstring(url, 8)
+            } ElseBlock {
+                components.scheme = "http"
+            }
+        }
+        
+        // Find first slash to separate host from path
+        slash_pos = StringFind(url, "/")
+        IfCondition EqualTo(slash_pos, -1) ThenBlock {
+            components.host = url
+            components.path = "/"
+        } ElseBlock {
+            components.host = StringSubstring(url, 0, slash_pos)
+            components.path = StringSubstring(url, slash_pos)
+        }
+        
+        // Extract port if present
+        colon_pos = StringFind(components.host, ":")
+        IfCondition NotEqual(colon_pos, -1) ThenBlock {
+            port_str = StringSubstring(components.host, Add(colon_pos, 1))
+            components.port = StringToNumber(port_str)
+            components.host = StringSubstring(components.host, 0, colon_pos)
+        } ElseBlock {
+            components.port = 0  // Will be set to default later
+        }
+        
+        ReturnValue(components)
+    }
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+Function.Network.Socket.IsConnected {
+    Input: (socket: SocketHandle)
+    Output: Boolean
+    Body: {
+        IfCondition Not(socket.connected) ThenBlock {
+            ReturnValue(False)
+        }
+        
+        // Try to peek at the socket to see if it's still connected
+        result = Hardware.Syscall.Recv(socket.fd, Null, 0, MSG_PEEK)
+        
+        IfCondition EqualTo(result, 0) ThenBlock {
+            // Connection closed by peer
+            socket.connected = False
+            ReturnValue(False)
+        } ElseBlock {
+            IfCondition LessThan(result, 0) ThenBlock {
+                errno = Hardware.Syscall.GetErrno()
+                IfCondition Or(EqualTo(errno, EAGAIN), EqualTo(errno, EWOULDBLOCK)) ThenBlock {
+                    ReturnValue(True)  // Still connected, just no data
+                } ElseBlock {
+                    socket.connected = False
+                    ReturnValue(False)  // Error occurred
+                }
+            } ElseBlock {
+                ReturnValue(True)  // Data available, connection good
+            }
+        }
+    }
+}
+
+Function.Network.Socket.GetError {
+    Input: (socket: SocketHandle)
+    Output: Integer
+    Body: {
+        error = 0
+        error_size = 4
+        
+        result = Hardware.Syscall.Getsockopt(
+            socket.fd,
+            SOL_SOCKET,
+            SO_ERROR,
+            error,
+            error_size
+        )
+        
+        IfCondition EqualTo(result, 0) ThenBlock {
+            ReturnValue(error)
+        } ElseBlock {
+            ReturnValue(-1)
+        }
+    }
+}
+
+Function.Network.HTTP.ShouldKeepAlive {
+    Input: (request: HTTPRequest, response: HTTPResponse)
+    Output: Boolean
+    Body: {
+        // Check Connection header in request
+        IfCondition Map.HasKey(request.headers, "Connection") ThenBlock {
+            connection = Map.Get(request.headers, "Connection")
+            IfCondition StringEquals(StringToLower(connection), "close") ThenBlock {
+                ReturnValue(False)
+            }
+        }
+        
+        // Check Connection header in response
+        IfCondition Map.HasKey(response.headers, "Connection") ThenBlock {
+            connection = Map.Get(response.headers, "Connection")
+            IfCondition StringEquals(StringToLower(connection), "close") ThenBlock {
+                ReturnValue(False)
+            }
+        }
+        
+        // Default to keep-alive for HTTP/1.1
+        ReturnValue(True)
+    }
+}
+
+// ============================================================================
+// Async Networking
+// ============================================================================
+
+Function.Network.Async.Connect {
+    Input: (host: Text, port: Integer, timeout: Integer = 30000)
+    Output: FutureHandle
+    Body: {
+        future = Async.Future.Create()
+        
+        connect_task = Lambda() {
+            TryBlock: {
+                socket = Network.Socket.Create("IPv4", "TCP")
+                success = Network.Socket.Connect(socket, host, port, timeout)
+                
+                IfCondition success ThenBlock {
+                    Async.Future.SetResult(future, socket)
+                } ElseBlock {
+                    Network.Socket.Close(socket)
+                    Async.Future.SetError(future, "Connection failed")
+                }
+            }
+            CatchError.Any {
+                Async.Future.SetError(future, GetErrorMessage())
+            }
+        }
+        
+        Thread.Create(connect_task)
+        
+        ReturnValue(future)
+    }
+}
+
+Function.Network.Async.Send {
+    Input: (socket: SocketHandle, data: Array[Byte], timeout: Integer = 5000)
+    Output: FutureHandle
+    Body: {
+        future = Async.Future.Create()
+        
+        send_task = Lambda() {
+            TryBlock: {
+                bytes_sent = Network.Socket.Send(socket, data, timeout)
+                Async.Future.SetResult(future, bytes_sent)
+            }
+            CatchError.Any {
+                Async.Future.SetError(future, GetErrorMessage())
+            }
+        }
+        
+        Thread.Create(send_task)
+        
+        ReturnValue(future)
+    }
+}
+
+Function.Network.Async.Receive {
+    Input: (socket: SocketHandle, max_bytes: Integer, timeout: Integer = 5000)
+    Output: FutureHandle
+    Body: {
+        future = Async.Future.Create()
+        
+        receive_task = Lambda() {
+            TryBlock: {
+                data = Network.Socket.Receive(socket, max_bytes, timeout)
+                Async.Future.SetResult(future, data)
+            }
+            CatchError.Any {
+                Async.Future.SetError(future, GetErrorMessage())
+            }
+        }
+        
+        Thread.Create(receive_task)
+        
+        ReturnValue(future)
+    }
+}
+
+// ============================================================================
+// Performance Monitoring
+// ============================================================================
+
+Function.Network.Performance.GetSocketStats {
+    Input: (socket: SocketHandle)
+    Output: SocketStats
+    Body: {
+        stats = SocketStats.Create()
+        stats.socket_fd = socket.fd
+        stats.family = socket.family
+        stats.type = socket.type
+        stats.connected = socket.connected
+        stats.buffer_size = socket.buffer_size
+        stats.bytes_sent = Hardware.Syscall.GetSocketBytesSent(socket.fd)
+        stats.bytes_received = Hardware.Syscall.GetSocketBytesReceived(socket.fd)
+        
+        ReturnValue(stats)
+    }
+}
+
+Function.Network.Performance.GetSystemNetworkStats {
+    Output: NetworkStats
+    Body: {
+        stats = NetworkStats.Create()
+        stats.active_connections = Hardware.System.GetActiveConnections()
+        stats.total_bytes_sent = Hardware.System.GetTotalBytesSent()
+        stats.total_bytes_received = Hardware.System.GetTotalBytesReceived()
+        stats.network_errors = Hardware.System.GetNetworkErrors()
+        
+        ReturnValue(stats)
+    }
+}

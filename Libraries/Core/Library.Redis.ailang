@@ -1,0 +1,140 @@
+// redis_lib.ailang - Redis Library Module
+// High-level abstractions for Redis operations built on AILANG primitives
+
+Library Redis {
+    
+    // Initialize Redis data structures
+    Task Init(size) {
+        // Allocate hash table for key-value storage
+        store = HashCreate(size)
+        
+        // Allocate buffers for protocol handling
+        request_buffer = Allocate(4096)
+        response_buffer = Allocate(1024)
+        
+        // Initialize connection state
+        connected = 0
+        
+        Return store
+    }
+    
+    // Redis SET command implementation
+    Task Set(store, key, value) {
+        // Store key-value pair using hash table primitive
+        result = HashSet(store, key, value)
+        
+        // Build RESP response
+        IfCondition result ThenBlock {
+            response = "+OK\r\n"
+        }
+        
+        not_result = NotEqual(result, 1)
+        IfCondition not_result ThenBlock {
+            response = "-ERR\r\n"
+        }
+        
+        Return response
+    }
+    
+    // Redis GET command implementation
+    Task Get(store, key) {
+        // Retrieve value from hash table
+        value = HashGet(store, key)
+        
+        // Check if key exists
+        exists = HashExists(store, key)
+        
+        // Build RESP response
+        IfCondition exists ThenBlock {
+            // Format as bulk string: $<length>\r\n<data>\r\n
+            length = StringLength(value)
+            length_str = NumberToString(length)
+            
+            response = StringConcat("$", length_str)
+            response = StringConcat(response, "\r\n")
+            response = StringConcat(response, value)
+            response = StringConcat(response, "\r\n")
+        }
+        
+        not_exists = NotEqual(exists, 1)
+        IfCondition not_exists ThenBlock {
+            // Null bulk string
+            response = "$-1\r\n"
+        }
+        
+        Return response
+    }
+    
+    // Parse RESP command
+    Task ParseCommand(buffer) {
+        // Check for array marker '*'
+        first_byte = buffer[0]
+        is_array = EqualTo(first_byte, 42)  // 42 = '*'
+        
+        IfCondition is_array ThenBlock {
+            // Parse array count
+            count = ParseNumber(buffer, 1)
+            
+            // Parse bulk strings
+            command = ParseBulkString(buffer)
+            
+            // Identify command type
+            is_set = StringCompare(command, "SET")
+            is_get = StringCompare(command, "GET")
+            
+            set_cmd = EqualTo(is_set, 0)
+            IfCondition set_cmd ThenBlock {
+                key = ParseBulkString(buffer)
+                value = ParseBulkString(buffer)
+                Return RunTask Redis.Set(store, key, value)
+            }
+            
+            get_cmd = EqualTo(is_get, 0)
+            IfCondition get_cmd ThenBlock {
+                key = ParseBulkString(buffer)
+                Return RunTask Redis.Get(store, key)
+            }
+        }
+        
+        Return "-ERR unknown command\r\n"
+    }
+    
+    // Helper: Parse bulk string from RESP
+    Task ParseBulkString(buffer) {
+        // Skip to '$' marker
+        marker = FindChar(buffer, 36)  // 36 = '$'
+        
+        // Parse length
+        length = ParseNumber(buffer, marker)
+        
+        // Extract string data
+        data = ExtractBytes(buffer, length)
+        
+        Return data
+    }
+}
+
+// Example usage in main program:
+Program {
+    PrintMessage("=== Redis Library Test ===")
+    
+    // Initialize Redis with 1024 hash slots
+    redis_store = RunTask Redis.Init(1024)
+    
+    // Test SET command
+    response1 = RunTask Redis.Set(redis_store, "name", "Alice")
+    PrintMessage("SET name Alice:")
+    PrintMessage(response1)  // Should print: +OK
+    
+    // Test GET command
+    response2 = RunTask Redis.Get(redis_store, "name")
+    PrintMessage("GET name:")
+    PrintMessage(response2)  // Should print: $5\r\nAlice\r\n
+    
+    // Test GET non-existent key
+    response3 = RunTask Redis.Get(redis_store, "missing")
+    PrintMessage("GET missing:")
+    PrintMessage(response3)  // Should print: $-1\r\n
+    
+    PrintMessage("=== Test Complete ===")
+}
