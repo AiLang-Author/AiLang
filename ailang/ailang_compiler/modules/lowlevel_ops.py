@@ -176,7 +176,7 @@ class LowLevelOps:
             # Perform dereference based on size
             if size_hint == "byte":
                 # MOVZX RAX, BYTE [RAX] - proper zero-extend
-                self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0x00)  # MOVZX RAX, BYTE [RAX]
+                self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, QWORD [RAX]
             elif size_hint == "word":
                 self.asm.emit_dereference_word()
             elif size_hint == "dword":
@@ -839,6 +839,29 @@ class LowLevelOps:
             # Get variable name
             if hasattr(node.variable, 'name'):
                 var_name = node.variable.name
+                
+                # FIRST: Check if it's a function
+                if hasattr(self.compiler, 'user_functions'):
+                    # Look in the actual user_functions dictionary
+                    if var_name in self.compiler.user_functions.user_functions:
+                        # Get function info and label
+                        func_info = self.compiler.user_functions.user_functions[var_name]
+                        label = func_info['label']
+                        self.asm.emit_load_label_address('rax', label)
+                        print(f"DEBUG: Got function address for {var_name} with label {label}")
+                        return True
+                    
+                    # Also try with Function. prefix stripped (in case of Function.TestFunc)
+                    if var_name.startswith("Function."):
+                        clean_target = var_name[9:]
+                        if clean_target in self.compiler.user_functions.user_functions:
+                            func_info = self.compiler.user_functions.user_functions[clean_target]
+                            label = func_info['label']
+                            self.asm.emit_load_label_address('rax', label)
+                            print(f"DEBUG: Got function address for {clean_target} with label {label}")
+                            return True
+                
+                # SECOND: Check if it's a variable (your existing code)
                 resolved_name = self.compiler.resolve_acronym_identifier(var_name)
                 
                 if resolved_name in self.compiler.variables:
@@ -884,9 +907,9 @@ class LowLevelOps:
             self.compiler.compile_expression(node.pointer)
             
             # Get size hint - default to qword for backward compatibility
-            size_hint = getattr(node, 'size_hint', 'byte') # FIX: Default to byte
+            size_hint = getattr(node, 'size_hint', 'qword') # Default to qword for integers/pointers
             if size_hint is None or size_hint == '':
-                size_hint = 'byte' # FIX: Default to byte
+                size_hint = 'qword' # Default to qword
             
             # Normalize size hint
             size_hint = str(size_hint).lower().strip('"').strip("'")

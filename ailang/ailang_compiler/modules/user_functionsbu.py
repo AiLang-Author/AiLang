@@ -99,10 +99,6 @@ class UserFunctions:
                     self.compiler.variables[var_name] = var_value
                     print(f"DEBUG: Preserved pool variable {var_name} in local scope")
             
-            # Push function scope for parameter tracking
-            if hasattr(self.compiler, 'scope_mgr'):
-                self.compiler.scope_mgr.push_function(func_name)
-            
             # CRITICAL FIX: Jump over function definition during normal execution
             skip_label = self.asm.create_label()
             self.asm.emit_jump_to_label(skip_label, "JMP")
@@ -120,6 +116,7 @@ class UserFunctions:
             self.asm.emit_push_r12()
             self.asm.emit_push_r13()
             self.asm.emit_push_r14()
+            self.asm.emit_push_r15()
             
             # --- FIX: Dynamically calculate local variable space ---
             # Pre-scan function body to calculate space needed for locals.
@@ -150,11 +147,6 @@ class UserFunctions:
                 offset = self.compiler.stack_size
                 self.compiler.variables[param_name] = offset
                 print(f"DEBUG: Param {param_name} at local offset {offset}")
-                
-                # Register parameter in scope manager - THIS IS THE KEY FIX
-                if hasattr(self.compiler, 'scope_mgr'):
-                    self.compiler.scope_mgr.add_parameter(param_name, offset)
-                    print(f"DEBUG: Registered param {param_name} with scope manager at offset {offset}")
                 
                 # Move from register to stack
                 if i == 0:
@@ -190,10 +182,6 @@ class UserFunctions:
             # CRITICAL FIX: Mark the skip label to continue normal execution
             self.asm.mark_label(skip_label)
             
-            # Pop function scope
-            if hasattr(self.compiler, 'scope_mgr'):
-                self.compiler.scope_mgr.pop()
-            
             # Restore function context
             self.current_function = old_function
             
@@ -206,7 +194,7 @@ class UserFunctions:
         except Exception as e:
             print(f"ERROR: Failed to compile function {func_name}: {str(e)}")
             raise
-            
+        
     def _count_local_variables(self, body):
         """Count local variables that will be created in function body"""
         # Simple heuristic - count assignments
@@ -307,6 +295,7 @@ class UserFunctions:
             if hasattr(self, 'current_function') and self.current_function:
                 print("DEBUG: ReturnValue in Function - full epilogue")
                 # Restore callee-saved registers
+                self.asm.emit_pop_r15()
                 self.asm.emit_pop_r14()
                 self.asm.emit_pop_r13()
                 self.asm.emit_pop_r12()

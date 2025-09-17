@@ -449,5 +449,45 @@ class SchedulingPrimitives:
         self.asm.emit_nop()
         
         
+    # In scheduling_primitives.py, add hooks
+
+def compile_loop_send(self, node):
+    """Enhanced LoopSend with deadlock detection"""
+    # ... existing send code ...
+    
+    # If debug level >= 3, check for deadlock
+    if self.compiler.debug_ops.debug_level >= 3:
+        # Get current actor ID
+        self._get_current_actor_handle()
+        self.asm.emit_mov_rdi_rax()  # Waiting actor
         
+        # Get target actor ID
+        self.compiler.compile_expression(node.target)
+        self.asm.emit_mov_rsi_rax()  # Waited-for actor
+        
+        # Check for deadlock
+        self.asm.emit_call('__debug_deadlock_check')
+    
+    # Continue with normal send...
+
+def compile_memory_access(self, address, is_write=False):
+    """Wrap memory access with race detection"""
+    if self.compiler.debug_ops.debug_level >= 3:
+        # Set up race detection
+        self.asm.emit_push_rdi()
+        self.asm.emit_push_rsi()
+        self.asm.emit_push_rdx()
+        
+        self.asm.emit_mov_rdi_from_address(address)  # Memory address
+        self.asm.emit_mov_rsi_imm64(1 if is_write else 0)  # Access type
+        self._get_current_actor_handle()
+        self.asm.emit_mov_rdx_rax()  # Actor ID
+        
+        self.asm.emit_call('__debug_race_check')
+        
+        self.asm.emit_pop_rdx()
+        self.asm.emit_pop_rsi()
+        self.asm.emit_pop_rdi()
+    
+    # Perform actual memory access...
     

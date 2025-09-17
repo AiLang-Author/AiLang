@@ -191,7 +191,7 @@ class ArithmeticOps:
         Compile comparison operations (LessThan, GreaterThan, EqualTo)
         """
         try:
-            if node.function in ['LessThan', 'LessEqual', 'GreaterThan', 'GreaterEqual', 'EqualTo'] and len(node.arguments) == 2:
+           if node.function in ['LessThan', 'LessEqual', 'GreaterThan', 'GreaterEqual', 'Equal', 'EqualTo'] and len(node.arguments) == 2:
                 print(f"DEBUG: Compiling {node.function}({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
                 
                 # Evaluate first argument
@@ -216,6 +216,8 @@ class ArithmeticOps:
                     self.asm.emit_bytes(0x0F, 0x9F, 0xC0)  # SETG AL
                 elif node.function == 'GreaterEqual':
                     self.asm.emit_bytes(0x0F, 0x9D, 0xC0)  # SETGE AL
+                elif node.function == 'Equal':
+                    self.asm.emit_bytes(0x0F, 0x94, 0xC0)  # SETE AL
                 elif node.function == 'EqualTo':
                     self.asm.emit_bytes(0x0F, 0x94, 0xC0)  # SETE AL
                 
@@ -224,9 +226,7 @@ class ArithmeticOps:
                 print(f"DEBUG: {node.function} operation completed")
                 return True
             
-            # Not a comparison operation
-            return False
-            
+                        
         except Exception as e:
             print(f"ERROR: Comparison operation compilation failed: {str(e)}")
             raise
@@ -380,6 +380,39 @@ class ArithmeticOps:
         
         print("DEBUG: Power operation completed")
         return True
+    
+    def compile_equal(self, node):
+        """Compile Equal(a, b) - returns 1 if equal, 0 if not"""
+        if len(node.arguments) != 2:
+            raise ValueError("Equal requires exactly 2 arguments")
+        
+        # Compile first argument
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Compile second argument
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rbx_rax()
+        
+        # Compare
+        self.asm.emit_pop_rax()
+        self.asm.emit_cmp_rax_rbx()
+        
+        # Set result based on equality
+        self.asm.emit_mov_rax_imm64(0)  # Default false
+        equal_label = self.asm.create_label()
+        end_label = self.asm.create_label()
+        
+        self.asm.emit_jump_to_label(equal_label, "JE")
+        self.asm.emit_jump_to_label(end_label, "JMP")
+        
+        self.asm.mark_label(equal_label)
+        self.asm.emit_mov_rax_imm64(1)  # True if equal
+        
+        self.asm.mark_label(end_label)
+        return True
+        
+    
     
     def compile_bitwise_not(self, node):
         """Compile BitwiseNot(a) - bitwise complement"""

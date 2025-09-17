@@ -32,6 +32,15 @@ class ExpressionCompiler:
             elif isinstance(expr, Identifier):
                 resolved_name = self.compiler.resolve_acronym_identifier(expr.name)
                 
+                # Check scope manager for parameters FIRST
+                if hasattr(self.compiler, 'scope_mgr'):
+                    var_type, offset = self.compiler.scope_mgr.resolve(resolved_name)
+                    if var_type == 'param':
+                        # Load parameter from stack
+                        self.asm.emit_bytes(0x48, 0x8b, 0x85)
+                        self.asm.emit_bytes(*struct.pack('<i', -offset))
+                        return
+                
                 # Try to find the variable
                 if resolved_name not in self.compiler.variables:
                     # Try with pool type prefixes

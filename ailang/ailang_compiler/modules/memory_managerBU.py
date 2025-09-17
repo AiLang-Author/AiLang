@@ -113,12 +113,12 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             self.asm.emit_push_r14()
             
             # CRITICAL: Allocate pool table BEFORE compiling any pools!
-             # CRITICAL: Allocate the global pool table BEFORE any declarations are compiled.
-            # This ensures R15 is valid before any library that uses a pool is imported.
-            if not self.pool_table_allocated:
-                print("DEBUG: Allocating global pool table at program start.")
+            # This must happen before any pool initialization code
+            has_pools = any(hasattr(decl, 'pool_type') for decl in node.declarations)
+            if has_pools:
+                print("DEBUG: Allocating pool table FIRST (before pool compilation)")
                 self.allocate_pool_table()
-                self.pool_table_allocated = True
+                self.pool_table_allocated = True  # Mark as allocated
             
             # NOW compile all declarations (including pools)
             # Pool initialization code will now have R15 set correctly
@@ -401,6 +401,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             print(f"ERROR: Resource item compilation failed: {str(e)}")
             raise
     
+    def compile_pool(self, node):
     def compile_pool(self, node, pre_pass_only=False):
         """Compile Pool declaration with indirect addressing through pool table"""
         if node.pool_type == 'DynamicPool':
@@ -426,9 +427,13 @@ class MemoryManager:  # <-- THIS WAS MISSING!
 
                 # --- Code Generation Phase (normal pass only) ---
                 print(f"DEBUG: Compiling static pool {pool_name} with global pool table")
+
                 for item in node.body:
                     if hasattr(item, 'key'):
                         var_name = f"{pool_name}.{item.key}"
+                        if var_name not in self.pool_variables:
+                            raise Exception(f"Internal Compiler Error: Pool variable '{var_name}' was not discovered in pre-pass.")
+
                         pool_index = self.pool_variables[var_name]
                         print(f"DEBUG: Compiling initialization for {var_name} at pool[{pool_index}]")
 
@@ -440,6 +445,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                                 init_value = int(item.value.value)
                             
                             self.asm.emit_mov_rax_imm64(init_value)
+                            self.asm.emit_bytes(0x49, 0x89, 0x87)
                             self.asm.emit_bytes(0x49, 0x89, 0x87) # MOV [R15 + disp32], RAX
                             self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
                             print(f"DEBUG: Initialized {var_name} = {init_value}")

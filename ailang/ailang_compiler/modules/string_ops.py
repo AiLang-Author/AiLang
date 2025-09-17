@@ -30,7 +30,7 @@ class StringOps:
             'ReadInput': self.compile_read_input,
             'PrintString': self.compile_print_string,
             # === NEW: Wire up all string handlers ===
-            'CharToString': self.compile_char_to_string,
+            'StringFromChar': self.compile_char_to_string,
             'StringToUpper': self.compile_string_to_upper,
             'StringToLower': self.compile_string_to_lower,
             'StringContains': self.compile_string_contains,
@@ -50,6 +50,78 @@ class StringOps:
         if handler:
             return handler(node)
         return False
+
+
+    
+
+    def compile_read_input(self, node):
+        """Read a line from standard input"""
+        try:
+            print("DEBUG: Compiling ReadInput")
+            
+            # Allocate buffer for input (e.g., 1024 bytes)
+            buffer_size = 1024
+            
+            # Allocate buffer on heap
+            self.asm.emit_mov_rdi_imm(buffer_size)
+            self.asm.emit_syscall_mmap()  # Returns buffer in RAX
+            self.asm.emit_push_rax()  # Save buffer address
+            
+            # Read from stdin (fd = 0)
+            self.asm.emit_pop_rsi()  # Buffer address in RSI
+            self.asm.emit_push_rsi()  # Save it again
+            self.asm.emit_mov_rdi_imm(0)  # stdin = 0
+            self.asm.emit_mov_rdx_imm(buffer_size - 1)  # Max bytes to read
+            self.asm.emit_mov_rax_imm64(0)  # sys_read = 0
+            self.asm.emit_syscall()
+            
+            # RAX now contains number of bytes read (or -1 on error, 0 on EOF)
+            # Check if we got EOF or error
+            self.asm.emit_test_rax_rax()
+            eof_label = self.asm.create_label()
+            self.asm.emit_jle(eof_label)  # Jump if <= 0
+            
+            # Not EOF - null terminate the string
+            self.asm.emit_pop_rsi()  # Get buffer address
+            self.asm.emit_push_rsi()  # Keep it on stack
+            self.asm.emit_mov_rbx_rax()  # Save byte count
+            
+            # Find newline and replace with null
+            self.asm.emit_mov_rcx_rax()  # Counter
+            find_newline_loop = self.asm.create_label()
+            found_newline = self.asm.create_label()
+            self.asm.mark_label(find_newline_loop)
+            self.asm.emit_test_rcx_rcx()
+            self.asm.emit_jz(found_newline)
+            self.asm.emit_mov_al_byte_ptr_rsi()  # Load byte
+            self.asm.emit_cmp_al_imm(10)  # Check for '\n'
+            self.asm.emit_je(found_newline)
+            self.asm.emit_inc_rsi()
+            self.asm.emit_dec_rcx()
+            self.asm.emit_jmp(find_newline_loop)
+            
+            self.asm.mark_label(found_newline)
+            self.asm.emit_mov_byte_ptr_rsi_imm(0)  # Null terminate
+            
+            # Return buffer address
+            self.asm.emit_pop_rax()
+            done_label = self.asm.create_label()
+            self.asm.emit_jmp(done_label)
+            
+            # EOF/error case - return 0
+            self.asm.mark_label(eof_label)
+            self.asm.emit_pop_rax()  # Clean stack
+            self.asm.emit_xor_rax_rax()  # Return 0
+            
+            self.asm.mark_label(done_label)
+            
+            return True
+            
+        except Exception as e:
+            print(f"ERROR: ReadInput compilation failed: {str(e)}")
+            return False
+
+
 
     def compile_string_to_number(self, node):
         """Convert ASCII string to integer - general purpose"""
@@ -1200,9 +1272,9 @@ class StringOps:
     def compile_char_to_string(self, node):
         """Convert single ASCII character code to string"""
         if len(node.arguments) < 1:
-            raise ValueError("CharToString requires 1 argument (ASCII code)")
+            raise ValueError("StringFromChar requires 1 argument (ASCII code)")
         
-        print("DEBUG: Compiling CharToString")
+        print("DEBUG: Compiling StringFromChar")
         
         # Get ASCII code
         self.compiler.compile_expression(node.arguments[0])
@@ -1231,7 +1303,7 @@ class StringOps:
         # Return string address
         self.asm.emit_mov_rax_rdi()
         
-        print("DEBUG: CharToString completed")
+        print("DEBUG: StringFromChar completed")
         return True
 
     def compile_string_to_upper(self, node):
@@ -1543,34 +1615,54 @@ class StringOps:
         return True
     
     def compile_string_substring(self, node):
-        """Extract substring(str, start_index, length)"""
+        """Extract substring(str, start_index, end_index) - FIXED to use end instead of length"""
         if len(node.arguments) != 3:
-            raise ValueError("StringSubstring requires string, start, length")
+            raise ValueError("StringSubstring requires string, start, end")
         
-        print("DEBUG: Compiling StringSubstring")
+        print("DEBUG: Compiling StringSubstring (end-based semantics)")
         
         # Save registers we'll use
         self.asm.emit_push_rbx()
         self.asm.emit_push_r12()
         self.asm.emit_push_r13()
+        self.asm.emit_push_r14()
         
-        # Get arguments
+        # Get arguments: R12=string, R13=start, R14=end
         self.compiler.compile_expression(node.arguments[0])
-        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX (save string pointer)
+        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX (string)
         
         self.compiler.compile_expression(node.arguments[1])
-        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX (save start index)
+        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX (start)
         
         self.compiler.compile_expression(node.arguments[2])
-        self.asm.emit_mov_rbx_rax()  # Length in RBX
+        self.asm.emit_bytes(0x49, 0x89, 0xC6)  # MOV R14, RAX (end)
+        
+        # Labels
+        null_case = self.asm.create_label()
+        empty_result = self.asm.create_label()
+        done_label = self.asm.create_label()
         
         # NULL check on string
         self.asm.emit_bytes(0x4D, 0x85, 0xE4)  # TEST R12, R12
-        null_case = self.asm.create_label()
-        done_label = self.asm.create_label()
         self.asm.emit_jump_to_label(null_case, "JZ")
         
-        # Allocate buffer (length + 1)
+        # Bounds validation: start >= 0, end >= start
+        self.asm.emit_bytes(0x4D, 0x85, 0xED)  # TEST R13, R13 (start >= 0)
+        self.asm.emit_jump_to_label(empty_result, "JL")  # Jump if less than 0
+        
+        self.asm.emit_bytes(0x4D, 0x39, 0xEE)  # CMP R14, R13 (end >= start)
+        self.asm.emit_jump_to_label(empty_result, "JL")  # Jump if end < start
+        
+        # Calculate actual length: length = end - start
+        self.asm.emit_bytes(0x4C, 0x89, 0xF0)  # MOV RAX, R14 (end)
+        self.asm.emit_bytes(0x4C, 0x29, 0xE8)  # SUB RAX, R13 (end - start)
+        self.asm.emit_mov_rbx_rax()            # RBX = substring length
+        
+        # Skip if zero length
+        self.asm.emit_bytes(0x48, 0x85, 0xDB)  # TEST RBX, RBX directly
+        self.asm.emit_jump_to_label(empty_result, "JZ")
+        
+        # Allocate buffer (length + 1 for null terminator)
         self.asm.emit_mov_rsi_rbx()  # Length to RSI
         self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI (for null terminator)
         
@@ -1583,6 +1675,10 @@ class StringOps:
         self.asm.emit_mov_r9_imm64(0)
         self.asm.emit_syscall()
         
+        # Check allocation success
+        self.asm.emit_bytes(0x48, 0x83, 0xF8, 0x00)  # CMP RAX, 0
+        self.asm.emit_jump_to_label(empty_result, "JL")  # Failed allocation
+        
         # RAX now contains the allocated buffer address
         self.asm.emit_mov_rdi_rax()  # Destination in RDI
         self.asm.emit_push_rdi()      # Save destination for return
@@ -1591,7 +1687,7 @@ class StringOps:
         self.asm.emit_bytes(0x4C, 0x89, 0xE6)  # MOV RSI, R12 (string pointer)
         self.asm.emit_bytes(0x4C, 0x01, 0xEE)  # ADD RSI, R13 (add start offset)
         
-        # Setup count
+        # Setup count (use calculated length, not end index)
         self.asm.emit_mov_rcx_rbx()  # Length in RCX for copy
         
         # Copy loop with bounds checking
@@ -1628,18 +1724,25 @@ class StringOps:
         self.asm.emit_pop_rax()
         self.asm.emit_jump_to_label(done_label, "JMP")
         
-        self.asm.mark_label(null_case)
-        # Return empty string for null input
+        self.asm.mark_label(empty_result)
+        # Return empty string for invalid bounds
         empty_str = self.asm.add_string("")
         self.asm.emit_load_data_address('rax', empty_str)
+        self.asm.emit_jump_to_label(done_label, "JMP")
+        
+        self.asm.mark_label(null_case)
+        # Return empty string for null input
+        empty_str2 = self.asm.add_string("")
+        self.asm.emit_load_data_address('rax', empty_str2)
         
         self.asm.mark_label(done_label)
         # Restore registers
+        self.asm.emit_pop_r14()
         self.asm.emit_pop_r13()
         self.asm.emit_pop_r12()
         self.asm.emit_pop_rbx()
         
-        print("DEBUG: StringSubstring completed")
+        print("DEBUG: StringSubstring (end-based) completed")
         return True
 
 
