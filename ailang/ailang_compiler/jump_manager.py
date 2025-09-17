@@ -17,6 +17,12 @@ class Label:
     position: int
     context: str  # 'local' or 'global'
 
+@dataclass
+class LeaFixup:
+    position: int         # Where the offset bytes start in the LEA instruction
+    target_label: str     # Label whose address we're loading
+    context: str          # 'local' or 'global'
+
 class JumpManager:
     """Manages all jump resolution with proper scoping"""
     
@@ -25,6 +31,10 @@ class JumpManager:
         self.global_labels: Dict[str, Label] = {}
         self.local_context_stack = []
         self.label_counter = 0
+        self.lea_fixups: List[LeaFixup] = []  # NEW: Track LEA instructions
+        
+        # Also expose labels property for compatibility
+        self.labels = {}  # Unified label dictionary
         
     def enter_local_context(self, name: str):
         """Enter a function or local scope"""
@@ -32,6 +42,7 @@ class JumpManager:
             'name': name,
             'jumps': [],
             'labels': {},
+            'lea_fixups': [],  # NEW: Track local LEA fixups
             'start_position': None
         })
     
@@ -49,6 +60,14 @@ class JumpManager:
                 
             target = context['labels'][jump.target_label]
             self._resolve_single_jump(jump, target, code_buffer)
+        
+        # NEW: Resolve local LEA fixups
+        for lea_fixup in context.get('lea_fixups', []):
+            if lea_fixup.target_label not in context['labels']:
+                raise ValueError(f"Undefined local label for LEA: {lea_fixup.target_label}")
+            
+            target = context['labels'][lea_fixup.target_label]
+            self._resolve_single_lea(lea_fixup, target, code_buffer)
     
     def add_jump(self, position: int, target_label: str, 
                  instruction_type: str, is_local: bool = False):
@@ -76,6 +95,21 @@ class JumpManager:
             self.local_context_stack[-1]['labels'][name] = label
         else:
             self.global_labels[name] = label
+            # Also add to unified labels dictionary
+            self.labels[name] = position
+    
+    def add_lea_fixup(self, position: int, target_label: str, is_local: bool = False):
+        """NEW: Add LEA instruction that needs fixup"""
+        lea_fixup = LeaFixup(position, target_label, 'local' if is_local else 'global')
+        
+        print(f"DEBUG: Added LEA fixup at {position} for label {target_label}")
+        
+        if is_local and self.local_context_stack:
+            if 'lea_fixups' not in self.local_context_stack[-1]:
+                self.local_context_stack[-1]['lea_fixups'] = []
+            self.local_context_stack[-1]['lea_fixups'].append(lea_fixup)
+        else:
+            self.lea_fixups.append(lea_fixup)
     
     def _resolve_single_jump(self, jump: Jump, label: Label, 
                             code_buffer: bytearray) -> None:
@@ -107,17 +141,63 @@ class JumpManager:
         # Now safely write the offset
         code_buffer[offset_position:offset_position+4] = offset_bytes
     
+    def _resolve_single_lea(self, lea_fixup: LeaFixup, label: Label, 
+                           code_buffer: bytearray) -> None:
+        """NEW: Resolve a single LEA instruction by patching the offset"""
+        
+        # Calculate RIP-relative offset
+        # RIP points to the instruction after the displacement
+        instruction_end = lea_fixup.position + 4
+        offset = label.position - instruction_end
+        
+        print(f"DEBUG: Resolving LEA to {lea_fixup.target_label} at {lea_fixup.position}: "
+              f"target={label.position}, offset={offset}")
+        
+        # Validate offset fits in 32 bits
+        if not (-2147483648 <= offset <= 2147483647):
+            raise ValueError(f"LEA offset {offset} exceeds 32-bit range")
+        
+        # Pack as 32-bit signed integer
+        offset_bytes = struct.pack('<i', offset)
+        
+        # Patch the code at the offset position
+        if lea_fixup.position + 4 > len(code_buffer):
+            code_buffer.extend([0x90] * (lea_fixup.position + 4 - len(code_buffer)))
+        
+        code_buffer[lea_fixup.position:lea_fixup.position+4] = offset_bytes
+    
     def resolve_global_jumps(self, code_buffer: bytearray) -> None:
-        """Resolve all remaining global jumps"""
+        """Resolve all remaining global jumps and LEA fixups"""
+        
+        # Resolve jumps
         for jump in self.global_jumps:
             if jump.target_label not in self.global_labels:
-                raise ValueError(f"Undefined global label: {jump.target_label}")
-                
-            label = self.global_labels[jump.target_label]
+                # Check unified labels as fallback
+                if jump.target_label in self.labels:
+                    label = Label(jump.target_label, self.labels[jump.target_label], 'global')
+                else:
+                    raise ValueError(f"Undefined global label: {jump.target_label}")
+            else:
+                label = self.global_labels[jump.target_label]
             self._resolve_single_jump(jump, label, code_buffer)
+        
+        # NEW: Resolve LEA fixups
+        for lea_fixup in self.lea_fixups:
+            if lea_fixup.target_label not in self.global_labels:
+                # Check unified labels as fallback
+                if lea_fixup.target_label in self.labels:
+                    label = Label(lea_fixup.target_label, self.labels[lea_fixup.target_label], 'global')
+                else:
+                    print(f"ERROR: LEA fixup failed - label {lea_fixup.target_label} not found")
+                    print(f"Available labels: {list(self.labels.keys())}")
+                    raise ValueError(f"Undefined label for LEA: {lea_fixup.target_label}")
+            else:
+                label = self.global_labels[lea_fixup.target_label]
+            self._resolve_single_lea(lea_fixup, label, code_buffer)
         
         # Clear after resolution
         self.global_jumps.clear()
+        self.lea_fixups.clear()
     
     def create_unique_label(self) -> str:
         """Generate a unique label name"""

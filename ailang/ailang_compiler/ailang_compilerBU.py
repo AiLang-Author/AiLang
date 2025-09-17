@@ -34,8 +34,6 @@ from ailang_compiler.modules.expression_compiler import ExpressionCompiler
 from ailang_compiler.modules.library_inliner import LibraryInliner
 from ailang_compiler.modules.user_functions import UserFunctions
 from ailang_compiler.modules.memory_pool import MemoryPool
-from .scope_manager import ScopeManager
-from ailang_compiler.modules.function_dispatch import FunctionDispatch
 
 
 
@@ -56,9 +54,7 @@ class AILANGToX64Compiler:
         self.open_files = {}
         self.vm_mode = vm_mode.lower()
         
-        self.ast = None # Will hold the root of the AST
         # Initialize core modules first
-        self.function_dispatch = FunctionDispatch(self)
         self.arithmetic = ArithmeticOps(self)
         self.fileio = FileIOOps(self)
         self.math_ops = MathOperations(self)
@@ -71,7 +67,6 @@ class AILANGToX64Compiler:
         self.codegen = CodeGenerator(self)
         self.lowlevel = LowLevelOps(self)
         self.user_functions = UserFunctions(self)
-        self.scope_mgr = ScopeManager(self)
         
         # Loop model support
         self.subroutines = {}      # name -> label mapping
@@ -106,8 +101,6 @@ class AILANGToX64Compiler:
         self.current_library_prefix = None
         
         self._node_dispatch = {
-        'CallIndirect': self.function_dispatch.compile_call_indirect,
-        'AddressOf': self.function_dispatch.compile_address_of,
         'Program': lambda n: self.memory.compile_program(n),
         'Library': lambda n: self.compile_library(n),
         'SubRoutine': lambda n: self.compile_subroutine(n),
@@ -327,53 +320,6 @@ class AILANGToX64Compiler:
         try:
             print(f"DEBUG: Compiling function call: {node.function}")
             
-            if node.function == "SystemCall":
-                # This is a special built-in function that maps to the x86-64 syscall instruction.
-                
-                # The syscall calling convention on x86-64 is:
-                # Syscall number in RAX
-                # Arguments in: RDI, RSI, RDX, R10, R8, R9
-                syscall_arg_regs = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
-                
-                # Map registers to their POP opcodes
-                pop_opcodes = {
-                    'rax': [0x58], 'rcx': [0x59], 'rdx': [0x5a], 'rbx': [0x5b],
-                    'rsi': [0x5e], 'rdi': [0x5f],
-                    'r8': [0x41, 0x58], 'r9': [0x41, 0x59], 'r10': [0x41, 0x5a],
-                    'r11': [0x41, 0x5b], 'r12': [0x41, 0x5c], 'r13': [0x41, 0x5d],
-                    'r14': [0x41, 0x5e], 'r15': [0x41, 0x5f]
-                }
-                
-                # The first argument to our FunctionCall node is the syscall number.
-                # The rest are the arguments for the syscall itself.
-                num_syscall_args = len(node.arguments) - 1
-                if num_syscall_args > len(syscall_arg_regs):
-                    raise ValueError(f"SystemCall supports up to {len(syscall_arg_regs)} arguments, but {num_syscall_args} were given.")
-
-                # We compile and pop arguments off the stack into registers in reverse order
-                # to ensure the stack is managed correctly.
-                for i in reversed(range(num_syscall_args)):
-                    arg_node = node.arguments[i + 1] # +1 to skip the syscall number
-                    self.compile_node(arg_node)
-                    reg = syscall_arg_regs[i]
-                    if reg in pop_opcodes:
-                        self.asm.emit_bytes(*pop_opcodes[reg])
-                    else:
-                        raise ValueError(f"Unsupported register for POP in SystemCall: {reg}")
-
-                # Compile the syscall number (the first argument) and pop it into RAX.
-                syscall_num_node = node.arguments[0]
-                self.compile_node(syscall_num_node)
-                self.asm.emit_bytes(*pop_opcodes['rax'])
-
-                # Emit the raw bytes for the 'syscall' instruction.
-                self.asm.emit_bytes(0x0f, 0x05)
-
-                # The return value of a syscall is placed in RAX. We push it onto
-                # our program's stack to be used by the assignment expression.
-                self.asm.emit_bytes(0x50)  # PUSH RAX
-                return
-
             # --- NEW: Context-aware library function resolution ---
             # If compiling inside a library, try to resolve the function with the library's prefix.
             # This handles calls between functions within the same library (e.g., Trig.Sin calling Trig.NormalizeDegrees).
@@ -391,25 +337,10 @@ class AILANGToX64Compiler:
             # === NEW: Check if this is a registered library function first ===
             # This handles forward references from the 2-pass registration
             if hasattr(self.user_functions, 'is_function_registered'):
-                # Try the name as-is first
                 if self.user_functions.is_function_registered(node.function):
                     print(f"DEBUG: Found registered function: {node.function}")
                     if self.user_functions.compile_function_call(node):
                         return
-                
-                # --- NEW FIX: Search through imported libraries ---
-                # If the name wasn't found, try prefixing it with the names of imported libraries.
-                for lib_name in self.loaded_libraries:
-                    # lib_name is like "Library.FixedPointTrig"
-                    lib_prefix = lib_name.split('.')[-1]
-                    prefixed_name = f"{lib_prefix}.{node.function}"
-                    if self.user_functions.is_function_registered(prefixed_name):
-                        print(f"DEBUG: Resolved '{node.function}' to '{prefixed_name}' via imported library '{lib_name}'")
-                        import copy
-                        node_copy = copy.copy(node)
-                        node_copy.function = prefixed_name
-                        if self.user_functions.compile_function_call(node_copy):
-                            return
             
             # Extract base function name (handles both "Category.Name" and "Name")
             base_name = node.function
@@ -474,9 +405,8 @@ class AILANGToX64Compiler:
 
             # Dispatch to modules (existing code)
             dispatch_modules = [
-                self.function_dispatch,  # Handle CallIndirect, AddressOf first
-                self.math_ops,          # Try math operations next
-                self.arithmetic,        # Then basic arithmetic
+                self.math_ops,      # Try math operations first
+                self.arithmetic,    # Then basic arithmetic
                 self.fileio, self.strings,
                 self.lowlevel, self.hash_ops, self.network_ops,
                 self.virtual_memory, self.atomics
@@ -865,30 +795,22 @@ class AILANGToX64Compiler:
     def compile(self, ast) -> bytes:
         """Compile AST to executable with 2-pass function registration"""
         print("\n=== COMPILATION STARTING ===")
-        # Store the AST so other modules can reference it (e.g., for global lookups)
-        self.ast = ast
-
-        # PASS 1: Register ALL global symbols (functions, variables, pools)
-        print("Phase 0: Registering all global symbols...")
-
+        
+        # PASS 1: Register ALL functions first (including in libraries)
+        print("Phase 0: Registering all functions...")
+        
+        # Process top-level functions
         for decl in ast.declarations:
-            node_type = type(decl).__name__
-            if node_type in ('Function', 'FunctionDefinition'):
+            if type(decl).__name__ in ('Function', 'FunctionDefinition'):
                 self.user_functions.register_function(decl)
-            elif node_type == 'Library':
+            elif type(decl).__name__ == 'Library':
                 # Libraries handle their own registration in compile_library
                 pass
-            elif node_type == 'Pool':
-                # Pre-pass to discover pool variables so they are globally visible
-                self.memory.compile_pool(decl, pre_pass_only=True)
-            elif node_type == 'Assignment':
-                # Pre-pass to register global variables so they are known before function compilation.
-                # This allocates stack space for them in the main stack frame.
-                if decl.target not in self.variables:
-                    self.stack_size += 8
-                    self.variables[decl.target] = self.stack_size
-                    print(f"DEBUG: Pre-registered global variable '{decl.target}' at offset {self.stack_size}")
-
+        
+        # Also let user_functions do its own scan if it has that method
+        if hasattr(self.user_functions, 'process_all_functions'):
+            self.user_functions.process_all_functions(ast)
+        
         # PASS 2: Compile everything
         print("Phase 1: Generating machine code...")
         self.compile_node(ast)
