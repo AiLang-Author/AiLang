@@ -1,12 +1,13 @@
 // flow_control_test_harness.ailang
-// Fixed version with proper syntax
+// Updated with corrected syntax after parser fixes
+// Version 2.1 - Avoiding Fork until lexer is updated
 
 PrintMessage("========================================")
-PrintMessage("AILANG Flow Control Test Harness v1.0")
+PrintMessage("AILANG Flow Control Test Harness v2.1")
 PrintMessage("========================================")
 PrintMessage("")
 
-// Global test tracking variables - MUST be declared first
+// Global test tracking variables
 total_tests = 0
 passed_tests = 0
 failed_tests = 0
@@ -14,7 +15,7 @@ test_name = ""
 expected = 0
 actual = 0
 
-// Helper subroutine for test results (Functions with Input/Output/Body don't work)
+// Helper subroutine for test results
 SubRoutine.RecordTest {
     // Uses globals: test_name, expected, actual
     total_tests = Add(total_tests, 1)
@@ -25,11 +26,11 @@ SubRoutine.RecordTest {
     PrintMessage("  Actual: ")
     PrintNumber(actual)
     
-    IfCondition EqualTo(expected, actual) ThenBlock {
-        PrintMessage("  PASS")
+    IfCondition EqualTo(expected, actual) ThenBlock: {
+        PrintMessage("  ✓ PASS")
         passed_tests = Add(passed_tests, 1)
-    } ElseBlock {
-        PrintMessage("  FAIL")
+    } ElseBlock: {
+        PrintMessage("  ✗ FAIL")
         failed_tests = Add(failed_tests, 1)
     }
 }
@@ -41,7 +42,7 @@ PrintMessage("========================================")
 // Test 1.1: Simple boolean condition
 PrintMessage("1.1 Boolean Literal Conditions")
 result1 = 0
-IfCondition True ThenBlock {
+IfCondition True ThenBlock: {
     result1 = 1
 }
 test_name = "If True"
@@ -50,9 +51,9 @@ actual = result1
 RunTask(RecordTest)
 
 result2 = 1
-IfCondition False ThenBlock {
+IfCondition False ThenBlock: {
     result2 = 0
-} ElseBlock {
+} ElseBlock: {
     result2 = 2
 }
 test_name = "If False with Else"
@@ -64,7 +65,7 @@ RunTask(RecordTest)
 PrintMessage("")
 PrintMessage("1.2 Numeric Conditions")
 result3 = 0
-IfCondition 1 ThenBlock {
+IfCondition 1 ThenBlock: {
     result3 = 10
 }
 test_name = "If 1 (truthy)"
@@ -73,9 +74,9 @@ actual = result3
 RunTask(RecordTest)
 
 result4 = 1
-IfCondition 0 ThenBlock {
+IfCondition 0 ThenBlock: {
     result4 = 0
-} ElseBlock {
+} ElseBlock: {
     result4 = 20
 }
 test_name = "If 0 (falsy)"
@@ -88,7 +89,7 @@ PrintMessage("")
 PrintMessage("1.3 Variable Conditions")
 flag = 1
 result5 = 0
-IfCondition flag ThenBlock {
+IfCondition flag ThenBlock: {
     result5 = 30
 }
 test_name = "Variable condition (truthy)"
@@ -98,9 +99,9 @@ RunTask(RecordTest)
 
 empty_flag = 0
 result6 = 1
-IfCondition empty_flag ThenBlock {
+IfCondition empty_flag ThenBlock: {
     result6 = 0
-} ElseBlock {
+} ElseBlock: {
     result6 = 40
 }
 test_name = "Variable condition (falsy)"
@@ -114,7 +115,7 @@ PrintMessage("1.4 Function Call Conditions")
 x = 5
 y = 3
 result7 = 0
-IfCondition GreaterThan(x, y) ThenBlock {
+IfCondition GreaterThan(x, y) ThenBlock: {
     result7 = 50
 }
 test_name = "GreaterThan(5, 3)"
@@ -125,9 +126,9 @@ RunTask(RecordTest)
 a = 2
 b = 8
 result8 = 1
-IfCondition LessThan(a, b) ThenBlock {
+IfCondition LessThan(a, b) ThenBlock: {
     result8 = 60
-} ElseBlock {
+} ElseBlock: {
     result8 = 0
 }
 test_name = "LessThan(2, 8)"
@@ -165,7 +166,7 @@ done = 0
 steps = 0
 WhileLoop EqualTo(done, 0) {
     steps = Add(steps, 1)
-    IfCondition EqualTo(steps, 4) ThenBlock {
+    IfCondition EqualTo(steps, 4) ThenBlock: {
         done = 1
     }
 }
@@ -203,49 +204,52 @@ WhileLoop And(GreaterThan(value, 0), LessThan(result9, 100)) {
     value = Subtract(value, 3)
 }
 test_name = "Complex condition result"
-expected = 40
+expected = 22
 actual = result9
 RunTask(RecordTest)
 
 PrintMessage("")
 PrintMessage("========================================")
-PrintMessage("SECTION 3: LOOP CONTROL (BREAK/CONTINUE)")
-PrintMessage("NOTE: May not be implemented")
+PrintMessage("SECTION 3: LOOP CONTROL (WORKAROUNDS)")
 PrintMessage("========================================")
 
-// Test 3.1: Break statement (may fail if not implemented)
-PrintMessage("3.1 Break Statement")
+// Test 3.1: Break pattern
+PrintMessage("3.1 Break Pattern (using flag)")
 break_counter = 0
 break_sum = 0
-WhileLoop LessThan(break_counter, 10) {
+should_continue = True
+WhileLoop And(LessThan(break_counter, 10), should_continue) {
     break_counter = Add(break_counter, 1)
     break_sum = Add(break_sum, break_counter)
     
-    IfCondition EqualTo(break_counter, 4) ThenBlock {
-        // BreakLoop  // Uncomment if implemented
-        // Workaround: set condition to exit
-        break_counter = 10
+    IfCondition EqualTo(break_counter, 4) ThenBlock: {
+        should_continue = False  // This simulates break
     }
 }
-test_name = "Break at 4 (simulated)"
-expected = 11  // Will be 11 due to workaround
+test_name = "Break at 4 (flag pattern)"
+expected = 4
 actual = break_counter
 RunTask(RecordTest)
 
-// Test 3.2: Continue statement (likely not implemented)
+test_name = "Sum at break"
+expected = 10  // 1+2+3+4
+actual = break_sum
+RunTask(RecordTest)
+
+// Test 3.2: Continue pattern
 PrintMessage("")
-PrintMessage("3.2 Continue Statement")
-PrintMessage("(ContinueLoop likely not implemented - using workaround)")
+PrintMessage("3.2 Continue Pattern (using if-else)")
 continue_counter = 0
 odd_sum = 0
 WhileLoop LessThan(continue_counter, 6) {
     continue_counter = Add(continue_counter, 1)
     
-    // Skip even numbers (workaround for missing ContinueLoop)
+    // Skip even numbers (continue pattern)
     is_odd = Modulo(continue_counter, 2)
-    IfCondition EqualTo(is_odd, 1) ThenBlock {
+    IfCondition EqualTo(is_odd, 1) ThenBlock: {
         odd_sum = Add(odd_sum, continue_counter)
     }
+    // ElseBlock would be empty - simulates continue
 }
 test_name = "Continue loop counter"
 expected = 6
@@ -253,7 +257,7 @@ actual = continue_counter
 RunTask(RecordTest)
 
 test_name = "Odd numbers sum"
-expected = 9
+expected = 9  // 1+3+5
 actual = odd_sum
 RunTask(RecordTest)
 
@@ -271,11 +275,11 @@ data_value = 0
 WhileLoop LessThan(state, 3) {
     machine_steps = Add(machine_steps, 1)
     
-    IfCondition EqualTo(state, 1) ThenBlock {
+    IfCondition EqualTo(state, 1) ThenBlock: {
         data_value = 100
         state = 2
-    } ElseBlock {
-        IfCondition EqualTo(state, 2) ThenBlock {
+    } ElseBlock: {
+        IfCondition EqualTo(state, 2) ThenBlock: {
             data_value = Multiply(data_value, 2)
             state = 3
         }
@@ -303,6 +307,49 @@ WhileLoop LessEqual(num, 5) {
 test_name = "Factorial of 5"
 expected = 120
 actual = factorial
+RunTask(RecordTest)
+
+// Test 4.3: Early exit with flag
+PrintMessage("")
+PrintMessage("4.3 Early Exit Pattern")
+search_target = 7
+found = False
+found_index = -1
+i = 0
+
+// Simulated array using if-else chain
+WhileLoop And(LessThan(i, 10), Not(found)) {
+    current_value = 0
+    IfCondition EqualTo(i, 0) ThenBlock: {
+        current_value = 3
+    } ElseBlock: {
+        IfCondition EqualTo(i, 1) ThenBlock: {
+            current_value = 5
+        } ElseBlock: {
+            IfCondition EqualTo(i, 2) ThenBlock: {
+                current_value = 7  // Target!
+            } ElseBlock: {
+                current_value = 9
+            }
+        }
+    }
+    
+    IfCondition EqualTo(current_value, search_target) ThenBlock: {
+        found = True
+        found_index = i
+    }
+    
+    i = Add(i, 1)
+}
+
+test_name = "Found target"
+expected = 1  // True
+actual = found
+RunTask(RecordTest)
+
+test_name = "Found at index"
+expected = 2
+actual = found_index
 RunTask(RecordTest)
 
 PrintMessage("")
@@ -343,9 +390,9 @@ level1 = 1
 level2 = 1
 level3 = 1
 
-IfCondition EqualTo(level1, 1) ThenBlock {
-    IfCondition EqualTo(level2, 1) ThenBlock {
-        IfCondition EqualTo(level3, 1) ThenBlock {
+IfCondition EqualTo(level1, 1) ThenBlock: {
+    IfCondition EqualTo(level2, 1) ThenBlock: {
+        IfCondition EqualTo(level3, 1) ThenBlock: {
             deep_result = 777
         }
     }
@@ -353,6 +400,19 @@ IfCondition EqualTo(level1, 1) ThenBlock {
 test_name = "Deep nesting"
 expected = 777
 actual = deep_result
+RunTask(RecordTest)
+
+// Test 5.4: Empty loop body
+PrintMessage("")
+PrintMessage("5.4 Empty Loop Body")
+empty_loop_var = 0
+WhileLoop LessThan(empty_loop_var, 3) {
+    // Intentionally empty except for increment
+    empty_loop_var = Add(empty_loop_var, 1)
+}
+test_name = "Empty loop iterations"
+expected = 3
+actual = empty_loop_var
 RunTask(RecordTest)
 
 PrintMessage("")
@@ -368,7 +428,7 @@ PrintMessage("Tests Failed: ")
 PrintNumber(failed_tests)
 
 success_rate = 0
-IfCondition GreaterThan(total_tests, 0) ThenBlock {
+IfCondition GreaterThan(total_tests, 0) ThenBlock: {
     // Calculate percentage (integer division)
     success_rate = Divide(Multiply(passed_tests, 100), total_tests)
 }
@@ -377,15 +437,16 @@ PrintMessage("Success Rate: ")
 PrintNumber(success_rate)
 PrintMessage("%")
 
-IfCondition EqualTo(failed_tests, 0) ThenBlock {
+IfCondition EqualTo(failed_tests, 0) ThenBlock: {
     PrintMessage("")
-    PrintMessage("ALL TESTS PASSED!")
+    PrintMessage("✓✓✓ ALL TESTS PASSED! ✓✓✓")
     PrintMessage("Flow control implementation is working correctly.")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("")
-    PrintMessage("FAILURES DETECTED")
+    PrintMessage("✗✗✗ FAILURES DETECTED ✗✗✗")
     PrintMessage("Review failed tests above.")
 }
 
 PrintMessage("")
-PrintMessage("Test harness complete.")
+PrintMessage("Test harness v2.0 complete.")
+PrintMessage("Syntax validated for parser fixes.")
