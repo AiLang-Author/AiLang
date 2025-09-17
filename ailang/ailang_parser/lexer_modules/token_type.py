@@ -9,9 +9,8 @@ class TokenType(Enum):
     IFCONDITION = auto()
     THENBLOCK = auto()
     ELSEBLOCK = auto()
-    CHOOSEPATH = auto()
-    CASEOPTION = auto()
-    DEFAULTOPTION = auto()
+    TRUEBLOCK = auto()   
+    FALSEBLOCK = auto()   
     WHILELOOP = auto()
     UNTILCONDITION = auto()
     FOREVERY = auto()
@@ -286,7 +285,6 @@ class TokenType(Enum):
     BARRIER = auto()                   # Memory/compiler barrier
 
     # System Calls and Kernel Operations
-    SYSTEMCALL = auto()                # Make system call
     PRIVILEGELEVEL = auto()            # CPU privilege level
     TASKSWITCH = auto()                # Task/context switch
     PROCESSCONTEXT = auto()            # Process context

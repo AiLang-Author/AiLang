@@ -5,15 +5,15 @@ def get_keyword_mapping():
     """Returns the complete keyword to TokenType mapping dictionary."""
     return {
         # Original keywords (preserved)
+        'Body': TokenType.BODY,
         'RunTask': TokenType.RUNTASK,
         'PrintMessage': TokenType.PRINTMESSAGE,
         'ReturnValue': TokenType.RETURNVALUE,
         'IfCondition': TokenType.IFCONDITION,
         'ThenBlock': TokenType.THENBLOCK,
         'ElseBlock': TokenType.ELSEBLOCK,
-        'ChoosePath': TokenType.CHOOSEPATH,
-        'CaseOption': TokenType.CASEOPTION,
-        'DefaultOption': TokenType.DEFAULTOPTION,
+        'TrueBlock': TokenType.TRUEBLOCK,
+        'FalseBlock': TokenType.FALSEBLOCK,
         'WhileLoop': TokenType.WHILELOOP,
         'UntilCondition': TokenType.UNTILCONDITION,
         'ForEvery': TokenType.FOREVERY,
@@ -118,10 +118,10 @@ def get_keyword_mapping():
         'MemoryLimit': TokenType.MEMORYLIMIT,
         'CPUQuota': TokenType.CPUQUOTA,
         'Level': TokenType.LEVEL,
-        'Hardware': TokenType.HARDWARE,
-        'Syscall': TokenType.SYSCALL,
-        'Interrupt': TokenType.INTERRUPT,
-        'Register': TokenType.REGISTER,
+        'Hardware': TokenType.HARDWARE, 
+        'SystemCall': TokenType.SYSCALL, # Changed from 'Syscall' to match usage
+        'Interrupt': TokenType.INTERRUPT, 
+        'Register': TokenType.REGISTER, 
         'Memory': TokenType.MEMORY,
         'PhysicalAddress': TokenType.PHYSICALADDRESS,
         'VirtualAddress': TokenType.VIRTUALADDRESS,
@@ -187,7 +187,7 @@ def get_keyword_mapping():
         # From new test harness
         'StringIndexOf': TokenType.STRINGINDEXOF,
         'StringSplit': TokenType.STRINGSPLIT,
-        'CharToString': TokenType.CHARTOSTRING,
+        'StringFromChar': TokenType.CHARTOSTRING,
 
         # File I/O (preserved)
         'OpenFile': TokenType.OPENFILE,
@@ -307,7 +307,6 @@ def get_keyword_mapping():
         'Barrier': TokenType.BARRIER,
 
         # System Calls and Kernel Operations
-        'SystemCall': TokenType.SYSTEMCALL,
         'PrivilegeLevel': TokenType.PRIVILEGELEVEL,
         'TaskSwitch': TokenType.TASKSWITCH,
         'ProcessContext': TokenType.PROCESSCONTEXT,
