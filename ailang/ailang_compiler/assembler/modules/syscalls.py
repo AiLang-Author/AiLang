@@ -40,3 +40,38 @@ class SystemCallOperations:
         """IRETQ - Return from interrupt (64-bit)"""
         self.emit_bytes(0x48, 0xCF)
         print("DEBUG: IRETQ")
+        
+        
+   
+    def emit_syscall_read(self):
+        """Emit sys_read syscall (rax=0)"""
+        self.emit_mov_rax_imm64(0)
+        self.emit_syscall()
+
+    def emit_test_rax_rax(self):
+        """TEST RAX, RAX"""
+        self.emit_bytes(0x48, 0x85, 0xC0)
+
+    def emit_jle(self, label):
+        """Jump if less or equal (JLE)"""
+        self.emit_jump_to_label(label, "JLE")
+
+    def emit_mov_al_byte_ptr_rsi(self):
+        """MOV AL, BYTE PTR [RSI]"""
+        self.emit_bytes(0x8A, 0x06)
+
+    def emit_cmp_al_imm(self, imm8):
+        """CMP AL, imm8"""
+        self.emit_bytes(0x3C, imm8 & 0xFF)
+
+    def emit_mov_byte_ptr_rsi_imm(self, imm8):
+        """MOV BYTE PTR [RSI], imm8"""
+        self.emit_bytes(0xC6, 0x06, imm8 & 0xFF)
+
+    def emit_inc_rsi(self):
+        """INC RSI"""
+        self.emit_bytes(0x48, 0xFF, 0xC6)
+
+    def emit_dec_rcx(self):
+        """DEC RCX"""
+        self.emit_bytes(0x48, 0xFF, 0xC9)

@@ -253,3 +253,58 @@ class MemoryOperations:
     def emit_mov_byte_ptr_rdi_zero(self):
         """MOV BYTE PTR [RDI], 0 - Store zero byte at [RDI]"""
         self.emit_bytes(0xC6, 0x07, 0x00)
+        
+    # === FUNCTION ADDRESS LOADING ===
+    
+    def emit_load_label_address(self, reg, label):
+        """Load address of label into register using RIP-relative addressing"""
+        print(f"DEBUG: Loading address of label {label} into {reg}")
+        
+        current_pos = len(self.code)
+        
+        if reg.lower() == 'rax':
+            self.emit_bytes(0x48, 0x8D, 0x05)  # LEA RAX, [RIP + disp32]
+        elif reg.lower() == 'rbx':
+            self.emit_bytes(0x48, 0x8D, 0x1D)  # LEA RBX, [RIP + disp32]
+        elif reg.lower() == 'rcx':
+            self.emit_bytes(0x48, 0x8D, 0x0D)  # LEA RCX, [RIP + disp32]
+        else:
+            raise ValueError(f"emit_load_label_address not implemented for register {reg}")
+        
+        # Emit placeholder
+        self.emit_bytes(0xFF, 0xFF, 0xFF, 0xFF)  # Distinctive pattern for debugging
+        
+        # Register with JumpManager instead of separate system
+        self.jump_manager.add_lea_fixup(current_pos + 3, label)  # +3 for opcode bytes
+    
+    def resolve_label_relocations(self):
+        """Resolve label relocations for function pointers"""
+        if not hasattr(self, 'label_relocations'):
+            return
+            
+        print(f"DEBUG: Resolving {len(self.label_relocations)} label relocations")
+        
+        for reloc in self.label_relocations:
+            label = reloc['label']
+            position = reloc['position']
+            
+            if label in self.labels:
+                label_addr = self.labels[label]
+                
+                # Calculate RIP-relative offset
+                # RIP points to the instruction after the displacement
+                instruction_end = position + 4
+                offset = label_addr - instruction_end
+                
+                print(f"DEBUG: Resolving {label} at pos {position}: offset = {offset}")
+                
+                # Patch the displacement
+                if reloc['type'] == 'RIP_RELATIVE' and reloc['size'] == 4:
+                    offset_bytes = struct.pack('<i', offset)
+                    for i, byte in enumerate(offset_bytes):
+                        self.code[position + i] = byte
+                else:
+                    print(f"WARNING: Unknown relocation type: {reloc['type']}")
+            else:
+                print(f"ERROR: Unresolved label: {label}")
+                # Leave as zero - will likely crash but compilation continues
