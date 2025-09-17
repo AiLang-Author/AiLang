@@ -2,8 +2,8 @@
 from ailang_ast import (
     ASTNode, Program, Library, Pool, ResourceItem, Loop, SubRoutine, Function, 
     RunTask, PrintMessage, ReturnValue, If, While, ForEvery, Assignment, 
-    MathExpression, FunctionCall, Identifier, Number, String, Boolean, 
-    ArrayLiteral, TypeExpression, ChoosePath, Try, SendMessage, ReceiveMessage, 
+    MathExpression, FunctionCall, Identifier, Number, String, Boolean,
+    ArrayLiteral, TypeExpression, Try, SendMessage, ReceiveMessage,
     EveryInterval, WithSecurity, BreakLoop, ContinueLoop, HaltProgram, Lambda, 
     Combinator, MacroBlock, MacroDefinition, SecurityContext, SecurityLevel, 
     ConstrainedType, Constant, Apply, RunMacro, MapLiteral, SubPool, 
@@ -220,25 +220,6 @@ class ASTPrinter(ASTVisitor):
         result += self.indent() + "}"
         return result
 
-    def visit_ChoosePath(self, node: ChoosePath) -> str:
-        result = f"ChoosePath({self.visit(node.expression)}) {{\n"
-        self.indent_level += 1
-        for case_value, case_body in node.cases:
-            result += self.indent() + f"CaseOption \"{case_value}\":\n"
-            self.indent_level += 1
-            for stmt in case_body:
-                result += self.indent() + self.visit(stmt) + "\n"
-            self.indent_level -= 1
-        if node.default:
-            result += self.indent() + "DefaultOption:\n"
-            self.indent_level += 1
-            for stmt in node.default:
-                result += self.indent() + self.visit(stmt) + "\n"
-            self.indent_level -= 1
-        self.indent_level -= 1
-        result += self.indent() + "}"
-        return result
-    
     def visit_While(self, node: While) -> str:
         result = f"WhileLoop {self.visit(node.condition)} {{\n"
         self.indent_level += 1
@@ -264,7 +245,7 @@ class ASTPrinter(ASTVisitor):
             result += self.indent() + self.visit(stmt) + "\n"
         self.indent_level -= 1
         for error_type, catch_body in node.catch_clauses:
-            result += self.indent() + f"CatchError.{error_type}:\n"
+            result += self.indent() + f"CatchError.{self.visit(error_type)}:\n"
             self.indent_level += 1
             for stmt in catch_body:
                 result += self.indent() + self.visit(stmt) + "\n"

@@ -37,8 +37,8 @@ __all__ = [
     'BreakLoop', 'ContinueLoop',
     
     # Control Flow
-    'If', 'While', 'ForEvery', 'ChoosePath', 'Try', 'Fork', 'Branch',
-    'EveryInterval', 'WithSecurity',
+    'If', 'While', 'ForEvery', 'Try', 'Fork', 'Branch', 'EveryInterval',
+    'WithSecurity',
     
     # Functions
     'Function', 'Lambda', 'Combinator', 'MacroBlock', 'MacroDefinition', 'SubRoutine',
