@@ -29,7 +29,7 @@ from .ast_statements import (
 )
 
 from .ast_control_flow import (
-    If, While, ForEvery, ChoosePath, Try, Fork, Branch,
+    If, While, ForEvery, Try, Fork, Branch,
     EveryInterval, WithSecurity
 )
 
@@ -99,7 +99,7 @@ __all__ = [
     'BreakLoop', 'ContinueLoop',
     
     # Control Flow
-    'If', 'While', 'ForEvery', 'ChoosePath', 'Try', 'Fork', 'Branch',
+    'If', 'While', 'ForEvery', 'Try', 'Fork', 'Branch',
     'EveryInterval', 'WithSecurity',
     
     # Functions

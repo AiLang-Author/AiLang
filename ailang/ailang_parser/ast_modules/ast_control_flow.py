@@ -26,13 +26,6 @@ class ForEvery(ASTNode):
     body: List[ASTNode]
 
 @dataclass
-class ChoosePath(ASTNode):
-    """Switch/case-like statement"""
-    expression: ASTNode
-    cases: List[Tuple[str, List[ASTNode]]]
-    default: Optional[List[ASTNode]] = None
-
-@dataclass
 class Try(ASTNode):
     """Try-catch-finally statement"""
     body: List[ASTNode]
