@@ -1,5 +1,5 @@
 #parse_statements.py
-"""Parser methods for handling statements"""
+"""Parser methods for handling statements - FIXED for consistent flow control"""
 
 from typing import Optional
 from ..lexer import TokenType
@@ -28,8 +28,6 @@ class ParserStatementsMixin:
             return self.parse_returnvalue()
         elif self.match(TokenType.IFCONDITION):
             return self.parse_if()
-        elif self.match(TokenType.CHOOSEPATH):
-            return self.parse_choosepath()
         elif self.match(TokenType.WHILELOOP):
             return self.parse_while()
         elif self.match(TokenType.FOREVERY):
@@ -63,8 +61,6 @@ class ParserStatementsMixin:
             return self.parse_interrupt_control()
         elif self.match(TokenType.INLINEASSEMBLY):
             return self.parse_inline_assembly()
-        elif self.match(TokenType.SYSTEMCALL):
-            return self.parse_system_call()
         # === NEW: Virtual Memory Statement Parsing ===
         elif self.match(TokenType.PAGETABLE, TokenType.VIRTUALMEMORY, TokenType.CACHE, 
                     TokenType.TLB, TokenType.MEMORYBARRIER):
@@ -129,12 +125,20 @@ class ParserStatementsMixin:
         return ReturnValue(value=value, line=start_token.line, column=start_token.column)
 
     def parse_if(self) -> If:
+        """
+        FIXED: Parse IfCondition with flat, consistent syntax:
+        IfCondition condition ThenBlock: { ... } ElseBlock: { ... }
+        """
         start_token = self.consume(TokenType.IFCONDITION)
         condition = self.parse_expression()
-        self.consume(TokenType.THENBLOCK)
         self.skip_newlines()
+        
+        # Direct ThenBlock syntax - no extra wrapper brace
+        self.consume(TokenType.THENBLOCK)
+        self.consume(TokenType.COLON)
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
+        
         self.push_context("IfCondition.ThenBlock")
         then_body = []
         while not self.match(TokenType.RBRACE):
@@ -142,15 +146,18 @@ class ParserStatementsMixin:
             if stmt:
                 then_body.append(stmt)
             self.skip_newlines()
-        self.consume(TokenType.RBRACE)
+        self.consume(TokenType.RBRACE)  # Close ThenBlock
         self.pop_context()
         self.skip_newlines()
+        
+        # Optional ElseBlock at same level
         else_body = None
         if self.match(TokenType.ELSEBLOCK):
             self.consume(TokenType.ELSEBLOCK)
-            self.skip_newlines()
+            self.consume(TokenType.COLON)
             self.consume(TokenType.LBRACE)
             self.skip_newlines()
+            
             self.push_context("IfCondition.ElseBlock")
             else_body = []
             while not self.match(TokenType.RBRACE):
@@ -158,70 +165,27 @@ class ParserStatementsMixin:
                 if stmt:
                     else_body.append(stmt)
                 self.skip_newlines()
-            self.consume(TokenType.RBRACE)
+            self.consume(TokenType.RBRACE)  # Close ElseBlock
             self.pop_context()
+        
+        # NO extra closing brace - the structure is flat!
         return If(condition=condition, then_body=then_body, else_body=else_body,
-                  line=start_token.line, column=start_token.column)
+                line=start_token.line, column=start_token.column)
 
-    def parse_choosepath(self) -> ChoosePath:
-        start_token = self.consume(TokenType.CHOOSEPATH)
-        self.consume(TokenType.LPAREN)
-        expression = self.parse_expression()
-        self.consume(TokenType.RPAREN)
-        self.skip_newlines()
-        self.consume(TokenType.LBRACE)
-        self.skip_newlines()
-        self.push_context("ChoosePath")
-        cases = []
-        default = None
-        while not self.match(TokenType.RBRACE):
-            if self.match(TokenType.CASEOPTION):
-                self.consume(TokenType.CASEOPTION)
-                if self.match(TokenType.STRING):
-                    case_value = self.consume(TokenType.STRING).value
-                elif self.match(TokenType.NUMBER):
-                    case_value = self.consume(TokenType.NUMBER).value
-                else:
-                    self.error("CaseOption requires a string or number literal")
-                self.consume(TokenType.COLON)
-                self.skip_newlines()
-                self.consume(TokenType.LBRACE)
-                self.skip_newlines()
-                case_body = []
-                while not self.match(TokenType.RBRACE):
-                    stmt = self.parse_statement()
-                    if stmt:
-                        case_body.append(stmt)
-                    self.skip_newlines()
-                self.consume(TokenType.RBRACE)
-                cases.append((case_value, case_body))
-            elif self.match(TokenType.DEFAULTOPTION):
-                self.consume(TokenType.DEFAULTOPTION)
-                self.consume(TokenType.COLON)
-                self.skip_newlines()
-                self.consume(TokenType.LBRACE)
-                self.skip_newlines()
-                default = []
-                while not self.match(TokenType.RBRACE):
-                    stmt = self.parse_statement()
-                    if stmt:
-                        default.append(stmt)
-                    self.skip_newlines()
-                self.consume(TokenType.RBRACE)
-            else:
-                self.error(f"Expected CaseOption or DefaultOption, but got {self.current_token.type.name}")
-            self.skip_newlines()
-        self.consume(TokenType.RBRACE)
-        self.pop_context()
-        return ChoosePath(expression=expression, cases=cases, default=default,
-                         line=start_token.line, column=start_token.column)
-
+    
     def parse_while(self) -> While:
+        """
+        FIXED: Parse WhileLoop with simple, consistent syntax:
+        WhileLoop condition { ... }
+        
+        No Body: wrapper - just the statements directly
+        """
         start_token = self.consume(TokenType.WHILELOOP)
         condition = self.parse_expression()
         self.skip_newlines()
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
+        
         self.push_context("WhileLoop")
         body = []
         while not self.match(TokenType.RBRACE):
@@ -231,10 +195,15 @@ class ParserStatementsMixin:
             self.skip_newlines()
         self.consume(TokenType.RBRACE)
         self.pop_context()
+        
         return While(condition=condition, body=body,
-                     line=start_token.line, column=start_token.column)
+                    line=start_token.line, column=start_token.column)
 
     def parse_forevery(self) -> ForEvery:
+        """
+        ForEvery with consistent syntax:
+        ForEvery variable in collection { ... }
+        """
         start_token = self.consume(TokenType.FOREVERY)
         variable = self.consume(TokenType.IDENTIFIER).value
         self.consume(TokenType.IN)
@@ -255,18 +224,20 @@ class ParserStatementsMixin:
                         line=start_token.line, column=start_token.column)
 
     def parse_fork(self) -> Fork:
-        """Parse Fork construct: Fork condition { true_block } { false_block }"""
+        """
+        FIXED Fork construct with consistent syntax:
+        Fork condition TrueBlock: { ... } FalseBlock: { ... }
+        """
         start_token = self.consume(TokenType.FORK)
-        self.push_context("Fork")
-        
-        # Parse condition expression
         condition = self.parse_expression()
-        
         self.skip_newlines()
         
-        # Parse true block
+        # TrueBlock
+        self.consume(TokenType.TRUEBLOCK)
+        self.consume(TokenType.COLON)
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
+        
         self.push_context("Fork.TrueBlock")
         true_block = []
         while not self.match(TokenType.RBRACE):
@@ -276,42 +247,39 @@ class ParserStatementsMixin:
             self.skip_newlines()
         self.consume(TokenType.RBRACE)
         self.pop_context()
-        
         self.skip_newlines()
         
-        # Parse false block (required - both blocks must be present)
-        false_block = []
-        if self.match(TokenType.LBRACE):
-            self.consume(TokenType.LBRACE)
-            self.skip_newlines()
-            self.push_context("Fork.FalseBlock")
-            while not self.match(TokenType.RBRACE):
-                stmt = self.parse_statement()
-                if stmt:
-                    false_block.append(stmt)
-                self.skip_newlines()
-            self.consume(TokenType.RBRACE)
-            self.pop_context()
-        else:
-            # Fork requires both blocks
-            self.error("Fork requires both true and false blocks")
+        # FalseBlock
+        self.consume(TokenType.FALSEBLOCK)
+        self.consume(TokenType.COLON)
+        self.consume(TokenType.LBRACE)
+        self.skip_newlines()
         
+        self.push_context("Fork.FalseBlock")
+        false_block = []
+        while not self.match(TokenType.RBRACE):
+            stmt = self.parse_statement()
+            if stmt:
+                false_block.append(stmt)
+            self.skip_newlines()
+        self.consume(TokenType.RBRACE)
         self.pop_context()
+        
         return Fork(condition=condition, true_block=true_block, false_block=false_block,
                     line=start_token.line, column=start_token.column)
 
     def parse_branch(self) -> Branch:
-        """Parse Branch construct: Branch expression { Case value { block } ... Default { block } }"""
+        """
+        Branch with consistent syntax:
+        Branch expression { Case value: { ... } Default: { ... } }
+        """
         start_token = self.consume(TokenType.BRANCH)
-        self.push_context("Branch")
-        
-        # Parse expression to branch on
         expression = self.parse_expression()
-        
         self.skip_newlines()
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
         
+        self.push_context("Branch")
         cases = []
         default = None
         
@@ -321,7 +289,7 @@ class ParserStatementsMixin:
             if self.match(TokenType.CASE):
                 self.consume(TokenType.CASE)
                 
-                # Parse case value (can be number, string, or identifier)
+                # Parse case value
                 if self.match(TokenType.NUMBER):
                     case_value = Number(value=self.current_token.value, 
                                     line=self.current_token.line, 
@@ -340,6 +308,7 @@ class ParserStatementsMixin:
                 else:
                     self.error("Case value must be a number, string, or identifier")
                 
+                self.consume(TokenType.COLON)
                 self.skip_newlines()
                 self.consume(TokenType.LBRACE)
                 self.skip_newlines()
@@ -358,6 +327,7 @@ class ParserStatementsMixin:
                 
             elif self.match(TokenType.DEFAULT):
                 self.consume(TokenType.DEFAULT)
+                self.consume(TokenType.COLON)
                 self.skip_newlines()
                 self.consume(TokenType.LBRACE)
                 self.skip_newlines()
@@ -384,6 +354,9 @@ class ParserStatementsMixin:
                     line=start_token.line, column=start_token.column)
 
     def parse_try(self) -> Try:
+        """
+        TryBlock with consistent syntax
+        """
         start_token = self.consume(TokenType.TRYBLOCK)
         self.consume(TokenType.COLON)
         self.skip_newlines()
@@ -402,8 +375,17 @@ class ParserStatementsMixin:
         catch_clauses = []
         while self.match(TokenType.CATCHERROR):
             self.consume(TokenType.CATCHERROR)
-            self.consume(TokenType.DOT)
-            error_type = self.parse_type()
+            self.consume(TokenType.COLON)
+
+            # Allow generic CatchError: {} as well as typed CatchError: Type {}
+            error_type = None
+            if not self.match(TokenType.LBRACE):
+                error_type = self.parse_type()
+            else:
+                # For a generic catch, we can use a placeholder or a special "Any" type.
+                from ..ailang_ast import TypeExpression
+                error_type = TypeExpression(base_type="Any", line=self.current_token.line, column=self.current_token.column)
+
             self.skip_newlines()
             self.consume(TokenType.LBRACE)
             self.skip_newlines()

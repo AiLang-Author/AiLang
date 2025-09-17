@@ -115,3 +115,45 @@ class ParserDebugMixin:
             line=self.current_token.line if self.current_token else 0,
             column=self.current_token.column if self.current_token else 0
         )
+
+    # In parse_debug.py - extend existing ParserDebugMixin
+
+def parse_debug_statement(self):
+    """Parse all debug statements - unified syntax"""
+    if not self.match(TokenType.DEBUG):
+        return None
+        
+    self.advance()  # consume 'debug'
+    
+    # Check for debug subcommands
+    if self.current_token and self.current_token.type == TokenType.IDENTIFIER:
+        cmd = self.current_token.value
+        
+        # New enhanced debug commands
+        if cmd == 'stacktrace':
+            return self.parse_debug_stacktrace()
+        elif cmd == 'memory':
+            return self.parse_debug_memory()
+        elif cmd == 'watch':
+            return self.parse_debug_watch()
+        elif cmd == 'locals':
+            return self.parse_debug_locals()
+        elif cmd == 'registers':
+            return self.parse_debug_registers()
+        elif cmd == 'interactive':
+            return self.parse_debug_interactive()
+        elif cmd == 'breakpoint':
+            return self.parse_debug_breakpoint()
+        elif cmd == 'profile':
+            return self.parse_debug_profile()
+        elif cmd == 'leak':
+            return self.parse_debug_leak_check()
+        elif cmd == 'core':
+            return self.parse_debug_core()
+        elif cmd == 'assert':
+            return self.parse_debug_assert()  # Existing
+        elif cmd == 'trace':
+            return self.parse_debug_trace()   # Existing
+        else:
+            # Fall back to existing debug block parsing
+            return self.parse_debug_block()

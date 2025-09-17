@@ -53,10 +53,13 @@ class ParserUtilitiesMixin:
             TokenType.POINTER
         ]
         if self.match(*type_tokens):
-            type_name = self.current_token.value
+            token = self.current_token
+            type_name = token.value
             self.advance()
-            return type_name
-        return "Any"  # Default type
+            # Return a proper AST node, not a raw string
+            return TypeExpression(base_type=type_name, line=token.line, column=token.column)
+        # If no type is found, return None. The caller should handle this.
+        return None
 
     def parse_string_array(self) -> List[str]:
         """Parse an array of strings"""

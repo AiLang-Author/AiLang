@@ -217,23 +217,28 @@ class ParserLowLevelMixin:
         self.consume(TokenType.RBRACKET)
         return constraints
 
-    def parse_system_call(self) -> SystemCall:
-        """Parse system call statements"""
-        start_token = self.consume(TokenType.SYSTEMCALL)
+    def parse_system_call(self) -> FunctionCall:
+        """Parse system call statements as a function call for the compiler."""
+        start_token = self.consume(TokenType.SYSCALL)
         self.consume(TokenType.LPAREN)
         
+        # The first argument to our special function is the syscall number.
         call_number = self.parse_expression()
-        arguments = []
+        
+        # Collect all arguments for the FunctionCall node.
+        all_args = [call_number]
         
         while self.match(TokenType.COMMA):
             self.consume(TokenType.COMMA)
             self.skip_newlines()
-            arguments.append(self.parse_expression())
+            all_args.append(self.parse_expression())
         
         self.consume(TokenType.RPAREN)
-        return SystemCall(
-            call_number=call_number,
-            arguments=arguments,
+        # Return a FunctionCall node. The backend will need to be taught
+        # to recognize "SystemCall" as a special, built-in function.
+        return FunctionCall(
+            function="SystemCall",
+            arguments=all_args,
             line=start_token.line,
             column=start_token.column
         )

@@ -178,6 +178,19 @@ class ParserExpressionsMixin:
     def parse_primary(self) -> ASTNode:
         self.skip_newlines()
         
+        # Handle prefix - operator (unary minus)
+        if self.match(TokenType.DASH):
+            token = self.current_token
+            self.advance()
+            # Recursively parse the expression to be negated.
+            # Using parse_primary() gives it high precedence.
+            operand = self.parse_primary()
+            
+            # Syntactic sugar: -x becomes Subtract(0, x)
+            zero_node = Number(value="0", line=token.line, column=token.column)
+            return FunctionCall(function='Subtract', arguments=[zero_node, operand],
+                                line=token.line, column=token.column)
+
         # Handle prefix ! operator (unary NOT)
         if self.match(TokenType.BANG_SIGN):
             token = self.current_token
@@ -194,6 +207,10 @@ class ParserExpressionsMixin:
             return FunctionCall(function='BitwiseNot', arguments=[operand],
                             line=token.line if token else 0, 
                             column=token.column if token else 0)
+
+        # Allow SystemCall to be used as a value-producing expression
+        if self.match(TokenType.SYSCALL):
+            return self.parse_system_call()
         
         if self.match(TokenType.NUMBER):
             token = self.current_token
@@ -521,6 +538,21 @@ class ParserExpressionsMixin:
                     arguments.append(self.parse_expression())
             
             self.consume(TokenType.RPAREN)
+
+            # Handle Negate(x) as syntactic sugar for Subtract(0, x)
+            if name == "Negate":
+                if len(arguments) != 1:
+                    self.error(f"Negate function expects 1 argument, but got {len(arguments)}")
+                
+                zero_node = Number(value="0", line=start_token.line, column=start_token.column)
+                
+                return FunctionCall(
+                    function="Subtract",
+                    arguments=[zero_node, arguments[0]],
+                    line=start_token.line,
+                    column=start_token.column
+                )
+
             return FunctionCall(
                 function=name,
                 arguments=arguments,
