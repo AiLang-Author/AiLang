@@ -1,0 +1,218 @@
+// test_infix_symbols.ailang  
+// Test if traditional math symbols work in infix notation
+
+PrintMessage("AILANG Infix Symbol Test")
+PrintMessage("========================")
+
+// ============== SECTION 1: SYMBOL OPERATORS ==============
+PrintMessage("")
+PrintMessage("Section 1: Testing Symbol Operators")
+
+// Test 1: Plus symbol
+PrintMessage("Test: (2 + 3)")
+TryBlock: {
+    result1 = (2 + 3)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result1)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: + symbol not supported")
+}
+
+// Test 2: Minus symbol
+PrintMessage("Test: (10 - 4)")
+TryBlock: {
+    result2 = (10 - 4)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result2)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: - symbol not supported")
+}
+
+// Test 3: Multiply symbol
+PrintMessage("Test: (5 * 6)")
+TryBlock: {
+    result3 = (5 * 6)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result3)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: * symbol not supported")
+}
+
+// Test 4: Divide symbol
+PrintMessage("Test: (20 / 4)")
+TryBlock: {
+    result4 = (20 / 4)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result4)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: / symbol not supported")
+}
+
+// Test 5: Power symbol
+PrintMessage("Test: (2 ^ 3)")
+TryBlock: {
+    result5 = (2 ^ 3)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result5)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: ^ symbol not supported")
+}
+
+// ============== SECTION 2: COMPLEX SYMBOL EXPRESSIONS ==============
+PrintMessage("")
+PrintMessage("Section 2: Complex Symbol Expressions")
+
+// Test 6: The exact expression you mentioned
+PrintMessage("Test: ((2 + 3) * (2 + 3))")
+TryBlock: {
+    result6 = ((2 + 3) * (2 + 3))
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result6)
+    PrintMessage("  Expected: 25")
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: Complex symbol expression not supported")
+}
+
+// Test 7: Multi-level nesting with symbols
+PrintMessage("Test: (((1 + 2) * 3) - 4)")
+TryBlock: {
+    result7 = (((1 + 2) * 3) - 4)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result7)
+    PrintMessage("  Expected: 5")
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: Multi-level symbol nesting not supported")
+}
+
+// ============== SECTION 3: WORKING ALTERNATIVES ==============
+PrintMessage("")
+PrintMessage("Section 3: Working Named Operator Alternatives")
+
+// These should definitely work based on the parser code
+
+// Alternative to ((2 + 3) * (2 + 3))
+result8 = ((2 Add 3) Multiply (2 Add 3))
+PrintMessage("((2 Add 3) Multiply (2 Add 3)) = ")
+PrintNumber(result8)
+PrintMessage("Expected: 25")
+
+// Alternative to (((1 + 2) * 3) - 4)
+result9 = (((1 Add 2) Multiply 3) Subtract 4)
+PrintMessage("(((1 Add 2) Multiply 3) Subtract 4) = ")
+PrintNumber(result9)
+PrintMessage("Expected: 5")
+
+// ============== SECTION 4: MIXED NOTATION TEST ==============
+PrintMessage("")
+PrintMessage("Section 4: Can We Mix Symbols and Names?")
+
+// Test 10: Mix + with Add
+PrintMessage("Test: (2 + (3 Add 4))")
+TryBlock: {
+    result10 = (2 + (3 Add 4))
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result10)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: Cannot mix symbols and names")
+}
+
+// Test 11: Mix * with Multiply
+PrintMessage("Test: ((2 * 3) Add 4)")
+TryBlock: {
+    result11 = ((2 * 3) Add 4)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result11)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: Cannot mix symbols and names")
+}
+
+// ============== SECTION 5: COMPARISON SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 5: Comparison Symbol Operators")
+
+// Test 12: Greater than symbol
+PrintMessage("Test: (5 > 3)")
+TryBlock: {
+    result12 = (5 > 3)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result12)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: > symbol not supported")
+}
+
+// Test 13: Less than symbol
+PrintMessage("Test: (5 < 3)")
+TryBlock: {
+    result13 = (5 < 3)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result13)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: < symbol not supported")
+}
+
+// Test 14: Equal symbol
+PrintMessage("Test: (5 == 5)")
+TryBlock: {
+    result14 = (5 == 5)
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result14)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: == symbol not supported")
+}
+
+// ============== SECTION 6: WITHOUT PARENTHESES ==============
+PrintMessage("")
+PrintMessage("Section 6: Infix Without Parentheses")
+
+// Test 15: No parentheses (probably won't work)
+PrintMessage("Test: 2 Add 3")
+TryBlock: {
+    result15 = 2 Add 3
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result15)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: Infix requires parentheses")
+}
+
+// Test 16: No parentheses with symbols
+PrintMessage("Test: 2 + 3")
+TryBlock: {
+    result16 = 2 + 3
+    PrintMessage("  SUCCESS: ")
+    PrintNumber(result16)
+}
+CatchError.ParseError {
+    PrintMessage("  FAILED: Symbol infix requires parentheses")
+}
+
+// ============== SUMMARY ==============
+PrintMessage("")
+PrintMessage("========================")
+PrintMessage("Test Summary:")
+PrintMessage("")
+PrintMessage("What DEFINITELY works:")
+PrintMessage("  - (a Add b) - Named operators in parentheses")
+PrintMessage("  - ((a Add b) Multiply c) - Nested named operators")
+PrintMessage("  - Complex expressions with named operators")
+PrintMessage("")
+PrintMessage("What we're testing:")
+PrintMessage("  - (a + b) - Symbol operators")
+PrintMessage("  - ((a + b) * c) - Nested symbol operators")
+PrintMessage("  - Mixed notation styles")
+PrintMessage("")
+PrintMessage("If symbol operators don't work, use named operators!")
+PrintMessage("Named operators are AILANG's primary design.")
+

@@ -1,0 +1,54 @@
+// debug_xarray_minimal.ailang
+// Minimal test to find the segfault
+
+LibraryImport.Library.XArrays
+
+PrintMessage("=== XArray Debug Test ===")
+
+// Test 1: Basic allocation
+PrintMessage("Test 1: Allocate")
+buffer = Allocate(24)
+PrintMessage("Allocated buffer")
+
+// Test 2: StoreValue
+PrintMessage("Test 2: StoreValue")
+StoreValue(buffer, 100)
+PrintMessage("Stored value 100")
+
+// Test 3: Dereference
+PrintMessage("Test 3: Dereference")
+value = Dereference(buffer)
+PrintMessage("Retrieved value:")
+PrintNumber(value)
+
+// Test 4: ArrayCreate
+PrintMessage("Test 4: ArrayCreate")
+arr = ArrayCreate(4)
+PrintMessage("Created array")
+
+// Test 5: ArraySet
+PrintMessage("Test 5: ArraySet")
+ArraySet(arr, 0, 42)
+PrintMessage("Set array[0] = 42")
+
+// Test 6: ArrayGet
+PrintMessage("Test 6: ArrayGet")
+val = ArrayGet(arr, 0)
+PrintMessage("Got array[0]:")
+PrintNumber(val)
+
+// Test 7: XArray.XCreate without push
+PrintMessage("Test 7: XArray.XCreate")
+xarr = XArray.XCreate(4)
+PrintMessage("Created XArray")
+
+// Test 8: Check XArray structure
+PrintMessage("Test 8: Check XArray fields")
+cap = XArray.XCapacity(xarr)
+PrintMessage("Capacity:")
+PrintNumber(cap)
+sz = XArray.XSize(xarr)
+PrintMessage("Size:")
+PrintNumber(sz)
+
+PrintMessage("=== Tests Complete ===")

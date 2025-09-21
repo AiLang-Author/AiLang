@@ -1,0 +1,88 @@
+// test_string_interactive.ailang
+// Interactive test for ReadInput and string operations
+
+PrintMessage("Interactive String Input Test")
+PrintMessage("=============================")
+PrintMessage("")
+
+// Test 1: Basic ReadInput
+PrintMessage("Test 1: Basic input")
+PrintMessage("Enter your name: ")
+name = ReadInput()
+greeting = StringConcat("Hello, ", name)
+greeting2 = StringConcat(greeting, "!")
+PrintMessage(greeting2)
+PrintMessage("")
+
+// Test 2: Yes/No validation
+PrintMessage("Test 2: Yes/No validation")
+PrintMessage("Do you like AILANG? (yes/no): ")
+response = ReadInput()
+
+is_yes = StringEquals(response, "yes")
+is_no = StringEquals(response, "no")
+
+IfCondition is_yes ThenBlock {
+    PrintMessage("Great! AILANG appreciates your support!")
+} ElseBlock {
+    IfCondition is_no ThenBlock {
+        PrintMessage("Sorry to hear that. We'll keep improving!")
+    } ElseBlock {
+        PrintMessage("I didn't understand. Please enter 'yes' or 'no' next time.")
+    }
+}
+PrintMessage("")
+
+// Test 3: Number input and parsing
+PrintMessage("Test 3: Number input")
+PrintMessage("Enter a number: ")
+num_str = ReadInput()
+num = StringToNumber(num_str)
+doubled = Multiply(num, 2)
+PrintMessage("Your number doubled is:")
+PrintNumber(doubled)
+PrintMessage("")
+
+// Test 4: String comparison
+PrintMessage("Test 4: Password check")
+correct_password = "AILANG2025"
+PrintMessage("Enter the password (hint: AILANG2025): ")
+password = ReadInput()
+is_correct = StringEquals(password, correct_password)
+
+IfCondition is_correct ThenBlock {
+    PrintMessage("Access granted!")
+} ElseBlock {
+    PrintMessage("Access denied! Wrong password.")
+}
+PrintMessage("")
+
+// Test 5: Empty input handling
+PrintMessage("Test 5: Empty input test")
+PrintMessage("Just press Enter without typing anything: ")
+empty_input = ReadInput()
+empty_len = StringLength(empty_input)
+PrintMessage("Length of your input:")
+PrintNumber(empty_len)
+
+is_empty = EqualTo(empty_len, 0)
+IfCondition is_empty ThenBlock {
+    PrintMessage("You entered nothing (empty string).")
+} ElseBlock {
+    PrintMessage("You entered something.")
+}
+PrintMessage("")
+
+// Test 6: Multi-word input
+PrintMessage("Test 6: Multi-word input")
+PrintMessage("Enter a short sentence: ")
+sentence = ReadInput()
+PrintMessage("You entered:")
+PrintMessage(sentence)
+sentence_len = StringLength(sentence)
+PrintMessage("Character count:")
+PrintNumber(sentence_len)
+PrintMessage("")
+
+PrintMessage("=============================")
+PrintMessage("Interactive test complete!")

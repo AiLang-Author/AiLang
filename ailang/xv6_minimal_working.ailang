@@ -1,0 +1,708 @@
+// Library.XArrays.ailang
+// Advanced array and data structure operations for AILANG
+// Uses X-prefix to avoid lexer keyword collisions
+
+PrintMessage("Loading XArrays Library v1.0")
+PrintMessage("================================")
+
+// ====================
+// Configuration & Constants
+// ====================
+FixedPool.XArrays {
+    "XMAX_ARRAY_SIZE": Initialize=65536
+    "XMAX_HASH_BUCKETS": Initialize=127
+    "XSTACK_SIZE": Initialize=1024
+    "XQUEUE_SIZE": Initialize=1024
+    "XNULL": Initialize=-1
+    "XERROR": Initialize=-999999
+}
+
+// ====================
+// Global Variables for Functions
+// ====================
+// All function parameters and local variables must be declared globally
+arr = 0
+value = 0
+index = 0
+initial_capacity = 0
+capacity = 0
+size = 0
+data = 0
+new_capacity = 0
+new_data = 0
+i = 0
+j = 0
+old_val = 0
+new_size = 0
+arr_struct = 0
+stack = 0
+queue = 0
+head = 0
+tail = 0
+new_head = 0
+new_tail = 0
+hash_table = 0
+key = 0
+buckets = 0
+bucket_count = 0
+abs_key = 0
+hash = 0
+new_node = 0
+item_count = 0
+node_key = 0
+current = 0
+list = 0
+target = 0
+left = 0
+right = 0
+mid = 0
+mid_val = 0
+low = 0
+high = 0
+pivot_index = 0
+pivot = 0
+temp = 0
+max_val = 0
+min_val = 0
+left_val = 0
+right_val = 0
+result = 0
+
+// ====================
+// Dynamic Array Operations
+// ====================
+
+// Create a dynamic array with metadata
+// Structure: [capacity, size, data_ptr]
+Function.XArray.XCreate {
+    Input: initial_capacity: Integer
+    Output: Address
+    Body: {
+        // 3 fields, 8 bytes each
+        arr_struct = Allocate(24)
+        
+        StoreValue(arr_struct, initial_capacity)
+        StoreValue(Add(arr_struct, 8), 0)
+        
+        data = ArrayCreate(initial_capacity)
+        StoreValue(Add(arr_struct, 16), data)
+        
+        ReturnValue(arr_struct)
+    }
+}
+
+// Get current size of dynamic array
+Function.XArray.XSize {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        ReturnValue(Dereference(Add(arr, 8)))
+    }
+}
+
+// Get capacity of dynamic array
+Function.XArray.XCapacity {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        ReturnValue(Dereference(arr))
+    }
+}
+
+// Push element to dynamic array with auto-resize
+Function.XArray.XPush {
+    Input: arr: Address
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        capacity = Dereference(arr)
+        size = Dereference(Add(arr, 8))
+        data = Dereference(Add(arr, 16))
+        
+        // Check if resize needed
+        IfCondition GreaterEqual(size, capacity) ThenBlock {
+            new_capacity = Multiply(capacity, 2)
+            new_data = ArrayCreate(new_capacity)
+            
+            // Copy old data
+            i = 0
+            WhileLoop LessThan(i, size) {
+                old_val = ArrayGet(data, i)
+                ArraySet(new_data, i, old_val)
+                i = Add(i, 1)
+            }
+            
+            ArrayDestroy(data)
+            
+            StoreValue(arr, new_capacity)
+            StoreValue(Add(arr, 16), new_data)
+            data = new_data
+        }
+        
+        ArraySet(data, size, value)
+        StoreValue(Add(arr, 8), Add(size, 1))
+        
+        ReturnValue(1)
+    }
+}
+
+// Pop element from dynamic array
+Function.XArray.XPop {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        size = Dereference(Add(arr, 8))
+        
+        IfCondition EqualTo(size, 0) ThenBlock {
+            ReturnValue(XArrays.XERROR)
+        }
+        
+        data = Dereference(Add(arr, 16))
+        new_size = Subtract(size, 1)
+        value = ArrayGet(data, new_size)
+        
+        StoreValue(Add(arr, 8), new_size)
+        
+        ReturnValue(value)
+    }
+}
+
+// Get element at index
+Function.XArray.XGet {
+    Input: arr: Address
+    Input: index: Integer
+    Output: Integer
+    Body: {
+        size = Dereference(Add(arr, 8))
+        
+        IfCondition Or(LessThan(index, 0), GreaterEqual(index, size)) ThenBlock {
+            ReturnValue(XArrays.XERROR)
+        }
+        
+        data = Dereference(Add(arr, 16))
+        ReturnValue(ArrayGet(data, index))
+    }
+}
+
+// Set element at index
+Function.XArray.XSet {
+    Input: arr: Address
+    Input: index: Integer
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        size = Dereference(Add(arr, 8))
+        
+        IfCondition Or(LessThan(index, 0), GreaterEqual(index, size)) ThenBlock {
+            ReturnValue(0)
+        }
+        
+        data = Dereference(Add(arr, 16))
+        ArraySet(data, index, value)
+        
+        ReturnValue(1)
+    }
+}
+
+// Clear all elements
+Function.XArray.XClear {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        StoreValue(Add(arr, 8), 0)
+        ReturnValue(1)
+    }
+}
+
+// ====================
+// Stack Operations
+// ====================
+
+// Create a stack
+Function.XStack.XCreate {
+    Input: capacity: Integer
+    Output: Address
+    Body: {
+        // Stack uses dynamic array internally
+        ReturnValue(XArray.XCreate(capacity))
+    }
+}
+
+// Push to stack
+Function.XStack.XPush {
+    Input: stack: Address
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(XArray.XPush(stack, value))
+    }
+}
+
+// Pop from stack
+Function.XStack.XPop {
+    Input: stack: Address
+    Output: Integer
+    Body: {
+        ReturnValue(XArray.XPop(stack))
+    }
+}
+
+// Peek at top without popping
+Function.XStack.XPeek {
+    Input: stack: Address
+    Output: Integer
+    Body: {
+        size = XArray.XSize(stack)
+        
+        IfCondition EqualTo(size, 0) ThenBlock {
+            ReturnValue(XArrays.XERROR)
+        }
+        
+        ReturnValue(XArray.XGet(stack, Subtract(size, 1)))
+    }
+}
+
+// Check if stack is empty
+Function.XStack.XIsEmpty {
+    Input: stack: Address
+    Output: Integer
+    Body: {
+        ReturnValue(EqualTo(XArray.XSize(stack), 0))
+    }
+}
+
+// ====================
+// Queue Operations
+// ====================
+
+// Create a circular queue
+Function.XQueue.XCreate {
+    Input: capacity: Integer
+    Output: Address
+    Body: {
+        // Structure: [capacity, size, head, tail, data_ptr]
+        queue = Allocate(40)
+        
+        StoreValue(queue, capacity)
+        StoreValue(Add(queue, 8), 0)
+        StoreValue(Add(queue, 16), 0)
+        StoreValue(Add(queue, 24), 0)
+        
+        data = ArrayCreate(capacity)
+        StoreValue(Add(queue, 32), data)
+        
+        ReturnValue(queue)
+    }
+}
+
+// Enqueue element
+Function.XQueue.XEnqueue {
+    Input: queue: Address
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        capacity = Dereference(queue)
+        size = Dereference(Add(queue, 8))
+        
+        IfCondition GreaterEqual(size, capacity) ThenBlock {
+            ReturnValue(0)
+        }
+        
+        tail = Dereference(Add(queue, 24))
+        data = Dereference(Add(queue, 32))
+        
+        ArraySet(data, tail, value)
+        
+        new_tail = Modulo(Add(tail, 1), capacity)
+        StoreValue(Add(queue, 24), new_tail)
+        StoreValue(Add(queue, 8), Add(size, 1))
+        
+        ReturnValue(1)
+    }
+}
+
+// Dequeue element
+Function.XQueue.XDequeue {
+    Input: queue: Address
+    Output: Integer
+    Body: {
+        size = Dereference(Add(queue, 8))
+        
+        IfCondition EqualTo(size, 0) ThenBlock {
+            ReturnValue(XArrays.XERROR)
+        }
+        
+        capacity = Dereference(queue)
+        head = Dereference(Add(queue, 16))
+        data = Dereference(Add(queue, 32))
+        
+        value = ArrayGet(data, head)
+        
+        new_head = Modulo(Add(head, 1), capacity)
+        StoreValue(Add(queue, 16), new_head)
+        StoreValue(Add(queue, 8), Subtract(size, 1))
+        
+        ReturnValue(value)
+    }
+}
+
+// ====================
+// Hash Table Operations
+// ====================
+
+// Simple hash function
+Function.XHash.XHashInt {
+    Input: key: Integer
+    Input: buckets: Integer
+    Output: Integer
+    Body: {
+        // Simple modulo hash
+        abs_key = key
+        IfCondition LessThan(key, 0) ThenBlock {
+            abs_key = Subtract(0, key)
+        }
+        
+        ReturnValue(Modulo(abs_key, buckets))
+    }
+}
+
+// Create hash table
+Function.XHash.XCreate {
+    Input: bucket_count: Integer
+    Output: Address
+    Body: {
+        // Structure: [bucket_count, item_count, buckets_ptr]
+        hash_table = Allocate(24)
+        
+        StoreValue(hash_table, bucket_count)
+        StoreValue(Add(hash_table, 8), 0)
+        
+        // Create array of buckets (each bucket is a linked list)
+        buckets = ArrayCreate(bucket_count)
+        
+        // Initialize all buckets to NULL
+        i = 0
+        WhileLoop LessThan(i, bucket_count) {
+            ArraySet(buckets, i, 0)
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(hash_table, 16), buckets)
+        
+        ReturnValue(hash_table)
+    }
+}
+
+// Insert key-value pair
+Function.XHash.XInsert {
+    Input: hash_table: Address
+    Input: key: Integer
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        bucket_count = Dereference(hash_table)
+        buckets = Dereference(Add(hash_table, 16))
+        
+        hash = XHash.XHashInt(key, bucket_count)
+        
+        // Node structure: [key, value, next]
+        new_node = Allocate(24)
+        StoreValue(new_node, key)
+        StoreValue(Add(new_node, 8), value)
+        
+        // Insert at head of bucket
+        head = ArrayGet(buckets, hash)
+        StoreValue(Add(new_node, 16), head)
+        ArraySet(buckets, hash, new_node)
+        
+        // Increment item count
+        item_count = Dereference(Add(hash_table, 8))
+        StoreValue(Add(hash_table, 8), Add(item_count, 1))
+        
+        ReturnValue(1)
+    }
+}
+
+// Lookup value by key
+Function.XHash.XLookup {
+    Input: hash_table: Address
+    Input: key: Integer
+    Output: Integer
+    Body: {
+        bucket_count = Dereference(hash_table)
+        buckets = Dereference(Add(hash_table, 16))
+        
+        hash = XHash.XHashInt(key, bucket_count)
+        current = ArrayGet(buckets, hash)
+        
+        WhileLoop NotEqual(current, 0) {
+            node_key = Dereference(current)
+            
+            IfCondition EqualTo(node_key, key) ThenBlock {
+                ReturnValue(Dereference(Add(current, 8)))
+            }
+            
+            current = Dereference(Add(current, 16))
+        }
+        
+        ReturnValue(XArrays.XERROR)
+    }
+}
+
+// ====================
+// Linked List Operations
+// ====================
+
+// Create linked list head
+Function.XList.XCreate {
+    Output: Address
+    Body: {
+        // List structure: [head, tail, size]
+        list = Allocate(24)
+        
+        StoreValue(list, 0)
+        StoreValue(Add(list, 8), 0)
+        StoreValue(Add(list, 16), 0)
+        
+        ReturnValue(list)
+    }
+}
+
+// Append to list
+Function.XList.XAppend {
+    Input: list: Address
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        // Node structure: [value, next]
+        new_node = Allocate(16)
+        StoreValue(new_node, value)
+        StoreValue(Add(new_node, 8), 0)
+        
+        head = Dereference(list)
+        tail = Dereference(Add(list, 8))
+        
+        IfCondition EqualTo(head, 0) ThenBlock {
+            StoreValue(list, new_node)
+            StoreValue(Add(list, 8), new_node)
+        } ElseBlock {
+            StoreValue(Add(tail, 8), new_node)
+            StoreValue(Add(list, 8), new_node)
+        }
+        
+        size = Dereference(Add(list, 16))
+        StoreValue(Add(list, 16), Add(size, 1))
+        
+        ReturnValue(1)
+    }
+}
+
+// Prepend to list
+Function.XList.XPrepend {
+    Input: list: Address
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        new_node = Allocate(16)
+        StoreValue(new_node, value)
+        
+        head = Dereference(list)
+        StoreValue(Add(new_node, 8), head)
+        StoreValue(list, new_node)
+        
+        IfCondition EqualTo(head, 0) ThenBlock {
+            StoreValue(Add(list, 8), new_node)
+        }
+        
+        size = Dereference(Add(list, 16))
+        StoreValue(Add(list, 16), Add(size, 1))
+        
+        ReturnValue(1)
+    }
+}
+
+// Get list size
+Function.XList.XSize {
+    Input: list: Address
+    Output: Integer
+    Body: {
+        ReturnValue(Dereference(Add(list, 16)))
+    }
+}
+
+// ====================
+// Utility Functions
+// ====================
+
+// Binary search in sorted array
+Function.XUtil.XBinarySearch {
+    Input: arr: Address
+    Input: target: Integer
+    Output: Integer
+    Body: {
+        size = XArray.XSize(arr)
+        left = 0
+        right = Subtract(size, 1)
+        
+        WhileLoop LessEqual(left, right) {
+            mid = Divide(Add(left, right), 2)
+            mid_val = XArray.XGet(arr, mid)
+            
+            IfCondition EqualTo(mid_val, target) ThenBlock {
+                ReturnValue(mid)
+            }
+            
+            IfCondition LessThan(mid_val, target) ThenBlock {
+                left = Add(mid, 1)
+            } ElseBlock {
+                right = Subtract(mid, 1)
+            }
+        }
+        
+        ReturnValue(XArrays.XNULL)
+    }
+}
+
+// Quick sort for arrays
+Function.XUtil.XQuickSort {
+    Input: arr: Address
+    Input: low: Integer
+    Input: high: Integer
+    Output: Integer
+    Body: {
+        // Copy parameters to local variables
+        local_arr = arr
+        local_low = low
+        local_high = high
+        
+        IfCondition LessThan(local_low, local_high) ThenBlock {
+            pivot_index = XUtil.XPartition(local_arr, local_low, local_high)
+            
+            XUtil.XQuickSort(local_arr, local_low, Subtract(pivot_index, 1))
+            XUtil.XQuickSort(local_arr, Add(pivot_index, 1), local_high)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Partition helper for quicksort
+Function.XUtil.XPartition {
+    Input: arr: Address
+    Input: low: Integer
+    Input: high: Integer
+    Output: Integer
+    Body: {
+        pivot = XArray.XGet(arr, high)
+        i = Subtract(low, 1)
+        
+        j = low
+        WhileLoop LessThan(j, high) {
+            current = XArray.XGet(arr, j)
+            
+            IfCondition LessEqual(current, pivot) ThenBlock {
+                i = Add(i, 1)
+                
+                // Swap elements
+                temp = XArray.XGet(arr, i)
+                XArray.XSet(arr, i, current)
+                XArray.XSet(arr, j, temp)
+            }
+            
+            j = Add(j, 1)
+        }
+        
+        // Place pivot
+        i = Add(i, 1)
+        temp = XArray.XGet(arr, i)
+        XArray.XSet(arr, i, pivot)
+        XArray.XSet(arr, high, temp)
+        
+        ReturnValue(i)
+    }
+}
+
+// Find maximum in array
+Function.XUtil.XFindMax {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        size = XArray.XSize(arr)
+        
+        IfCondition EqualTo(size, 0) ThenBlock {
+            ReturnValue(XArrays.XERROR)
+        }
+        
+        max_val = XArray.XGet(arr, 0)
+        i = 1
+        
+        WhileLoop LessThan(i, size) {
+            current = XArray.XGet(arr, i)
+            
+            IfCondition GreaterThan(current, max_val) ThenBlock {
+                max_val = current
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(max_val)
+    }
+}
+
+// Find minimum in array
+Function.XUtil.XFindMin {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        size = XArray.XSize(arr)
+        
+        IfCondition EqualTo(size, 0) ThenBlock {
+            ReturnValue(XArrays.XERROR)
+        }
+        
+        min_val = XArray.XGet(arr, 0)
+        i = 1
+        
+        WhileLoop LessThan(i, size) {
+            current = XArray.XGet(arr, i)
+            
+            IfCondition LessThan(current, min_val) ThenBlock {
+                min_val = current
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(min_val)
+    }
+}
+
+// Reverse array in place
+Function.XUtil.XReverse {
+    Input: arr: Address
+    Output: Integer
+    Body: {
+        size = XArray.XSize(arr)
+        left = 0
+        right = Subtract(size, 1)
+        
+        WhileLoop LessThan(left, right) {
+            // Swap elements
+            left_val = XArray.XGet(arr, left)
+            right_val = XArray.XGet(arr, right)
+            
+            XArray.XSet(arr, left, right_val)
+            XArray.XSet(arr, right, left_val)
+            
+            left = Add(left, 1)
+            right = Subtract(right, 1)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+PrintMessage("XArrays Library loaded successfully!")
+PrintMessage("Features: Dynamic arrays, stacks, queues, hash tables, linked lists")
+PrintMessage("All functions use X-prefix to avoid keyword conflicts")

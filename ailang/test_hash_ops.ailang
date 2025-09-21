@@ -1,0 +1,84 @@
+// test_hash_ops.ailang
+// Test hash table operations in isolation
+
+SubRoutine.Main {
+    PrintMessage("Testing Hash Operations")
+    PrintMessage("=======================")
+    
+    // Create hash store
+    PrintMessage("\n1. Creating hash store...")
+    store = HashCreate(1024)
+    PrintMessage("   Store address: ")
+    PrintNumber(store)
+    PrintMessage("")
+    
+    // Test SET and GET
+    PrintMessage("\n2. Testing HashSet...")
+    key1 = "test"
+    val1 = "value"
+    
+    PrintMessage("   Setting key='")
+    PrintString(key1)
+    PrintMessage("' value='")
+    PrintString(val1)
+    PrintMessage("'")
+    
+    HashSet(store, key1, val1)
+    PrintMessage("   HashSet completed")
+    
+    // Check if exists
+    PrintMessage("\n3. Testing HashExists...")
+    exists = HashExists(store, key1)
+    PrintMessage("   Key exists: ")
+    PrintNumber(exists)
+    PrintMessage(" (should be 1)")
+    
+    // Get value back
+    PrintMessage("\n4. Testing HashGet...")
+    retrieved = HashGet(store, key1)
+    PrintMessage("   Retrieved: ")
+    PrintString(retrieved)
+    PrintMessage(" (should be 'value')")
+    
+    // Test with different key
+    PrintMessage("\n5. Testing second key...")
+    key2 = "abc"
+    val2 = "123"
+    
+    HashSet(store, key2, val2)
+    exists2 = HashExists(store, key2)
+    retrieved2 = HashGet(store, key2)
+    
+    PrintMessage("   Key2 exists: ")
+    PrintNumber(exists2)
+    PrintMessage("")
+    PrintMessage("   Retrieved2: ")
+    PrintString(retrieved2)
+    PrintMessage(" (should be '123')")
+    
+    // Verify first key still exists
+    PrintMessage("\n6. Verify first key still exists...")
+    still_exists = HashExists(store, key1)
+    still_val = HashGet(store, key1)
+    
+    PrintMessage("   First key still exists: ")
+    PrintNumber(still_exists)
+    PrintMessage("")
+    PrintMessage("   First value: ")
+    PrintString(still_val)
+    PrintMessage(" (should be 'value')")
+    
+    // Test non-existent key
+    PrintMessage("\n7. Testing non-existent key...")
+    fake_key = "nothere"
+    fake_exists = HashExists(store, fake_key)
+    
+    PrintMessage("   Non-existent key exists: ")
+    PrintNumber(fake_exists)
+    PrintMessage(" (should be 0)")
+    
+    PrintMessage("\n=======================")
+    PrintMessage("Hash operations test complete!")
+}
+
+RunTask(Main)

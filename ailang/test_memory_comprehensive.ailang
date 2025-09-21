@@ -1,0 +1,241 @@
+// test_memory_comprehensive.ailang
+// Complete test harness for all memory operations
+
+PrintMessage("COMPREHENSIVE MEMORY OPERATIONS TEST")
+PrintMessage("=====================================")
+PrintMessage("")
+
+// Global test tracking
+passed = 0
+failed = 0
+total = 0
+
+// ==========================================
+// SECTION 1: STACK VARIABLES
+// ==========================================
+PrintMessage("SECTION 1: Stack Variables")
+PrintMessage("--------------------------")
+
+// Basic stack allocation
+stack_var1 = 100
+stack_var2 = 200
+stack_var3 = Add(stack_var1, stack_var2)
+
+PrintMessage("Stack var1 (100):")
+PrintNumber(stack_var1)
+PrintMessage("Stack var2 (200):")
+PrintNumber(stack_var2)
+PrintMessage("Stack sum (300):")
+PrintNumber(stack_var3)
+
+// Nested scope variables
+counter = 0
+WhileLoop LessThan(counter, 3) {
+    loop_var = Multiply(counter, 10)
+    PrintMessage("Loop var:")
+    PrintNumber(loop_var)
+    counter = Add(counter, 1)
+}
+
+// ==========================================
+// SECTION 2: FIXEDPOOL OPERATIONS
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 2: FixedPool Operations")
+PrintMessage("--------------------------------")
+
+// Max int test
+FixedPool.TestFixed {
+    "const1": Initialize=42
+    "const2": Initialize=-999
+    "const3": Initialize=0
+    "const4": Initialize=2147483647
+}
+
+PrintMessage("FixedPool const1 (42):")
+PrintNumber(TestFixed.const1)
+PrintMessage("FixedPool const2 (-999):")
+PrintNumber(TestFixed.const2)
+PrintMessage("FixedPool const3 (0):")
+PrintNumber(TestFixed.const3)
+PrintMessage("FixedPool const4 (2147483647):")
+PrintNumber(TestFixed.const4)
+
+// Operations with FixedPool
+result = Add(TestFixed.const1, TestFixed.const2)
+PrintMessage("const1 + const2 (-957):")
+PrintNumber(result)
+
+// ==========================================
+// SECTION 3: DYNAMICPOOL OPERATIONS
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 3: DynamicPool Operations")
+PrintMessage("----------------------------------")
+
+DynamicPool.TestDynamic {
+    "value1": Initialize=1000
+    "value2": Initialize=2000
+    "value3": Initialize=3000
+}
+
+PrintMessage("Initial values:")
+PrintMessage("value1 (1000):")
+PrintNumber(TestDynamic.value1)
+PrintMessage("value2 (2000):")
+PrintNumber(TestDynamic.value2)
+PrintMessage("value3 (3000):")
+PrintNumber(TestDynamic.value3)
+
+// Modify DynamicPool values
+TestDynamic.value1 = Add(TestDynamic.value1, 111)
+TestDynamic.value2 = Subtract(TestDynamic.value2, 222)
+TestDynamic.value3 = Multiply(TestDynamic.value3, 2)
+
+PrintMessage("After modifications:")
+PrintMessage("value1 (1111):")
+PrintNumber(TestDynamic.value1)
+PrintMessage("value2 (1778):")
+PrintNumber(TestDynamic.value2)
+PrintMessage("value3 (6000):")
+PrintNumber(TestDynamic.value3)
+
+// ==========================================
+// SECTION 4: HEAP ALLOCATION
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 4: Heap Allocation")
+PrintMessage("---------------------------")
+
+// Allocate memory
+heap_ptr = Allocate(256)
+PrintMessage("Allocated 256 bytes, ptr:")
+PrintNumber(heap_ptr)
+
+// Store and retrieve values
+StoreValue(heap_ptr, 12345)
+value = Dereference(heap_ptr)
+PrintMessage("Stored/retrieved value (12345):")
+PrintNumber(value)
+
+// Store at offset
+offset_ptr = Add(heap_ptr, 8)
+StoreValue(offset_ptr, 67890)
+value2 = Dereference(offset_ptr)
+PrintMessage("Value at offset 8 (67890):")
+PrintNumber(value2)
+
+// Deallocate
+Deallocate(heap_ptr, 256)
+PrintMessage("Memory deallocated")
+
+// ==========================================
+// SECTION 5: ARRAYS
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 5: Array Operations")
+PrintMessage("----------------------------")
+
+// Create and initialize array
+arr = ArrayCreate(10)
+PrintMessage("Created array of size 10")
+
+// Set values
+i = 0
+WhileLoop LessThan(i, 10) {
+    value = Multiply(i, 11)
+    ArraySet(arr, i, value)
+    i = Add(i, 1)
+}
+
+// Get values
+PrintMessage("Array contents (0, 11, 22, ...):")
+j = 0
+WhileLoop LessThan(j, 5) {
+    val = ArrayGet(arr, j)
+    PrintNumber(val)
+    j = Add(j, 1)
+}
+
+// Array with pool interaction
+FixedPool.ArrayConfig {
+    "size": Initialize=5
+    "default_val": Initialize=999
+}
+
+arr2 = ArrayCreate(ArrayConfig.size)
+ArraySet(arr2, 0, ArrayConfig.default_val)
+test_val = ArrayGet(arr2, 0)
+PrintMessage("Array with pool config value (999):")
+PrintNumber(test_val)
+
+// ==========================================
+// SECTION 6: ADDRESS OPERATIONS
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 6: Address Operations")
+PrintMessage("------------------------------")
+
+// AddressOf and Dereference
+local_var = 42
+addr = AddressOf(local_var)
+PrintMessage("Address of local_var:")
+PrintNumber(addr)
+
+// Modify through pointer
+StoreValue(addr, 84)
+PrintMessage("Modified via pointer (84):")
+PrintNumber(local_var)
+
+// ==========================================
+// SECTION 7: MIXED POOL OPERATIONS
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 7: Mixed Pool Operations")
+PrintMessage("---------------------------------")
+
+FixedPool.Constants {
+    "multiplier": Initialize=10
+}
+
+DynamicPool.Runtime {
+    "accumulator": Initialize=0
+}
+
+// Use FixedPool value to modify DynamicPool
+k = 0
+WhileLoop LessThan(k, 5) {
+    Runtime.accumulator = Add(Runtime.accumulator, Constants.multiplier)
+    k = Add(k, 1)
+}
+
+PrintMessage("Accumulator after 5 iterations (50):")
+PrintNumber(Runtime.accumulator)
+
+// ==========================================
+// SECTION 8: MEMORY STRESS TEST
+// ==========================================
+PrintMessage("")
+PrintMessage("SECTION 8: Memory Stress Test")
+PrintMessage("------------------------------")
+
+// Many allocations
+ptr1 = Allocate(128)
+ptr2 = Allocate(256)
+ptr3 = Allocate(512)
+
+StoreValue(ptr1, 111)
+StoreValue(ptr2, 222)
+StoreValue(ptr3, 333)
+
+sum_ptrs = Add(Dereference(ptr1), Dereference(ptr2))
+sum_ptrs = Add(sum_ptrs, Dereference(ptr3))
+PrintMessage("Sum of heap values (666):")
+PrintNumber(sum_ptrs)
+
+Deallocate(ptr1, 128)
+Deallocate(ptr2, 256)
+Deallocate(ptr3, 512)
+
+PrintMessage("")
+PrintMessage("TEST COMPLETE - Check for any incorrect values")

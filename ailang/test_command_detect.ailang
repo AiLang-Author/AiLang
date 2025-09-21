@@ -1,0 +1,120 @@
+// test_command_detect.ailang
+// Test command detection logic in isolation
+
+SubRoutine.Main {
+    PrintMessage("Testing Command Detection")
+    PrintMessage("=========================")
+    
+    // Test 1: GET command buffer
+    PrintMessage("\nTest 1: GET command")
+    buffer_get = Allocate(30)
+    
+    // Simulate: *2\r\n$3\r\nGET\r\n$3\r\nkey\r\n
+    // We'll skip to where command starts (after 2 newlines)
+    SetByte(buffer_get, 0, 42)   // *
+    SetByte(buffer_get, 1, 50)   // 2
+    SetByte(buffer_get, 2, 13)   // \r
+    SetByte(buffer_get, 3, 10)   // \n (1st newline)
+    SetByte(buffer_get, 4, 36)   // $
+    SetByte(buffer_get, 5, 51)   // 3
+    SetByte(buffer_get, 6, 13)   // \r
+    SetByte(buffer_get, 7, 10)   // \n (2nd newline)
+    SetByte(buffer_get, 8, 71)   // G
+    SetByte(buffer_get, 9, 69)   // E
+    SetByte(buffer_get, 10, 84)  // T
+    
+    // Find command offset
+    cmd_offset = 0
+    found_count = 0
+    
+    PrintMessage("  Scanning for command...")
+    WhileLoop And(LessThan(cmd_offset, 30), LessThan(found_count, 2)) {
+        Body: {
+            byte = GetByte(buffer_get, cmd_offset)
+            IfCondition EqualTo(byte, 10) ThenBlock {  // LF
+                found_count = Add(found_count, 1)
+                PrintMessage("    Newline ")
+                PrintNumber(found_count)
+                PrintMessage(" at offset ")
+                PrintNumber(cmd_offset)
+                PrintMessage("")
+            }
+            cmd_offset = Add(cmd_offset, 1)
+        }
+        }
+    
+    PrintMessage("  Command starts at offset ")
+    PrintNumber(cmd_offset)
+    PrintMessage("")
+    
+    first_cmd_char = GetByte(buffer_get, cmd_offset)
+    PrintMessage("  First command char: ")
+    PrintNumber(first_cmd_char)
+    PrintMessage(" (should be 71 for 'G')")
+    
+    // Test 2: SET command
+    PrintMessage("\n\nTest 2: SET command")
+    buffer_set = Allocate(30)
+    
+    SetByte(buffer_set, 0, 42)   // *
+    SetByte(buffer_set, 1, 51)   // 3
+    SetByte(buffer_set, 2, 13)   // \r
+    SetByte(buffer_set, 3, 10)   // \n
+    SetByte(buffer_set, 4, 36)   // $
+    SetByte(buffer_set, 5, 51)   // 3
+    SetByte(buffer_set, 6, 13)   // \r
+    SetByte(buffer_set, 7, 10)   // \n
+    SetByte(buffer_set, 8, 83)   // S
+    SetByte(buffer_set, 9, 69)   // E
+    SetByte(buffer_set, 10, 84)  // T
+    
+    cmd_offset = 0
+    found_count = 0
+    
+    PrintMessage("  Scanning for command...")
+    WhileLoop And(LessThan(cmd_offset, 30), LessThan(found_count, 2)) {
+        Body: {
+            byte = GetByte(buffer_set, cmd_offset)
+            IfCondition EqualTo(byte, 10) ThenBlock {
+                found_count = Add(found_count, 1)
+            }
+            cmd_offset = Add(cmd_offset, 1)
+        }
+        }
+    
+    first_cmd_char = GetByte(buffer_set, cmd_offset)
+    PrintMessage("  First command char: ")
+    PrintNumber(first_cmd_char)
+    PrintMessage(" (should be 83 for 'S')")
+    
+    // Test 3: Command dispatch logic
+    PrintMessage("\n\nTest 3: Command dispatch")
+    
+    test_char = 83  // Test with SET
+    
+    PrintMessage("  Testing char ")
+    PrintNumber(test_char)
+    PrintMessage("")
+    
+    IfCondition EqualTo(test_char, 80) ThenBlock {
+        PrintMessage("  -> PING detected")
+    } ElseBlock {
+        IfCondition EqualTo(test_char, 71) ThenBlock {
+            PrintMessage("  -> GET detected")
+        } ElseBlock {
+            IfCondition EqualTo(test_char, 83) ThenBlock {
+                PrintMessage("  -> SET detected (SHOULD PRINT)")
+            } ElseBlock {
+                PrintMessage("  -> Unknown command")
+            }
+        }
+    }
+    
+    PrintMessage("\n=========================")
+    PrintMessage("Command detection test complete!")
+    
+    Deallocate(buffer_get, 30)
+    Deallocate(buffer_set, 30)
+}
+
+RunTask(Main)

@@ -1,0 +1,105 @@
+// section4_isolated_test.ailang
+// Isolate Section 4 to find the issue
+
+PrintMessage("Section 4 Isolated Test")
+PrintMessage("=======================")
+
+// Global variables
+test_name = ""
+test_expected = 0
+test_actual = 0
+totaltests = 0
+passed_tests = 0
+failed_tests = 0
+section_tests = 0
+section_passed = 0
+
+// Helper subroutine
+SubRoutine.TestResult {
+    totaltests = Add(totaltests, 1)
+    section_tests = Add(section_tests, 1)
+    
+    PrintMessage("  TEST: ")
+    PrintMessage(test_name)
+    PrintMessage("    Expected: ")
+    PrintNumber(test_expected)
+    PrintMessage("    Actual:   ")
+    PrintNumber(test_actual)
+    
+    IfCondition EqualTo(test_expected, test_actual) ThenBlock {
+        PrintMessage("    PASS")
+        PrintMessage("")
+        passed_tests = Add(passed_tests, 1)
+        section_passed = Add(section_passed, 1)
+    } ElseBlock {
+        PrintMessage("    FAIL")
+        PrintMessage("")
+        failed_tests = Add(failed_tests, 1)
+    }
+}
+
+PrintMessage("Creating MessageSystem pool...")
+
+// THIS IS LINE 405 AREA - Test the exact syntax
+FixedPool.MessageSystem {
+    "sender_message": Initialize=0
+    "receiver_result": Initialize=0
+    "message_ready": Initialize=0
+}
+
+PrintMessage("Pool created successfully")
+
+// Test pool access
+MessageSystem.sender_message = 42
+PrintMessage("Set sender_message to 42")
+PrintMessage("Value is:")
+PrintNumber(MessageSystem.sender_message)
+
+// Producer actor
+LoopActor.MessageSender {
+    PrintMessage("MessageSender started")
+    
+    message_count = 0
+    WhileLoop LessThan(message_count, 3) {
+        MessageSystem.sender_message = Add(Multiply(message_count, 100), 10)
+        MessageSystem.message_ready = 1
+        
+        PrintMessage("Sent message:")
+        PrintNumber(MessageSystem.sender_message)
+        
+        message_count = Add(message_count, 1)
+        
+        // Simple exit for test
+        MessageSystem.message_ready = 0
+    }
+    
+    PrintMessage("MessageSender finished")
+}
+
+// Consumer actor  
+LoopActor.MessageReceiver {
+    PrintMessage("MessageReceiver started")
+    
+    processed_count = 0
+    total_received = 0
+    
+    WhileLoop LessThan(processed_count, 3) {
+        total_received = Add(total_received, 110)
+        processed_count = Add(processed_count, 1)
+    }
+    
+    MessageSystem.receiver_result = 330
+    PrintMessage("MessageReceiver finished")
+}
+
+// Test
+test_name = "Message communication total"
+test_expected = 330
+test_actual = MessageSystem.receiver_result
+RunTask(TestResult)
+
+PrintMessage("Section 4 test complete")
+PrintMessage("Total tests:")
+PrintNumber(totaltests)
+PrintMessage("Passed:")
+PrintNumber(passed_tests)

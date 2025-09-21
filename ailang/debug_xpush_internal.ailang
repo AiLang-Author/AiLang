@@ -1,0 +1,54 @@
+// debug_xpush_internal.ailang
+// Test with debug output inside XPush logic
+
+LibraryImport.Library.XArrays
+
+PrintMessage("=== XPush Internal Debug ===")
+
+// Create array
+PrintMessage("Creating XArray...")
+arr = XArray.XCreate(4)
+PrintMessage("Array created at address:")
+PrintNumber(arr)
+
+// Manually inspect the structure
+PrintMessage("Reading capacity...")
+capacity = Dereference(arr)
+PrintMessage("Capacity:")
+PrintNumber(capacity)
+
+PrintMessage("Reading size...")
+size = Dereference(Add(arr, 8))
+PrintMessage("Size:")
+PrintNumber(size)
+
+PrintMessage("Reading data pointer...")
+data = Dereference(Add(arr, 16))
+PrintMessage("Data pointer:")
+PrintNumber(data)
+
+// Now try the operations XPush would do
+PrintMessage("Testing ArraySet on data...")
+ArraySet(data, 0, 10)
+PrintMessage("ArraySet succeeded")
+
+PrintMessage("Testing ArrayGet on data...")
+val = ArrayGet(data, 0)
+PrintMessage("ArrayGet returned:")
+PrintNumber(val)
+
+// Now update size
+PrintMessage("Updating size...")
+StoreValue(Add(arr, 8), 1)
+new_size = Dereference(Add(arr, 8))
+PrintMessage("New size:")
+PrintNumber(new_size)
+
+PrintMessage("=== Manual push succeeded ===")
+
+// Now try actual XPush
+PrintMessage("Calling XArray.XPush...")
+XArray.XPush(arr, 20)
+PrintMessage("XPush succeeded!")
+
+PrintMessage("=== Test Complete ===")

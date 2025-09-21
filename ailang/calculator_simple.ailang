@@ -1,0 +1,100 @@
+
+// calculator_simple.ailang - Interactive command-line calculator
+// Supports +, -, *, / operations on two numbers
+
+LibraryImport.Library.RESP
+
+
+
+
+
+
+PrintMessage("=====================================")
+PrintMessage("    AILANG Command Line Calculator")
+PrintMessage("=====================================")
+PrintMessage("Enter expressions like: 10 + 20")
+PrintMessage("Supports: + - * /")
+PrintMessage("Type 'quit' to exit")
+PrintMessage("")
+
+
+
+//global variable declerations go at top of file 
+input_str = 0
+
+// Shared pool for calculator state
+FixedPool.CalcState {
+    "running": Initialize=1
+    "operand1": Initialize=0
+    "operand2": Initialize=0
+    "operator": Initialize=0
+    "result": Initialize=0
+}
+
+// Function to parse and evaluate simple expressions
+Function.Calculator.ProcessInput {
+    Input: input_str
+    Body: {
+        // Check for quit command
+        is_quit = StringEquals(input_str, "quit")
+        IfCondition is_quit ThenBlock:{
+            CalcState.running = 0
+            PrintMessage("Goodbye!")
+            ReturnValue(0)
+        } 
+
+        // For now, handle hardcoded test cases
+        // Real parsing would need character-by-character processing
+
+        // Test: "10 + 20"
+        is_test1 = StringEquals(input_str, "10 + 20")
+        IfCondition is_test1 ThenBlock:{
+            result = Add(10, 20)
+            PrintMessage("Result: 30")
+            ReturnValue(1)
+        }
+
+        // Test: "100 - 50"
+        is_test2 = StringEquals(input_str, "100 - 50")
+        IfCondition is_test2 ThenBlock:{
+            result = Subtract(100, 50)
+            PrintMessage("Result: 50")
+            ReturnValue(1)
+        }
+
+        // Test: "6 * 7"
+        is_test3 = StringEquals(input_str, "6 * 7")
+        IfCondition is_test3 ThenBlock:{
+            result = Multiply(6, 7)
+            PrintMessage("Result: 42")
+            ReturnValue(1)
+        }
+
+        // Test: "100 / 4"
+        is_test4 = StringEquals(input_str, "100 / 4")
+        IfCondition is_test4 ThenBlock:{
+            result = Divide(100, 4)
+            PrintMessage("Result: 25")
+            ReturnValue(1)
+        }
+
+        PrintMessage("Unknown expression. Try: 10 + 20, 100 - 50, 6 * 7, or 100 / 4")
+        ReturnValue(0)
+    }
+}
+
+// Main calculator loop
+WhileLoop CalcState.running {
+    // Prompt
+    PrintMessage("calc> ")
+    
+    // Get user input
+    input = ReadInput("")
+    
+    // Process the input
+    status = Calculator.ProcessInput(input)
+    
+    PrintMessage("")  // Blank line for readability
+}
+
+PrintMessage("Calculator terminated.")

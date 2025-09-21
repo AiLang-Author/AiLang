@@ -253,23 +253,7 @@ WhileLoop LessThan(i, 10) {
 
 ## Advanced Flow Control
 
-### ChoosePath (Pattern Matching)
 
-String-based pattern matching with proper syntax:
-
-```ailang
-ChoosePath(expression) {
-    CaseOption "pattern1": {
-        // handle pattern1
-    }
-    CaseOption "pattern2": {
-        // handle pattern2
-    }
-    DefaultOption: {
-        // default handling
-    }
-}
-```
 
 ### Try-Catch Exception Handling
 
@@ -402,6 +386,99 @@ IfCondition Not(valid) ThenBlock: {
     PrintMessage("Too many failed attempts")
 }
 ```
+
+## Message Passing
+
+### SendMessage
+
+Sends messages to named channels with optional parameters:
+```ailang
+// Basic message (signal)
+SendMessage.ChannelName
+
+// Message with parameters using arrow syntax
+SendMessage.DataChannel(data=>value, priority=>1)
+
+// Multiple parameters
+SendMessage.StatusUpdate(
+    status=>"active",
+    timestamp=>current_time,
+    sender=>actor_id
+)
+Syntax: SendMessage.Target(param1=>value1, param2=>value2, ...)
+
+Target: The channel/queue name to send to
+Parameters: Optional key-value pairs using => arrow operator
+The arrow operator shows data flow direction clearly
+
+ReceiveMessage
+Receives and processes messages from named channels:
+ailang// Basic receive with processing body
+ReceiveMessage.DataChannel {
+    // Process the received message
+    PrintMessage("Message received")
+    ProcessData()
+}
+
+// Future: Filtered receive (not yet implemented)
+// ReceiveMessage.DataChannel(priority=>1) {
+//     // Only process high-priority messages
+// }
+Syntax: ReceiveMessage.MessageType { body }
+
+MessageType: The channel to receive from
+Body: Statements executed when a message is available
+If no message is queued, the body is skipped
+
+Message Passing Example
+ailang// Producer-Consumer pattern
+SubRoutine.Producer {
+    data = GenerateData()
+    SendMessage.WorkQueue(
+        task=>data,
+        priority=>1,
+        timestamp=>GetTime()
+    )
+    PrintMessage("Work item sent")
+}
+
+SubRoutine.Consumer {
+    ReceiveMessage.WorkQueue {
+        // This executes only if a message exists
+        PrintMessage("Processing work item")
+        result = ProcessTask()
+        SendMessage.ResultQueue(result=>result)
+    }
+}
+
+// Run producer and consumer
+RunTask(Producer)
+RunTask(Consumer)
+Implementation Notes
+The current implementation uses simplified queue semantics:
+
+Messages are stored in channel-specific variables
+SendMessage overwrites previous unread messages (single-item queue)
+ReceiveMessage checks for non-zero values and clears after processing
+Body execution is conditional on message availability
+
+Future enhancements planned:
+
+Multi-message queues
+Blocking/non-blocking receive modes
+Message filtering and pattern matching
+Inter-process communication
+Network-based messaging
+Priority queues and timeouts
+
+
+This documentation reflects:
+1. The new `=>` arrow syntax for parameters
+2. Clear examples of both Send and Receive
+3. How the constructs currently work
+4. Future enhancement possibilities
+5. Implementation details for users to understand the behavior
+
 
 ## Implementation Status
 

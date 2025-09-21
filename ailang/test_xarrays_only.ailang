@@ -1,0 +1,7 @@
+LibraryImport.Library.XArrays
+
+SubRoutine.Main {
+    PrintMessage("XArrays library loaded OK")
+    Exit(0)
+}
+RunTask(Main)

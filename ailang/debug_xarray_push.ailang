@@ -1,0 +1,62 @@
+// debug_xarray_push.ailang
+// Test XArray.XPush operation
+
+LibraryImport.Library.XArrays
+
+PrintMessage("=== XArray.XPush Debug Test ===")
+
+// Create array
+PrintMessage("Creating XArray with capacity 4")
+arr = XArray.XCreate(4)
+PrintMessage("Created successfully")
+
+// Check initial state
+cap = XArray.XCapacity(arr)
+PrintMessage("Initial capacity:")
+PrintNumber(cap)
+sz = XArray.XSize(arr)
+PrintMessage("Initial size:")
+PrintNumber(sz)
+
+// First push
+PrintMessage("Pushing value 10...")
+XArray.XPush(arr, 10)
+PrintMessage("Push complete")
+
+sz = XArray.XSize(arr)
+PrintMessage("Size after first push:")
+PrintNumber(sz)
+
+// Second push
+PrintMessage("Pushing value 20...")
+XArray.XPush(arr, 20)
+PrintMessage("Push complete")
+
+sz = XArray.XSize(arr)
+PrintMessage("Size after second push:")
+PrintNumber(sz)
+
+// Third push
+PrintMessage("Pushing value 30...")
+XArray.XPush(arr, 30)
+PrintMessage("Push complete")
+
+sz = XArray.XSize(arr)
+PrintMessage("Size after third push:")
+PrintNumber(sz)
+
+// Get values back
+PrintMessage("Getting values...")
+val0 = XArray.XGet(arr, 0)
+PrintMessage("arr[0]:")
+PrintNumber(val0)
+
+val1 = XArray.XGet(arr, 1)
+PrintMessage("arr[1]:")
+PrintNumber(val1)
+
+val2 = XArray.XGet(arr, 2)
+PrintMessage("arr[2]:")
+PrintNumber(val2)
+
+PrintMessage("=== Test Complete ===")

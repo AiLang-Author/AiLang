@@ -1,0 +1,7 @@
+LibraryImport.Library.RESP
+
+SubRoutine.Main {
+    PrintMessage("RESP library loaded OK")
+    Exit(0)
+}
+RunTask(Main)

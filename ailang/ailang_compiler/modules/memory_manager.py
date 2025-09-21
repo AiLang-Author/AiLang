@@ -279,27 +279,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
         try:
             print(f"DEBUG: Assignment to {node.target}, value: {node.value}, type: {type(node.value)}")
             
-            # Check for dynamic pool access first
-            resolved_name = self.compiler.resolve_acronym_identifier(node.target)
-            if '.' in resolved_name:
-                parts = resolved_name.split('.')
-                if len(parts) == 3 and parts[0] == 'DynamicPool':
-                    pool_name = f"{parts[0]}.{parts[1]}"
-                    member_key = parts[2]
-                    
-                    if pool_name in self.dynamic_pool_metadata and member_key in self.dynamic_pool_metadata[pool_name]['members']:
-                        print(f"DEBUG: Storing to dynamic pool var {resolved_name}")
-                        self.compiler.compile_expression(node.value) # Value in RAX
-                        self.asm.emit_push_rax() # Save value
-                        
-                        pool_stack_offset = self.compiler.variables[pool_name]
-                        member_offset = self.dynamic_pool_metadata[pool_name]['members'][member_key]
-                        
-                        self.emit_dynamic_pool_store(pool_stack_offset, member_offset)
-                        
-                        return # Assignment handled
-
-            # Compile the value expression first
+            # Compile the value expression first (we need it in RAX for any assignment)
             if isinstance(node.value, (Number, String, Identifier, FunctionCall)):
                 self.compiler.compile_expression(node.value)
             elif type(node.value).__name__ == 'RunTask':
@@ -313,16 +293,40 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                 print(f"DEBUG: Attempting to compile {value_type} as expression")
                 self.compiler.compile_expression(node.value)
             
-            # Result is now in RAX, store it
+            # Now handle the assignment with value in RAX
             resolved_name = self.compiler.resolve_acronym_identifier(node.target)
             
-            # TODO: Add support for manual assignment to pool members
-            # Currently, assignments like "TestData.value_a = 999" create shadow variables
-            # instead of updating the pool table. This needs special handling to detect
-            # pool member targets and update [R15 + offset] instead of creating stack vars.
-            # For now, use Initialize= in pool declarations for initial values.
+            # Check for DynamicPool access - both full and short forms
+            if '.' in resolved_name:
+                parts = resolved_name.split('.')
+                
+                # Check for 3-part form: DynamicPool.TestDynamic.value1
+                if len(parts) == 3 and parts[0] == 'DynamicPool':
+                    pool_name = f"{parts[0]}.{parts[1]}"
+                    member_key = parts[2]
+                    
+                    if pool_name in self.dynamic_pool_metadata and member_key in self.dynamic_pool_metadata[pool_name]['members']:
+                        print(f"DEBUG: Storing to dynamic pool var {resolved_name} (3-part)")
+                        self.asm.emit_push_rax()
+                        pool_stack_offset = self.compiler.variables[pool_name]
+                        member_offset = self.dynamic_pool_metadata[pool_name]['members'][member_key]
+                        self.emit_dynamic_pool_store(pool_stack_offset, member_offset)
+                        return
+                
+                # Check for 2-part form: TestDynamic.value1
+                elif len(parts) == 2:
+                    pool_name = f"DynamicPool.{parts[0]}"
+                    member_key = parts[1]
+                    
+                    if pool_name in self.dynamic_pool_metadata and member_key in self.dynamic_pool_metadata[pool_name]['members']:
+                        print(f"DEBUG: Storing to dynamic pool var {resolved_name} (2-part)")
+                        self.asm.emit_push_rax()
+                        pool_stack_offset = self.compiler.variables[pool_name]
+                        member_offset = self.dynamic_pool_metadata[pool_name]['members'][member_key]
+                        self.emit_dynamic_pool_store(pool_stack_offset, member_offset)
+                        return
             
-            # Try to find with pool prefixes if needed (for reading, not assignment)
+            # Try to find with pool prefixes if needed
             if resolved_name not in self.compiler.variables and '.' in node.target:
                 pool_types = ['FixedPool', 'DynamicPool', 'TemporalPool', 
                             'NeuralPool', 'KernelPool', 'ActorPool', 
@@ -333,8 +337,25 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                         resolved_name = prefixed_name
                         break
             
+            # Handle regular variables and FixedPool variables
             if resolved_name not in self.compiler.variables:
-                # Allocate new variable on stack
+                # Check if it's a DynamicPool member that needs special handling
+                parts = resolved_name.split('.')
+                if len(parts) == 2:
+                    pool_name = f"DynamicPool.{parts[0]}"
+                    member_name = parts[1]
+                    
+                    if pool_name in self.dynamic_pool_metadata:
+                        if member_name in self.dynamic_pool_metadata[pool_name]['members']:
+                            print(f"DEBUG: {resolved_name} is a DynamicPool member, using pool storage")
+                            self.asm.emit_push_rax()
+                            pool_stack_offset = self.compiler.variables[pool_name]
+                            member_offset = self.dynamic_pool_metadata[pool_name]['members'][member_name]
+                            self.emit_dynamic_pool_store(pool_stack_offset, member_offset)
+                            print(f"DEBUG: Assignment to DynamicPool member {resolved_name} completed")
+                            return
+                
+                # Not a DynamicPool member - allocate normally
                 self.compiler.stack_size += 16
                 offset = self.compiler.stack_size
                 self.compiler.variables[resolved_name] = offset
@@ -346,7 +367,6 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             if value & 0x80000000:  # Pool variable
                 pool_index = value & 0x7FFFFFFF
                 print(f"DEBUG: Storing to pool var {resolved_name} at pool[{pool_index}]")
-                # MOV [R15 + pool_index*8], RAX
                 self.asm.emit_bytes(0x49, 0x89, 0x87)  # MOV [R15 + disp32], RAX
                 self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
             else:
@@ -360,7 +380,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
         except Exception as e:
             print(f"ERROR: Assignment compilation failed: {str(e)}")
             raise
-    
+        
     def compile_resource_item(self, item, pool):
         """Compile a resource item"""
         try:
@@ -404,7 +424,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
     def compile_pool(self, node, pre_pass_only=False):
         """Compile Pool declaration with indirect addressing through pool table"""
         if node.pool_type == 'DynamicPool':
-            return self.compile_dynamic_pool(node)
+            return self.compile_dynamic_pool(node, pre_pass_only)  # Pass pre_pass_only!
         else: # Handles FixedPool and other future static pools
             try:
                 pool_name = f"{node.pool_type}.{node.name}"
@@ -432,17 +452,18 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                         pool_index = self.pool_variables[var_name]
                         print(f"DEBUG: Compiling initialization for {var_name} at pool[{pool_index}]")
 
-                        if item.value is not None and hasattr(item.value, 'value'):
-                            if type(item.value).__name__ == 'String':
-                                string_offset = self.asm.add_string(item.value.value)
-                                init_value = 0x402000 + string_offset
-                            else:
-                                init_value = int(item.value.value)
-                            
-                            self.asm.emit_mov_rax_imm64(init_value)
-                            self.asm.emit_bytes(0x49, 0x89, 0x87) # MOV [R15 + disp32], RAX
-                            self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
-                            print(f"DEBUG: Initialized {var_name} = {init_value}")
+                        if item.value is not None:
+                            if hasattr(item.value, 'value'):
+                                if type(item.value).__name__ == 'String':
+                                    string_offset = self.asm.add_string(item.value.value)
+                                    init_value = 0x402000 + string_offset
+                                else:
+                                    init_value = int(item.value.value)
+                                
+                                self.asm.emit_mov_rax_imm64(init_value)
+                                self.asm.emit_bytes(0x49, 0x89, 0x87) # MOV [R15 + disp32], RAX
+                                self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
+                                print(f"DEBUG: Initialized {var_name} = {init_value}")
                 
                 print(f"DEBUG: Pool {pool_name} completed")
                 return True
@@ -450,7 +471,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                 print(f"ERROR: Pool compilation failed: {str(e)}")
                 raise
 
-    def compile_dynamic_pool(self, node):
+    def compile_dynamic_pool(self, node, pre_pass_only=False):
         """Compile a DynamicPool declaration by allocating it on the heap."""
         try:
             pool_name = f"{node.pool_type}.{node.name}"
@@ -467,35 +488,75 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                     current_offset += 8
             self.dynamic_pool_metadata[pool_name]['members'] = member_offsets
             
+            # Register the pool in compiler variables if not already present
+            if pool_name not in self.compiler.variables:
+                self.compiler.stack_size += 16
+                self.compiler.variables[pool_name] = self.compiler.stack_size
+                print(f"DEBUG: Registered dynamic pool {pool_name} at offset {self.compiler.variables[pool_name]}")
+
+            # CRITICAL: Check if this is just the discovery/pre-pass phase
+            if pre_pass_only:
+                print(f"DEBUG: Pre-pass only for {pool_name}, skipping code generation")
+                return True  # Don't generate runtime code during pre-pass
+            
+            # === CODE GENERATION PHASE - Only runs during actual compilation ===
+            print(f"DEBUG: Generating runtime code for {pool_name}")
+            
             num_items = len(node.body)
             initial_capacity = num_items * 2 if num_items > 0 else 16
             mmap_size = 16 + (initial_capacity * 8)
 
-            self.asm.emit_mov_rax_imm64(9)
-            self.asm.emit_mov_rdi_imm64(0)
-            self.asm.emit_mov_rsi_imm64(mmap_size)
-            self.asm.emit_mov_rdx_imm64(3)
-            self.asm.emit_mov_r10_imm64(0x22)
-            self.asm.emit_mov_r8_imm64(-1)
-            self.asm.emit_mov_r9_imm64(0)
+            # Generate mmap syscall to allocate heap memory for the pool
+            self.asm.emit_mov_rax_imm64(9)          # sys_mmap
+            self.asm.emit_mov_rdi_imm64(0)          # addr = NULL
+            self.asm.emit_mov_rsi_imm64(mmap_size)  # size
+            self.asm.emit_mov_rdx_imm64(3)          # PROT_READ | PROT_WRITE
+            self.asm.emit_mov_r10_imm64(0x22)       # MAP_PRIVATE | MAP_ANONYMOUS
+            self.asm.emit_mov_r8_imm64(-1)          # fd = -1
+            self.asm.emit_mov_r9_imm64(0)           # offset = 0
             self.asm.emit_syscall()
 
+            # Store the allocated pointer on the stack
             stack_offset = self.compiler.variables[pool_name]
             self.asm.emit_bytes(0x48, 0x89, 0x85, *struct.pack('<i', -stack_offset))
             print(f"DEBUG: Stored DynamicPool pointer for {pool_name} at [RBP - {stack_offset}]")
 
-            self.asm.emit_push_rax()
-            self.asm.emit_mov_rbx_imm64(initial_capacity)
-            self.asm.emit_bytes(0x48, 0x89, 0x18)
-            self.asm.emit_mov_rbx_imm64(num_items)
-            self.asm.emit_bytes(0x48, 0x89, 0x58, 0x08)
-            self.asm.emit_pop_rax()
+            # Initialize the pool header with capacity and size
+            self.asm.emit_push_rax()                           # Save pool pointer
+            self.asm.emit_mov_rbx_imm64(initial_capacity)      # Load capacity
+            self.asm.emit_bytes(0x48, 0x89, 0x18)             # MOV [RAX], RBX (store capacity)
+            self.asm.emit_mov_rbx_imm64(num_items)            # Load current size
+            self.asm.emit_bytes(0x48, 0x89, 0x58, 0x08)       # MOV [RAX+8], RBX (store size)
+            self.asm.emit_pop_rax()                           # Restore pool pointer
             
+            # Initialize member values from Initialize= declarations
+            for item in node.body:
+                if hasattr(item, 'key') and item.value is not None:
+                    member_offset = member_offsets[item.key]
+                    
+                    if hasattr(item.value, 'value'):
+                        init_value = int(item.value.value)
+                        
+                        # Load pool base address from stack
+                        self.asm.emit_bytes(0x48, 0x8B, 0x85, *struct.pack('<i', -stack_offset))  # MOV RAX, [RBP-offset]
+                        
+                        # Add member offset to get target address
+                        if member_offset > 0:
+                            self.asm.emit_bytes(0x48, 0x05, *struct.pack('<I', member_offset))  # ADD RAX, member_offset
+                        
+                        # Store the initialization value
+                        self.asm.emit_mov_rbx_imm64(init_value)
+                        self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX
+                        
+                        print(f"DEBUG: Initialized {pool_name}.{item.key} = {init_value} at offset {member_offset}")
+            
+            print(f"DEBUG: DynamicPool {pool_name} initialization complete")
             return True
+            
         except Exception as e:
             print(f"ERROR: DynamicPool compilation failed: {str(e)}")
             raise
-        
+            
         
     def allocate_pool_table(self):
         """Allocate memory for the pool table at program start"""

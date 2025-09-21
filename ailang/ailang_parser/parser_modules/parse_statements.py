@@ -420,46 +420,110 @@ class ParserStatementsMixin:
                   line=start_token.line, column=start_token.column)
 
     def parse_sendmessage(self) -> SendMessage:
+        """
+        Parse SendMessage with arrow syntax for parameters
+        SendMessage.Target(param=>value, param2=>value2)
+        """
         start_token = self.consume(TokenType.SENDMESSAGE)
         self.consume(TokenType.DOT)
         target = self.consume(TokenType.IDENTIFIER).value
         parameters = {}
+        
         if self.match(TokenType.LPAREN):
             self.consume(TokenType.LPAREN)
             self.skip_newlines()
+            
             while not self.match(TokenType.RPAREN):
                 self.skip_newlines()
                 if self.match(TokenType.RPAREN):
                     break
+                    
+                # Parse parameter name
                 param_name = self.consume(TokenType.IDENTIFIER).value
-                self.consume(TokenType.DASH)
+                
+                # Change from DASH to => arrow (EQUALS followed by GREATER_SIGN)
+                self.consume(TokenType.EQUALS, "Expected '=>' after parameter name")
+                self.consume(TokenType.GREATER_SIGN, "Expected '=>' after parameter name")
+                
+                # Parse parameter value
                 param_value = self.parse_expression()
                 parameters[param_name] = param_value
+                
                 if self.match(TokenType.COMMA):
                     self.consume(TokenType.COMMA)
                 self.skip_newlines()
+                
             self.consume(TokenType.RPAREN)
-        return SendMessage(target=target, parameters=parameters,
-                         line=start_token.line, column=start_token.column)
+            
+        return SendMessage(
+            target=target, 
+            parameters=parameters,
+            line=start_token.line, 
+            column=start_token.column
+        )
 
     def parse_receivemessage(self) -> ReceiveMessage:
+        """
+        Parse ReceiveMessage with optional parameters for filtering
+        ReceiveMessage.MessageType { body }
+        or
+        ReceiveMessage.MessageType(filter=>value) { body }
+        """
         start_token = self.consume(TokenType.RECEIVEMESSAGE)
         self.consume(TokenType.DOT)
         message_type = self.consume(TokenType.IDENTIFIER).value
+        
+        # Optional parameters for message filtering (future enhancement)
+        parameters = {}
+        if self.match(TokenType.LPAREN):
+            self.consume(TokenType.LPAREN)
+            self.skip_newlines()
+            
+            while not self.match(TokenType.RPAREN):
+                self.skip_newlines()
+                if self.match(TokenType.RPAREN):
+                    break
+                    
+                # Parse parameter name
+                param_name = self.consume(TokenType.IDENTIFIER).value
+                
+                # Use => arrow for consistency (EQUALS followed by GREATER_SIGN)
+                self.consume(TokenType.EQUALS, "Expected '=>' after parameter name")
+                self.consume(TokenType.GREATER_SIGN, "Expected '=>' after parameter name")
+                
+                # Parse parameter value
+                param_value = self.parse_expression()
+                parameters[param_name] = param_value
+                
+                if self.match(TokenType.COMMA):
+                    self.consume(TokenType.COMMA)
+                self.skip_newlines()
+                
+            self.consume(TokenType.RPAREN)
+        
         self.skip_newlines()
         self.consume(TokenType.LBRACE)
         self.skip_newlines()
         self.push_context(f"ReceiveMessage.{message_type}")
+        
         body = []
         while not self.match(TokenType.RBRACE):
             stmt = self.parse_statement()
             if stmt:
                 body.append(stmt)
             self.skip_newlines()
+            
         self.consume(TokenType.RBRACE)
         self.pop_context()
-        return ReceiveMessage(message_type=message_type, body=body,
-                            line=start_token.line, column=start_token.column)
+        
+        # Note: ReceiveMessage AST node needs to be updated to include parameters field
+        # For now, we'll just pass the standard fields
+        return ReceiveMessage(
+            message_type=message_type, 
+            body=body,
+            line=start_token.line, 
+            column=start_token.column
+        )
 
     def parse_everyinterval(self) -> EveryInterval:
         start_token = self.consume(TokenType.EVERYINTERVAL)

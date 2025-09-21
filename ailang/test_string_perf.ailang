@@ -1,0 +1,57 @@
+// test_string_perf.ailang
+// String operations with performance monitoring
+
+PrintMessage("String Operations Performance Test")
+PrintMessage("===================================")
+
+// Test 1: StringEquals performance
+DebugPerf.Start("string_equals")
+eq1 = StringEquals("Hello", "Hello")
+eq2 = StringEquals("Hello", "World")
+eq3 = StringEquals("LongStringTest123456", "LongStringTest123456")
+DebugPerf.End("string_equals")
+PrintMessage("StringEquals tests completed")
+
+// Test 2: StringConcat performance
+DebugPerf.Start("string_concat")
+str1 = StringConcat("Hello", "World")
+str2 = StringConcat(str1, "Test")
+str3 = StringConcat(str2, "123456789")
+DebugPerf.End("string_concat")
+PrintMessage("Concatenated result:")
+PrintMessage(str3)
+
+// Test 3: StringLength performance
+DebugPerf.Start("string_length")
+len1 = StringLength("A")
+len2 = StringLength("Hello World")
+len3 = StringLength(str3)
+DebugPerf.End("string_length")
+PrintMessage("Length of final string:")
+PrintNumber(len3)
+
+// Test 4: Number conversion performance
+DebugPerf.Start("number_conversion")
+str_num = NumberToString(-12345)
+num_str = StringToNumber("-67890")
+DebugPerf.End("number_conversion")
+PrintMessage("Conversion test:")
+PrintMessage(str_num)
+PrintNumber(num_str)
+
+// Test 5: Bulk operations
+DebugPerf.Start("bulk_string_ops")
+i = 0
+result = "Start"
+WhileLoop LessThan(i, 10) {
+    Body: {
+        result = StringConcat(result, "X")
+        i = Add(i, 1)
+    }
+    }
+DebugPerf.End("bulk_string_ops")
+PrintMessage("Bulk result:")
+PrintMessage(result)
+
+PrintMessage("")
+PrintMessage("Performance test complete!")

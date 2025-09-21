@@ -1,0 +1,67 @@
+// Library.RedisUtils.ailang - FIXED SYNTAX
+// General utility functions for Redis server
+
+Function.RedisUtils.StringCopy {
+    Input: source: String
+    Output: String
+    Body: {
+        len = StringLength(source)
+        dest = Allocate(Add(len, 1))
+        MemoryCopy(dest, source, len)
+        SetByte(dest, len, 0)
+        ReturnValue(dest)
+    }
+}
+
+Function.RedisUtils.StringToInt {
+    Input: str: String
+    Output: Integer
+    Body: {
+        result = 0
+        i = 0
+        len = StringLength(str)
+        negative = 0
+        
+        IfCondition GreaterThan(len, 0) ThenBlock: {
+            first = GetByte(str, 0)
+            IfCondition EqualTo(first, 45) ThenBlock: {
+                negative = 1
+                i = 1
+            }
+        }
+        
+        WhileLoop LessThan(i, len) {
+            byte = GetByte(str, i)
+            IfCondition And(GreaterEqual(byte, 48), LessEqual(byte, 57)) ThenBlock: {
+                digit = Subtract(byte, 48)
+                result = Multiply(result, 10)
+                result = Add(result, digit)
+            }
+            i = Add(i, 1)
+        }
+        
+        IfCondition negative ThenBlock: {
+            result = Subtract(0, result)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Add test harness
+SubRoutine.TestUtils {
+    PrintMessage("Testing RedisUtils")
+    
+    // Test StringToInt
+    str = "42"
+    val = RedisUtils.StringToInt(str)
+    PrintMessage("StringToInt('42') =")
+    PrintNumber(val)
+    
+    str = "-123"
+    val = RedisUtils.StringToInt(str)
+    PrintMessage("StringToInt('-123') =")
+    PrintNumber(val)
+}
+
+RunTask(TestUtils)

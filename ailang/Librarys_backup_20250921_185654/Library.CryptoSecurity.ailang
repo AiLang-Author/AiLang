@@ -1,0 +1,1114 @@
+// ============================================================================
+// AILANG Cryptography & Security Library
+// Hardware-Accelerated Crypto with Cache-Aware Security Primitives
+// ============================================================================
+
+// Memory pools for cryptographic operations
+Pool.Crypto.Keys = SecurityPool {
+    "private_keys": ElementType-PrivateKey, MaximumLength-10000,
+    "public_keys": ElementType-PublicKey, MaximumLength-100000,
+    "symmetric_keys": ElementType-SymmetricKey, MaximumLength-100000,
+    "secure_erase": Initialize-True, CanChange-False,
+    "memory_protection": Initialize-"locked", CanChange-False
+}
+
+Pool.Crypto.Buffers = SecurityPool {
+    "crypto_buffers": ElementType-Byte, MaximumLength-1073741824,  // 1GB
+    "hash_contexts": ElementType-HashContext, MaximumLength-100000,
+    "cipher_contexts": ElementType-CipherContext, MaximumLength-100000,
+    "secure_erase": Initialize-True, CanChange-False,
+    "cache_alignment": Initialize-64, CanChange-False
+}
+
+Pool.Crypto.RandomState = SecurityPool {
+    "entropy_pools": ElementType-EntropyPool, MaximumLength-100,
+    "rng_state": ElementType-RNGState, MaximumLength-1000,
+    "secure_erase": Initialize-True, CanChange-False,
+    "hardware_entropy": Initialize-True, CanChange-False
+}
+
+Pool.Crypto.Certificates = FixedPool {
+    "x509_certs": ElementType-X509Certificate, MaximumLength-10000,
+    "cert_chains": ElementType-CertificateChain, MaximumLength-10000,
+    "crl_entries": ElementType-CRLEntry, MaximumLength-100000
+}
+
+Pool.Crypto.Sessions = TemporalPool {
+    "tls_sessions": ElementType-TLSSession, MaximumLength-100000,
+    "session_keys": ElementType-SessionKey, MaximumLength-100000,
+    "lifetime": Initialize-"session_scope", CanChange-False,
+    "secure_erase": Initialize-True, CanChange-False
+}
+
+// ============================================================================
+// Core Cryptographic Types
+// ============================================================================
+
+HashContext = Record {
+    algorithm: Text,  // "SHA256", "SHA3-256", "BLAKE3", "MD5", etc.
+    state: Array[Byte],
+    total_length: UInt64,
+    block_size: UInt32,
+    digest_size: UInt32,
+    finalized: Boolean
+}
+
+CipherContext = Record {
+    algorithm: Text,  // "AES-256-GCM", "ChaCha20-Poly1305", "AES-128-CBC", etc.
+    mode: Text,      // "GCM", "CBC", "CTR", "ECB"
+    key: Array[Byte],
+    iv: Array[Byte],
+    tag: OptionalType[Array[Byte]],  // For authenticated encryption
+    encrypt: Boolean,
+    block_size: UInt32,
+    key_size: UInt32
+}
+
+SymmetricKey = Record {
+    algorithm: Text,
+    key_data: Array[Byte],
+    key_size: UInt32,
+    created_at: UInt64,
+    usage_count: UInt64,
+    max_usage: OptionalType[UInt64]
+}
+
+PrivateKey = Record {
+    algorithm: Text,  // "RSA", "ECDSA", "Ed25519", "X25519"
+    key_data: Array[Byte],
+    key_size: UInt32,
+    curve_name: OptionalType[Text],  // For ECC keys
+    public_key: OptionalType[PublicKey],
+    created_at: UInt64,
+    usage_count: UInt64
+}
+
+PublicKey = Record {
+    algorithm: Text,
+    key_data: Array[Byte],
+    key_size: UInt32,
+    curve_name: OptionalType[Text],
+    fingerprint: Array[Byte],
+    created_at: UInt64
+}
+
+KeyPair = Record {
+    private_key: PrivateKey,
+    public_key: PublicKey,
+    algorithm: Text,
+    key_size: UInt32
+}
+
+RNGState = Record {
+    algorithm: Text,  // "CSPRNG", "ChaCha20", "AES-CTR-DRBG"
+    state: Array[Byte],
+    counter: UInt64,
+    seed: Array[Byte],
+    entropy_estimate: UInt32,
+    last_reseed: UInt64
+}
+
+EntropyPool = Record {
+    source: Text,  // "hardware", "system", "user", "network"
+    entropy_bits: UInt32,
+    data: Array[Byte],
+    collected_at: UInt64,
+    quality_score: UInt8
+}
+
+X509Certificate = Record {
+    der_data: Array[Byte],
+    subject: Text,
+    issuer: Text,
+    serial_number: Array[Byte],
+    not_before: UInt64,
+    not_after: UInt64,
+    public_key: PublicKey,
+    signature_algorithm: Text,
+    fingerprint_sha256: Array[Byte],
+    is_ca: Boolean,
+    key_usage: Array[Text]
+}
+
+TLSSession = Record {
+    session_id: Array[Byte],
+    protocol_version: Text,
+    cipher_suite: Text,
+    compression_method: Text,
+    master_secret: Array[Byte],
+    client_random: Array[Byte],
+    server_random: Array[Byte],
+    created_at: UInt64,
+    expires_at: UInt64
+}
+
+// ============================================================================
+// Hash Functions
+// ============================================================================
+
+Function.Crypto.SHA256 {
+    Input: (data: Array[Byte])
+    Output: Array[Byte]
+    Body: {
+        context = Crypto.Hash.Create("SHA256")
+        Crypto.Hash.Update(context, data)
+        digest = Crypto.Hash.Finalize(context)
+        
+        ReturnValue(digest)
+    }
+}
+
+Function.Crypto.SHA256.String {
+    Input: (data: Text)
+    Output: Array[Byte]
+    Body: {
+        bytes = StringToBytes(data)
+        ReturnValue(Crypto.SHA256(bytes))
+    }
+}
+
+Function.Crypto.SHA3_256 {
+    Input: (data: Array[Byte])
+    Output: Array[Byte]
+    Body: {
+        context = Crypto.Hash.Create("SHA3-256")
+        Crypto.Hash.Update(context, data)
+        digest = Crypto.Hash.Finalize(context)
+        
+        ReturnValue(digest)
+    }
+}
+
+Function.Crypto.BLAKE3 {
+    Input: (data: Array[Byte])
+    Output: Array[Byte]
+    Body: {
+        context = Crypto.Hash.Create("BLAKE3")
+        Crypto.Hash.Update(context, data)
+        digest = Crypto.Hash.Finalize(context)
+        
+        ReturnValue(digest)
+    }
+}
+
+Function.Crypto.Hash.Create {
+    Input: (algorithm: Text)
+    Output: HashContext
+    Body: {
+        Pool.Crypto.Buffers.Allocate(context)
+        
+        context.algorithm = algorithm
+        context.total_length = 0
+        context.finalized = False
+        
+        ChoosePath algorithm {
+            CaseOption "SHA256": {
+                context.block_size = 64
+                context.digest_size = 32
+                context.state = Crypto.Internal.SHA256.InitState()
+            }
+            CaseOption "SHA3-256": {
+                context.block_size = 136
+                context.digest_size = 32
+                context.state = Crypto.Internal.SHA3.InitState()
+            }
+            CaseOption "BLAKE3": {
+                context.block_size = 64
+                context.digest_size = 32
+                context.state = Crypto.Internal.BLAKE3.InitState()
+            }
+            CaseOption "MD5": {
+                context.block_size = 64
+                context.digest_size = 16
+                context.state = Crypto.Internal.MD5.InitState()
+            }
+            DefaultOption: {
+                TryBlock: {} CatchError.UnsupportedAlgorithm {
+                    PrintMessage(StringConcat("Unsupported hash algorithm: ", algorithm))
+                }
+            }
+        }
+        
+        ReturnValue(context)
+    }
+}
+
+Function.Crypto.Hash.Update {
+    Input: (context: HashContext, data: Array[Byte])
+    Body: {
+        IfCondition context.finalized ThenBlock {
+            TryBlock: {} CatchError.HashFinalized {
+                PrintMessage("Cannot update finalized hash context")
+                ReturnValue()
+            }
+        }
+        
+        context.total_length = Add(context.total_length, ArrayLength(data))
+        
+        ChoosePath context.algorithm {
+            CaseOption "SHA256": Crypto.Internal.SHA256.Update(context, data)
+            CaseOption "SHA3-256": Crypto.Internal.SHA3.Update(context, data)
+            CaseOption "BLAKE3": Crypto.Internal.BLAKE3.Update(context, data)
+            CaseOption "MD5": Crypto.Internal.MD5.Update(context, data)
+        }
+    }
+}
+
+Function.Crypto.Hash.Finalize {
+    Input: (context: HashContext)
+    Output: Array[Byte]
+    Body: {
+        IfCondition context.finalized ThenBlock {
+            TryBlock: {} CatchError.HashFinalized {
+                PrintMessage("Hash context already finalized")
+                ReturnValue(Array.Create())
+            }
+        }
+        
+        context.finalized = True
+        
+        ChoosePath context.algorithm {
+            CaseOption "SHA256": ReturnValue(Crypto.Internal.SHA256.Finalize(context))
+            CaseOption "SHA3-256": ReturnValue(Crypto.Internal.SHA3.Finalize(context))
+            CaseOption "BLAKE3": ReturnValue(Crypto.Internal.BLAKE3.Finalize(context))
+            CaseOption "MD5": ReturnValue(Crypto.Internal.MD5.Finalize(context))
+            DefaultOption: ReturnValue(Array.Create())
+        }
+    }
+}
+
+// ============================================================================
+// Message Authentication Codes (MAC)
+// ============================================================================
+
+Function.Crypto.HMAC.SHA256 {
+    Input: (key: Array[Byte], message: Array[Byte])
+    Output: Array[Byte]
+    Body: {
+        // HMAC-SHA256 implementation
+        block_size = 64
+        
+        // Prepare key
+        IfCondition GreaterThan(ArrayLength(key), block_size) ThenBlock {
+            key = Crypto.SHA256(key)
+        }
+        
+        // Pad key to block size
+        padded_key = Array.Create(block_size, Byte)
+        ArrayCopy(key, 0, padded_key, 0, ArrayLength(key))
+        
+        // Create inner and outer keys
+        inner_key = Array.Create(block_size, Byte)
+        outer_key = Array.Create(block_size, Byte)
+        
+        ForEvery i in Range(0, block_size) {
+            inner_key[i] = BitwiseXor(padded_key[i], 0x36)
+            outer_key[i] = BitwiseXor(padded_key[i], 0x5C)
+        }
+        
+        // Inner hash: H(K ⊕ ipad || message)
+        inner_context = Crypto.Hash.Create("SHA256")
+        Crypto.Hash.Update(inner_context, inner_key)
+        Crypto.Hash.Update(inner_context, message)
+        inner_hash = Crypto.Hash.Finalize(inner_context)
+        
+        // Outer hash: H(K ⊕ opad || inner_hash)
+        outer_context = Crypto.Hash.Create("SHA256")
+        Crypto.Hash.Update(outer_context, outer_key)
+        Crypto.Hash.Update(outer_context, inner_hash)
+        final_hash = Crypto.Hash.Finalize(outer_context)
+        
+        ReturnValue(final_hash)
+    }
+}
+
+Function.Crypto.HMAC.Verify {
+    Input: (key: Array[Byte], message: Array[Byte], expected_mac: Array[Byte])
+    Output: Boolean
+    Body: {
+        calculated_mac = Crypto.HMAC.SHA256(key, message)
+        ReturnValue(Crypto.ConstantTimeCompare(calculated_mac, expected_mac))
+    }
+}
+
+// ============================================================================
+// Symmetric Encryption
+// ============================================================================
+
+Function.Crypto.AES256.Encrypt {
+    Input: (
+        plaintext: Array[Byte],
+        key: Array[Byte],
+        mode: Text = "GCM",
+        iv: OptionalType[Array[Byte]] = Null
+    )
+    Output: CipherResult
+    Body: {
+        IfCondition NotEqual(ArrayLength(key), 32) ThenBlock {
+            TryBlock: {} CatchError.InvalidKeySize {
+                PrintMessage("AES-256 requires 32-byte key")
+                ReturnValue(Crypto.CreateErrorResult("Invalid key size"))
+            }
+        }
+        
+        IfCondition EqualTo(iv, Null) ThenBlock {
+            ChoosePath mode {
+                CaseOption "GCM": iv = Crypto.SecureRandom(12)  // 96-bit IV for GCM
+                CaseOption "CBC": iv = Crypto.SecureRandom(16)  // 128-bit IV for CBC
+                CaseOption "CTR": iv = Crypto.SecureRandom(16)
+                DefaultOption: iv = Crypto.SecureRandom(16)
+            }
+        }
+        
+        context = Crypto.Cipher.Create("AES-256", mode, True)
+        Crypto.Cipher.SetKey(context, key)
+        Crypto.Cipher.SetIV(context, iv)
+        
+        ciphertext = Crypto.Cipher.Update(context, plaintext)
+        final_block = Crypto.Cipher.Finalize(context)
+        
+        IfCondition GreaterThan(ArrayLength(final_block), 0) ThenBlock {
+            ciphertext = ArrayConcat(ciphertext, final_block)
+        }
+        
+        result = CipherResult.Create()
+        result.success = True
+        result.data = ciphertext
+        result.iv = iv
+        
+        // For authenticated modes, get the tag
+        IfCondition StringEquals(mode, "GCM") ThenBlock {
+            result.tag = Crypto.Cipher.GetTag(context)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Crypto.AES256.Decrypt {
+    Input: (
+        ciphertext: Array[Byte],
+        key: Array[Byte],
+        iv: Array[Byte],
+        mode: Text = "GCM",
+        tag: OptionalType[Array[Byte]] = Null
+    )
+    Output: CipherResult
+    Body: {
+        IfCondition NotEqual(ArrayLength(key), 32) ThenBlock {
+            TryBlock: {} CatchError.InvalidKeySize {
+                PrintMessage("AES-256 requires 32-byte key")
+                ReturnValue(Crypto.CreateErrorResult("Invalid key size"))
+            }
+        }
+        
+        context = Crypto.Cipher.Create("AES-256", mode, False)
+        Crypto.Cipher.SetKey(context, key)
+        Crypto.Cipher.SetIV(context, iv)
+        
+        // For authenticated modes, set the tag
+        IfCondition StringEquals(mode, "GCM") ThenBlock {
+            IfCondition EqualTo(tag, Null) ThenBlock {
+                TryBlock: {} CatchError.MissingTag {
+                    PrintMessage("GCM mode requires authentication tag")
+                    ReturnValue(Crypto.CreateErrorResult("Missing authentication tag"))
+                }
+            }
+            Crypto.Cipher.SetTag(context, tag)
+        }
+        
+        TryBlock: {
+            plaintext = Crypto.Cipher.Update(context, ciphertext)
+            final_block = Crypto.Cipher.Finalize(context)
+            
+            IfCondition GreaterThan(ArrayLength(final_block), 0) ThenBlock {
+                plaintext = ArrayConcat(plaintext, final_block)
+            }
+            
+            result = CipherResult.Create()
+            result.success = True
+            result.data = plaintext
+            
+            ReturnValue(result)
+        }
+        CatchError.AuthenticationFailed {
+            PrintMessage("Decryption failed: Authentication tag verification failed")
+            ReturnValue(Crypto.CreateErrorResult("Authentication failed"))
+        }
+    }
+}
+
+Function.Crypto.ChaCha20Poly1305.Encrypt {
+    Input: (
+        plaintext: Array[Byte],
+        key: Array[Byte],
+        nonce: OptionalType[Array[Byte]] = Null,
+        aad: OptionalType[Array[Byte]] = Null
+    )
+    Output: CipherResult
+    Body: {
+        IfCondition NotEqual(ArrayLength(key), 32) ThenBlock {
+            TryBlock: {} CatchError.InvalidKeySize {
+                PrintMessage("ChaCha20-Poly1305 requires 32-byte key")
+                ReturnValue(Crypto.CreateErrorResult("Invalid key size"))
+            }
+        }
+        
+        IfCondition EqualTo(nonce, Null) ThenBlock {
+            nonce = Crypto.SecureRandom(12)  // 96-bit nonce
+        }
+        
+        context = Crypto.Cipher.Create("ChaCha20-Poly1305", "AEAD", True)
+        Crypto.Cipher.SetKey(context, key)
+        Crypto.Cipher.SetIV(context, nonce)
+        
+        IfCondition NotEqual(aad, Null) ThenBlock {
+            Crypto.Cipher.SetAAD(context, aad)
+        }
+        
+        ciphertext = Crypto.Cipher.Update(context, plaintext)
+        final_block = Crypto.Cipher.Finalize(context)
+        
+        IfCondition GreaterThan(ArrayLength(final_block), 0) ThenBlock {
+            ciphertext = ArrayConcat(ciphertext, final_block)
+        }
+        
+        result = CipherResult.Create()
+        result.success = True
+        result.data = ciphertext
+        result.iv = nonce
+        result.tag = Crypto.Cipher.GetTag(context)
+        
+        ReturnValue(result)
+    }
+}
+
+// ============================================================================
+// Asymmetric Cryptography
+// ============================================================================
+
+Function.Crypto.RSA.GenerateKeyPair {
+    Input: (key_size: UInt32 = 2048)
+    Output: KeyPair
+    Body: {
+        IfCondition Not(Or(Or(EqualTo(key_size, 1024), EqualTo(key_size, 2048)), 
+                          Or(EqualTo(key_size, 3072), EqualTo(key_size, 4096)))) ThenBlock {
+            TryBlock: {} CatchError.InvalidKeySize {
+                PrintMessage("RSA key size must be 1024, 2048, 3072, or 4096 bits")
+                key_size = 2048
+            }
+        }
+        
+        Pool.Crypto.Keys.Allocate(private_key)
+        Pool.Crypto.Keys.Allocate(public_key)
+        
+        // Generate RSA key pair using hardware acceleration if available
+        key_data = Crypto.Internal.RSA.GenerateKeyPair(key_size)
+        
+        private_key.algorithm = "RSA"
+        private_key.key_size = key_size
+        private_key.key_data = key_data.private_key_der
+        private_key.created_at = Time.Unix()
+        private_key.usage_count = 0
+        
+        public_key.algorithm = "RSA"
+        public_key.key_size = key_size
+        public_key.key_data = key_data.public_key_der
+        public_key.fingerprint = Crypto.SHA256(key_data.public_key_der)
+        public_key.created_at = Time.Unix()
+        
+        private_key.public_key = public_key
+        
+        keypair = KeyPair.Create()
+        keypair.private_key = private_key
+        keypair.public_key = public_key
+        keypair.algorithm = "RSA"
+        keypair.key_size = key_size
+        
+        ReturnValue(keypair)
+    }
+}
+
+Function.Crypto.RSA.Sign {
+    Input: (
+        message: Array[Byte],
+        private_key: PrivateKey,
+        hash_algorithm: Text = "SHA256"
+    )
+    Output: Array[Byte]
+    Body: {
+        IfCondition NotEqual(private_key.algorithm, "RSA") ThenBlock {
+            TryBlock: {} CatchError.InvalidKeyType {
+                PrintMessage("Expected RSA private key")
+                ReturnValue(Array.Create())
+            }
+        }
+        
+        // Hash the message
+        message_hash = ChoosePath hash_algorithm {
+            CaseOption "SHA256": Crypto.SHA256(message)
+            CaseOption "SHA3-256": Crypto.SHA3_256(message)
+            CaseOption "BLAKE3": Crypto.BLAKE3(message)
+            DefaultOption: Crypto.SHA256(message)
+        }
+        
+        // Create signature using RSA-PSS
+        signature = Crypto.Internal.RSA.SignPSS(
+            message_hash, 
+            private_key.key_data, 
+            hash_algorithm
+        )
+        
+        private_key.usage_count = Add(private_key.usage_count, 1)
+        
+        ReturnValue(signature)
+    }
+}
+
+Function.Crypto.RSA.Verify {
+    Input: (
+        message: Array[Byte],
+        signature: Array[Byte],
+        public_key: PublicKey,
+        hash_algorithm: Text = "SHA256"
+    )
+    Output: Boolean
+    Body: {
+        IfCondition NotEqual(public_key.algorithm, "RSA") ThenBlock {
+            TryBlock: {} CatchError.InvalidKeyType {
+                PrintMessage("Expected RSA public key")
+                ReturnValue(False)
+            }
+        }
+        
+        // Hash the message
+        message_hash = ChoosePath hash_algorithm {
+            CaseOption "SHA256": Crypto.SHA256(message)
+            CaseOption "SHA3-256": Crypto.SHA3_256(message)
+            CaseOption "BLAKE3": Crypto.BLAKE3(message)
+            DefaultOption: Crypto.SHA256(message)
+        }
+        
+        // Verify signature using RSA-PSS
+        valid = Crypto.Internal.RSA.VerifyPSS(
+            message_hash,
+            signature,
+            public_key.key_data,
+            hash_algorithm
+        )
+        
+        ReturnValue(valid)
+    }
+}
+
+Function.Crypto.ECDSA.GenerateKeyPair {
+    Input: (curve: Text = "P-256")
+    Output: KeyPair
+    Body: {
+        valid_curves = ["P-256", "P-384", "P-521", "secp256k1"]
+        IfCondition Not(ArrayContains(valid_curves, curve)) ThenBlock {
+            TryBlock: {} CatchError.InvalidCurve {
+                PrintMessage(StringConcat("Unsupported curve: ", curve))
+                curve = "P-256"
+            }
+        }
+        
+        Pool.Crypto.Keys.Allocate(private_key)
+        Pool.Crypto.Keys.Allocate(public_key)
+        
+        key_data = Crypto.Internal.ECDSA.GenerateKeyPair(curve)
+        
+        private_key.algorithm = "ECDSA"
+        private_key.curve_name = curve
+        private_key.key_data = key_data.private_key_der
+        private_key.created_at = Time.Unix()
+        private_key.usage_count = 0
+        
+        public_key.algorithm = "ECDSA"
+        public_key.curve_name = curve
+        public_key.key_data = key_data.public_key_der
+        public_key.fingerprint = Crypto.SHA256(key_data.public_key_der)
+        public_key.created_at = Time.Unix()
+        
+        private_key.public_key = public_key
+        
+        keypair = KeyPair.Create()
+        keypair.private_key = private_key
+        keypair.public_key = public_key
+        keypair.algorithm = "ECDSA"
+        
+        ReturnValue(keypair)
+    }
+}
+
+// ============================================================================
+// Secure Random Number Generation
+// ============================================================================
+
+Function.Crypto.SecureRandom {
+    Input: (size: UInt32)
+    Output: Array[Byte]
+    Body: {
+        random_data = Array.Create(size, Byte)
+        
+        // Use hardware RNG if available
+        IfCondition Hardware.HasRDRAND() ThenBlock {
+            Crypto.Internal.FillHardwareRandom(random_data)
+        } ElseBlock {
+            // Fall back to cryptographically secure PRNG
+            rng_state = Crypto.Internal.GetSecureRNGState()
+            Crypto.Internal.FillSecureRandom(rng_state, random_data)
+        }
+        
+        ReturnValue(random_data)
+    }
+}
+
+Function.Crypto.Random.Integer {
+    Input: (min_value: Integer, max_value: Integer)
+    Output: Integer
+    Body: {
+        IfCondition GreaterThanOrEqual(min_value, max_value) ThenBlock {
+            TryBlock: {} CatchError.InvalidRange {
+                PrintMessage("min_value must be less than max_value")
+                ReturnValue(min_value)
+            }
+        }
+        
+        range_size = Subtract(max_value, min_value)
+        bytes_needed = Crypto.Internal.BytesNeededForRange(range_size)
+        
+        // Rejection sampling to avoid modulo bias
+        WhileLoop True {
+            random_bytes = Crypto.SecureRandom(bytes_needed)
+            random_value = Crypto.Internal.BytesToInteger(random_bytes)
+            
+            IfCondition LessThan(random_value, Multiply(range_size, 
+                                Divide(Power(256, bytes_needed), range_size))) ThenBlock {
+                result = Add(min_value, Modulo(random_value, range_size))
+                ReturnValue(result)
+            }
+        }
+    }
+}
+
+Function.Crypto.Random.String {
+    Input: (
+        length: UInt32,
+        charset: Text = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    )
+    Output: Text
+    Body: {
+        charset_length = StringLength(charset)
+        result_chars = Array.Create(length, Text)
+        
+        ForEvery i in Range(0, length) {
+            random_index = Crypto.Random.Integer(0, charset_length)
+            result_chars[i] = StringChar(charset, random_index)
+        }
+        
+        ReturnValue(ArrayJoin(result_chars, ""))
+    }
+}
+
+// ============================================================================
+// Key Derivation Functions
+// ============================================================================
+
+Function.Crypto.PBKDF2 {
+    Input: (
+        password: Array[Byte],
+        salt: Array[Byte],
+        iterations: UInt32,
+        key_length: UInt32,
+        hash_algorithm: Text = "SHA256"
+    )
+    Output: Array[Byte]
+    Body: {
+        IfCondition LessThan(iterations, 10000) ThenBlock {
+            PrintMessage("Warning: PBKDF2 iterations less than 10,000 is weak")
+        }
+        
+        derived_key = Crypto.Internal.PBKDF2(
+            password,
+            salt,
+            iterations,
+            key_length,
+            hash_algorithm
+        )
+        
+        ReturnValue(derived_key)
+    }
+}
+
+Function.Crypto.Scrypt {
+    Input: (
+        password: Array[Byte],
+        salt: Array[Byte],
+        n: UInt32,       // CPU/memory cost
+        r: UInt32,       // Block size
+        p: UInt32,       // Parallelization
+        key_length: UInt32
+    )
+    Output: Array[Byte]
+    Body: {
+        // Validate parameters
+        IfCondition Not(And(GreaterThan(n, 1), EqualTo(BitwiseAnd(n, Subtract(n, 1)), 0))) ThenBlock {
+            TryBlock: {} CatchError.InvalidParameter {
+                PrintMessage("Scrypt N parameter must be power of 2 > 1")
+                n = 16384
+            }
+        }
+        
+        derived_key = Crypto.Internal.Scrypt(password, salt, n, r, p, key_length)
+        
+        ReturnValue(derived_key)
+    }
+}
+
+Function.Crypto.Argon2id {
+    Input: (
+        password: Array[Byte],
+        salt: Array[Byte],
+        memory_kb: UInt32 = 65536,    // 64MB
+        iterations: UInt32 = 3,
+        parallelism: UInt32 = 4,
+        key_length: UInt32 = 32
+    )
+    Output: Array[Byte]
+    Body: {
+        derived_key = Crypto.Internal.Argon2id(
+            password,
+            salt,
+            memory_kb,
+            iterations,
+            parallelism,
+            key_length
+        )
+        
+        ReturnValue(derived_key)
+    }
+}
+
+// ============================================================================
+// Digital Signatures (Advanced)
+// ============================================================================
+
+Function.Crypto.Ed25519.GenerateKeyPair {
+    Output: KeyPair
+    Body: {
+        Pool.Crypto.Keys.Allocate(private_key)
+        Pool.Crypto.Keys.Allocate(public_key)
+        
+        key_data = Crypto.Internal.Ed25519.GenerateKeyPair()
+        
+        private_key.algorithm = "Ed25519"
+        private_key.key_size = 256
+        private_key.key_data = key_data.private_key
+        private_key.created_at = Time.Unix()
+        private_key.usage_count = 0
+        
+        public_key.algorithm = "Ed25519"
+        public_key.key_size = 256
+        public_key.key_data = key_data.public_key
+        public_key.fingerprint = Crypto.SHA256(key_data.public_key)
+        public_key.created_at = Time.Unix()
+        
+        private_key.public_key = public_key
+        
+        keypair = KeyPair.Create()
+        keypair.private_key = private_key
+        keypair.public_key = public_key
+        keypair.algorithm = "Ed25519"
+        keypair.key_size = 256
+        
+        ReturnValue(keypair)
+    }
+}
+
+Function.Crypto.Ed25519.Sign {
+    Input: (message: Array[Byte], private_key: PrivateKey)
+    Output: Array[Byte]
+    Body: {
+        IfCondition NotEqual(private_key.algorithm, "Ed25519") ThenBlock {
+            TryBlock: {} CatchError.InvalidKeyType {
+                PrintMessage("Expected Ed25519 private key")
+                ReturnValue(Array.Create())
+            }
+        }
+        
+        signature = Crypto.Internal.Ed25519.Sign(message, private_key.key_data)
+        private_key.usage_count = Add(private_key.usage_count, 1)
+        
+        ReturnValue(signature)
+    }
+}
+
+Function.Crypto.Ed25519.Verify {
+    Input: (message: Array[Byte], signature: Array[Byte], public_key: PublicKey)
+    Output: Boolean
+    Body: {
+        IfCondition NotEqual(public_key.algorithm, "Ed25519") ThenBlock {
+            TryBlock: {} CatchError.InvalidKeyType {
+                PrintMessage("Expected Ed25519 public key")
+                ReturnValue(False)
+            }
+        }
+        
+        valid = Crypto.Internal.Ed25519.Verify(message, signature, public_key.key_data)
+        
+        ReturnValue(valid)
+    }
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+Function.Crypto.ConstantTimeCompare {
+    Input: (a: Array[Byte], b: Array[Byte])
+    Output: Boolean
+    Body: {
+        IfCondition NotEqual(ArrayLength(a), ArrayLength(b)) ThenBlock {
+            ReturnValue(False)
+        }
+        
+        result = 0
+        ForEvery i in Range(0, ArrayLength(a)) {
+            result = BitwiseOr(result, BitwiseXor(a[i], b[i]))
+        }
+        
+        ReturnValue(EqualTo(result, 0))
+    }
+}
+
+Function.Crypto.SecureErase {
+    Input: (data: Array[Byte])
+    Body: {
+        // Overwrite with random data multiple times
+        ForEvery pass in Range(0, 3) {
+            random_data = Crypto.SecureRandom(ArrayLength(data))
+            ArrayCopy(random_data, 0, data, 0, ArrayLength(data))
+        }
+        
+        // Final overwrite with zeros
+        ArrayFill(data, 0)
+        
+        // Tell compiler not to optimize this away
+        Hardware.Memory.ForceWrite(AddressOf(data), ArrayLength(data))
+    }
+}
+
+Function.Crypto.GenerateSalt {
+    Input: (size: UInt32 = 32)
+    Output: Array[Byte]
+    Body: {
+        ReturnValue(Crypto.SecureRandom(size))
+    }
+}
+
+Function.Crypto.Base64.Encode {
+    Input: (data: Array[Byte])
+    Output: Text
+    Body: {
+        ReturnValue(Crypto.Internal.Base64.Encode(data))
+    }
+}
+
+Function.Crypto.Base64.Decode {
+    Input: (encoded: Text)
+    Output: Array[Byte]
+    Body: {
+        TryBlock: {
+            ReturnValue(Crypto.Internal.Base64.Decode(encoded))
+        }
+        CatchError.InvalidBase64 {
+            PrintMessage("Invalid Base64 encoding")
+            ReturnValue(Array.Create())
+        }
+    }
+}
+
+Function.Crypto.Hex.Encode {
+    Input: (data: Array[Byte])
+    Output: Text
+    Body: {
+        hex_chars = "0123456789abcdef"
+        result = Array.Create(Multiply(ArrayLength(data), 2), Text)
+        
+        ForEvery i in Range(0, ArrayLength(data)) {
+            byte_value = data[i]
+            result[Multiply(i, 2)] = StringChar(hex_chars, RightShift(byte_value, 4))
+            result[Add(Multiply(i, 2), 1)] = StringChar(hex_chars, BitwiseAnd(byte_value, 15))
+        }
+        
+        ReturnValue(ArrayJoin(result, ""))
+    }
+}
+
+Function.Crypto.Hex.Decode {
+    Input: (hex_string: Text)
+    Output: Array[Byte]
+    Body: {
+        IfCondition NotEqual(Modulo(StringLength(hex_string), 2), 0) ThenBlock {
+            TryBlock: {} CatchError.InvalidHex {
+                PrintMessage("Hex string must have even length")
+                ReturnValue(Array.Create())
+            }
+        }
+        
+        result = Array.Create(Divide(StringLength(hex_string), 2), Byte)
+        
+        ForEvery i in Range(0, ArrayLength(result)) {
+            hex_byte = StringSlice(hex_string, Multiply(i, 2), Add(Multiply(i, 2), 2))
+            result[i] = Crypto.Internal.HexToByte(hex_byte)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// ============================================================================
+// Password Hashing
+// ============================================================================
+
+Function.Crypto.Password.Hash {
+    Input: (
+        password: Text,
+        algorithm: Text = "Argon2id",
+        options: OptionalType[Map[Text, Any]] = Null
+    )
+    Output: Text
+    Body: {
+        password_bytes = StringToBytes(password)
+        salt = Crypto.GenerateSalt(32)
+        
+        ChoosePath algorithm {
+            CaseOption "Argon2id": {
+                memory_kb = 65536
+                iterations = 3
+                parallelism = 4
+                
+                IfCondition NotEqual(options, Null) ThenBlock {
+                    IfCondition Map.ContainsKey(options, "memory_kb") ThenBlock {
+                        memory_kb = Map.Get(options, "memory_kb")
+                    }
+                    IfCondition Map.ContainsKey(options, "iterations") ThenBlock {
+                        iterations = Map.Get(options, "iterations")
+                    }
+                    IfCondition Map.ContainsKey(options, "parallelism") ThenBlock {
+                        parallelism = Map.Get(options, "parallelism")
+                    }
+                }
+                
+                hash = Crypto.Argon2id(password_bytes, salt, memory_kb, iterations, parallelism, 32)
+                
+                // Format: $argon2id$v=19$m=65536,t=3,p=4$salt$hash
+                salt_b64 = Crypto.Base64.Encode(salt)
+                hash_b64 = Crypto.Base64.Encode(hash)
+                
+                formatted = StringConcat(
+                    "$argon2id$v=19$m=", NumberToString(memory_kb),
+                    ",t=", NumberToString(iterations),
+                    ",p=", NumberToString(parallelism),
+                    "$", salt_b64, "$", hash_b64
+                )
+                
+                ReturnValue(formatted)
+            }
+            CaseOption "Scrypt": {
+                n = 16384
+                r = 8
+                p = 1
+                
+                IfCondition NotEqual(options, Null) ThenBlock {
+                    IfCondition Map.ContainsKey(options, "n") ThenBlock {
+                        n = Map.Get(options, "n")
+                    }
+                    IfCondition Map.ContainsKey(options, "r") ThenBlock {
+                        r = Map.Get(options, "r")
+                    }
+                    IfCondition Map.ContainsKey(options, "p") ThenBlock {
+                        p = Map.Get(options, "p")
+                    }
+                }
+                
+                hash = Crypto.Scrypt(password_bytes, salt, n, r, p, 32)
+                
+                salt_b64 = Crypto.Base64.Encode(salt)
+                hash_b64 = Crypto.Base64.Encode(hash)
+                
+                formatted = StringConcat(
+                    "$scrypt$n=", NumberToString(n),
+                    ",r=", NumberToString(r),
+                    ",p=", NumberToString(p),
+                    "$", salt_b64, "$", hash_b64
+                )
+                
+                ReturnValue(formatted)
+            }
+            DefaultOption: {
+                TryBlock: {} CatchError.UnsupportedAlgorithm {
+                    PrintMessage(StringConcat("Unsupported password hashing algorithm: ", algorithm))
+                    ReturnValue("")
+                }
+            }
+        }
+    }
+}
+
+Function.Crypto.Password.Verify {
+    Input: (password: Text, hash: Text)
+    Output: Boolean
+    Body: {
+        // Parse hash format to determine algorithm
+        IfCondition StringStartsWith(hash, "$argon2id$") ThenBlock {
+            ReturnValue(Crypto.Internal.VerifyArgon2id(password, hash))
+        } ElseBlock {
+            IfCondition StringStartsWith(hash, "$scrypt$") ThenBlock {
+                ReturnValue(Crypto.Internal.VerifyScrypt(password, hash))
+            } ElseBlock {
+                PrintMessage("Unknown password hash format")
+                ReturnValue(False)
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Result Types
+// ============================================================================
+
+CipherResult = Record {
+    success: Boolean,
+    data: Array[Byte],
+    iv: OptionalType[Array[Byte]],
+    tag: OptionalType[Array[Byte]],
+    error_message: OptionalType[Text]
+}
+
+Function.CipherResult.Create {
+    Output: CipherResult
+    Body: {
+        result = CipherResult.Record()
+        result.success = False
+        result.data = Array.Create()
+        result.iv = Null
+        result.tag = Null
+        result.error_message = Null
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Crypto.CreateErrorResult {
+    Input: (error_message: Text)
+    Output: CipherResult
+    Body: {
+        result = CipherResult.Create()
+        result.success = False
+        result.error_message = error_message
+        
+        ReturnValue(result)
+    }
+}

@@ -1,0 +1,61 @@
+// Enhanced Redis client with byte-level debugging
+SubRoutine.TestClient {
+    PrintMessage("AILANG Redis Debug Client")
+    PrintMessage("========================")
+    
+    socket = SocketCreate()
+    result = SocketConnect(socket, "127.0.0.1", 6379)
+    
+    IfCondition LessThan(result, 0) ThenBlock {
+        PrintMessage("Connection failed")
+        Exit(1)
+    }
+    
+    // Test EXISTS command
+    PrintMessage("Testing EXISTS command...")
+    
+    // First SET a key
+    set_cmd = "*3\r\n$3\r\nSET\r\n$4\r\ntest\r\n$5\r\nvalue\r\n"
+    SocketWrite(socket, set_cmd, StringLength(set_cmd))
+    
+    response = Allocate(256)
+    bytes_read = SocketRead(socket, response, 256)
+    PrintMessage("SET response: ")
+    PrintString(response)
+    
+    // Now test EXISTS
+    exists_cmd = "*2\r\n$6\r\nEXISTS\r\n$4\r\ntest\r\n"
+    SocketWrite(socket, exists_cmd, StringLength(exists_cmd))
+    
+    bytes_read = SocketRead(socket, response, 256)
+    PrintMessage("EXISTS response bytes read: ")
+    PrintNumber(bytes_read)
+    PrintMessage("")
+    
+    // Show raw bytes
+    PrintMessage("Raw bytes: ")
+    i = 0
+    WhileLoop LessThan(i, bytes_read) {
+        byte = GetByte(response, i)
+        PrintNumber(byte)
+        PrintMessage(" ")
+        
+        // Show ASCII if printable
+        IfCondition And(GreaterEqual(byte, 32), LessEqual(byte, 126)) ThenBlock {
+            PrintMessage("(")
+            // Would need PrintChar here
+            PrintMessage(") ")
+        }
+        i = Add(i, 1)
+    }
+    PrintMessage("")
+    
+    // Show as string
+    PrintMessage("As string: ")
+    PrintString(response)
+    
+    Deallocate(response, 256)
+    SocketClose(socket)
+}
+
+RunTask(TestClient)

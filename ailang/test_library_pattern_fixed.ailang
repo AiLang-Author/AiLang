@@ -1,0 +1,121 @@
+// test_library_pattern.ailang - Fixed with pool-based array passing
+// Test library-style function organization
+
+PrintMessage("Library Pattern Test")
+PrintMessage("====================")
+
+// Shared pool for array passing
+FixedPool.Shared {
+    "resp_buffer": Initialize=0
+}
+
+// RESP-style library functions
+Function.RESP.MakeSimpleString {
+    Body: {
+        arr = ArrayCreate(5)
+        ArraySet(arr, 0, 43)  // '+'
+        ArraySet(arr, 1, 79)  // 'O'
+        ArraySet(arr, 2, 75)  // 'K'
+        ArraySet(arr, 3, 13)  // '\r'
+        ArraySet(arr, 4, 10)  // '\n'
+        
+        // Store in pool instead of returning
+        Shared.resp_buffer = arr
+        ReturnValue(1)  // Return success indicator
+    }
+}
+
+Function.RESP.MakeError {
+    Body: {
+        arr = ArrayCreate(5)
+        ArraySet(arr, 0, 45)  // '-'
+        ArraySet(arr, 1, 69)  // 'E'
+        ArraySet(arr, 2, 82)  // 'R'
+        ArraySet(arr, 3, 82)  // 'R'
+        ArraySet(arr, 4, 10)  // '\n'
+        
+        // Store in pool
+        Shared.resp_buffer = arr
+        ReturnValue(2)  // Return error indicator
+    }
+}
+
+Function.RESP.GetType {
+    Body: {
+        // Read from pool instead of parameter
+        buffer = Shared.resp_buffer
+        first = ArrayGet(buffer, 0)
+        
+        // Simple string '+'
+        is_simple = EqualTo(first, 43)
+        IfCondition is_simple ThenBlock {
+            ReturnValue(1)
+        }
+        
+        // Error '-'
+        is_error = EqualTo(first, 45)
+        IfCondition is_error ThenBlock {
+            ReturnValue(2)
+        }
+        
+        // Array '*'
+        is_array = EqualTo(first, 42)
+        IfCondition is_array ThenBlock {
+            ReturnValue(3)
+        }
+        
+        // Unknown
+        ReturnValue(0)
+    }
+}
+
+// Test the library
+dummy = RESP.MakeSimpleString()
+PrintMessage("Created OK response")
+
+ok_type = RESP.GetType()
+PrintMessage("OK type (should be 1):")
+PrintNumber(ok_type)
+
+dummy = RESP.MakeError()
+PrintMessage("Created ERR response")
+
+err_type = RESP.GetType()
+PrintMessage("ERR type (should be 2):")
+PrintNumber(err_type)
+
+// Math library functions work fine without arrays
+Function.Math.Min {
+    Input: a: 
+    Input: b:
+    Body: {
+        less = LessThan(a, b)
+        IfCondition less ThenBlock {
+            ReturnValue(a)
+        }
+        ReturnValue(b)
+    }
+}
+
+Function.Math.Max {
+    Input: a: 
+    Input: b:
+    Body: {
+        greater = GreaterThan(a, b)
+        IfCondition greater ThenBlock {
+            ReturnValue(a)
+        }
+        ReturnValue(b)
+    }
+}
+
+// Test Math library
+min_val = Math.Min(10, 20)
+PrintMessage("Min(10,20) = 10:")
+PrintNumber(min_val)
+
+max_val = Math.Max(10, 20)
+PrintMessage("Max(10,20) = 20:")
+PrintNumber(max_val)
+
+PrintMessage("Library pattern complete!")

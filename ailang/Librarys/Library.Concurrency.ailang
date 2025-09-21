@@ -5,35 +5,35 @@
 
 // Memory pools for concurrency primitives
 Pool.Concurrency.ThreadStacks = TemporalPool {
-    "thread_stacks": ElementType-Byte, MaximumLength-1000000000,  // 1GB total
+    "thread_stacks": ElementType-Byte, MaximumLength: 1000000000,  // 1GB total
     "stack_size": Initialize-1048576, CanChange-False,  // 1MB per stack
     "lifetime": Initialize-"thread_scope", CanChange-False,
     "cache_policy": Initialize-"L2", CanChange-False
 }
 
 Pool.Concurrency.L1ThreadStacks = FixedPool {
-    "l1_stacks": ElementType-Byte, MaximumLength-10485760,  // 10MB L1-optimized
+    "l1_stacks": ElementType-Byte, MaximumLength: 10485760,  // 10MB L1-optimized
     "cache_alignment": Initialize-64, CanChange-False
 }
 
 Pool.Concurrency.Synchronization = FixedPool {
-    "mutexes": ElementType-MutexHandle, MaximumLength-10000,
-    "conditions": ElementType-ConditionHandle, MaximumLength-10000,
-    "channels": ElementType-ChannelHandle, MaximumLength-10000,
+    "mutexes": ElementType-MutexHandle, MaximumLength: 10000,
+    "conditions": ElementType-ConditionHandle, MaximumLength: 10000,
+    "channels": ElementType-ChannelHandle, MaximumLength: 10000,
     "cache_aligned": Initialize-True, CanChange-False
 }
 
 Pool.Concurrency.TaskQueue = DynamicPool {
     "pending_tasks": ElementType-TaskHandle, CanChange-True,
-    "task_queue": ElementType-Address, MaximumLength-100000,
-    "priority_queue": ElementType-Address, MaximumLength-10000
+    "task_queue": ElementType-Address, MaximumLength: 100000,
+    "priority_queue": ElementType-Address, MaximumLength: 10000
 }
 
 Pool.ActorSystem.Runtime = ActorPool {
-    "actor_registry": ElementType-ActorHandle, MaximumLength-100000,
-    "message_queues": ElementType-MessageQueue, MaximumLength-100000,
-    "actor_states": ElementType-Address, MaximumLength-100000,
-    "supervision_tree": ElementType-SupervisorHandle, MaximumLength-1000
+    "actor_registry": ElementType-ActorHandle, MaximumLength: 100000,
+    "message_queues": ElementType-MessageQueue, MaximumLength: 100000,
+    "actor_states": ElementType-Address, MaximumLength: 100000,
+    "supervision_tree": ElementType-SupervisorHandle, MaximumLength: 1000
 }
 
 // ============================================================================
@@ -138,13 +138,13 @@ Function.Thread.Create {
         // Allocate stack based on cache policy
         ChoosePath cache_policy {
             CaseOption "L1": {
-                IfCondition LessEqual(stack_size, 1048576) ThenBlock {
+                IfCondition LessEqual(stack_size, 1048576) ThenBlock: {
                     Pool.Concurrency.L1ThreadStacks.Allocate(
                         thread.stack_address, 
                         size-stack_size,
                         alignment-64
                     )
-                } ElseBlock {
+                } ElseBlock: {
                     Pool.Concurrency.ThreadStacks.Allocate(
                         thread.stack_address,
                         size-stack_size
@@ -187,10 +187,10 @@ Function.Thread.Join {
     Input: (thread: ThreadHandle, timeout: OptionalType[Integer] = Null)
     Output: Boolean
     Body: {
-        IfCondition EqualTo(timeout, Null) ThenBlock {
+        IfCondition EqualTo(timeout, Null) ThenBlock: {
             Hardware.Thread.Join(thread.id)
             ReturnValue(True)
-        } ElseBlock {
+        } ElseBlock: {
             result = Hardware.Thread.JoinTimeout(thread.id, timeout)
             ReturnValue(result)
         }
@@ -242,10 +242,10 @@ Function.Concurrency.Mutex.Create {
     Body: {
         Pool.Concurrency.Synchronization.Allocate(mutex)
         
-        IfCondition cache_line_aligned ThenBlock {
+        IfCondition cache_line_aligned ThenBlock: {
             // Ensure mutex is on its own cache line
             mutex.cache_aligned = True
-        } ElseBlock {
+        } ElseBlock: {
             mutex.cache_aligned = False
         }
         
@@ -270,24 +270,24 @@ Function.Concurrency.Mutex.Lock {
             expected = 0
             success = Hardware.Atomic.CompareSwap(mutex.state, expected, 1)
             
-            IfCondition success ThenBlock {
+            IfCondition success ThenBlock: {
                 Hardware.Atomic.Store(mutex.owner, current_thread)
                 ReturnValue(True)
             }
             
             // Check timeout
-            IfCondition NotEqual(timeout, Null) ThenBlock {
+            IfCondition NotEqual(timeout, Null) ThenBlock: {
                 elapsed = Subtract(Time.GetMonotonicNanos(), start_time)
-                IfCondition GreaterThan(elapsed, Multiply(timeout, 1000000)) ThenBlock {
+                IfCondition GreaterThan(elapsed, Multiply(timeout, 1000000)) ThenBlock: {
                     ReturnValue(False)
                 }
             }
             
             // Adaptive spinning before yielding
-            IfCondition LessThan(spin_count, mutex.spin_count) ThenBlock {
+            IfCondition LessThan(spin_count, mutex.spin_count) ThenBlock: {
                 spin_count = Add(spin_count, 1)
                 Hardware.Pause()  // Prevent pipeline stall
-            } ElseBlock {
+            } ElseBlock: {
                 Thread.Yield()
                 spin_count = 0
             }
@@ -302,7 +302,7 @@ Function.Concurrency.Mutex.TryLock {
         expected = 0
         success = Hardware.Atomic.CompareSwap(mutex.state, expected, 1)
         
-        IfCondition success ThenBlock {
+        IfCondition success ThenBlock: {
             current_thread = Thread.GetCurrentId()
             Hardware.Atomic.Store(mutex.owner, current_thread)
         }
@@ -317,8 +317,9 @@ Function.Concurrency.Mutex.Unlock {
         current_thread = Thread.GetCurrentId()
         owner = Hardware.Atomic.Load(mutex.owner)
         
-        IfCondition NotEqual(owner, current_thread) ThenBlock {
-            TryBlock: {} CatchError.InvalidUnlock {
+        IfCondition NotEqual(owner, current_thread) ThenBlock: {
+            TryBlock: {} 
+            CatchError.InvalidUnlock: {
                 PrintMessage("Mutex unlock by non-owner thread")
             }
         }
@@ -349,7 +350,7 @@ Function.Concurrency.RWLock.ReadLock {
         Concurrency.Mutex.Lock(rwlock.reader_mutex)
         
         reader_count = Hardware.Atomic.Add(rwlock.readers, 1)
-        IfCondition EqualTo(reader_count, 1) ThenBlock {
+        IfCondition EqualTo(reader_count, 1) ThenBlock: {
             // First reader, block writers
             Concurrency.Mutex.Lock(rwlock.writer_mutex)
         }
@@ -364,7 +365,7 @@ Function.Concurrency.RWLock.ReadUnlock {
         Concurrency.Mutex.Lock(rwlock.reader_mutex)
         
         reader_count = Hardware.Atomic.Sub(rwlock.readers, 1)
-        IfCondition EqualTo(reader_count, 0) ThenBlock {
+        IfCondition EqualTo(reader_count, 0) ThenBlock: {
             // Last reader, allow writers
             Concurrency.Mutex.Unlock(rwlock.writer_mutex)
         }
@@ -435,7 +436,7 @@ Function.Concurrency.Condition.WaitTimeout {
         success = Thread.SuspendTimeout(current_thread, timeout_ms)
         Concurrency.Mutex.Lock(mutex)
         
-        IfCondition Not(success) ThenBlock {
+        IfCondition Not(success) ThenBlock: {
             // Timeout occurred, remove from queue
             Concurrency.Mutex.Lock(condition.mutex)
             Queue.Remove(condition.waiting_threads, current_thread)
@@ -451,7 +452,7 @@ Function.Concurrency.Condition.Signal {
     Body: {
         Concurrency.Mutex.Lock(condition.mutex)
         
-        IfCondition Not(Queue.IsEmpty(condition.waiting_threads)) ThenBlock {
+        IfCondition Not(Queue.IsEmpty(condition.waiting_threads)) ThenBlock: {
             waiting_thread = Queue.Pop(condition.waiting_threads)
             Thread.Resume(waiting_thread)
             Hardware.Atomic.Add(condition.signal_count, 1)
@@ -491,13 +492,13 @@ Function.Concurrency.Channel.Create {
         channel.capacity = capacity
         channel.element_type = element_type
         
-        IfCondition GreaterThan(capacity, 0) ThenBlock {
+        IfCondition GreaterThan(capacity, 0) ThenBlock: {
             // Buffered channel
             channel.buffer = CircularBuffer.Create(capacity, element_type)
             channel.buffer_mutex = Concurrency.Mutex.Create()
             channel.not_full = Concurrency.Condition.Create()
             channel.not_empty = Concurrency.Condition.Create()
-        } ElseBlock {
+        } ElseBlock: {
             // Unbuffered channel (synchronous)
             channel.sender_queue = Queue.Create()
             channel.receiver_queue = Queue.Create()
@@ -517,22 +518,22 @@ Function.Concurrency.Channel.Send {
     )
     Output: Boolean
     Body: {
-        IfCondition NotEqual(Hardware.Atomic.Load(channel.closed), 0) ThenBlock {
+        IfCondition NotEqual(Hardware.Atomic.Load(channel.closed), 0) ThenBlock: {
             ReturnValue(False)  // Channel is closed
         }
         
-        IfCondition GreaterThan(channel.capacity, 0) ThenBlock {
+        IfCondition GreaterThan(channel.capacity, 0) ThenBlock: {
             // Buffered channel
             Concurrency.Mutex.Lock(channel.buffer_mutex)
             
             start_time = Time.GetMonotonicNanos()
             
             WhileLoop CircularBuffer.IsFull(channel.buffer) {
-                IfCondition NotEqual(timeout, Null) ThenBlock {
+                IfCondition NotEqual(timeout, Null) ThenBlock: {
                     elapsed = Subtract(Time.GetMonotonicNanos(), start_time)
                     remaining = Subtract(Multiply(timeout, 1000000), elapsed)
                     
-                    IfCondition LessEqual(remaining, 0) ThenBlock {
+                    IfCondition LessEqual(remaining, 0) ThenBlock: {
                         Concurrency.Mutex.Unlock(channel.buffer_mutex)
                         ReturnValue(False)  // Timeout
                     }
@@ -542,11 +543,11 @@ Function.Concurrency.Channel.Send {
                         channel.buffer_mutex, 
                         Divide(remaining, 1000000)
                     )
-                    IfCondition Not(success) ThenBlock {
+                    IfCondition Not(success) ThenBlock: {
                         Concurrency.Mutex.Unlock(channel.buffer_mutex)
                         ReturnValue(False)  // Timeout
                     }
-                } ElseBlock {
+                } ElseBlock: {
                     Concurrency.Condition.Wait(channel.not_full, channel.buffer_mutex)
                 }
             }
@@ -556,19 +557,19 @@ Function.Concurrency.Channel.Send {
             Concurrency.Mutex.Unlock(channel.buffer_mutex)
             
             ReturnValue(True)
-        } ElseBlock {
+        } ElseBlock: {
             // Unbuffered channel (synchronous handoff)
             // Implementation for direct thread-to-thread transfer
             sender_info = SenderInfo.Create(Thread.GetCurrentId(), value)
             
             // Try to find waiting receiver
             receiver = Queue.TryPop(channel.receiver_queue)
-            IfCondition NotEqual(receiver, Null) ThenBlock {
+            IfCondition NotEqual(receiver, Null) ThenBlock: {
                 // Direct handoff
                 Thread.SendValue(receiver.thread_id, value)
                 Thread.Resume(receiver.thread_id)
                 ReturnValue(True)
-            } ElseBlock {
+            } ElseBlock: {
                 // Wait for receiver
                 Queue.Push(channel.sender_queue, sender_info)
                 Thread.Suspend(Thread.GetCurrentId())
@@ -582,7 +583,7 @@ Function.Concurrency.Channel.Receive {
     Input: (channel: ChannelHandle, timeout: OptionalType[Integer] = Null)
     Output: OptionalType[Any]
     Body: {
-        IfCondition GreaterThan(channel.capacity, 0) ThenBlock {
+        IfCondition GreaterThan(channel.capacity, 0) ThenBlock: {
             // Buffered channel
             Concurrency.Mutex.Lock(channel.buffer_mutex)
             
@@ -592,11 +593,11 @@ Function.Concurrency.Channel.Receive {
                 CircularBuffer.IsEmpty(channel.buffer),
                 EqualTo(Hardware.Atomic.Load(channel.closed), 0)
             ) {
-                IfCondition NotEqual(timeout, Null) ThenBlock {
+                IfCondition NotEqual(timeout, Null) ThenBlock: {
                     elapsed = Subtract(Time.GetMonotonicNanos(), start_time)
                     remaining = Subtract(Multiply(timeout, 1000000), elapsed)
                     
-                    IfCondition LessEqual(remaining, 0) ThenBlock {
+                    IfCondition LessEqual(remaining, 0) ThenBlock: {
                         Concurrency.Mutex.Unlock(channel.buffer_mutex)
                         ReturnValue(Null)  // Timeout
                     }
@@ -606,16 +607,16 @@ Function.Concurrency.Channel.Receive {
                         channel.buffer_mutex,
                         Divide(remaining, 1000000)
                     )
-                    IfCondition Not(success) ThenBlock {
+                    IfCondition Not(success) ThenBlock: {
                         Concurrency.Mutex.Unlock(channel.buffer_mutex)
                         ReturnValue(Null)  // Timeout
                     }
-                } ElseBlock {
+                } ElseBlock: {
                     Concurrency.Condition.Wait(channel.not_empty, channel.buffer_mutex)
                 }
             }
             
-            IfCondition CircularBuffer.IsEmpty(channel.buffer) ThenBlock {
+            IfCondition CircularBuffer.IsEmpty(channel.buffer) ThenBlock: {
                 // Channel closed and empty
                 Concurrency.Mutex.Unlock(channel.buffer_mutex)
                 ReturnValue(Null)
@@ -626,26 +627,26 @@ Function.Concurrency.Channel.Receive {
             Concurrency.Mutex.Unlock(channel.buffer_mutex)
             
             ReturnValue(value)
-        } ElseBlock {
+        } ElseBlock: {
             // Unbuffered channel
             // Try to find waiting sender
             sender = Queue.TryPop(channel.sender_queue)
-            IfCondition NotEqual(sender, Null) ThenBlock {
+            IfCondition NotEqual(sender, Null) ThenBlock: {
                 value = sender.value
                 Thread.Resume(sender.thread_id)
                 ReturnValue(value)
-            } ElseBlock {
+            } ElseBlock: {
                 // Wait for sender
                 receiver_info = ReceiverInfo.Create(Thread.GetCurrentId())
                 Queue.Push(channel.receiver_queue, receiver_info)
                 
-                IfCondition NotEqual(timeout, Null) ThenBlock {
+                IfCondition NotEqual(timeout, Null) ThenBlock: {
                     success = Thread.SuspendTimeout(Thread.GetCurrentId(), timeout)
-                    IfCondition Not(success) ThenBlock {
+                    IfCondition Not(success) ThenBlock: {
                         Queue.Remove(channel.receiver_queue, receiver_info)
                         ReturnValue(Null)  // Timeout
                     }
-                } ElseBlock {
+                } ElseBlock: {
                     Thread.Suspend(Thread.GetCurrentId())
                 }
                 
@@ -661,11 +662,11 @@ Function.Concurrency.Channel.Close {
     Body: {
         Hardware.Atomic.Store(channel.closed, 1)
         
-        IfCondition GreaterThan(channel.capacity, 0) ThenBlock {
+        IfCondition GreaterThan(channel.capacity, 0) ThenBlock: {
             // Buffered channel - wake up all waiters
             Concurrency.Condition.Broadcast(channel.not_empty)
             Concurrency.Condition.Broadcast(channel.not_full)
-        } ElseBlock {
+        } ElseBlock: {
             // Unbuffered channel - wake up all waiting senders/receivers
             WhileLoop Not(Queue.IsEmpty(channel.sender_queue)) {
                 sender = Queue.Pop(channel.sender_queue)
@@ -735,7 +736,7 @@ Function.ThreadPool.Submit {
         // Thread-safe task queue insertion
         Concurrency.Mutex.Lock(pool.queue_mutex)
         
-        IfCondition pool.shutdown ThenBlock {
+        IfCondition pool.shutdown ThenBlock: {
             Concurrency.Mutex.Unlock(pool.queue_mutex)
             Async.Future.SetError(future, "ThreadPool is shut down")
             ReturnValue(future)
@@ -762,7 +763,7 @@ Function.ThreadPool.WorkerLoop {
                 Concurrency.Condition.Wait(pool.has_tasks, pool.queue_mutex)
             }
             
-            IfCondition pool.shutdown ThenBlock {
+            IfCondition pool.shutdown ThenBlock: {
                 Concurrency.Mutex.Unlock(pool.queue_mutex)
                 BreakLoop
             }
@@ -775,7 +776,7 @@ Function.ThreadPool.WorkerLoop {
                 result = Apply(task.function, task.args)
                 Async.Future.SetResult(task.future, result)
             }
-            CatchError.Any {
+            CatchError.Any: {
                 error_msg = GetErrorMessage()
                 Async.Future.SetError(task.future, error_msg)
             }
@@ -791,7 +792,7 @@ Function.ThreadPool.Shutdown {
         Concurrency.Condition.Broadcast(pool.has_tasks)
         Concurrency.Mutex.Unlock(pool.queue_mutex)
         
-        IfCondition wait_for_completion ThenBlock {
+        IfCondition wait_for_completion ThenBlock: {
             ForEvery i in Range(0, pool.worker_count) {
                 Thread.Join(pool.workers[i])
             }
@@ -825,7 +826,7 @@ Function.Async.Future.SetResult {
     Body: {
         Concurrency.Mutex.Lock(future.mutex)
         
-        IfCondition future.completed ThenBlock {
+        IfCondition future.completed ThenBlock: {
             Concurrency.Mutex.Unlock(future.mutex)
             ReturnValue()
         }
@@ -838,7 +839,7 @@ Function.Async.Future.SetResult {
             TryBlock: {
                 Apply(callback, result)
             }
-            CatchError.Any {
+            CatchError.Any: {
                 PrintMessage("Future callback error: " + GetErrorMessage())
             }
         }
@@ -853,7 +854,7 @@ Function.Async.Future.SetError {
     Body: {
         Concurrency.Mutex.Lock(future.mutex)
         
-        IfCondition future.completed ThenBlock {
+        IfCondition future.completed ThenBlock: {
             Concurrency.Mutex.Unlock(future.mutex)
             ReturnValue()
         }
@@ -875,13 +876,14 @@ Function.Async.Await {
         start_time = Time.GetMonotonicNanos()
         
         WhileLoop Not(future.completed) {
-            IfCondition NotEqual(timeout, Null) ThenBlock {
+            IfCondition NotEqual(timeout, Null) ThenBlock: {
                 elapsed = Subtract(Time.GetMonotonicNanos(), start_time)
                 remaining = Subtract(Multiply(timeout, 1000000), elapsed)
                 
-                IfCondition LessEqual(remaining, 0) ThenBlock {
+                IfCondition LessEqual(remaining, 0) ThenBlock: {
                     Concurrency.Mutex.Unlock(future.mutex)
-                    TryBlock: {} CatchError.Timeout {
+                    TryBlock: {} 
+                    CatchError.Timeout: {
                         PrintMessage("Future await timeout")
                     }
                 }
@@ -891,11 +893,12 @@ Function.Async.Await {
                     future.mutex, 
                     Divide(remaining, 1000000)
                 )
-                IfCondition Not(success) ThenBlock {
+                IfCondition Not(success) ThenBlock: {
                     Concurrency.Mutex.Unlock(future.mutex)
-                    TryBlock: {} CatchError.Timeout {}
+                    TryBlock: {} 
+                    CatchError.Timeout: {}
                 }
-            } ElseBlock {
+            } ElseBlock: {
                 Concurrency.Condition.Wait(future.condition, future.mutex)
             }
         }
@@ -905,8 +908,9 @@ Function.Async.Await {
         
         Concurrency.Mutex.Unlock(future.mutex)
         
-        IfCondition NotEqual(error, Null) ThenBlock {
-            TryBlock: {} CatchError.AsyncError {
+        IfCondition NotEqual(error, Null) ThenBlock: {
+            TryBlock: {} 
+            CatchError.AsyncError: {
                 PrintMessage("Async error: " + error)
             }
         }
@@ -927,7 +931,7 @@ Function.Async.Run {
                 result = Apply(task, args)
                 Async.Future.SetResult(future, result)
             }
-            CatchError.Any {
+            CatchError.Any: {
                 Async.Future.SetError(future, GetErrorMessage())
             }
         }
@@ -976,9 +980,9 @@ Function.Actor.Send {
     Input: (actor: ActorHandle, message: Any)
     Output: Boolean
     Body: {
-        IfCondition actor.running ThenBlock {
+        IfCondition actor.running ThenBlock: {
             ReturnValue(Concurrency.Channel.Send(actor.mailbox, message, timeout-5000))
-        } ElseBlock {
+        } ElseBlock: {
             ReturnValue(False)
         }
     }
@@ -992,13 +996,15 @@ Function.Actor.SendSync {
         sync_message = SyncMessage.Create(message, reply_channel)
         
         success = Concurrency.Channel.Send(actor.mailbox, sync_message, timeout-timeout)
-        IfCondition Not(success) ThenBlock {
-            TryBlock: {} CatchError.Timeout {}
+        IfCondition Not(success) ThenBlock: {
+            TryBlock: {} 
+            CatchError.Timeout: {}
         }
         
         reply = Concurrency.Channel.Receive(reply_channel, timeout-timeout)
-        IfCondition EqualTo(reply, Null) ThenBlock {
-            TryBlock: {} CatchError.Timeout {}
+        IfCondition EqualTo(reply, Null) ThenBlock: {
+            TryBlock: {} 
+            CatchError.Timeout: {}
         }
         
         ReturnValue(reply)
@@ -1011,33 +1017,33 @@ Function.Actor.MessageLoop {
         WhileLoop actor.running {
             message = Concurrency.Channel.Receive(actor.mailbox, timeout-1000)
             
-            IfCondition NotEqual(message, Null) ThenBlock {
+            IfCondition NotEqual(message, Null) ThenBlock: {
                 TryBlock: {
                     // Call actor behavior with message and current state
                     result = Apply(actor.behavior, message, actor.state)
                     
                     // Check if result contains new state
-                    IfCondition IsRecord(result, "ActorResult") ThenBlock {
+                    IfCondition IsRecord(result, "ActorResult") ThenBlock: {
                         actor.state = result.new_state
                         
                         // Handle reply if it's a sync message
-                        IfCondition IsRecord(message, "SyncMessage") ThenBlock {
+                        IfCondition IsRecord(message, "SyncMessage") ThenBlock: {
                             Concurrency.Channel.Send(message.reply_channel, result.reply)
                         }
-                    } ElseBlock {
+                    } ElseBlock: {
                         actor.state = result
                     }
                 }
-                CatchError.ActorStop {
+                CatchError.ActorStop: {
                     actor.running = False
                     PrintMessage("Actor " + ToString(actor.id) + " stopped")
                 }
-                CatchError.Any {
+                CatchError.Any: {
                     error_msg = GetErrorMessage()
                     PrintMessage("Actor " + ToString(actor.id) + " error: " + error_msg)
                     
                     // Actor supervision - restart if supervised
-                    IfCondition NotEqual(actor.supervisor, Null) ThenBlock {
+                    IfCondition NotEqual(actor.supervisor, Null) ThenBlock: {
                         Supervisor.HandleActorError(actor.supervisor, actor, error_msg)
                     }
                 }
@@ -1141,7 +1147,7 @@ Function.Queue.Pop {
     Body: {
         Concurrency.Mutex.Lock(queue.mutex)
         
-        IfCondition EqualTo(ArrayLength(queue.items), 0) ThenBlock {
+        IfCondition EqualTo(ArrayLength(queue.items), 0) ThenBlock: {
             Concurrency.Mutex.Unlock(queue.mutex)
             ReturnValue(Null)
         }

@@ -1,0 +1,42 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/main.py", line 14, in compile_ailang_to_executable
+    ast = parser.compile(source_code)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/compiler.py", line 60, in compile
+    ast = parser.parse()
+          ^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 95, in parse
+    decl = self.parse_declaration()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_declarations.py", line 48, in parse_declaration
+    stmt = self.parse_statement()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 32, in parse_statement
+    return self.parse_while()
+           ^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 192, in parse_while
+    stmt = self.parse_statement()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 71, in parse_statement
+    expr = self.parse_expression()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_expressions.py", line 14, in parse_expression
+    return self.parse_strict_expression()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_expressions.py", line 55, in parse_strict_expression
+    return self.parse_primary()
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_expressions.py", line 489, in parse_primary
+    self.error(f"Unexpected token in expression: {self.current_token.value if self.current_token else 'EOF'}")
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 43, in error
+    raise ParseError(f"In {context}: {message}", self.current_token)
+ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 11, column 5: In program > WhileLoop: Unexpected token in expression: Body
+
+==================================================
+🚀 Starting compilation for: test_loops_comprehensive.ailang -> test_loops_comprehensive_exec
+==================================================
+🔨 Compiling AILANG source...
+❌ ERROR: Parse error at line 11, column 5: In program > WhileLoop: Unexpected token in expression: Body
+🔥 FAILED! Compilation of test_loops_comprehensive.ailang encountered an error.
+
+❌ One or more files failed to compile.

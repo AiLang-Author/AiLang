@@ -1,0 +1,421 @@
+// redis_test_client_debug.ailang
+// Redis test client with EXTREME debugging
+
+// Helper function for byte operations
+Function.ReadByte {
+    Input: addr: Address
+    Output: Integer
+    Body: {
+        raw = Dereference(addr)
+        byte = BitwiseAnd(raw, 255)
+        ReturnValue(byte)
+    }
+}
+
+PrintMessage("=========================================================")
+PrintMessage("=== REDIS TEST CLIENT WITH MAXIMUM VERBOSITY ===")
+PrintMessage("=========================================================")
+PrintMessage("")
+
+PrintMessage("[INIT] Starting Redis test client")
+PrintMessage("  Current working directory: [would be pwd]")
+PrintMessage("  Process ID: [would be PID]")
+PrintMessage("  Timestamp: [would be timestamp]")
+PrintMessage("")
+
+// Create client socket
+PrintMessage("[SOCKET] Creating client socket...")
+PrintMessage("  Calling SocketCreate()...")
+
+client_socket = SocketCreate()
+
+PrintMessage("  SocketCreate() returned: ")
+PrintNumber(client_socket)
+
+IfCondition LessThan(client_socket, 0) ThenBlock {
+    PrintMessage("  ERROR: Failed to create socket!")
+    PrintMessage("  Error code: ")
+    PrintNumber(client_socket)
+    PrintMessage("  Possible causes:")
+    PrintMessage("    - Out of file descriptors")
+    PrintMessage("    - System resource limits")
+    PrintMessage("    - Permission denied")
+    Exit(1)
+}
+
+PrintMessage("  SUCCESS: Socket created with descriptor ")
+PrintNumber(client_socket)
+PrintMessage("")
+
+// Connect to Redis server
+PrintMessage("[CONNECT] Attempting connection to Redis server")
+PrintMessage("  Target: 127.0.0.1:6379")
+PrintMessage("  Socket descriptor: ")
+PrintNumber(client_socket)
+PrintMessage("  Calling SocketConnect(socket, '127.0.0.1', 6379)...")
+
+result = SocketConnect(client_socket, "127.0.0.1", 6379)
+
+PrintMessage("  SocketConnect() returned: ")
+PrintNumber(result)
+
+IfCondition LessThan(result, 0) ThenBlock {
+    PrintMessage("  ERROR: Connection failed!")
+    PrintMessage("  Error code: ")
+    PrintNumber(result)
+    PrintMessage("  Possible causes:")
+    PrintMessage("    - Redis server not running")
+    PrintMessage("    - Port 6379 not open")
+    PrintMessage("    - Firewall blocking connection")
+    PrintMessage("    - Wrong IP address")
+    PrintMessage("  Cleaning up...")
+    SocketClose(client_socket)
+    PrintMessage("  Socket closed")
+    Exit(1)
+}
+
+PrintMessage("  SUCCESS: Connected to Redis server!")
+PrintMessage("")
+
+// Build proper RESP command for PING
+// Format: *1\r\n$4\r\nPING\r\n
+PrintMessage("[BUILD] Constructing RESP protocol message")
+PrintMessage("  Target command: PING")
+PrintMessage("  RESP format: *1\\r\\n$4\\r\\nPING\\r\\n")
+PrintMessage("  Breaking down:")
+PrintMessage("    *1    = Array with 1 element")
+PrintMessage("    \\r\\n  = CRLF separator")
+PrintMessage("    $4    = Bulk string of 4 bytes")
+PrintMessage("    \\r\\n  = CRLF separator")
+PrintMessage("    PING  = Command data")
+PrintMessage("    \\r\\n  = CRLF terminator")
+PrintMessage("")
+
+PrintMessage("  Allocating command buffer (32 bytes)...")
+command_buffer = Allocate(32)
+
+PrintMessage("  Buffer allocated at address: ")
+PrintNumber(command_buffer)
+PrintMessage("")
+
+// Build the command byte by byte with extreme verbosity
+PrintMessage("  Building command byte-by-byte:")
+offset = 0
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 42 ('*' - Array marker)")
+StoreValue(Add(command_buffer, offset), 42)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 49 ('1' - Array count)")
+StoreValue(Add(command_buffer, offset), 49)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 13 ('\\r' - Carriage return)")
+StoreValue(Add(command_buffer, offset), 13)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 10 ('\\n' - Line feed)")
+StoreValue(Add(command_buffer, offset), 10)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 36 ('$' - Bulk string marker)")
+StoreValue(Add(command_buffer, offset), 36)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 52 ('4' - String length)")
+StoreValue(Add(command_buffer, offset), 52)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 13 ('\\r' - Carriage return)")
+StoreValue(Add(command_buffer, offset), 13)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 10 ('\\n' - Line feed)")
+StoreValue(Add(command_buffer, offset), 10)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 80 ('P' - First letter of PING)")
+StoreValue(Add(command_buffer, offset), 80)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 73 ('I' - Second letter)")
+StoreValue(Add(command_buffer, offset), 73)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 78 ('N' - Third letter)")
+StoreValue(Add(command_buffer, offset), 78)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 71 ('G' - Fourth letter)")
+StoreValue(Add(command_buffer, offset), 71)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 13 ('\\r' - Carriage return)")
+StoreValue(Add(command_buffer, offset), 13)
+offset = Add(offset, 1)
+
+PrintMessage("    [")
+PrintNumber(offset)
+PrintMessage("] = 10 ('\\n' - Line feed)")
+StoreValue(Add(command_buffer, offset), 10)
+offset = Add(offset, 1)
+
+command_size = offset
+
+PrintMessage("")
+PrintMessage("  Total command size: ")
+PrintNumber(command_size)
+PrintMessage(" bytes")
+PrintMessage("")
+
+// Verify what we built
+PrintMessage("[VERIFY] Verifying command buffer contents:")
+v = 0
+WhileLoop LessThan(v, command_size) {
+    byte = ReadByte(Add(command_buffer, v))
+    PrintMessage("  Position ")
+    PrintNumber(v)
+    PrintMessage(": ")
+    PrintNumber(byte)
+    
+    // Decode
+    IfCondition EqualTo(byte, 42) ThenBlock { PrintMessage(" ('*')") }
+    IfCondition EqualTo(byte, 36) ThenBlock { PrintMessage(" ('$')") }
+    IfCondition EqualTo(byte, 49) ThenBlock { PrintMessage(" ('1')") }
+    IfCondition EqualTo(byte, 52) ThenBlock { PrintMessage(" ('4')") }
+    IfCondition EqualTo(byte, 80) ThenBlock { PrintMessage(" ('P')") }
+    IfCondition EqualTo(byte, 73) ThenBlock { PrintMessage(" ('I')") }
+    IfCondition EqualTo(byte, 78) ThenBlock { PrintMessage(" ('N')") }
+    IfCondition EqualTo(byte, 71) ThenBlock { PrintMessage(" ('G')") }
+    IfCondition EqualTo(byte, 13) ThenBlock { PrintMessage(" ('\\r')") }
+    IfCondition EqualTo(byte, 10) ThenBlock { PrintMessage(" ('\\n')") }
+    
+    v = Add(v, 1)
+}
+PrintMessage("")
+
+// Send the command
+PrintMessage("[SEND] Sending command to Redis server")
+PrintMessage("  Socket: ")
+PrintNumber(client_socket)
+PrintMessage("  Buffer address: ")
+PrintNumber(command_buffer)
+PrintMessage("  Size: ")
+PrintNumber(command_size)
+PrintMessage("  Calling SocketWrite()...")
+
+bytes_sent = SocketWrite(client_socket, command_buffer, command_size)
+
+PrintMessage("  SocketWrite() returned: ")
+PrintNumber(bytes_sent)
+
+IfCondition NotEqual(bytes_sent, command_size) ThenBlock {
+    PrintMessage("  WARNING: Partial write!")
+    PrintMessage("    Expected to send: ")
+    PrintNumber(command_size)
+    PrintMessage("    Actually sent: ")
+    PrintNumber(bytes_sent)
+} ElseBlock {
+    PrintMessage("  SUCCESS: All bytes sent")
+}
+PrintMessage("")
+
+// Read response
+PrintMessage("[RECEIVE] Waiting for server response")
+PrintMessage("  Allocating response buffer (256 bytes)...")
+
+response_buffer = Allocate(256)
+
+PrintMessage("  Response buffer at address: ")
+PrintNumber(response_buffer)
+PrintMessage("  Calling SocketRead()...")
+
+bytes_received = SocketRead(client_socket, response_buffer, 255)
+
+PrintMessage("  SocketRead() returned: ")
+PrintNumber(bytes_received)
+PrintMessage(" bytes")
+
+IfCondition LessEqual(bytes_received, 0) ThenBlock {
+    PrintMessage("  ERROR: No response or connection lost")
+    PrintMessage("  Possible causes:")
+    PrintMessage("    - Server crashed")
+    PrintMessage("    - Connection timeout")
+    PrintMessage("    - Network error")
+} ElseBlock {
+    PrintMessage("  SUCCESS: Received response")
+}
+PrintMessage("")
+
+// Display response with extreme detail
+PrintMessage("[RESPONSE] Analyzing server response")
+PrintMessage("  Raw response bytes (entire response):")
+
+i = 0
+WhileLoop LessThan(i, bytes_received) {
+    byte = ReadByte(Add(response_buffer, i))
+    PrintMessage("    [")
+    PrintNumber(i)
+    PrintMessage("] = ")
+    PrintNumber(byte)
+    PrintMessage(" = ")
+    
+    // Decode every possible byte
+    IfCondition EqualTo(byte, 43) ThenBlock { 
+        PrintMessage("'+' (Simple String Start)")
+    }
+    IfCondition EqualTo(byte, 45) ThenBlock { 
+        PrintMessage("'-' (Error Message Start)")
+    }
+    IfCondition EqualTo(byte, 36) ThenBlock { 
+        PrintMessage("'$' (Bulk String Start)")
+    }
+    IfCondition EqualTo(byte, 42) ThenBlock { 
+        PrintMessage("'*' (Array Start)")
+    }
+    IfCondition EqualTo(byte, 58) ThenBlock { 
+        PrintMessage("':' (Integer Start)")
+    }
+    IfCondition EqualTo(byte, 80) ThenBlock { PrintMessage("'P'") }
+    IfCondition EqualTo(byte, 79) ThenBlock { PrintMessage("'O'") }
+    IfCondition EqualTo(byte, 78) ThenBlock { PrintMessage("'N'") }
+    IfCondition EqualTo(byte, 71) ThenBlock { PrintMessage("'G'") }
+    IfCondition EqualTo(byte, 69) ThenBlock { PrintMessage("'E' (Error?)") }
+    IfCondition EqualTo(byte, 82) ThenBlock { PrintMessage("'R' (Error?)") }
+    IfCondition EqualTo(byte, 13) ThenBlock { PrintMessage("'\\r' (Carriage Return)") }
+    IfCondition EqualTo(byte, 10) ThenBlock { PrintMessage("'\\n' (Line Feed)") }
+    IfCondition EqualTo(byte, 0) ThenBlock { PrintMessage("NULL (End?)") }
+    IfCondition And(GreaterEqual(byte, 48), LessEqual(byte, 57)) ThenBlock {
+        PrintMessage("Digit '")
+        PrintNumber(Subtract(byte, 48))
+        PrintMessage("'")
+    }
+    IfCondition And(GreaterEqual(byte, 65), LessEqual(byte, 90)) ThenBlock {
+        PrintMessage("Uppercase letter")
+    }
+    IfCondition And(GreaterEqual(byte, 97), LessEqual(byte, 122)) ThenBlock {
+        PrintMessage("Lowercase letter")
+    }
+    
+    i = Add(i, 1)
+}
+PrintMessage("")
+
+// Interpret response
+PrintMessage("[INTERPRET] Interpreting RESP response")
+first_byte = ReadByte(response_buffer)
+
+PrintMessage("  First byte: ")
+PrintNumber(first_byte)
+PrintMessage(" = ")
+
+IfCondition EqualTo(first_byte, 43) ThenBlock {  // '+'
+    PrintMessage("Simple String Response")
+    PrintMessage("  This is the expected response for PING")
+    
+    // Try to extract PONG
+    IfCondition GreaterEqual(bytes_received, 5) ThenBlock {
+        p = ReadByte(Add(response_buffer, 1))
+        o = ReadByte(Add(response_buffer, 2))
+        n = ReadByte(Add(response_buffer, 3))
+        g = ReadByte(Add(response_buffer, 4))
+        
+        PrintMessage("  Next 4 bytes spell: ")
+        IfCondition And(EqualTo(p, 80), And(EqualTo(o, 79), And(EqualTo(n, 78), EqualTo(g, 71)))) ThenBlock {
+            PrintMessage("PONG")
+            PrintMessage("  ✓ SUCCESS: Got expected PONG response!")
+        } ElseBlock {
+            PrintMessage("[unexpected]")
+            PrintMessage("  WARNING: Not 'PONG'")
+        }
+    }
+}
+
+IfCondition EqualTo(first_byte, 36) ThenBlock {  // '$'
+    PrintMessage("Bulk String Response")
+    PrintMessage("  Alternative valid response for PING")
+    PrintMessage("  ✓ SUCCESS: Got bulk string PONG")
+}
+
+IfCondition EqualTo(first_byte, 45) ThenBlock {  // '-'
+    PrintMessage("Error Response!")
+    PrintMessage("  Server returned an error")
+    PrintMessage("  Error message follows the '-'")
+}
+
+IfCondition And(NotEqual(first_byte, 43), And(NotEqual(first_byte, 36), NotEqual(first_byte, 45))) ThenBlock {
+    PrintMessage("UNKNOWN/INVALID Response Type!")
+    PrintMessage("  This is not valid RESP protocol")
+    PrintMessage("  Server may be misconfigured or buggy")
+}
+PrintMessage("")
+
+// Cleanup
+PrintMessage("[CLEANUP] Closing connection and freeing memory")
+PrintMessage("  Closing socket ")
+PrintNumber(client_socket)
+PrintMessage("...")
+
+SocketClose(client_socket)
+
+PrintMessage("  Socket closed")
+PrintMessage("  Deallocating command buffer...")
+
+Deallocate(command_buffer, 32)
+
+PrintMessage("  Deallocating response buffer...")
+
+Deallocate(response_buffer, 256)
+
+PrintMessage("  Memory freed")
+PrintMessage("")
+
+PrintMessage("=========================================================")
+PrintMessage("=== TEST COMPLETE ===")
+PrintMessage("=========================================================")
+PrintMessage("")
+PrintMessage("Summary:")
+PrintMessage("  - Socket created: YES")
+PrintMessage("  - Connected to server: YES")
+PrintMessage("  - Command sent: YES")
+PrintMessage("  - Response received: ")
+IfCondition GreaterThan(bytes_received, 0) ThenBlock {
+    PrintMessage("YES")
+} ElseBlock {
+    PrintMessage("NO")
+}
+PrintMessage("  - Valid RESP response: ")
+IfCondition Or(EqualTo(first_byte, 43), EqualTo(first_byte, 36)) ThenBlock {
+    PrintMessage("YES")
+} ElseBlock {
+    PrintMessage("NO")
+}
+PrintMessage("")
+PrintMessage("If this worked, your Redis server is functioning correctly!")
+PrintMessage("If not, check the debug output above for issues.")

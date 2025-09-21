@@ -1,0 +1,128 @@
+// test_nested_if.ailang
+// Test various nested if-else-if chain patterns
+
+SubRoutine.Main {
+    PrintMessage("Testing Nested If-Else Chains")
+    PrintMessage("==============================")
+    
+    // Test 1: Simple if-else-if chain
+    PrintMessage("\nTest 1: Simple chain")
+    x = 2
+    
+    IfCondition EqualTo(x, 1) ThenBlock {
+        PrintMessage("  x is 1")
+    } ElseBlock {
+        IfCondition EqualTo(x, 2) ThenBlock {
+            PrintMessage("  x is 2 (SHOULD PRINT THIS)")
+        } ElseBlock {
+            IfCondition EqualTo(x, 3) ThenBlock {
+                PrintMessage("  x is 3")
+            } ElseBlock {
+                PrintMessage("  x is something else")
+            }
+        }
+    }
+    
+    // Test 2: Deeper nesting
+    PrintMessage("\nTest 2: Deeper nesting")
+    y = 71  // ASCII 'G'
+    
+    IfCondition EqualTo(y, 80) ThenBlock {
+        PrintMessage("  y is 80 (P)")
+    } ElseBlock {
+        IfCondition EqualTo(y, 71) ThenBlock {
+            PrintMessage("  y is 71 (G) (SHOULD PRINT THIS)")
+        } ElseBlock {
+            IfCondition EqualTo(y, 83) ThenBlock {
+                PrintMessage("  y is 83 (S)")
+            } ElseBlock {
+                PrintMessage("  y is unknown")
+            }
+        }
+    }
+    
+    // Test 3: With function calls in branches
+    PrintMessage("\nTest 3: With function calls")
+    z = 83  // ASCII 'S'
+    
+    IfCondition EqualTo(z, 80) ThenBlock {
+        result = Add(z, 1)
+        PrintMessage("  Branch 1: ")
+        PrintNumber(result)
+    } ElseBlock {
+        IfCondition EqualTo(z, 71) ThenBlock {
+            result = Add(z, 2)
+            PrintMessage("  Branch 2: ")
+            PrintNumber(result)
+        } ElseBlock {
+            IfCondition EqualTo(z, 83) ThenBlock {
+                result = Add(z, 3)
+                PrintMessage("  Branch 3 (SHOULD PRINT): ")
+                PrintNumber(result)
+                PrintMessage(" (should be 86)")
+            } ElseBlock {
+                PrintMessage("  Branch 4")
+            }
+        }
+    }
+    
+    // Test 4: Multiple statements in nested blocks
+    PrintMessage("\nTest 4: Multiple statements")
+    cmd = 71
+    
+    IfCondition EqualTo(cmd, 80) ThenBlock {
+        PrintMessage("  PING detected")
+        response = "PONG"
+        PrintMessage("  Response: ")
+        PrintMessage(response)
+    } ElseBlock {
+        IfCondition EqualTo(cmd, 71) ThenBlock {
+            PrintMessage("  GET detected (SHOULD PRINT)")
+            key = "testkey"
+            PrintMessage("  Key: ")
+            PrintMessage(key)
+            response = "nil"
+            PrintMessage("  Response: ")
+            PrintMessage(response)
+        } ElseBlock {
+            IfCondition EqualTo(cmd, 83) ThenBlock {
+                PrintMessage("  SET detected")
+                key = "testkey"
+                value = "testval"
+                PrintMessage("  Key: ")
+                PrintMessage(key)
+                PrintMessage("  Value: ")
+                PrintMessage(value)
+            } ElseBlock {
+                PrintMessage("  Unknown command")
+            }
+        }
+    }
+    
+    // Test 5: Flat structure (non-nested) for comparison
+    PrintMessage("\nTest 5: Flat structure (should work)")
+    flat = 83
+    
+    IfCondition EqualTo(flat, 80) ThenBlock {
+        PrintMessage("  Flat: 80")
+    }
+    
+    IfCondition EqualTo(flat, 71) ThenBlock {
+        PrintMessage("  Flat: 71")
+    }
+    
+    IfCondition EqualTo(flat, 83) ThenBlock {
+        PrintMessage("  Flat: 83 (SHOULD PRINT)")
+    }
+    
+    PrintMessage("\n==============================")
+    PrintMessage("Test complete!")
+    PrintMessage("\nExpected output:")
+    PrintMessage("  Test 1: 'x is 2'")
+    PrintMessage("  Test 2: 'y is 71 (G)'")
+    PrintMessage("  Test 3: 'Branch 3' with 86")
+    PrintMessage("  Test 4: 'GET detected' with key and response")
+    PrintMessage("  Test 5: 'Flat: 83'")
+}
+
+RunTask(Main)

@@ -1,0 +1,50 @@
+SubRoutine.Main {
+    PrintMessage("Starting Redis Debug Server")
+    
+    server_socket = SocketCreate()
+    PrintMessage("Socket created: ")
+    PrintNumber(server_socket)
+    PrintMessage("")
+    
+    result = SocketSetOption(server_socket, 1, 2, 1)
+    PrintMessage("SetOption result: ")
+    PrintNumber(result)
+    PrintMessage("")
+    
+    result = SocketBind(server_socket, 0, 6379)
+    PrintMessage("Bind result: ")
+    PrintNumber(result)
+    PrintMessage("")
+    
+    result = SocketListen(server_socket, 5)
+    PrintMessage("Listen result: ")
+    PrintNumber(result)
+    PrintMessage("")
+    
+    PrintMessage("About to enter accept loop...")
+    
+    counter = 0
+    WhileLoop 1 {
+        counter = Add(counter, 1)
+        PrintMessage("Loop iteration ")
+        PrintNumber(counter)
+        PrintMessage(" - calling accept...")
+        
+        client = SocketAccept(server_socket)
+        
+        PrintMessage("Accept returned: ")
+        PrintNumber(client)
+        PrintMessage("")
+        
+        IfCondition GreaterThan(client, 0) ThenBlock {
+            PrintMessage("GOT CLIENT!")
+            buffer = Allocate(1024)
+            SocketRead(client, buffer, 1024)
+            SocketWrite(client, "+PONG\r\n", 7)
+            SocketClose(client)
+            Deallocate(buffer, 1024)
+        }
+    }
+}
+
+RunTask(Main)

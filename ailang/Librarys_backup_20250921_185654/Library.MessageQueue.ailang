@@ -1,0 +1,90 @@
+// Library.MessageQueue.ailang
+
+// Queue node structure (using memory allocation)
+Function.QueueNode.Create {
+    Input: (data: Integer, next: Address)
+    Output: Address
+    
+    node = Allocate(16)  // 8 bytes data + 8 bytes next pointer
+    StoreValue(node, data)
+    StoreValue(Add(node, 8), next)
+    ReturnValue(node)
+}
+
+// Queue structure: head, tail, count
+Function.Queue.Create {
+    Output: Address
+    
+    queue = Allocate(24)  // head + tail + count
+    StoreValue(queue, 0)  // head = null
+    StoreValue(Add(queue, 8), 0)  // tail = null
+    StoreValue(Add(queue, 16), 0)  // count = 0
+    ReturnValue(queue)
+}
+
+Function.Queue.Enqueue {
+    Input: (queue: Address, data: Integer)
+    Output: Integer
+    
+    // Create new node
+    new_node = QueueNode.Create(data, 0)
+    
+    // Get current tail
+    tail = Dereference(Add(queue, 8))
+    
+    IfCondition EqualTo(tail, 0) ThenBlock: {
+        // Empty queue
+        StoreValue(queue, new_node)  // head = new_node
+        StoreValue(Add(queue, 8), new_node)  // tail = new_node
+    } ElseBlock: {
+        // Add to tail
+        StoreValue(Add(tail, 8), new_node)  // tail.next = new_node
+        StoreValue(Add(queue, 8), new_node)  // tail = new_node
+    }
+    
+    // Increment count
+    count = Dereference(Add(queue, 16))
+    StoreValue(Add(queue, 16), Add(count, 1))
+    
+    ReturnValue(1)
+}
+
+Function.Queue.Dequeue {
+    Input: queue: Address
+    Output: Integer
+    
+    // Check if empty
+    head = Dereference(queue)
+    IfCondition EqualTo(head, 0) ThenBlock: {
+        ReturnValue(-1)  // Error: empty queue
+    }
+    
+    // Get data from head
+    data = Dereference(head)
+    
+    // Move head to next
+    next = Dereference(Add(head, 8))
+    StoreValue(queue, next)
+    
+    // If queue is now empty, update tail
+    IfCondition EqualTo(next, 0) ThenBlock: {
+        StoreValue(Add(queue, 8), 0)  // tail = null
+    }
+    
+    // Decrement count
+    count = Dereference(Add(queue, 16))
+    StoreValue(Add(queue, 16), Subtract(count, 1))
+    
+    // Free old head
+    Deallocate(head, 16)
+    
+    ReturnValue(data)
+}
+
+Function.Queue.IsEmpty {
+    Input: queue: Address
+    Output: Integer
+    
+    count = Dereference(Add(queue, 16))
+    ReturnValue(EqualTo(count, 0))
+}

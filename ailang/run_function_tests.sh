@@ -1,7 +1,3 @@
-#Test runner for Ailang programs place test programs in the "program_here" below to run tests
-# remove the ailang extension from file name when adding files typical bahs rules apply to remove or block a test comment with # on each line
-
-
 #!/bin/bash
 
 # run_function_tests.sh - Run all function tests and track results
@@ -47,6 +43,34 @@ TESTS=(
     "calculator_simple"
     "calculator_app"
     "test_debug"
+    #"test_string_complete"
+    "test_pool_overflow"
+    "test_pool_tracking"
+    "test_concat_broken"
+    "test_user_functions_basic"
+    "test_user_functions_advanced"
+    "test_user_functions_edge"
+    "test_strings_comprehensive"
+    "test_fileio_comprehensive"
+    "test_fileio_minimal"
+    "test_strings_missing"
+
+
+    # Basic WhileLoop tests (should work)
+    "test_loops_comprehensive"
+    "test_loop_patterns"
+    "test_loop_simple"
+    
+    # New structure tests
+    "test_loopmain_structure"
+    "test_subroutine_basic"
+    "test_loopactor_basic"
+    "test_loop_special"
+    "test_loop_structures_full"
+    #"test_loop_advanced"
+    "test_runtask_comprehensive"
+    "test_loop_syntax_forms"
+    "test_loop_edge_cases"
 )
 
 # Additional test files that might exist

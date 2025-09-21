@@ -1,0 +1,435 @@
+// test_regression_suite_v1.ailang
+// Version 1.0 - Comprehensive regression test suite
+// Tests: Functions, Pools, Loops, Arrays, and their interactions
+
+PrintMessage("=== AILANG REGRESSION SUITE v1.0 ===")
+PrintMessage("Date: 2024")
+PrintMessage("")
+
+// ===========================
+// SECTION 1: BASIC OPERATIONS
+// ===========================
+PrintMessage("[SECTION 1: Basic Operations]")
+
+// Arithmetic
+a = 10
+b = 20
+sum = Add(a, b)
+diff = Subtract(b, a)
+prod = Multiply(a, 3)
+quot = Divide(b, 2)
+mod = Modulo(b, 3)
+
+DebugAssert(EqualTo(sum, 30), "Basic Add")
+DebugAssert(EqualTo(diff, 10), "Basic Subtract")
+DebugAssert(EqualTo(prod, 30), "Basic Multiply")
+DebugAssert(EqualTo(quot, 10), "Basic Divide")
+DebugAssert(EqualTo(mod, 2), "Basic Modulo")
+
+PrintMessage("  Basic arithmetic: PASSED")
+
+// ===========================
+// SECTION 2: POOL SYSTEM
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 2: Pool System]")
+
+FixedPool.TestPool {
+    "value_a": Initialize=100
+    "value_b": Initialize=200
+    "value_c": Initialize=300
+}
+
+FixedPool.ConfigPool {
+    "max_size": Initialize=1024
+    "timeout": Initialize=5000
+    "retries": Initialize=3
+}
+
+// Test pool access
+pool_sum = Add(TestPool.value_a, TestPool.value_b)
+DebugAssert(EqualTo(pool_sum, 300), "Pool addition")
+
+total = Add(TestPool.value_c, ConfigPool.max_size)
+DebugAssert(EqualTo(total, 1324), "Cross-pool access")
+
+PrintMessage("  Pool operations: PASSED")
+
+// ===========================
+// SECTION 3: FUNCTIONS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 3: Functions]")
+
+// Simple function
+Function.Math.Double {
+    Input: x:
+    Body: {
+        result = Multiply(x, 2)
+        ReturnValue(result)
+    }
+}
+
+// Function with multiple params
+Function.Math.AddThree {
+    Input: a:
+    Input: b:
+    Input: c:
+    Body: {
+        sum = Add(a, b)
+        sum = Add(sum, c)
+        ReturnValue(sum)
+    }
+}
+
+// Function using pools
+Function.Pool.GetConfigValue {
+    Input: which:
+    Body: {
+        IfCondition (which == 1) ThenBlock {
+            ReturnValue(ConfigPool.max_size)
+        }
+        IfCondition (which == 2) ThenBlock {
+            ReturnValue(ConfigPool.timeout)
+        }
+        ReturnValue(ConfigPool.retries)
+    }
+}
+
+// Test function calls
+doubled = Math.Double(21)
+DebugAssert(EqualTo(doubled, 42), "Function Double")
+
+sum3 = Math.AddThree(10, 20, 30)
+DebugAssert(EqualTo(sum3, 60), "Function AddThree")
+
+config1 = Pool.GetConfigValue(1)
+DebugAssert(EqualTo(config1, 1024), "Function with pool access")
+
+PrintMessage("  Function calls: PASSED")
+
+// ===========================
+// SECTION 4: LOOPS WITH FUNCTIONS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 4: Loops with Functions]")
+
+// Loop calling function
+loop_sum = 0
+i = 0
+WhileLoop (i < 5) {
+    val = Math.Double(i)
+    loop_sum = Add(loop_sum, val)
+    i = Add(i, 1)
+}
+DebugAssert(EqualTo(loop_sum, 20), "Loop with function calls")
+// 0*2 + 1*2 + 2*2 + 3*2 + 4*2 = 0+2+4+6+8 = 20
+
+PrintMessage("  Loop+Function: PASSED")
+
+// ===========================
+// SECTION 5: LOOPS WITH POOLS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 5: Loops with Pools]")
+
+// Loop accessing pools
+pool_accumulator = 0
+j = 0
+WhileLoop (j < 3) {
+    IfCondition (j == 0) ThenBlock {
+        pool_accumulator = Add(pool_accumulator, TestPool.value_a)
+    }
+    IfCondition (j == 1) ThenBlock {
+        pool_accumulator = Add(pool_accumulator, TestPool.value_b)
+    }
+    IfCondition (j == 2) ThenBlock {
+        pool_accumulator = Add(pool_accumulator, TestPool.value_c)
+    }
+    j = Add(j, 1)
+}
+DebugAssert(EqualTo(pool_accumulator, 600), "Loop with pool access")
+
+PrintMessage("  Loop+Pool: PASSED")
+
+// ===========================
+// SECTION 6: NESTED FUNCTIONS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 6: Nested Functions]")
+
+Function.Math.Quadruple {
+    Input: x:
+    Body: {
+        doubled = Math.Double(x)
+        result = Math.Double(doubled)
+        ReturnValue(result)
+    }
+}
+
+quad = Math.Quadruple(5)
+DebugAssert(EqualTo(quad, 20), "Nested function calls")
+
+PrintMessage("  Nested functions: PASSED")
+
+// ===========================
+// SECTION 7: ARRAYS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 7: Arrays]")
+
+arr = ArrayCreate(10)
+ArraySet(arr, 0, 100)
+ArraySet(arr, 5, 500)
+ArraySet(arr, 9, 900)
+
+val0 = ArrayGet(arr, 0)
+val5 = ArrayGet(arr, 5)
+val9 = ArrayGet(arr, 9)
+
+DebugAssert(EqualTo(val0, 100), "Array index 0")
+DebugAssert(EqualTo(val5, 500), "Array index 5")
+DebugAssert(EqualTo(val9, 900), "Array index 9")
+
+// Array with loop
+arr_sum = 0
+k = 0
+WhileLoop (k < 10) {
+    ArraySet(arr, k, k)
+    k = Add(k, 1)
+}
+
+k = 0
+WhileLoop (k < 10) {
+    val = ArrayGet(arr, k)
+    arr_sum = Add(arr_sum, val)
+    k = Add(k, 1)
+}
+DebugAssert(EqualTo(arr_sum, 45), "Array loop sum")
+// 0+1+2+3+4+5+6+7+8+9 = 45
+
+PrintMessage("  Arrays: PASSED")
+
+// ===========================
+// SECTION 8: ARRAYS WITH POOLS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 8: Arrays with Pools]")
+
+pool_arr = ArrayCreate(3)
+ArraySet(pool_arr, 0, TestPool.value_a)
+ArraySet(pool_arr, 1, TestPool.value_b)
+ArraySet(pool_arr, 2, TestPool.value_c)
+
+arr_pool_sum = 0
+m = 0
+WhileLoop (m < 3) {
+    val = ArrayGet(pool_arr, m)
+    arr_pool_sum = Add(arr_pool_sum, val)
+    m = Add(m, 1)
+}
+DebugAssert(EqualTo(arr_pool_sum, 600), "Array with pool values")
+
+PrintMessage("  Arrays+Pools: PASSED")
+
+// ===========================
+// SECTION 9: RECURSIVE FUNCTION
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 9: Recursive Functions]")
+
+Function.Math.Factorial {
+    Input: n:
+    Body: {
+        IfCondition (n <= 1) ThenBlock {
+            ReturnValue(1)
+        }
+        n_minus_1 = Subtract(n, 1)
+        fact_n_minus_1 = Math.Factorial(n_minus_1)
+        result = Multiply(n, fact_n_minus_1)
+        ReturnValue(result)
+    }
+}
+
+fact5 = Math.Factorial(5)
+DebugAssert(EqualTo(fact5, 120), "Factorial(5)")
+
+PrintMessage("  Recursion: PASSED")
+
+// ===========================
+// SECTION 10: COMPLEX LOOP
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 10: Complex Loops]")
+
+// Nested loops
+outer = 0
+inner_total = 0
+PrintMessage("  Running nested loops (3 outer x 4 inner)...")
+WhileLoop (outer < 3) {
+    inner = 0
+    WhileLoop (inner < 4) {
+        inner_total = Add(inner_total, 1)
+        inner = Add(inner, 1)
+    }
+    outer = Add(outer, 1)
+}
+PrintMessage("  Inner total count: ")
+PrintNumber(inner_total)
+DebugAssert(EqualTo(inner_total, 12), "Nested loops")
+
+PrintMessage("  Complex loops: PASSED")
+
+// ===========================
+// SECTION 11: FUNCTIONS IN LOOPS WITH POOLS
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 11: Combined Features]")
+
+// Function that uses pools in a loop
+Function.Complex.PoolLoopSum {
+    Body: {
+        sum = 0
+        i = 0
+        WhileLoop (i < 3) {
+            mod_val = Modulo(i, 3)
+            IfCondition (mod_val == 0) ThenBlock {
+                sum = Add(sum, TestPool.value_a)
+            }
+            IfCondition (mod_val == 1) ThenBlock {
+                sum = Add(sum, TestPool.value_b)
+            }
+            IfCondition (mod_val == 2) ThenBlock {
+                sum = Add(sum, TestPool.value_c)
+            }
+            i = Add(i, 1)
+        }
+        ReturnValue(sum)
+    }
+}
+
+complex_result = Complex.PoolLoopSum()
+DebugAssert(EqualTo(complex_result, 600), "Function with loop and pools")
+
+PrintMessage("  Combined features: PASSED")
+
+// ===========================
+// SECTION 12: STRESS TEST
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 12: Stress Test]")
+
+// Many pools
+FixedPool.Stress1 {
+    "a": Initialize=1000
+    "b": Initialize=2000
+}
+
+FixedPool.Stress2 {
+    "x": Initialize=3000
+    "y": Initialize=4000
+}
+
+// Function using multiple pools
+Function.Stress.MultiPool {
+    Body: {
+        sum = Add(Stress1.a, Stress1.b)
+        sum = Add(sum, Stress2.x)
+        sum = Add(sum, Stress2.y)
+        ReturnValue(sum)
+    }
+}
+
+// Loop calling function that uses pools
+stress_total = 0
+n = 0
+WhileLoop (n < 10) {
+    partial = Stress.MultiPool()
+    stress_total = Add(stress_total, partial)
+    n = Add(n, 1)
+}
+DebugAssert(EqualTo(stress_total, 100000), "Stress test")
+// (1000+2000+3000+4000) * 10 = 10000 * 10 = 100000
+
+PrintMessage("  Stress test: PASSED")
+
+// ===========================
+// SECTION 13: CONTROL FLOW
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 13: Control Flow]")
+
+// Complex if-else chains
+test_val = 50
+result = 0
+
+IfCondition (test_val > 100) ThenBlock {
+    result = 1
+} ElseBlock {
+    IfCondition (test_val > 25) ThenBlock {
+        result = 2
+    } ElseBlock {
+        result = 3
+    }
+}
+DebugAssert(EqualTo(result, 2), "Nested if-else")
+
+PrintMessage("  Control flow: PASSED")
+
+// ===========================
+// SECTION 14: EDGE CASES
+// ===========================
+PrintMessage("")
+PrintMessage("[SECTION 14: Edge Cases]")
+
+// Zero iterations
+edge_sum = 0
+edge_i = 10
+WhileLoop (edge_i < 5) {
+    edge_sum = Add(edge_sum, 1)
+    edge_i = Add(edge_i, 1)
+}
+DebugAssert(EqualTo(edge_sum, 0), "Zero iteration loop")
+
+// Function returning zero
+Function.Edge.ReturnZero {
+    Body: {
+        ReturnValue(0)
+    }
+}
+
+zero_result = Edge.ReturnZero()
+DebugAssert(EqualTo(zero_result, 0), "Return zero")
+
+// Large array
+big_arr = ArrayCreate(100)
+ArraySet(big_arr, 99, 9999)
+big_val = ArrayGet(big_arr, 99)
+DebugAssert(EqualTo(big_val, 9999), "Large array access")
+
+PrintMessage("  Edge cases: PASSED")
+
+// ===========================
+// SUMMARY
+// ===========================
+PrintMessage("")
+PrintMessage("=====================================")
+PrintMessage("    REGRESSION SUITE COMPLETE")
+PrintMessage("=====================================")
+PrintMessage("✓ Basic Operations")
+PrintMessage("✓ Pool System")
+PrintMessage("✓ Functions")
+PrintMessage("✓ Loops with Functions")
+PrintMessage("✓ Loops with Pools")
+PrintMessage("✓ Nested Functions")
+PrintMessage("✓ Arrays")
+PrintMessage("✓ Arrays with Pools")
+PrintMessage("✓ Recursive Functions")
+PrintMessage("✓ Complex Loops")
+PrintMessage("✓ Combined Features")
+PrintMessage("✓ Stress Test")
+PrintMessage("✓ Control Flow")
+PrintMessage("✓ Edge Cases")
+PrintMessage("")
+PrintMessage("All tests PASSED!")
+PrintMessage("=== END REGRESSION SUITE v1.0 ===")

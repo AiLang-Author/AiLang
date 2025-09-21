@@ -1,0 +1,473 @@
+// string_operations_test_harness.ailang
+// Complete test suite including broken/unimplemented features
+// This serves as both documentation and regression test
+
+PrintMessage("=======================================================")
+PrintMessage("AILANG String Operations - Complete Test Suite")
+PrintMessage("Including broken/unimplemented features for tracking")
+PrintMessage("=======================================================")
+PrintMessage("")
+
+// Global test tracking
+total_tests = 0
+passed_tests = 0
+failed_tests = 0
+section_tests = 0
+section_passed = 0
+test_name = ""
+test_expected = ""
+test_actual = ""
+test_expected_num = 0
+test_actual_num = 0
+section_name = ""
+
+// Variables for complex functions
+count = 0
+i = 0
+length = 0
+char_code = 0
+result = ""
+buffer = 0
+in_word = 0
+is_space = 0
+is_tab = 0
+is_newline = 0
+is_whitespace = 0
+at_pos = 0
+dot_pos = 0
+num_str = ""
+current_length = 0
+padding_needed = 0
+width = 0
+target_char = 0
+text = ""
+email = ""
+field1 = ""
+field2 = ""
+field3 = ""
+level = ""
+component = ""
+message = ""
+number = 0
+
+// Helper for string test results
+SubRoutine.TestStringResult {
+    total_tests = Add(total_tests, 1)
+    section_tests = Add(section_tests, 1)
+    
+    PrintMessage("  TEST: ")
+    PrintMessage(test_name)
+    PrintMessage("    Expected: '")
+    PrintMessage(test_expected)
+    PrintMessage("'")
+    PrintMessage("    Actual: '")
+    PrintMessage(test_actual)
+    PrintMessage("'")
+    
+    is_equal = StringEquals(test_expected, test_actual)
+    IfCondition EqualTo(is_equal, 1) ThenBlock: {
+        PrintMessage("    PASS")
+        passed_tests = Add(passed_tests, 1)
+        section_passed = Add(section_passed, 1)
+    } ElseBlock: {
+        PrintMessage("    FAIL")
+        failed_tests = Add(failed_tests, 1)
+    }
+    PrintMessage("")
+}
+
+
+
+// Helper for numeric test results
+SubRoutine.TestNumberResult {
+    total_tests = Add(total_tests, 1)
+    section_tests = Add(section_tests, 1)
+    
+    PrintMessage("  TEST: ")
+    PrintMessage(test_name)
+    PrintMessage("    Expected: ")
+    PrintNumber(test_expected_num)
+    PrintMessage("    Actual: ")
+    PrintNumber(test_actual_num)
+    
+    IfCondition EqualTo(test_expected_num, test_actual_num) ThenBlock: {
+        PrintMessage("    PASS")
+        passed_tests = Add(passed_tests, 1)
+        section_passed = Add(section_passed, 1)
+    } ElseBlock: {
+        PrintMessage("    FAIL")
+        failed_tests = Add(failed_tests, 1)
+    }
+    PrintMessage("")
+}
+
+// Section summary helper
+SubRoutine.SectionSummary {
+    PrintMessage("Section ")
+    PrintMessage(section_name)
+    PrintMessage(" Results: ")
+    PrintNumber(section_passed)
+    PrintMessage("/")
+    PrintNumber(section_tests)
+    PrintMessage(" passed")
+    PrintMessage("")
+    
+    section_tests = 0
+    section_passed = 0
+}
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 1: STRING LITERALS (Should all pass)")
+PrintMessage("=======================================================")
+
+basic_string = "Hello"
+test_name = "Basic string literal"
+test_expected = "Hello"
+test_actual = basic_string
+RunTask(TestStringResult)
+
+empty_string = ""
+test_name = "Empty string"
+test_expected = ""
+test_actual = empty_string
+RunTask(TestStringResult)
+
+numbers_string = "12345"
+test_name = "Numeric string"
+test_expected = "12345"
+test_actual = numbers_string
+RunTask(TestStringResult)
+
+mixed_string = "ABC123!@#"
+test_name = "Mixed characters"
+test_expected = "ABC123!@#"
+test_actual = mixed_string
+RunTask(TestStringResult)
+
+section_name = "1 (Literals)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 2: STRING LENGTH (Should all pass)")
+PrintMessage("=======================================================")
+
+test_name = "Length of Hello"
+test_expected_num = 5
+test_actual_num = StringLength("Hello")
+RunTask(TestNumberResult)
+
+test_name = "Length of empty"
+test_expected_num = 0
+test_actual_num = StringLength("")
+RunTask(TestNumberResult)
+
+test_name = "Length of single char"
+test_expected_num = 1
+test_actual_num = StringLength("A")
+RunTask(TestNumberResult)
+
+long_string = "This is a very long string with many characters"
+test_name = "Length of long string"
+test_expected_num = 47
+test_actual_num = StringLength(long_string)
+RunTask(TestNumberResult)
+
+section_name = "2 (Length)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 3: STRING CONCAT (Should all pass)")
+PrintMessage("=======================================================")
+
+test_name = "Simple concat"
+test_expected = "HelloWorld"
+test_actual = StringConcat("Hello", "World")
+RunTask(TestStringResult)
+
+test_name = "Concat with space"
+test_expected = "Hello World"
+test_actual = StringConcat("Hello ", "World")
+RunTask(TestStringResult)
+
+test_name = "Concat empty+string"
+test_expected = "Test"
+test_actual = StringConcat("", "Test")
+RunTask(TestStringResult)
+
+test_name = "Concat string+empty"
+test_expected = "Test"
+test_actual = StringConcat("Test", "")
+RunTask(TestStringResult)
+
+test_name = "Concat empty+empty"
+test_expected = ""
+test_actual = StringConcat("", "")
+RunTask(TestStringResult)
+
+section_name = "3 (Concat)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 4: STRING EQUALS (Should all pass)")
+PrintMessage("=======================================================")
+
+test_name = "Equal strings"
+test_expected_num = 1
+test_actual_num = StringEquals("test", "test")
+RunTask(TestNumberResult)
+
+test_name = "Different strings"
+test_expected_num = 0
+test_actual_num = StringEquals("test", "TEST")
+RunTask(TestNumberResult)
+
+test_name = "Empty equals empty"
+test_expected_num = 1
+test_actual_num = StringEquals("", "")
+RunTask(TestNumberResult)
+
+test_name = "Empty vs non-empty"
+test_expected_num = 0
+test_actual_num = StringEquals("", "test")
+RunTask(TestNumberResult)
+
+section_name = "4 (Equals)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 5: NUMBER CONVERSIONS (Should all pass)")
+PrintMessage("=======================================================")
+
+test_name = "Number 0 to string"
+test_expected = "0"
+test_actual = NumberToString(0)
+RunTask(TestStringResult)
+
+test_name = "42 to string"
+test_expected = "42"
+test_actual = NumberToString(42)
+RunTask(TestStringResult)
+
+test_name = "String 0 to number"
+test_expected_num = 0
+test_actual_num = StringToNumber("0")
+RunTask(TestNumberResult)
+
+test_name = "String 42 to number"
+test_expected_num = 42
+test_actual_num = StringToNumber("42")
+RunTask(TestNumberResult)
+
+section_name = "5 (Conversions)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 6: CHARACTER ACCESS (Should all pass)")
+PrintMessage("=======================================================")
+
+test_string = "Hello"
+test_name = "First char H (72)"
+test_expected_num = 72
+test_actual_num = StringCharAt(test_string, 0)
+RunTask(TestNumberResult)
+
+test_name = "Second char e (101)"
+test_expected_num = 101
+test_actual_num = StringCharAt(test_string, 1)
+RunTask(TestNumberResult)
+
+test_name = "Last char o (111)"
+test_expected_num = 111
+test_actual_num = StringCharAt(test_string, 4)
+RunTask(TestNumberResult)
+
+section_name = "6 (CharAt)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 7: STRING-BUFFER INTEGRATION")
+PrintMessage("WARNING: May fail due to StoreValue/Dereference bugs")
+PrintMessage("=======================================================")
+
+// This section likely to fail based on memory test results
+buffer = Allocate(100)
+
+// Try to store "TEST"
+StoreValue(buffer, 84)         // 'T'
+StoreValue(Add(buffer, 1), 69) // 'E'
+StoreValue(Add(buffer, 2), 83) // 'S'
+StoreValue(Add(buffer, 3), 84) // 'T'
+StoreValue(Add(buffer, 4), 0)  // Null terminator
+
+// Read back bytes (likely to get wrong values)
+byte1 = Dereference(buffer)
+byte2 = Dereference(Add(buffer, 1))
+
+test_name = "Buffer byte 1 (T=84)"
+test_expected_num = 84
+test_actual_num = byte1
+RunTask(TestNumberResult)
+
+test_name = "Buffer byte 2 (E=69)"
+test_expected_num = 69
+test_actual_num = byte2
+RunTask(TestNumberResult)
+
+Deallocate(buffer, 100)
+
+section_name = "7 (Buffer)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 8: ADVANCED FUNCTIONS (May not be implemented)")
+PrintMessage("=======================================================")
+
+PrintMessage("Testing advanced functions - failures expected if not implemented")
+PrintMessage("")
+
+// These will likely cause errors if functions don't exist
+// Uncomment to test if implemented:
+
+// test_name = "StringToUpper"
+// test_expected = "HELLO"
+// test_actual = StringToUpper("hello")
+// RunTask(TestStringResult)
+
+// test_name = "StringToLower"
+// test_expected = "hello"
+// test_actual = StringToLower("HELLO")
+// RunTask(TestStringResult)
+
+// test_name = "StringTrim"
+// test_expected = "hello"
+// test_actual = StringTrim("  hello  ")
+// RunTask(TestStringResult)
+
+// test_name = "StringContains"
+// test_expected_num = 1
+// test_actual_num = StringContains("Hello World", "World")
+// RunTask(TestNumberResult)
+
+// test_name = "StringIndexOf"
+// test_expected_num = 6
+// test_actual_num = StringIndexOf("Hello World", "World")
+// RunTask(TestNumberResult)
+
+// test_name = "StringSubstring"
+// test_expected = "Hello"
+// test_actual = StringSubstring("Hello World", 0, 5)
+// RunTask(TestStringResult)
+
+// test_name = "StringReplace"
+// test_expected = "Hello AILANG"
+// test_actual = StringReplace("Hello World", "World", "AILANG")
+// RunTask(TestStringResult)
+
+PrintMessage("(Advanced functions skipped - uncomment to test)")
+
+section_name = "8 (Advanced)"
+RunTask(SectionSummary)
+
+PrintMessage("=======================================================")
+PrintMessage("SECTION 9: COMPLEX OPERATIONS (Using SubRoutines)")
+PrintMessage("=======================================================")
+
+// Count spaces in string
+SubRoutine.CountSpaces {
+    // Uses globals: text
+    count = 0
+    i = 0
+    length = StringLength(text)
+    
+    WhileLoop LessThan(i, length) {
+        char_code = StringCharAt(text, i)
+        IfCondition EqualTo(char_code, 32) ThenBlock: {
+            count = Add(count, 1)
+        }
+        i = Add(i, 1)
+    }
+}
+
+text = "Hello World Test"
+RunTask(CountSpaces)
+test_name = "Count spaces"
+test_expected_num = 2
+test_actual_num = count
+RunTask(TestNumberResult)
+
+// Check if all digits
+SubRoutine.IsAllDigits {
+    // Uses globals: text, sets result
+    i = 0
+    length = StringLength(text)
+    result = 1
+    
+    IfCondition EqualTo(length, 0) ThenBlock: {
+        result = 0
+    }
+    
+    WhileLoop And(LessThan(i, length), EqualTo(result, 1)) {
+        char_code = StringCharAt(text, i)
+        IfCondition Or(LessThan(char_code, 48), GreaterThan(char_code, 57)) ThenBlock: {
+            result = 0
+        }
+        i = Add(i, 1)
+    }
+}
+
+text = "12345"
+RunTask(IsAllDigits)
+test_name = "IsAllDigits(12345)"
+test_expected_num = 1
+test_actual_num = result
+RunTask(TestNumberResult)
+
+text = "12a45"
+RunTask(IsAllDigits)
+test_name = "IsAllDigits(12a45)"
+test_expected_num = 0
+test_actual_num = result
+RunTask(TestNumberResult)
+
+section_name = "9 (Complex)"
+RunTask(SectionSummary)
+
+// FINAL SUMMARY
+PrintMessage("=======================================================")
+PrintMessage("FINAL TEST SUMMARY")
+PrintMessage("=======================================================")
+
+PrintMessage("Total Tests: ")
+PrintNumber(total_tests)
+PrintMessage("Passed: ")
+PrintNumber(passed_tests)
+PrintMessage("Failed: ")
+PrintNumber(failed_tests)
+
+success_rate = 0
+IfCondition GreaterThan(total_tests, 0) ThenBlock: {
+    success_rate = Divide(Multiply(passed_tests, 100), total_tests)
+}
+
+PrintMessage("Success Rate: ")
+PrintNumber(success_rate)
+PrintMessage("%")
+PrintMessage("")
+
+PrintMessage("EXPECTED WORKING:")
+PrintMessage("- String literals, length, concat, equals")
+PrintMessage("- Number conversions, character access")
+PrintMessage("")
+PrintMessage("EXPECTED FAILURES:")
+PrintMessage("- Buffer integration (StoreValue/Dereference broken)")
+PrintMessage("- Advanced functions (if not implemented)")
+PrintMessage("")
+
+IfCondition EqualTo(failed_tests, 0) ThenBlock: {
+    PrintMessage("=== ALL TESTS PASSED! ===")
+} ElseBlock: {
+    PrintMessage("=== FAILURES DETECTED (see above) ===")
+}
+
+PrintMessage("")
+PrintMessage("Test Complete - Use for regression testing")

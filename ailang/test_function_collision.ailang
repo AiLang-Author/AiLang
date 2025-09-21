@@ -1,0 +1,72 @@
+// test_function_collision.ailang
+// Test if function names can collide or get reused
+
+PrintMessage("=== FUNCTION COLLISION TEST ===")
+PrintMessage("")
+
+// Create a pool
+FixedPool.TestPool {
+    "value1": Initialize=100
+}
+
+// Test 1: Define a function
+Function.Test.Add1 {
+    Input: x:
+    Body: {
+        ReturnValue(Add(x, 1))
+    }
+}
+
+result1 = Test.Add1(5)
+PrintMessage("First Test.Add1(5) = ")
+PrintNumber(result1)
+PrintMessage("Expected: 6")
+PrintMessage("")
+
+// Test 2: Redefine the SAME function name
+Function.Test.Add1 {
+    Input: x:
+    Body: {
+        ReturnValue(Add(x, 10))  // Different implementation!
+    }
+}
+
+result2 = Test.Add1(5)
+PrintMessage("Second Test.Add1(5) = ")
+PrintNumber(result2)
+PrintMessage("Expected: 15 if redefined, 6 if using first")
+PrintMessage("")
+
+// Test 3: Similar with Complex namespace
+Function.Complex.PoolLoop {
+    Body: {
+        ReturnValue(TestPool.value1)  // Just return pool value
+    }
+}
+
+result3 = Complex.PoolLoop()
+PrintMessage("First Complex.PoolLoop() = ")
+PrintNumber(result3)
+PrintMessage("Expected: 100")
+PrintMessage("")
+
+// Test 4: Redefine Complex.PoolLoop
+Function.Complex.PoolLoop {
+    Body: {
+        ReturnValue(999)  // Return different value
+    }
+}
+
+result4 = Complex.PoolLoop()
+PrintMessage("Second Complex.PoolLoop() = ")
+PrintNumber(result4)
+PrintMessage("Expected: 999 if redefined, 100 if using first")
+PrintMessage("")
+
+// Test 5: Check if pool is still accessible
+pool_check = TestPool.value1
+PrintMessage("Pool still accessible: ")
+PrintNumber(pool_check)
+PrintMessage("")
+
+PrintMessage("=== END TEST ===")

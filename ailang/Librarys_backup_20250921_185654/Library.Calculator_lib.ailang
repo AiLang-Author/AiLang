@@ -1,0 +1,265 @@
+// Calculator_lib.ailang - High-performance calculator library
+// Provides expression parsing and evaluation for other AILANG applications
+
+PrintMessage("Loading Calculator Library v1.0")
+PrintMessage("================================")
+
+// Shared state pool for calculator operations
+FixedPool.CalcLib {
+    "token_buffer": Initialize=0
+    "token_count": Initialize=0
+    "error_flag": Initialize=0
+    "last_result": Initialize=0
+}
+
+// Token types for parsing
+// 1 = Number, 2 = Plus, 3 = Minus, 4 = Multiply, 5 = Divide, 6 = LeftParen, 7 = RightParen
+
+// Parse a single digit character to number
+Function.CalcLib.CharToDigit {
+    Input: char:
+    Body: {
+        // ASCII '0' = 48, '1' = 49, etc.
+        is_zero = EqualTo(char, 48)
+        IfCondition is_zero ThenBlock { ReturnValue(0) }
+        
+        is_one = EqualTo(char, 49)
+        IfCondition is_one ThenBlock { ReturnValue(1) }
+        
+        is_two = EqualTo(char, 50)
+        IfCondition is_two ThenBlock { ReturnValue(2) }
+        
+        is_three = EqualTo(char, 51)
+        IfCondition is_three ThenBlock { ReturnValue(3) }
+        
+        is_four = EqualTo(char, 52)
+        IfCondition is_four ThenBlock { ReturnValue(4) }
+        
+        is_five = EqualTo(char, 53)
+        IfCondition is_five ThenBlock { ReturnValue(5) }
+        
+        is_six = EqualTo(char, 54)
+        IfCondition is_six ThenBlock { ReturnValue(6) }
+        
+        is_seven = EqualTo(char, 55)
+        IfCondition is_seven ThenBlock { ReturnValue(7) }
+        
+        is_eight = EqualTo(char, 56)
+        IfCondition is_eight ThenBlock { ReturnValue(8) }
+        
+        is_nine = EqualTo(char, 57)
+        IfCondition is_nine ThenBlock { ReturnValue(9) }
+        
+        // Not a digit
+        ReturnValue(-1)
+    }
+}
+
+// Parse multi-digit number from string
+Function.CalcLib.ParseNumber {
+    Input: str:
+    Input: start_pos:
+    Body: {
+        result = 0
+        pos = start_pos
+        
+        // Simple 3-digit parser for now
+        // In real implementation, would loop until non-digit
+        
+        // Get length (simplified - assume max 3 digits)
+        digit1 = CalcLib.CharToDigit(ArrayGet(str, pos))
+        is_valid = GreaterEqual(digit1, 0)
+        IfCondition is_valid ThenBlock {
+            result = digit1
+            pos = Add(pos, 1)
+            
+            // Check second digit
+            digit2 = CalcLib.CharToDigit(ArrayGet(str, pos))
+            is_valid2 = GreaterEqual(digit2, 0)
+            IfCondition is_valid2 ThenBlock {
+                result = Add(Multiply(result, 10), digit2)
+                pos = Add(pos, 1)
+                
+                // Check third digit
+                digit3 = CalcLib.CharToDigit(ArrayGet(str, pos))
+                is_valid3 = GreaterEqual(digit3, 0)
+                IfCondition is_valid3 ThenBlock {
+                    result = Add(Multiply(result, 10), digit3)
+                    pos = Add(pos, 1)
+                }
+            }
+        }
+        
+        CalcLib.last_result = result
+        ReturnValue(pos)  // Return new position
+    }
+}
+
+// Core math operations
+Function.CalcLib.DoAdd {
+    Input: a:
+    Input: b:
+    Body: {
+        result = Add(a, b)
+        CalcLib.last_result = result
+        ReturnValue(result)
+    }
+}
+
+Function.CalcLib.DoSubtract {
+    Input: a:
+    Input: b:
+    Body: {
+        result = Subtract(a, b)
+        CalcLib.last_result = result
+        ReturnValue(result)
+    }
+}
+
+Function.CalcLib.DoMultiply {
+    Input: a:
+    Input: b:
+    Body: {
+        result = Multiply(a, b)
+        CalcLib.last_result = result
+        ReturnValue(result)
+    }
+}
+
+Function.CalcLib.DoDivide {
+    Input: a:
+    Input: b:
+    Body: {
+        // Check for divide by zero
+        is_zero = EqualTo(b, 0)
+        IfCondition is_zero ThenBlock {
+            CalcLib.error_flag = 1
+            PrintMessage("ERROR: Division by zero!")
+            ReturnValue(0)
+        }
+        
+        result = Divide(a, b)
+        CalcLib.last_result = result
+        ReturnValue(result)
+    }
+}
+
+// Evaluate simple two-operand expression
+Function.CalcLib.EvaluateSimple {
+    Input: op1:
+    Input: operator:
+    Input: op2:
+    Body: {
+        // operator: 43='+', 45='-', 42='*', 47='/'
+        
+        is_add = EqualTo(operator, 43)
+        IfCondition is_add ThenBlock {
+            result = CalcLib.DoAdd(op1, op2)
+            ReturnValue(result)
+        }
+        
+        is_sub = EqualTo(operator, 45)
+        IfCondition is_sub ThenBlock {
+            result = CalcLib.DoSubtract(op1, op2)
+            ReturnValue(result)
+        }
+        
+        is_mul = EqualTo(operator, 42)
+        IfCondition is_mul ThenBlock {
+            result = CalcLib.DoMultiply(op1, op2)
+            ReturnValue(result)
+        }
+        
+        is_div = EqualTo(operator, 47)
+        IfCondition is_div ThenBlock {
+            result = CalcLib.DoDivide(op1, op2)
+            ReturnValue(result)
+        }
+        
+        // Unknown operator
+        CalcLib.error_flag = 1
+        PrintMessage("ERROR: Unknown operator")
+        ReturnValue(0)
+    }
+}
+
+// High-level evaluation with precedence (simplified PEMDAS)
+Function.CalcLib.EvaluateExpression {
+    Input: expr_array:
+    Input: length:
+    Body: {
+        // For now, handle simple "num op num" format
+        // Real implementation would handle full PEMDAS
+        
+        // Reset error flag
+        CalcLib.error_flag = 0
+        
+        // Parse first number
+        pos = 0
+        new_pos = CalcLib.ParseNumber(expr_array, pos)
+        num1 = CalcLib.last_result
+        
+        // Skip spaces (simplified - assume single space)
+        pos = Add(new_pos, 1)
+        
+        // Get operator
+        op = ArrayGet(expr_array, pos)
+        pos = Add(pos, 2)  // Skip operator and space
+        
+        // Parse second number
+        new_pos = CalcLib.ParseNumber(expr_array, pos)
+        num2 = CalcLib.last_result
+        
+        // Evaluate
+        result = CalcLib.EvaluateSimple(num1, op, num2)
+        
+        ReturnValue(result)
+    }
+}
+
+// Public API function for external programs
+Function.CalcLib.Calculate {
+    Input: expression:
+    Body: {
+        PrintMessage("Calculating expression...")
+        
+        // Convert string to array (simplified)
+        // In real implementation, would properly tokenize
+        
+        result = CalcLib.EvaluateExpression(expression, 10)
+        
+        // Check for errors
+        has_error = EqualTo(CalcLib.error_flag, 1)
+        IfCondition has_error ThenBlock {
+            PrintMessage("Calculation failed")
+            ReturnValue(-1)
+        }
+        
+        PrintMessage("Result:")
+        PrintNumber(result)
+        ReturnValue(result)
+    }
+}
+
+// Test the library
+PrintMessage("")
+PrintMessage("Testing Calculator Library:")
+PrintMessage("---------------------------")
+
+// Test basic operations
+test1 = CalcLib.DoAdd(10, 20)
+PrintMessage("10 + 20 =")
+PrintNumber(test1)
+
+test2 = CalcLib.DoMultiply(6, 7)
+PrintMessage("6 * 7 =")
+PrintNumber(test2)
+
+test3 = CalcLib.DoDivide(100, 4)
+PrintMessage("100 / 4 =")
+PrintNumber(test3)
+
+// Test expression evaluation
+PrintMessage("")
+PrintMessage("Library ready for use!")
+PrintMessage("Call CalcLib.Calculate(expression) from your program")

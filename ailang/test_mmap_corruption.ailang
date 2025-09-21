@@ -1,0 +1,114 @@
+// test_mmap_corruption.ailang  
+// Test if mmap (used by StringExtract) corrupts function/pool access
+
+PrintMessage("=== MMAP Corruption Test ===")
+PrintMessage("")
+
+FixedPool.TestState {
+    "value": Initialize=1
+}
+
+Function.ReadPool {
+    Body: {
+        PrintMessage("  Reading pool value...")
+        v = TestState.value
+        PrintMessage("    Value: ")
+        PrintNumber(v)
+    }
+}
+
+// Test 1: Baseline - pool access works
+PrintMessage("[1] Baseline test")
+ReadPool()
+PrintMessage("")
+
+// Test 2: Direct mmap call
+PrintMessage("[2] Direct mmap syscall")
+PrintMessage("  Calling mmap directly...")
+
+// Allocate 16 bytes via mmap (like StringExtract does)
+// mmap(0, 16, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
+size = 16
+prot = 3    // PROT_READ | PROT_WRITE  
+flags = 34  // MAP_PRIVATE | MAP_ANONYMOUS
+
+// This mimics what StringExtract does internally
+buffer = Allocate(size)
+PrintMessage("  Allocated: ")
+PrintNumber(buffer)
+
+PrintMessage("  Now testing pool access...")
+ReadPool()  // Does this crash?
+PrintMessage("")
+
+// Test 3: Allocate then free
+PrintMessage("[3] Allocate and free pattern")
+buf2 = Allocate(32)
+PrintMessage("  Allocated 32 bytes")
+Deallocate(buf2, 32)
+PrintMessage("  Deallocated")
+ReadPool()
+PrintMessage("")
+
+// Test 4: Multiple allocations
+PrintMessage("[4] Multiple allocations")
+a1 = Allocate(8)
+PrintMessage("  Alloc 1: ")
+PrintNumber(a1)
+a2 = Allocate(8)
+PrintMessage("  Alloc 2: ")
+PrintNumber(a2)
+a3 = Allocate(8)
+PrintMessage("  Alloc 3: ")
+PrintNumber(a3)
+
+ReadPool()
+PrintMessage("")
+
+// Test 5: Simulate StringExtract pattern exactly
+PrintMessage("[5] Exact StringExtract pattern")
+
+Function.SimulateExtract {
+    Input: src: Text
+    Input: offset: Integer
+    Input: length: Integer
+    Output: Address
+    Body: {
+        PrintMessage("    Simulating extract...")
+        
+        // Allocate buffer (length + 1) like StringExtract
+        alloc_size = Add(length, 1)
+        new_buf = Allocate(alloc_size)
+        
+        PrintMessage("    Allocated: ")
+        PrintNumber(new_buf)
+        
+        // Would copy data here...
+        
+        ReturnValue(new_buf)
+    }
+}
+
+result = SimulateExtract("TEST", 0, 4)
+PrintMessage("  Extract simulation returned: ")
+PrintNumber(result)
+
+PrintMessage("  Testing pool after simulated extract...")
+ReadPool()  // Crash here?
+PrintMessage("")
+
+// Test 6: The real StringExtract
+PrintMessage("[6] Real StringExtract")
+real = StringExtract("ABCD", 0, 2)
+PrintMessage("  StringExtract returned: ")
+PrintNumber(real)
+PrintMessage("  Content: '")
+PrintMessage(real)
+PrintMessage("'")
+
+PrintMessage("  Testing pool after real extract...")
+ReadPool()  // CRASH HERE!
+
+PrintMessage("")
+PrintMessage("=== TEST COMPLETE ===")
+PrintMessage("Crash point indicates what's corrupting pool access")

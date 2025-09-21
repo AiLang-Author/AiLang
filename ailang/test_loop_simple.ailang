@@ -1,0 +1,34 @@
+// test_loop_simple.ailang
+// Simplest possible tests for each loop structure
+
+PrintMessage("Simple Loop Structure Test")
+PrintMessage("===========================")
+
+// Test 1: Basic Loop (if supported)
+PrintMessage("Test 1: Basic Loop structure")
+LoopActor.TestLoop {
+    PrintMessage("  Inside Loop.TestLoop")
+    x = 42
+    PrintMessage("  Set x to 42")
+}
+
+// Test 2: Simple SubRoutine
+PrintMessage("Test 2: SubRoutine")
+SubRoutine.SimpleTask {
+    PrintMessage("  SubRoutine.SimpleTask executed")
+}
+RunTask(SimpleTask)
+
+// Test 3: Basic WhileLoop (known to work)
+PrintMessage("Test 3: WhileLoop")
+i = 0
+WhileLoop LessThan(i, 2) {
+    Body: {
+        PrintMessage("  WhileLoop iteration")
+        i = Add(i, 1)
+    }
+    }
+
+PrintMessage("===========================")
+PrintMessage("Simple tests complete!")
+PrintMessage("If this runs, basic structures work")

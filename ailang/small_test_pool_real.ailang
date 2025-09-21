@@ -1,0 +1,16 @@
+// Test with smaller iterations first
+PrintMessage("Test 3: 20 concatenations")
+DebugPerf.Start("pooled_20x")
+m = 0
+str4 = "X"
+WhileLoop LessThan(m, 20) {
+    str4 = StringConcatPooled(str4, "Y")
+    m = Add(m, 1)
+}
+DebugPerf.End("pooled_20x")
+
+// Check pool usage after 20
+used = StringPool.Status()
+PrintMessage("After 20 iterations:")
+PrintNumber(used)
+PrintMessage("bytes used")

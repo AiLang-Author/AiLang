@@ -1,0 +1,25 @@
+// Test_Function_Call.ailang
+
+Function.Test.AddNumbers {
+    Input: a: Integer
+    Input: b: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("Inside AddNumbers\n")
+        result = Add(a, b)
+        ReturnValue(result)
+    }
+}
+SubRoutine.Main {
+    PrintMessage("Testing function calls...\n")
+    
+    PrintMessage("Calling AddNumbers(3, 5)...\n")
+    sum = Test.AddNumbers(3, 5)
+    PrintMessage("Result: ")
+    PrintNumber(sum)
+    PrintMessage("\n")
+    
+    PrintMessage("Done\n")
+}
+
+RunTask(Main)

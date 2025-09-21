@@ -1,0 +1,23 @@
+// Test namespace functionality with simple operations
+ImportLibrary.Library.RESP
+
+// Global variable - should be namespaced
+counter = 42
+
+// Function with parameter - param should NOT be namespaced
+Function.Helper {
+    
+    Input: value
+    Output: Integer
+    
+    // Local variable - should NOT be namespaced
+    local_result = Add(value, 10)
+    ReturnValue(local_result)
+    }
+
+// Test the function
+result = Helper(counter)
+
+// Print results
+PrintMessage("Test completed successfully")
+PrintNumber(result)

@@ -1,0 +1,20 @@
+// test_pool_tracking.ailang
+pool = StringPool.Init(256)  // Tiny pool
+
+PrintMessage("Pool initialized with 256 bytes")
+
+i = 0
+WhileLoop LessThan(i, 10) {
+    Body: {
+        PrintMessage("Iteration:")
+        PrintNumber(i)
+    
+        str = StringConcatPooled("ABCDEFGHIJ", "KLMNOPQRST")  // 20 bytes each time
+    
+        used = StringPool.Status()
+        PrintMessage("Bytes used:")
+        PrintNumber(used)
+    
+        i = Add(i, 1)
+    }
+    }

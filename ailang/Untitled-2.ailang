@@ -1,0 +1,252 @@
+// test_comprehensive_math.ailang
+// Comprehensive math test harness - keep adding tests as needed
+
+PrintMessage("=== COMPREHENSIVE MATH TEST SUITE ===")
+PrintMessage("")
+
+// ========== SECTION 1: BASIC ARITHMETIC ==========
+PrintMessage("[1] Basic Arithmetic")
+
+// Positive operations (these should work)
+result = Add(10, 5)
+PrintMessage("10 + 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 15")
+
+result = Subtract(10, 5)
+PrintMessage("10 - 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 5")
+
+result = Multiply(10, 5)
+PrintMessage("10 * 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 50")
+
+result = Divide(10, 5)
+PrintMessage("10 / 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 2")
+
+// ========== SECTION 2: NEGATIVE NUMBERS ==========
+PrintMessage("")
+PrintMessage("[2] Negative Number Operations")
+
+// Negative addition/subtraction
+result = Add(-10, 5)
+PrintMessage("-10 + 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: -5")
+
+result = Subtract(-10, 5)
+PrintMessage("-10 - 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: -15")
+
+result = Add(-10, -5)
+PrintMessage("-10 + (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: -15")
+
+// Negative multiplication
+result = Multiply(-10, 5)
+PrintMessage("-10 * 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: -50")
+
+result = Multiply(-10, -5)
+PrintMessage("-10 * (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: 50")
+
+result = Multiply(10, -5)
+PrintMessage("10 * (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: -50")
+
+// ========== SECTION 3: DIVISION EDGE CASES ==========
+PrintMessage("")
+PrintMessage("[3] Division Edge Cases - FINDING THE BUG")
+
+// Positive divisions (should work)
+result = Divide(20, 4)
+PrintMessage("20 / 4 = ")
+PrintNumber(result)
+PrintMessage("Expected: 5")
+
+// Negative dividend
+result = Divide(-20, 4)
+PrintMessage("-20 / 4 = ")
+PrintNumber(result)
+PrintMessage("Expected: -5")
+
+// Negative divisor
+result = Divide(20, -4)
+PrintMessage("20 / (-4) = ")
+PrintNumber(result)
+PrintMessage("Expected: -5")
+
+// Both negative
+result = Divide(-20, -4)
+PrintMessage("-20 / (-4) = ")
+PrintNumber(result)
+PrintMessage("Expected: 5")
+
+// Integer division with remainder
+result = Divide(21, 4)
+PrintMessage("21 / 4 = ")
+PrintNumber(result)
+PrintMessage("Expected: 5 (integer division)")
+
+// Negative with remainder
+result = Divide(-21, 4)
+PrintMessage("-21 / 4 = ")
+PrintNumber(result)
+PrintMessage("Expected: -5 (integer division)")
+
+result = Divide(21, -4)
+PrintMessage("21 / (-4) = ")
+PrintNumber(result)
+PrintMessage("Expected: -5 (integer division)")
+
+result = Divide(-21, -4)
+PrintMessage("-21 / (-4) = ")
+PrintNumber(result)
+PrintMessage("Expected: 5 (integer division)")
+
+// Division by 1 and -1
+result = Divide(42, 1)
+PrintMessage("42 / 1 = ")
+PrintNumber(result)
+PrintMessage("Expected: 42")
+
+result = Divide(42, -1)
+PrintMessage("42 / (-1) = ")
+PrintNumber(result)
+PrintMessage("Expected: -42")
+
+result = Divide(-42, 1)
+PrintMessage("-42 / 1 = ")
+PrintNumber(result)
+PrintMessage("Expected: -42")
+
+result = Divide(-42, -1)
+PrintMessage("-42 / (-1) = ")
+PrintNumber(result)
+PrintMessage("Expected: 42")
+
+// ========== SECTION 4: MODULO OPERATIONS ==========
+PrintMessage("")
+PrintMessage("[4] Modulo Operations")
+
+result = Modulo(17, 5)
+PrintMessage("17 % 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 2")
+
+result = Modulo(-17, 5)
+PrintMessage("-17 % 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: -2 or 3 (depends on implementation)")
+
+result = Modulo(17, -5)
+PrintMessage("17 % (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: 2 or -3 (depends on implementation)")
+
+result = Modulo(-17, -5)
+PrintMessage("-17 % (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: -2")
+
+// ========== SECTION 5: ZERO EDGE CASES ==========
+PrintMessage("")
+PrintMessage("[5] Zero Edge Cases")
+
+result = Add(0, 5)
+PrintMessage("0 + 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 5")
+
+result = Multiply(0, 5)
+PrintMessage("0 * 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 0")
+
+result = Multiply(0, -5)
+PrintMessage("0 * (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: 0")
+
+result = Divide(0, 5)
+PrintMessage("0 / 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 0")
+
+result = Divide(0, -5)
+PrintMessage("0 / (-5) = ")
+PrintNumber(result)
+PrintMessage("Expected: 0")
+
+// ========== SECTION 6: LARGE NUMBERS ==========
+PrintMessage("")
+PrintMessage("[6] Large Number Operations")
+
+result = Multiply(1000000, 1000)
+PrintMessage("1000000 * 1000 = ")
+PrintNumber(result)
+PrintMessage("Expected: 1000000000")
+
+result = Divide(1000000000, 1000)
+PrintMessage("1000000000 / 1000 = ")
+PrintNumber(result)
+PrintMessage("Expected: 1000000")
+
+// ========== SECTION 7: CHAINED OPERATIONS ==========
+PrintMessage("")
+PrintMessage("[7] Chained Operations")
+
+// Order of operations test
+result = Add(Multiply(3, 4), 5)
+PrintMessage("(3 * 4) + 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 17")
+
+result = Multiply(Add(3, 4), 5)
+PrintMessage("(3 + 4) * 5 = ")
+PrintNumber(result)
+PrintMessage("Expected: 35")
+
+// Complex chain with negatives
+result = Divide(Multiply(-6, 4), -3)
+PrintMessage("((-6) * 4) / (-3) = ")
+PrintNumber(result)
+PrintMessage("Expected: 8")
+
+// ========== SECTION 8: SYMBOL OPERATIONS ==========
+PrintMessage("")
+PrintMessage("[8] Symbol Operations (Infix)")
+
+result = (20 / 4)
+PrintMessage("(20 / 4) = ")
+PrintNumber(result)
+PrintMessage("Expected: 5")
+
+result = (-20 / 4)
+PrintMessage("(-20 / 4) = ")
+PrintNumber(result)
+PrintMessage("Expected: -5")
+
+result = (20 / -4)
+PrintMessage("(20 / -4) = ")
+PrintNumber(result)
+PrintMessage("Expected: -5")
+
+result = (-20 / -4)
+PrintMessage("(-20 / -4) = ")
+PrintNumber(result)
+PrintMessage("Expected: 5")
+
+PrintMessage("")
+PrintMessage("=== END COMPREHENSIVE TEST ===")
+PrintMessage("Check for any unexpected results above!")

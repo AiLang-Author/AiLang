@@ -1,0 +1,40 @@
+// debug_array_create.ailang
+// Test ArrayCreate specifically
+
+PrintMessage("=== ArrayCreate Debug ===")
+
+PrintMessage("Test 1: Creating array size 4")
+arr1 = ArrayCreate(4)
+PrintMessage("Array address:")
+PrintNumber(arr1)
+
+IfCondition EqualTo(arr1, 0) ThenBlock {
+    PrintMessage("ERROR: ArrayCreate returned NULL!")
+} ElseBlock {
+    PrintMessage("Array created successfully")
+    
+    // Test if we can use it
+    PrintMessage("Setting arr1[0] = 42")
+    ArraySet(arr1, 0, 42)
+    
+    PrintMessage("Getting arr1[0]")
+    val = ArrayGet(arr1, 0)
+    PrintMessage("Value:")
+    PrintNumber(val)
+}
+
+PrintMessage("Test 2: Creating another array")
+arr2 = ArrayCreate(10)
+PrintMessage("Array 2 address:")
+PrintNumber(arr2)
+
+PrintMessage("Test 3: Store array pointer and retrieve")
+buffer = Allocate(8)
+StoreValue(buffer, arr1)
+retrieved = Dereference(buffer)
+PrintMessage("Original array:")
+PrintNumber(arr1)
+PrintMessage("Retrieved array:")
+PrintNumber(retrieved)
+
+PrintMessage("=== Test Complete ===")

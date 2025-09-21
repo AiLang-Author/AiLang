@@ -1,0 +1,31 @@
+// test_basic_ops.ailang
+// Test core operations we know work
+
+PrintMessage("Basic Operations Test")
+PrintMessage("=====================")
+
+// Test arithmetic
+a = 10
+b = 20
+sum = Add(a, b)
+PrintMessage("10 + 20 = 30:")
+PrintNumber(sum)
+
+diff = Subtract(b, a)
+PrintMessage("20 - 10 = 10:")
+PrintNumber(diff)
+
+product = Multiply(a, 3)
+PrintMessage("10 * 3 = 30:")
+PrintNumber(product)
+
+// Test comparisons
+is_less = LessThan(a, b)
+PrintMessage("10 < 20 (should be 1):")
+PrintNumber(is_less)
+
+is_equal = EqualTo(a, 10)
+PrintMessage("10 == 10 (should be 1):")
+PrintNumber(is_equal)
+
+PrintMessage("Basic ops test complete!")

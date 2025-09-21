@@ -1,0 +1,102 @@
+// test_section3_to_4.ailang
+// Test the transition from Section 3 to Section 4
+
+PrintMessage("Testing Section 3 to 4 Transition")
+
+// Minimal globals
+section_tests = 0
+section_passed = 0
+section_name = ""
+system_initialized = 0
+init_value = 0
+shadow_work = 0
+shadow_cycles = 0
+main_result = 0
+integration_ready = 0
+
+// Section summary helper
+SubRoutine.SectionSummary {
+    PrintMessage("Section ")
+    PrintMessage(section_name)
+    PrintMessage(" complete")
+    section_tests = 0
+    section_passed = 0
+}
+
+PrintMessage("===========================================================")
+PrintMessage("SECTION 3: LOOP INITIALIZATION AND BACKGROUND")
+PrintMessage("===========================================================")
+
+// LoopStart test
+LoopStart.SystemInit {
+    PrintMessage("System initialization started")
+    system_initialized = 1
+    init_value = 999
+    PrintMessage("System initialization complete")
+}
+
+PrintMessage("After LoopStart")
+
+// LoopShadow background processing
+LoopShadow.BackgroundWorker {
+    PrintMessage("Background worker started")
+    
+    WhileLoop LessThan(shadow_cycles, 3) {
+        Body: {
+            shadow_work = Add(shadow_work, 10)
+            shadow_cycles = Add(shadow_cycles, 1)
+            PrintMessage("Background cycle:")
+            PrintNumber(shadow_cycles)
+        }
+        }
+    
+    PrintMessage("Background worker finished")
+}
+
+PrintMessage("After LoopShadow")
+
+// Integration test
+LoopStart.IntegrationInit {
+    PrintMessage("Integration init")
+    integration_ready = 1
+}
+
+LoopShadow.IntegrationBackground {
+    PrintMessage("Integration background")
+}
+
+LoopMain.IntegrationMain {
+    PrintMessage("Integration main started")
+    
+    IfCondition EqualTo(integration_ready, 1) ThenBlock {
+        main_result = 555
+        PrintMessage("Main processing complete")
+    }
+}
+
+PrintMessage("After LoopMain")
+
+section_name = "3 (Initialization/Background)"
+RunTask(SectionSummary)
+
+PrintMessage("===========================================================")
+PrintMessage("SECTION 4: ACTOR COMMUNICATION PATTERNS")
+PrintMessage("===========================================================")
+
+PrintMessage("About to declare MessageSystem pool...")
+
+// THIS IS THE CRITICAL PART - Line 405 area
+FixedPool.MessageSystem {
+    "sender_message": Initialize=0
+    "receiver_result": Initialize=0
+    "message_ready": Initialize=0
+}
+
+PrintMessage("Pool declared successfully!")
+
+// Test pool access
+MessageSystem.sender_message = 123
+PrintMessage("MessageSystem.sender_message = ")
+PrintNumber(MessageSystem.sender_message)
+
+PrintMessage("Test complete - no parse errors!")

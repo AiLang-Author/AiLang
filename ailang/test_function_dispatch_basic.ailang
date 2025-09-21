@@ -1,0 +1,19 @@
+// test_func_pointer.ailang
+PrintMessage("=== Function Pointer Test ===")
+
+// Define function first
+Function.TestFunc {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        result = Add(x, 10)
+        ReturnValue(result)
+    }
+}
+
+// Now get its address
+func_ptr = AddressOf(TestFunc)
+PrintMessage("Function pointer:")
+PrintNumber(func_ptr)
+
+PrintMessage("Test complete!")

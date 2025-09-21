@@ -1,0 +1,23 @@
+// test_pool_basic.ailang
+pool = StringPool.Init(65536)  // Large pool first
+
+PrintMessage("Before any operations:")
+used = StringPool.Status()
+PrintNumber(used)
+
+// Single operation
+result = StringConcatPooled("Hello", "World")
+PrintMessage("Result of concat:")
+PrintMessage(result)
+
+PrintMessage("After one concat:")
+used = StringPool.Status()
+PrintNumber(used)
+
+// A few more
+result2 = StringConcatPooled(result, "!")
+PrintMessage(result2)
+
+PrintMessage("After two concats:")
+used = StringPool.Status()
+PrintNumber(used)

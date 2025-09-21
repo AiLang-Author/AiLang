@@ -1,0 +1,70 @@
+// flow_control_debug.ailang
+// Minimal tests to identify parser/compiler issues
+
+PrintMessage("=== FLOW CONTROL DEBUG TEST ===")
+PrintMessage("")
+
+// Test 1: BreakLoop
+PrintMessage("Test 1: BreakLoop")
+counter1 = 0
+WhileLoop LessThan(counter1, 10) {
+    counter1 = Add(counter1, 1)
+    IfCondition EqualTo(counter1, 3) ThenBlock: {
+        PrintMessage("Breaking at 3")
+        BreakLoop
+    }
+    PrintNumber(counter1)
+}
+PrintMessage("Final counter1: ")
+PrintNumber(counter1)
+PrintMessage("")
+
+// Test 2: ContinueLoop
+PrintMessage("Test 2: ContinueLoop")
+counter2 = 0
+sum2 = 0
+WhileLoop LessThan(counter2, 5) {
+    counter2 = Add(counter2, 1)
+    IfCondition EqualTo(Modulo(counter2, 2), 0) ThenBlock: {
+        PrintMessage("Skipping even: ")
+        PrintNumber(counter2)
+        ContinueLoop
+    }
+    sum2 = Add(sum2, counter2)
+}
+PrintMessage("Sum of odds: ")
+PrintNumber(sum2)
+PrintMessage("")
+
+// Test 3: HaltProgram (conditional, not executed)
+PrintMessage("Test 3: HaltProgram (conditional)")
+IfCondition False ThenBlock: {
+    PrintMessage("This won't print")
+    HaltProgram("Should not halt")
+} ElseBlock: {
+    PrintMessage("HaltProgram skipped successfully")
+}
+PrintMessage("")
+
+// Test 4: Nested loops with break
+PrintMessage("Test 4: Nested break")
+outer = 0
+inner = 0
+WhileLoop LessThan(outer, 3) {
+    inner = 0
+    PrintMessage("Outer: ")
+    PrintNumber(outer)
+    WhileLoop LessThan(inner, 3) {
+        PrintMessage("  Inner: ")
+        PrintNumber(inner)
+        IfCondition EqualTo(inner, 1) ThenBlock: {
+            PrintMessage("  Breaking inner")
+            BreakLoop
+        }
+        inner = Add(inner, 1)
+    }
+    outer = Add(outer, 1)
+}
+PrintMessage("")
+
+PrintMessage("=== DEBUG TEST COMPLETE ===")

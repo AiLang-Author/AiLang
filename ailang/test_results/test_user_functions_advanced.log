@@ -1,0 +1,35 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/main.py", line 14, in compile_ailang_to_executable
+    ast = parser.compile(source_code)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/compiler.py", line 60, in compile
+    ast = parser.parse()
+          ^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 95, in parse
+    decl = self.parse_declaration()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_declarations.py", line 27, in parse_declaration
+    return self.parse_function()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_declarations.py", line 288, in parse_function
+    stmt = self.parse_statement()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 30, in parse_statement
+    return self.parse_if()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 138, in parse_if
+    self.consume(TokenType.COLON)
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 75, in consume
+    self.error(f"Expected {token_type.name}, got {self.current_token.type.name}. {message}")
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 43, in error
+    raise ParseError(f"In {context}: {message}", self.current_token)
+ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 69, column 49: In program > Function.Logic.Max: Expected COLON, got LBRACE. 
+
+==================================================
+🚀 Starting compilation for: test_user_functions_advanced.ailang -> test_user_functions_advanced_exec
+==================================================
+🔨 Compiling AILANG source...
+❌ ERROR: Parse error at line 69, column 49: In program > Function.Logic.Max: Expected COLON, got LBRACE. 
+🔥 FAILED! Compilation of test_user_functions_advanced.ailang encountered an error.
+
+❌ One or more files failed to compile.

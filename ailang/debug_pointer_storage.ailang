@@ -1,0 +1,42 @@
+// debug_pointer_storage.ailang
+// Test storing and retrieving large values
+
+PrintMessage("=== Pointer Storage Debug ===")
+
+buffer = Allocate(32)
+
+// Test small values
+PrintMessage("Test 1: Small value")
+StoreValue(buffer, 42)
+val1 = Dereference(buffer)
+PrintMessage("Stored: 42")
+PrintMessage("Retrieved:")
+PrintNumber(val1)
+
+// Test medium values
+PrintMessage("Test 2: Medium value")
+StoreValue(Add(buffer, 8), 65536)
+val2 = Dereference(Add(buffer, 8))
+PrintMessage("Stored: 65536")
+PrintMessage("Retrieved:")
+PrintNumber(val2)
+
+// Test large values (32-bit boundary)
+PrintMessage("Test 3: 32-bit boundary")
+large = 4294967295  // 2^32 - 1
+StoreValue(Add(buffer, 16), large)
+val3 = Dereference(Add(buffer, 16))
+PrintMessage("Stored: 4294967295")
+PrintMessage("Retrieved:")
+PrintNumber(val3)
+
+// Test pointer-like value
+PrintMessage("Test 4: Simulate pointer")
+ptr_val = 132156599205888  // Example pointer value
+StoreValue(Add(buffer, 24), ptr_val)
+val4 = Dereference(Add(buffer, 24))
+PrintMessage("Stored: 132156599205888")
+PrintMessage("Retrieved:")
+PrintNumber(val4)
+
+PrintMessage("=== Test Complete ===")

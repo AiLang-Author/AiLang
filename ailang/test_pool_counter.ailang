@@ -1,0 +1,13 @@
+FixedPool.TestPool {
+    "counter": Initialize=0
+}
+
+PrintMessage("Counter before: ")
+PrintNumber(TestPool.counter)
+PrintMessage("\n")
+
+TestPool.counter = Add(TestPool.counter, 1)
+
+PrintMessage("Counter after: ")
+PrintNumber(TestPool.counter)
+PrintMessage("\n")

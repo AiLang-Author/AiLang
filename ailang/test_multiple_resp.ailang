@@ -1,0 +1,25 @@
+PrintMessage("Testing multiple RESP functions")
+
+Function.RESP.MakeSimpleString {
+    Body: {
+        PrintMessage("First function")
+        ReturnValue(1)
+    }
+}
+
+Function.RESP.MakeError {
+    Body: {
+        PrintMessage("Second function")
+        ReturnValue(2)
+    }
+}
+
+PrintMessage("Calling first function...")
+r1 = RESP.MakeSimpleString()
+PrintNumber(r1)
+
+PrintMessage("Calling second function...")
+r2 = RESP.MakeError()
+PrintNumber(r2)
+
+PrintMessage("Done!")

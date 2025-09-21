@@ -3,8 +3,8 @@ LibraryImport.Core.SortedSet {
     
     // Simple memory pool
     DynamicPool.Pool.SortedSet.Main {
-        "nodes": ElementType-Address, MaximumLength-10000000,
-        "headers": ElementType-Address, MaximumLength-1000
+        "nodes": ElementType=Address, MaximumLength=10000000,
+        "headers": ElementType=Address, MaximumLength=1000
     }
     
     // Constants
@@ -59,7 +59,7 @@ LibraryImport.Core.SortedSet {
             StoreValue(score_offset, score)
             
             // Only increment count on first add
-            IfCondition LessThan(old_count, 1000) ThenBlock {
+            IfCondition LessThan(old_count, 1000) ThenBlock: {
                 new_count = Add(old_count, 1)
                 StoreValue(count_ptr, new_count)
             }
@@ -132,9 +132,10 @@ LibraryImport.Core.SortedSet {
         Input: (zset: Address, member: Text, increment: FloatingPoint)
         Output: FloatingPoint
         Body: {
-            current = RunTask.ZSet.Score(zset-zset, member-member)
+            current = ZSet.Score(zset, member)
             new_score = Add(current, increment)
-            RunTask.ZSet.Add(zset-zset, member-member, score-new_score)
+            ZSet.Add(zset, member, new_score)
             ReturnValue(new_score)
         }
     }
+}

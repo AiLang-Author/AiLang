@@ -34,10 +34,11 @@ from ailang_compiler.modules.expression_compiler import ExpressionCompiler
 from ailang_compiler.modules.library_inliner import LibraryInliner
 from ailang_compiler.modules.user_functions import UserFunctions
 from ailang_compiler.modules.memory_pool import MemoryPool
-from .scope_manager import ScopeManager
 from ailang_compiler.modules.function_dispatch import FunctionDispatch
+from ailang_compiler.modules.try_catch import SimplifiedTryCatchCompiler, register_try_catch_in_compiler
+from ailang_compiler.modules.message_passing import MessagePassing
 
-
+from .scope_manager import ScopeManager
 
 class AILANGToX64Compiler:
     """Main compiler orchestrator for AILANG to x86-64 compilation"""
@@ -72,6 +73,11 @@ class AILANGToX64Compiler:
         self.lowlevel = LowLevelOps(self)
         self.user_functions = UserFunctions(self)
         self.scope_mgr = ScopeManager(self)
+        
+        self.try_catch = SimplifiedTryCatchCompiler(self)
+        print("DEBUG: Initialized Try/Catch compiler module")
+        self.message_passing = MessagePassing(self)
+        print("DEBUG: Initialized message passing module")
         
         # Loop model support
         self.subroutines = {}      # name -> label mapping
@@ -132,9 +138,13 @@ class AILANGToX64Compiler:
         'BreakLoop': lambda n: self.control_flow.compile_break(n),
         'ContinueLoop': lambda n: self.control_flow.compile_continue(n),
         'If': lambda n: self.control_flow.compile_if_condition(n),
-                    'DebugBlock': lambda n: self.debug_ops.compile_operation(n) if hasattr(self, 'debug_ops') else None,
-            'DebugAssert': lambda n: self.debug_ops.compile_operation(n) if hasattr(self, 'debug_ops') else None,
-            'Assignment': lambda n: self.memory.compile_assignment(n),
+        'Try': lambda n: self.try_catch.compile_try(n),
+        'SendMessage': lambda n: self.message_passing.compile_sendmessage(n),
+        'ReceiveMessage': lambda n: self.message_passing.compile_receivemessage(n),
+        
+        'DebugBlock': lambda n: self.debug_ops.compile_operation(n) if hasattr(self, 'debug_ops') else None,
+        'DebugAssert': lambda n: self.debug_ops.compile_operation(n) if hasattr(self, 'debug_ops') else None,
+        'Assignment': lambda n: self.memory.compile_assignment(n),
         'PrintMessage': lambda n: self.strings.compile_print_message(n),
         'RunTask': lambda n: self._compile_run_task_dispatch(n),
         'FunctionCall': lambda n: self._compile_function_call_dispatch(n),
@@ -144,7 +154,7 @@ class AILANGToX64Compiler:
         'Function': lambda n: self.user_functions.compile_function_definition(n),
         'FunctionDefinition': lambda n: self.user_functions.compile_function_definition(n),
         'ReturnValue': lambda n: self.user_functions.compile_return(n.value if hasattr(n, 'value') else None),
-        
+        'TryBlock': lambda n: self.try_catch.compile_try(n),
         
         }
 

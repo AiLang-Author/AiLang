@@ -1,0 +1,1790 @@
+// redis_server_extended.ailang
+// Extended Redis server with more commands
+// redis_server.ailang
+// This file contains the full server logic with the requested debugging statements.
+// You can integrate this with your existing project.
+
+LibraryImport.Library.RESP
+LibraryImport.Library.XArrays
+// --- Assumed Library Imports ---
+// LibraryImport.XArray
+
+// Global data store for the server
+// Declared at the top level for clarity and global scope.
+store = XSHash.XCreate(1024)
+// --- Main Server Logic ---
+
+// State for stream ID generation
+FixedPool.StreamState {
+    "last_id_ms": Initialize=0
+}
+
+// Type constants for our Redis-like objects
+FixedPool.DataTypes {
+    "TYPE_STRING": Initialize=0
+    "TYPE_LIST": Initialize=1
+    "TYPE_STREAM": Initialize=2
+    "TYPE_SET": Initialize=3
+}
+
+// Mailbox for passing new client sockets to actors
+FixedPool.Mailbox {
+    "new_client_socket": Initialize=0
+}
+
+// Define standard system call numbers for clarity and maintainability
+ // Linux x86-64 syscall number for time(NULL)
+FixedPool.SyscallNumbers {
+   
+    "TIME": Initialize=201
+}
+
+// Helper function to convert string to integer
+Function.Helpers.StringToInt {
+    Input: str:
+Function.Server.HandleClient {
+    Input: client_socket: Integer
+    Body: {
+        // Simple string to integer conversion
+        result = 0
+        i = 0
+        len = StringLength(str)
+        negative = 0
+        // --- Variable Initializations ---
+        // Assuming these variables are defined here.
+        buffer = Allocate(4096)
+        buffer_offset = 0
+        buffer_data_len = 0
+        read_target_ptr = 0
+        read_max_len = 0
+        client_connected = True
+        
+        // Check for negative sign
+        IfCondition GreaterThan(len, 0) ThenBlock: {
+            first = GetByte(str, 0)
+            IfCondition EqualTo(first, 45) ThenBlock: {  // '-'
+                negative = 1
+                i = 1
+        WhileLoop client_connected {
+            // DEBUG: Check buffer state at the start of each iteration
+            Debug("loop.state", level=1) {
+                PrintMessage("[DEBUG] Main loop iteration - buffer_offset: ")
+                PrintNumber(buffer_offset)
+                PrintMessage(" buffer_data_len: ")
+                PrintNumber(buffer_data_len)
+                PrintMessage("\n")
+            }
+        }
+        
+        WhileLoop LessThan(i, len) {
+            byte = GetByte(str, i)
+            // Check if digit (48-57 are '0'-'9')
+            IfCondition And(GreaterEqual(byte, 48), LessEqual(byte, 57)) ThenBlock: {
+                digit = Subtract(byte, 48)
+                result = Multiply(result, 10)
+                result = Add(result, digit)
+            }
+            i = Add(i, 1)
+        }
+        
+        IfCondition negative ThenBlock: {
+            result = Subtract(0, result)
+        }
+        
+        ReturnValue(result)
+    }
+}
+            
+            // ... (Your logic to process commands already in the buffer would go here) ...
+            
+            // Read more data from the socket
+            read_target_ptr = Add(buffer, buffer_data_len)
+            read_max_len = Subtract(4096, buffer_data_len)
+            bytes_read = SocketRead(client_socket, read_target_ptr, read_max_len)
+
+// Helper to convert integer to string
+Function.Helpers.IntToString {
+    Input: num:
+    Body: {
+        // Allocate buffer for result
+        buffer = Allocate(32)
+        pos = 0
+        value = num
+        
+        // Handle negative
+        IfCondition LessThan(value, 0) ThenBlock: {
+            SetByte(buffer, pos, 45)  // '-'
+            pos = Add(pos, 1)
+            value = Subtract(0, value)
+        }
+        
+        // Handle zero
+        IfCondition EqualTo(value, 0) ThenBlock: {
+            SetByte(buffer, pos, 48)  // '0'
+            pos = Add(pos, 1)
+            SetByte(buffer, pos, 0)   // null terminate
+            ReturnValue(buffer)
+        }
+        
+        // Convert digits (simplified - assumes small numbers)
+        start_pos = pos
+        WhileLoop GreaterThan(value, 0) {
+            digit = Modulo(value, 10)
+            SetByte(buffer, pos, Add(48, digit))
+            pos = Add(pos, 1)
+            value = Divide(value, 10)
+        }
+        
+        // Reverse the digits
+        end_pos = Subtract(pos, 1)
+        WhileLoop LessThan(start_pos, end_pos) {
+            temp = GetByte(buffer, start_pos)
+            SetByte(buffer, start_pos, GetByte(buffer, end_pos))
+            SetByte(buffer, end_pos, temp)
+            start_pos = Add(start_pos, 1)
+            end_pos = Subtract(end_pos, 1)
+        }
+        
+        SetByte(buffer, pos, 0)  // null terminate
+        ReturnValue(buffer)
+    }
+}
+
+// Helper to parse a stream ID string "ms-seq" into an array of two integers.
+Function.Helpers.ParseStreamID {
+    Input: id_str: Address
+    Output: Address // Pointer to an XArray with 2 integers [ms, seq]
+    Body: {
+        // Find the position of the '-' separator
+        dash_pos = StringIndexOf(id_str, "-")
+        
+        IfCondition EqualTo(dash_pos, -1) ThenBlock: {
+            // Invalid ID format, return null
+            ReturnValue(0)
+        }
+        
+        // Extract and convert the milliseconds part
+        ms_str = StringSubstring(id_str, 0, dash_pos)
+        ms_val = Helpers.StringToInt(ms_str)
+        Deallocate(ms_str, 0)
+        
+        // Extract and convert the sequence part
+        len = StringLength(id_str)
+        seq_start = Add(dash_pos, 1)
+        seq_len = Subtract(len, seq_start)
+        seq_str = StringSubstring(id_str, seq_start, seq_len)
+        seq_val = Helpers.StringToInt(seq_str)
+        Deallocate(seq_str, 0)
+        
+        // Create an XArray to hold the two integer parts.
+        // WARNING: The current XArray library does not have a destructor, so this will leak memory.
+        result_arr = XArray.XCreate(2)
+        XArray.XPush(result_arr, ms_val)
+        XArray.XPush(result_arr, seq_val)
+        
+        ReturnValue(result_arr)
+    }
+}
+
+// Helper to compare two stream ID strings (e.g., "1-0" vs "0-10").
+Function.Helpers.CompareStreamIDs {
+    Input: id1_str: Address
+    Input: id2_str: Address
+    Output: Integer // Returns 1 if id1 > id2, -1 if id1 < id2, 0 if equal.
+    Body: {
+        id1_parts = Helpers.ParseStreamID(id1_str)
+        id2_parts = Helpers.ParseStreamID(id2_str)
+        
+        // Handle parsing errors
+        IfCondition Or(EqualTo(id1_parts, 0), EqualTo(id2_parts, 0)) ThenBlock: {
+            // Proper cleanup would free the parsed arrays here.
+            ReturnValue(-2) // Indicate error
+        }
+        
+        id1_ms = XArray.XGet(id1_parts, 0)
+        id1_seq = XArray.XGet(id1_parts, 1)
+        id2_ms = XArray.XGet(id2_parts, 0)
+        id2_seq = XArray.XGet(id2_parts, 1)
+        
+        // Clean up the temporary XArray objects created by ParseStreamID.
+        // The integer values inside are not pointers, so we don't need to free them.
+        XArray.XDestroy(id1_parts)
+        XArray.XDestroy(id2_parts)
+        
+        result = 0
+        IfCondition GreaterThan(id1_ms, id2_ms) ThenBlock: {
+            result = 1
+        } ElseBlock: {
+            IfCondition LessThan(id1_ms, id2_ms) ThenBlock: {
+                result = -1
+            } ElseBlock: {
+                // Milliseconds are equal, so compare sequence numbers
+                IfCondition GreaterThan(id1_seq, id2_seq) ThenBlock: { result = 1 }
+                IfCondition LessThan(id1_seq, id2_seq) ThenBlock: { result = -1 }
+            }
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Helper to get the system time in milliseconds.
+Function.Helpers.GetSystemTime {
+    Output: Integer // Returns current time in milliseconds
+    Body: {
+        // Per your hint, we can use a syscall to get real time.
+        // This is much more accurate than the simulated clock.
+        // Assuming syscall #201 is 'time' which returns seconds since epoch,
+        // similar to Linux. A more advanced implementation might use a
+        // higher resolution clock syscall if available.
+        time_in_seconds = SystemCall(SyscallNumbers.TIME, 0) // Arg 0 for time(NULL)
+        time_in_ms = Multiply(time_in_seconds, 1000)
+        ReturnValue(time_in_ms)
+    }
+}
+
+// Helper to check for and handle key expiration (passive eviction)
+Function.Helpers.CheckAndEvictExpiredKey {
+    Input: key: Address
+    Input: wrapper: Address
+    Output: Integer // Returns 1 if key was expired and evicted, 0 otherwise.
+    Body: {
+        // Expiration is stored at offset 8
+        expiration_ms = Dereference(Add(wrapper, 8))
+        
+        // A value of 0 means no expiration is set.
+        IfCondition NotEqual(expiration_ms, 0) ThenBlock: {
+            now = Helpers.GetSystemTime()
+            IfCondition LessThan(expiration_ms, now) ThenBlock: {
+                // --- Key is expired, evict it now ---
+                // This logic is a safe subset of the DEL command.
+                // We can call XDelete, which returns the wrapper for us to free.
+                deleted_wrapper = XSHash.XDelete(store, key)
+                IfCondition NotEqual(deleted_wrapper, XArrays.XNULL) ThenBlock: {
+                    type = Dereference(deleted_wrapper)
+                    value_ptr = Dereference(Add(deleted_wrapper, 16)) // New offset for value
+            IfCondition GreaterThan(bytes_read, 0) ThenBlock: {
+                buffer_data_len = Add(buffer_data_len, bytes_read)
+                
+                // DEBUG: Log details about the data just read
+                Debug("buffer.read", level=1) {
+                    PrintMessage("[DEBUG] Read bytes from socket: ")
+                    PrintNumber(bytes_read)
+                    PrintMessage("\n[DEBUG] Total buffer length: ")
+                    PrintNumber(buffer_data_len)
+                    PrintMessage("\n[DEBUG] Buffer offset: ")
+                    PrintNumber(buffer_offset)
+                    
+                    IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: { Deallocate(value_ptr, 0) }
+                    IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
+                    IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
+                    IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                    
+                    Deallocate(deleted_wrapper, 0)
+                    // Print first few bytes to see what we received
+                    PrintMessage("\n[DEBUG] First bytes: ")
+                    i = 0
+                    WhileLoop And(LessThan(i, 20), LessThan(i, buffer_data_len)) {
+                        PrintNumber(GetByte(buffer, i))
+                        PrintMessage(" ")
+                        i = Add(i, 1)
+                    }
+                    PrintMessage("\n")
+                }
+                ReturnValue(1) // Key was expired and evicted.
+            } ElseBlock: {
+                // Handle socket close or error
+                client_connected = False
+            }
+        }
+            
+            // ... (Rest of your main loop logic, e.g., calling the parser) ...
+            
+        } // End WhileLoop
+        
+        ReturnValue(0) // Key is not expired.
+        Deallocate(buffer)
+    }
+}
+
+// --- START: Pipelining-aware RESP Parser ---
+// This logic is added here to fix a crash caused by the server's main loop
+// expecting a pipelining-aware parser that did not exist in the RESP library.
+
+// Finds the next CRLF (\r\n) in the buffer from a given offset.
+// Returns the index of the \r, or -1 if not found.
+Function.Helpers.Internal.FindCRLF {
+Function.Helpers.ParsePipelinedArray {
+    Input: buffer: Address
+    Input: length: Integer
+    Input: offset: Integer
+    Output: Integer
+    Output: Address
+    Body: {
+        i = offset
+        // Stop one before the end to allow checking i and i+1
+        limit = Subtract(length, 1)
+        
+        WhileLoop LessThan(i, limit) {
+            char1 = GetByte(buffer, i)
+            IfCondition EqualTo(char1, 13) ThenBlock: { // '\r'
+                char2 = GetByte(buffer, Add(i, 1))
+                IfCondition EqualTo(char2, 10) ThenBlock: { // '\n'
+                    ReturnValue(i) // Found it
+                }
+            }
+            i = Add(i, 1)
+        // DEBUG: Log entry into the main parsing function
+        Debug("parser.entry", level=1) {
+            PrintMessage("[DEBUG] ParsePipelinedArray called with length: ")
+            PrintNumber(length)
+            PrintMessage(" offset: ")
+            PrintNumber(offset)
+            PrintMessage("\n")
+        }
+        ReturnValue(-1) // Not found
+    }
+}
+
+// Parses an integer from a slice of the buffer.
+Function.Helpers.Internal.ParseIntFromSlice {
+    Input: buffer: Address
+    Input: start: Integer
+    Input: end: Integer
+    Output: Integer
+    Body: {
+        result = 0
+        i = start
+        negative = 0
+        
+        first_char = GetByte(buffer, i)
+        IfCondition EqualTo(first_char, 45) ThenBlock: { // '-'
+            negative = 1
+            i = Add(i, 1)
+        }
+        
+        WhileLoop LessThan(i, end) {
+            byte = GetByte(buffer, i)
+            digit = Subtract(byte, 48)
+            result = Multiply(result, 10)
+            result = Add(result, digit)
+            i = Add(i, 1)
+        }
+        
+        IfCondition negative ThenBlock: {
+            result = Subtract(0, result)
+        }
+        ReturnValue(result)
+        parse_result = Helpers.Internal.ParseValue(buffer, length, offset)
+        ReturnValue(parse_result)
+    }
+}
+
+// The main recursive parser. Parses one RESP value from the buffer.
+// Returns an XArray: [parsed_value_ptr, bytes_consumed]
+// Returns [0, 0] if the buffer has incomplete data.
+Function.Helpers.Internal.ParseValue {
+    Input: buffer: Address
+    Input: length: Integer
+    Input: offset: Integer
+    Output: Address
+    Body: {
+        // Check if we have at least one byte for the type prefix
+        Debug("parser.value", level=1) {
+            PrintMessage("[DEBUG] ParseValue: length=")
+            PrintNumber(length)
+            PrintMessage(" offset=")
+            PrintNumber(offset)
+            PrintMessage("\n")
+        }
+        
+        IfCondition GreaterEqual(offset, length) ThenBlock: {
+            Debug("parser.error", level=1) {
+                PrintMessage("[DEBUG] ParseValue: No data to parse (offset >= length)\n")
+            }
+            res_arr = XArray.XCreate(2)
+            XArray.XPush(res_arr, 0)
+            XArray.XPush(res_arr, 0)
+            ReturnValue(res_arr)
+        }
+        
+        type_char = GetByte(buffer, offset)
+        
+        // --- Case: Bulk String ($) ---
+        IfCondition EqualTo(type_char, 36) ThenBlock: { // '$'
+            line_end_pos = Helpers.Internal.FindCRLF(buffer, length, offset)
+            IfCondition EqualTo(line_end_pos, -1) ThenBlock: { // Incomplete line
+                res_arr = XArray.XCreate(2)
+                XArray.XPush(res_arr, 0)
+                XArray.XPush(res_arr, 0)
+                ReturnValue(res_arr)
+            }
+            
+            str_len = Helpers.Internal.ParseIntFromSlice(buffer, Add(offset, 1), line_end_pos)
+            
+            IfCondition EqualTo(str_len, -1) ThenBlock: { // RESP Null Bulk String "$-1\r\n"
+                total_consumed = Add(Subtract(line_end_pos, offset), 2)
+                res_arr = XArray.XCreate(2)
+                XArray.XPush(res_arr, 0) // Represent nil as a null pointer
+                XArray.XPush(res_arr, total_consumed)
+                ReturnValue(res_arr)
+            }
+            
+            data_start = Add(line_end_pos, 2)
+            total_needed = Add(data_start, Add(str_len, 2))
+            IfCondition GreaterThan(total_needed, length) ThenBlock: { // Incomplete data
+                res_arr = XArray.XCreate(2)
+                XArray.XPush(res_arr, 0)
+                XArray.XPush(res_arr, 0)
+                ReturnValue(res_arr)
+            }
+            
+            new_str = Allocate(Add(str_len, 1))
+            data_ptr = Add(buffer, data_start)
+            MemoryCopy(new_str, data_ptr, str_len)
+            SetByte(new_str, str_len, 0) // Null terminate
+            
+            total_consumed = Subtract(total_needed, offset)
+            
+            res_arr = XArray.XCreate(2)
+            XArray.XPush(res_arr, new_str)
+            XArray.XPush(res_arr, total_consumed)
+            ReturnValue(res_arr)
+        Debug("parser.type", level=1) {
+            PrintMessage("[DEBUG] ParseValue: type char = ")
+            PrintNumber(type_char)
+            PrintMessage(" (42=*, 36=$, 43=+, 45=-, 58=:)\n")
+        }
+        
+        // --- Case: Array (*) ---
+        IfCondition EqualTo(type_char, 42) ThenBlock: { // '*'
+            line_end_pos = Helpers.Internal.FindCRLF(buffer, length, offset)
+            IfCondition EqualTo(line_end_pos, -1) ThenBlock: { // Incomplete line
+                res_arr = XArray.XCreate(2)
+                XArray.XPush(res_arr, 0)
+                XArray.XPush(res_arr, 0)
+                ReturnValue(res_arr)
+            }
+            
+            array_len = Helpers.Internal.ParseIntFromSlice(buffer, Add(offset, 1), line_end_pos)
+            parsed_elements = XArray.XCreate(array_len)
+            current_offset = Add(line_end_pos, 2)
+            i = 0
+            WhileLoop LessThan(i, array_len) {
+                element_res = Helpers.Internal.ParseValue(buffer, length, current_offset)
+                element_val = XArray.XGet(element_res, 0)
+                consumed = XArray.XGet(element_res, 1)
+                
+                IfCondition EqualTo(consumed, 0) ThenBlock: {
+                    // Incomplete data for a sub-element. Abort and clean up.
+                    j = 0
+                    parsed_count = XArray.XSize(parsed_elements)
+                    WhileLoop LessThan(j, parsed_count) {
+                        item = XArray.XGet(parsed_elements, j)
+                        Deallocate(item, 0)
+                        j = Add(j, 1)
+                    }
+                    XArray.XDestroy(parsed_elements)
+                    XArray.XDestroy(element_res)
+                    
+                    res_arr = XArray.XCreate(2)
+                    XArray.XPush(res_arr, 0)
+                    XArray.XPush(res_arr, 0)
+                    ReturnValue(res_arr)
+                }
+                
+                XArray.XPush(parsed_elements, element_val)
+                current_offset = Add(current_offset, consumed)
+                XArray.XDestroy(element_res)
+                i = Add(i, 1)
+            }
+            
+            total_consumed = Subtract(current_offset, offset)
+            res_arr = XArray.XCreate(2)
+            XArray.XPush(res_arr, parsed_elements)
+            XArray.XPush(res_arr, total_consumed)
+            ReturnValue(res_arr)
+        }
+        // ... (Your complete parsing logic for all RESP types would go here) ...
+        
+        // Unsupported type for client commands
+        res_arr = XArray.XCreate(2)
+        XArray.XPush(res_arr, 0)
+        XArray.XPush(res_arr, 0)
+        ReturnValue(res_arr)
+        // Fallback return for incomplete implementation
+        ReturnValue(0)
+    }
+}
+
+// The public function to be called by the server's main loop.
+Function.Helpers.ParsePipelinedArray {
+    Input: buffer: Address
+    Input: length: Integer
+    Input: offset: Integer
+    Output: Address // Returns XArray: [native_command_array, bytes_consumed]
+    Body: {
+        parse_result = Helpers.Internal.ParseValue(buffer, length, offset)
+        parsed_value = XArray.XGet(parse_result, 0)
+        bytes_consumed = XArray.XGet(parse_result, 1)
+        
+        IfCondition EqualTo(bytes_consumed, 0) ThenBlock: {
+            XArray.XDestroy(parse_result)
+            final_res = XArray.XCreate(2)
+            XArray.XPush(final_res, 0)
+            XArray.XPush(final_res, 0)
+            ReturnValue(final_res)
+        }
+        
+        // Convert the parsed XArray of strings to a native Array of strings.
+        num_elements = XArray.XSize(parsed_value)
+        native_array = ArrayCreate(num_elements)
+        
+        i = 0
+        WhileLoop LessThan(i, num_elements) {
+            element_str = XArray.XGet(parsed_value, i)
+            ArraySet(native_array, i, element_str)
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(parsed_value)
+        XArray.XDestroy(parse_result)
+        
+        final_res = XArray.XCreate(2)
+        XArray.XPush(final_res, native_array)
+        XArray.XPush(final_res, bytes_consumed)
+        ReturnValue(final_res)
+    }
+}
+// --- END: Pipelining-aware RESP Parser ---
+
+Function.Server.HandleClient {
+    Input: client_socket: Integer
+    Body: {
+        Debug("client.connect", level=1) { PrintMessage("[DEBUG] New client connected.") }
+
+        buffer = Allocate(4096)
+        // --- FIX: Add buffer state for pipelining support ---
+        buffer_data_len = 0
+        buffer_offset = 0
+        client_connected = 1
+        
+        WhileLoop client_connected {
+            // --- FIX: Process all commands in the buffer before reading more ---
+            // This loop handles pipelined commands sent in a single batch.
+            WhileLoop And(client_connected, LessThan(buffer_offset, buffer_data_len)) {
+                // NOTE: This change assumes RESP.ParseArray is modified to take an offset and
+                // return an XArray: [command_array, bytes_consumed]. We now use our local helper.
+                parse_result = Helpers.ParsePipelinedArray(buffer, buffer_data_len, buffer_offset)
+                
+                command_array = XArray.XGet(parse_result, 0)
+                bytes_consumed = XArray.XGet(parse_result, 1)
+                XArray.XDestroy(parse_result) // Clean up the result container
+
+                // If no full command could be parsed, break to read more data
+                IfCondition EqualTo(bytes_consumed, 0) ThenBlock: {
+                    BreakLoop
+                }
+
+                // Advance the buffer offset
+                buffer_offset = Add(buffer_offset, bytes_consumed)
+
+                IfCondition NotEqual(command_array, 0) ThenBlock: {
+                    // --- Existing command processing logic starts here ---
+                    array_len = ArrayLength(command_array)
+                    
+                    IfCondition GreaterThan(array_len, 0) ThenBlock: {
+                        cmd_str = ArrayGet(command_array, 0)
+                        command = StringToUpper(cmd_str)
+
+                        Debug("command.parse", level=1) {
+                            PrintMessage("[DEBUG] Parsed command:")
+                            PrintMessage(command)
+                        }
+                        
+                        // --- FIX: Make command dispatch more robust ---
+                        // Use a flag to distinguish between "unhandled command" and "handled command with no response".
+                        command_handled = 0
+                        response = 0
+                        
+                        // PING, SET, GET, and ALL OTHER COMMANDS are here...
+                        // (This is the large block of existing command handlers)
+
+                        // DBSIZE command (number of keys)
+                        is_dbsize = StringCompare(command, "DBSIZE")
+                        IfCondition EqualTo(is_dbsize, 0) ThenBlock: {
+                            // The XSHash library tracks the item count at offset 8 of the hash table struct.
+                            key_count = Dereference(Add(store, 8))
+                            response = RESP.Integer(key_count)
+                            command_handled = 1
+                        }
+                                                    
+                        // Send response
+                        // Use NotEqual(response, -1) to check against our special flag from MONITOR
+                        IfCondition NotEqual(response, -1) ThenBlock: {
+                            IfCondition command_handled ThenBlock: {
+                                // Command was handled. If it produced a response, send it.
+                                IfCondition NotEqual(response, 0) ThenBlock: {
+                                    Debug("client.write", level=1) {
+                                        PrintMessage("[DEBUG] Sending response to client:")
+                                        PrintMessage(response)
+                                    }
+                                    response_len = StringLength(response)
+                                    SocketWrite(client_socket, response, response_len)
+                                    Deallocate(response, 0)
+                                }
+                            } ElseBlock: {
+                                // Command was not handled by any block, so it's unknown.
+                                error_msg = RESP.Error("unknown command")
+                                error_len = StringLength(error_msg)
+                                SocketWrite(client_socket, error_msg, error_len)
+                                Deallocate(error_msg, 0)
+                            }
+                        }
+                        
+                        // Clean up array
+                        i = 0
+                        WhileLoop LessThan(i, array_len) {
+                            element = ArrayGet(command_array, i)
+                            IfCondition NotEqual(element, 0) ThenBlock: {
+                                Deallocate(element, 0)
+                            }
+                            i = Add(i, 1)
+                        }
+                    }
+                    
+                    ArrayDestroy(command_array)
+                } ElseBlock: {
+                    // Parser returned null, but consumed bytes. Indicates a protocol error.
+                    // Disconnect the client to be safe.
+                    client_connected = 0
+                }
+            } // --- End of inner processing loop ---
+
+            // If the client is still connected, manage the buffer for the next read
+            IfCondition client_connected ThenBlock: {
+                // If we've processed the whole buffer, reset it
+                IfCondition EqualTo(buffer_offset, buffer_data_len) ThenBlock: {
+                    buffer_offset = 0
+                    buffer_data_len = 0
+                } ElseBlock: {
+                    // If there's a partial command left, move it to the start of the buffer
+                    remaining_data = Subtract(buffer_data_len, buffer_offset)
+                    MemoryCopy(buffer, Add(buffer, buffer_offset), remaining_data)
+                    buffer_offset = 0
+                    buffer_data_len = remaining_data
+                }
+
+                // Read more data from the socket, appending to what's left in the buffer
+                read_target_ptr = Add(buffer, buffer_data_len)
+                read_max_len = Subtract(4096, buffer_data_len)
+                bytes_read = SocketRead(client_socket, read_target_ptr, read_max_len)
+                IfCondition GreaterThan(bytes_read, 0) ThenBlock: {
+                    buffer_data_len = Add(buffer_data_len, bytes_read)
+                } ElseBlock: {
+                    client_connected = 0
+                }
+            } ElseBlock: {
+                client_connected = 0
+                Debug("client.disconnect", level=1) { PrintMessage("[DEBUG] Client disconnected (read 0 bytes).") }
+            }
+        }
+        
+        SocketClose(client_socket)
+        Debug("client.close", level=1) {
+            PrintMessage("[DEBUG] Client socket closed.")
+        }
+        Deallocate(buffer, 0)
+    }
+}
+
+SubRoutine.Main {
+    
+    Debug("server.start", level=1) {
+        PrintMessage("[DEBUG] Server Main subroutine started.")
+        PrintMessage("[DEBUG] Initializing main data store...")
+    }
+
+    // Create server socket
+    server_socket = SocketCreate()
+    IfCondition LessEqual(server_socket, 0) ThenBlock: {
+        Exit(1)
+    }
+    
+    // Set options and bind
+    SocketSetOption(server_socket, 1, 2, 1)
+    result = SocketBind(server_socket, 0, 6379)
+    IfCondition LessThan(result, 0) ThenBlock: {
+        SocketClose(server_socket)
+        Exit(1)
+    }
+    
+    // Listen
+    result = SocketListen(server_socket, 128)
+    IfCondition LessThan(result, 0) ThenBlock: {
+        SocketClose(server_socket)
+        Exit(1)
+    }
+    
+    // Announce the port we are listening on for clarity
+    PrintMessage("Server listening on port 6379")
+    Debug("server.listen", level=1) {
+        PrintMessage("[DEBUG] Socket setup complete. Entering main accept loop.")
+    }
+    
+    // Main server loop
+    server_running = 1
+    WhileLoop server_running {
+        client_socket = SocketAccept(server_socket)
+        
+        Debug("server.accept", level=1) {
+            PrintMessage("[DEBUG] SocketAccept returned. Socket ID:")
+            PrintNumber(client_socket)
+        }
+
+        IfCondition GreaterThan(client_socket, 0) ThenBlock: {
+            Debug("client.connect", level=1) { PrintMessage("[DEBUG] New client connected.") }
+
+            buffer = Allocate(4096)
+            // --- FIX: Add buffer state for pipelining support ---
+            buffer_data_len = 0
+            buffer_offset = 0
+            client_connected = 1
+            
+            WhileLoop client_connected {
+                // --- FIX: Process all commands in the buffer before reading more ---
+                // This loop handles pipelined commands sent in a single batch.
+                WhileLoop And(client_connected, LessThan(buffer_offset, buffer_data_len)) {
+                    // NOTE: This change assumes RESP.ParseArray is modified to take an offset and
+                    // return an XArray: [command_array, bytes_consumed]. We now use our local helper.
+                    parse_result = Helpers.ParsePipelinedArray(buffer, buffer_data_len, buffer_offset)
+                    
+                    command_array = XArray.XGet(parse_result, 0)
+                    bytes_consumed = XArray.XGet(parse_result, 1)
+                    XArray.XDestroy(parse_result) // Clean up the result container
+
+                    // If no full command could be parsed, break to read more data
+                    IfCondition EqualTo(bytes_consumed, 0) ThenBlock: {
+                        BreakLoop
+                    }
+
+                    // Advance the buffer offset
+                    buffer_offset = Add(buffer_offset, bytes_consumed)
+
+                    IfCondition NotEqual(command_array, 0) ThenBlock: {
+                        // --- Existing command processing logic starts here ---
+                        array_len = ArrayLength(command_array)
+                        
+                        IfCondition GreaterThan(array_len, 0) ThenBlock: {
+                            cmd_str = ArrayGet(command_array, 0)
+                            command = StringToUpper(cmd_str)
+
+                            Debug("command.parse", level=1) {
+                                PrintMessage("[DEBUG] Parsed command:")
+                                PrintMessage(command)
+                            }
+                            
+                            // --- FIX: Make command dispatch more robust ---
+                            // Use a flag to distinguish between "unhandled command" and "handled command with no response".
+                            command_handled = 0
+                            response = 0
+                            
+                            // PING
+                            is_ping = StringCompare(command, "PING")
+                            IfCondition EqualTo(is_ping, 0) ThenBlock: {
+                                response = RESP.SimpleString("PONG")
+                                command_handled = 1
+                            }
+                            
+                            // ECHO
+                            is_echo = StringCompare(command, "ECHO")
+                            IfCondition And(EqualTo(is_echo, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                echo_msg = ArrayGet(command_array, 1)
+                                response = RESP.BulkString(echo_msg)
+                                command_handled = 1
+                            }
+                            
+                            // SET
+                            is_set = StringCompare(command, "SET")
+                            IfCondition And(EqualTo(is_set, 0), GreaterEqual(array_len, 3)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                value = ArrayGet(command_array, 2)
+                                Debug("command.set", level=1) {
+                                    PrintMessage("[DEBUG] SET Key:")
+                                    PrintMessage(key)
+                                    PrintMessage("[DEBUG] SET Value:")
+                                    PrintMessage(value)
+                                }
+                                
+                                // --- FIX: Properly handle overwriting existing keys to prevent memory leaks ---
+                                // To safely overwrite, we first delete the old key if it exists.
+                                // This ensures any complex data types (like lists) are properly freed.
+                                old_value_wrapper = XSHash.XDelete(store, key)
+                                
+                                is_found = NotEqual(old_value_wrapper, XArrays.XNULL)
+                                IfCondition is_found ThenBlock: {
+                                    // An old value was found and removed. Free its memory.
+                                    // The value pointer is now at offset 16.
+                                    type = Dereference(old_value_wrapper)
+                                    value_ptr = Dereference(Add(old_value_wrapper, 16))
+                                    
+                                    IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: { Deallocate(value_ptr, 0) }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                                    
+                                    Deallocate(old_value_wrapper, 0) // Finally, free the wrapper itself
+                                }
+
+                                // Create a wrapper object: [type, expiration_ms, value_ptr] - 24 bytes
+                                new_wrapper = Allocate(24)
+                                StoreValue(new_wrapper, DataTypes.TYPE_STRING) // type at offset 0
+                                StoreValue(Add(new_wrapper, 8), 0) // expiration_ms at offset 8, 0=persistent
+                                // The wrapper now owns the value, so we must copy it.
+                                value_copy = Helpers.StringCopy(value)
+                                StoreValue(Add(new_wrapper, 16), value_copy) // value_ptr at offset 16
+
+                                // Now, insert the new value. Since we deleted the old key, this is always a clean insert.
+                                XSHash.XInsert(store, key, new_wrapper)
+                                response = RESP.SimpleString("OK")
+                                command_handled = 1
+                            }
+                            
+                            // GET
+                            is_get = StringCompare(command, "GET")
+                            IfCondition And(EqualTo(is_get, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                // --- PERFORMANCE OPTIMIZATION: Avoid double lookup ---
+                                // Call XLookup once and check the result instead of calling XExists then XLookup.
+                                wrapper = XSHash.XLookup(store, key)
+                                
+                                // XLookup returns XNULL (-1) if not found.
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    // Check for expiration before proceeding
+                                    is_expired = Helpers.CheckAndEvictExpiredKey(key, wrapper)
+                                    IfCondition is_expired ThenBlock: {
+                                        response = RESP.BulkString(0) // Act as if not found
+                                    } ElseBlock: {
+                                        // Key is valid, proceed with GET
+                                        type = Dereference(wrapper)
+                                        IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                            value_ptr = Dereference(Add(wrapper, 16))
+                                            response = RESP.BulkString(value_ptr)
+                                        } ElseBlock: {
+                                            // Tried to GET a non-string type
+                                            response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                        }
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.BulkString(0)  // nil
+                                }
+                                command_handled = 1
+                            }
+                            
+                            // DEL
+                            is_del = StringCompare(command, "DEL")
+                            IfCondition And(EqualTo(is_del, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                // --- FIX: Implement proper DEL with type-aware memory cleanup ---
+                                key = ArrayGet(command_array, 1)
+                                
+                                // XSHash.XDelete finds, unlinks, and frees the hash node and its key.
+                                // It returns the pointer to the value wrapper for us to clean up.
+                                value_wrapper_ptr = XSHash.XDelete(store, key)
+                                
+                                is_found = NotEqual(value_wrapper_ptr, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    // Now, inspect the wrapper to free the actual value correctly.
+                                    type = Dereference(value_wrapper_ptr)
+                                    value_ptr = Dereference(Add(value_wrapper_ptr, 16))
+                                    
+                                    IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                        Deallocate(value_ptr, 0) // Free the string
+                                    }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        XList.XDestroyDeep(value_ptr) // Free the list and its contents
+                                    }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                                    
+                                    Deallocate(value_wrapper_ptr, 0) // Finally, free the wrapper itself
+                                    response = RESP.Integer(1) // Return 1 for deleted key
+                                } ElseBlock: {
+                                    response = RESP.Integer(0) // Return 0 if key was not found
+                                }
+                                command_handled = 1
+                            }
+
+                            // --- SET COMMANDS ---
+
+                            // SADD - Add members to a set
+                            is_sadd = StringCompare(command, "SADD")
+                            IfCondition And(EqualTo(is_sadd, 0), GreaterEqual(array_len, 3)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                set_ptr = 0
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_SET) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        set_ptr = Dereference(Add(wrapper, 16))
+                                    }
+                                } ElseBlock: {
+                                    // Create a new set (which is just a hash table)
+                                    set_ptr = XSHash.XCreate(16)
+                                    new_wrapper = Allocate(24)
+                                    StoreValue(new_wrapper, DataTypes.TYPE_SET)
+                                    StoreValue(Add(new_wrapper, 8), 0) // expiration
+                                    StoreValue(Add(new_wrapper, 16), set_ptr)
+                                    XSHash.XInsert(store, key, new_wrapper)
+                                }
+
+                                // If we have a valid set_ptr, add the members
+                                IfCondition NotEqual(set_ptr, 0) ThenBlock: {
+                                    added_count = 0
+                                    i = 2
+                                    WhileLoop LessThan(i, array_len) {
+                                        member = ArrayGet(command_array, i)
+                                        // Use XExists to check for presence before inserting
+                                        exists = XSHash.XExists(set_ptr, member)
+                                        IfCondition Not(exists) ThenBlock: {
+                                            // The value in a set's hash table is irrelevant, use 1
+                                            XSHash.XInsert(set_ptr, member, 1)
+                                            added_count = Add(added_count, 1)
+                                        }
+                                        i = Add(i, 1)
+                                    }
+                                    response = RESP.Integer(added_count)
+                                }
+                                command_handled = 1
+                            }
+
+                            // SMEMBERS - Get all members of a set
+                            is_smembers = StringCompare(command, "SMEMBERS")
+                            IfCondition And(EqualTo(is_smembers, 0), EqualTo(array_len, 2)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition Not(is_found) ThenBlock: {
+                                    response = RESP.Array(ArrayCreate(0)) // Not found, return empty array
+                                } ElseBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_SET) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        set_ptr = Dereference(Add(wrapper, 16))
+                                        // Use our new XSHash.XKeys function to get all members
+                                        keys_xarray = XSHash.XKeys(set_ptr)
+                                        
+                                        // Convert the XArray to a native Array for the RESP helper
+                                        num_members = XArray.XSize(keys_xarray)
+                                        members_array = ArrayCreate(num_members)
+                                        
+                                        i = 0
+                                        WhileLoop LessThan(i, num_members) {
+                                            member_str = XArray.XGet(keys_xarray, i)
+                                            ArraySet(members_array, i, member_str)
+                                            i = Add(i, 1)
+                                        }
+                                        
+                                        response = RESP.Array(members_array)
+                                        
+                                        // Clean up the native array and the XArray (and the strings it contains)
+                                        ArrayDestroy(members_array)
+                                        i = 0
+                                        WhileLoop LessThan(i, num_members) {
+                                            member_str = XArray.XGet(keys_xarray, i)
+                                            Deallocate(member_str, 0)
+                                            i = Add(i, 1)
+                                        }
+                                        XArray.XDestroy(keys_xarray)
+                                    }
+                                }
+                                command_handled = 1
+                            }
+                            
+                            // EXISTS
+                            is_exists = StringCompare(command, "EXISTS")
+                            IfCondition And(EqualTo(is_exists, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                // With a proper DEL command, XExists is now sufficient.
+                                exists = XSHash.XExists(store, key)
+                                response = RESP.Integer(exists)
+                                command_handled = 1
+                            }
+                            
+                            // INCR
+                            is_incr = StringCompare(command, "INCR")
+                            IfCondition And(EqualTo(is_incr, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                // --- FIX: Update INCR to work with the type system ---
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        val_str = Dereference(Add(wrapper, 16))
+                                        current = Helpers.StringToInt(val_str)
+                                        new_val = Add(current, 1)
+                                        new_str = Helpers.IntToString(new_val)
+                                        
+                                        // Free the old string and update the wrapper with the new one
+                                        Deallocate(val_str, 0)
+                                        StoreValue(Add(wrapper, 16), new_str)
+                                        response = RESP.Integer(new_val)
+                                    }
+                                } ElseBlock: {
+                                    // Key doesn't exist, create it with value "1"
+                                    new_val = 1
+                                    new_str = Helpers.IntToString(new_val)
+                                    new_wrapper = Allocate(24)
+                                    StoreValue(new_wrapper, DataTypes.TYPE_STRING)
+                                    StoreValue(Add(new_wrapper, 8), 0)
+                                    StoreValue(Add(new_wrapper, 16), new_str)
+                                    XSHash.XInsert(store, key, new_wrapper)
+                                    response = RESP.Integer(new_val)
+                                }
+                                command_handled = 1
+                            }
+                            
+                            // DECR
+                            is_decr = StringCompare(command, "DECR")
+                            IfCondition And(EqualTo(is_decr, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                // --- FIX: Update DECR to work with the type system ---
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        val_str = Dereference(Add(wrapper, 16))
+                                        current = Helpers.StringToInt(val_str)
+                                        new_val = Subtract(current, 1)
+                                        new_str = Helpers.IntToString(new_val)
+
+                                        // Free the old string and update the wrapper with the new one
+                                        Deallocate(val_str, 0)
+                                        StoreValue(Add(wrapper, 16), new_str)
+                                        response = RESP.Integer(new_val)
+                                    }
+                                } ElseBlock: {
+                                    // Key doesn't exist, create it with value "-1"
+                                    new_val = -1
+                                    new_str = Helpers.IntToString(new_val)
+                                    new_wrapper = Allocate(24)
+                                    StoreValue(new_wrapper, DataTypes.TYPE_STRING)
+                                    StoreValue(Add(new_wrapper, 8), 0)
+                                    StoreValue(Add(new_wrapper, 16), new_str)
+                                    XSHash.XInsert(store, key, new_wrapper)
+                                    response = RESP.Integer(new_val)
+                                }
+                                command_handled = 1
+                            }
+
+                            // --- STREAM COMMANDS ---
+
+                            // XADD - Add an entry to a stream
+                            is_xadd = StringCompare(command, "XADD")
+                            IfCondition And(EqualTo(is_xadd, 0), GreaterEqual(array_len, 4)) ThenBlock: {
+                                num_args = Subtract(array_len, 3)
+                                is_odd = Modulo(num_args, 2)
+                                IfCondition NotEqual(is_odd, 0) ThenBlock: {
+                                    response = RESP.Error("ERR wrong number of arguments for XADD command")
+                                } ElseBlock: {
+                                    key = ArrayGet(command_array, 1)
+                                    id_str_arg = ArrayGet(command_array, 2)
+
+                                    // --- FIX: Make XADD type-aware ---
+                                    // Get or create the stream (an XArray of entries)
+                                    stream_ptr = 0
+                                    wrapper = XSHash.XLookup(store, key)
+                                    is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                    IfCondition is_found ThenBlock: {
+                                        type = Dereference(wrapper)
+                                        IfCondition NotEqual(type, DataTypes.TYPE_STREAM) ThenBlock: {
+                                            response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                        } ElseBlock: {
+                                            stream_ptr = Dereference(Add(wrapper, 16))
+                                        }
+                                    } ElseBlock: {
+                                        stream_ptr = XArray.XCreate(16)
+                                        new_wrapper = Allocate(24)
+                                        StoreValue(new_wrapper, DataTypes.TYPE_STREAM)
+                                        StoreValue(Add(new_wrapper, 8), 0)
+                                        StoreValue(Add(new_wrapper, 16), stream_ptr)
+                                        XSHash.XInsert(store, key, new_wrapper)
+                                    }
+
+                                    // If we have a valid stream_ptr, proceed
+                                    IfCondition NotEqual(stream_ptr, 0) ThenBlock: {
+                                    // Handle ID generation if '*' is provided
+                                    is_auto_id = StringCompare(id_str_arg, "*")
+                                    generated_id = 0
+                                    IfCondition EqualTo(is_auto_id, 0) ThenBlock: {
+                                        // Generate a new ID. A real implementation uses time.
+                                        // We use a simple incrementing counter for the 'ms' part.
+                                        last_id_val = StreamState.last_id_ms
+                                        new_id_val = Add(last_id_val, 1)
+                                        StreamState.last_id_ms = new_id_val
+                                        
+                                        id_ms_str = Helpers.IntToString(new_id_val)
+                                        generated_id = StringConcat(id_ms_str, "-0")
+                                        Deallocate(id_ms_str, 0)
+                                    } ElseBlock: {
+                                        // Use the provided ID. A real implementation would validate it.
+                                        generated_id = Helpers.StringCopy(id_str_arg)
+                                    }
+
+                                    // Create the stream entry: an XArray of [id, f1, v1, f2, v2, ...]
+                                    num_fields = Add(1, num_args)
+                                    entry_ptr = XArray.XCreate(num_fields)
+
+                                    // Add the ID to the entry. The entry now owns this memory.
+                                    XArray.XPush(entry_ptr, generated_id)
+
+                                    // Add field-value pairs to the entry, copying each one.
+                                    i = 3
+                                    WhileLoop LessThan(i, array_len) {
+                                        field_or_value = ArrayGet(command_array, i)
+                                        copy = Helpers.StringCopy(field_or_value)
+                                        XArray.XPush(entry_ptr, copy)
+                                        i = Add(i, 1)
+                                    }
+
+                                    // Add the new entry to the stream
+                                    XArray.XPush(stream_ptr, entry_ptr)
+
+                                    // The response is the ID of the newly added entry.
+                                    response = RESP.BulkString(generated_id)
+                                    }
+                                }
+                                command_handled = 1
+                            }
+
+                            // XREAD - Read entries from a stream (simplified)
+                            is_xread = StringCompare(command, "XREAD")
+                            IfCondition And(EqualTo(is_xread, 0), EqualTo(array_len, 4)) ThenBlock: {
+                                streams_keyword = StringToUpper(ArrayGet(command_array, 1))
+                                is_streams = StringCompare(streams_keyword, "STREAMS")
+
+                                IfCondition NotEqual(is_streams, 0) ThenBlock: {
+                                    response = RESP.Error("ERR Syntax error, missing STREAMS keyword")
+                                } ElseBlock: {
+                                    key = ArrayGet(command_array, 2)
+                                    start_id_str = ArrayGet(command_array, 3)
+
+                                    // --- FIX: Make XREAD type-aware ---
+                                    wrapper = XSHash.XLookup(store, key)
+                                    is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                    IfCondition Not(is_found) ThenBlock: {
+                                        response = RESP.Array(ArrayCreate(0))
+                                    } ElseBlock: {
+                                        type = Dereference(wrapper)
+                                        IfCondition NotEqual(type, DataTypes.TYPE_STREAM) ThenBlock: {
+                                            response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                        } ElseBlock: {
+                                            stream_ptr = Dereference(Add(wrapper, 16))
+                                            stream_len = XArray.XSize(stream_ptr)
+                                        
+                                        // Create a temporary array to hold pointers to matching entries
+                                        matching_entries = XArray.XCreate(8)
+
+                                        // Find all entries with an ID greater than start_id_str
+                                        i = 0
+                                        WhileLoop LessThan(i, stream_len) {
+                                            entry_ptr = XArray.XGet(stream_ptr, i)
+                                            entry_id_ptr = XArray.XGet(entry_ptr, 0)
+                                            
+                                            comparison = Helpers.CompareStreamIDs(entry_id_ptr, start_id_str)
+                                            IfCondition EqualTo(comparison, 1) ThenBlock: {
+                                                XArray.XPush(matching_entries, entry_ptr)
+                                            }
+                                            i = Add(i, 1)
+                                        }
+
+                                        // NOTE: The standard XREAD response is a deeply nested array.
+                                        // The current RESP.Array function likely can't build that.
+                                        // This implementation returns a single, non-standard flat array:
+                                        // [stream_name, [entry1], [entry2], ...]
+                                        // where each entry is also flattened: [id, f1, v1, f2, v2, ...]
+                                        // This is not Redis-compatible but demonstrates stream reading.
+                                        
+                                        num_found = XArray.XSize(matching_entries)
+                                        IfCondition EqualTo(num_found, 0) ThenBlock: {
+                                            response = RESP.Array(ArrayCreate(0))
+                                        } ElseBlock: {
+                                            // For simplicity, we'll just return the first new entry's fields
+                                            // A full implementation would require a recursive RESP array builder.
+                                            first_entry = XArray.XGet(matching_entries, 0)
+                                            response = RESP.Array(first_entry)
+                                            }
+                                            // Clean up the temporary array. It only holds pointers, not owned data.
+                                            XArray.XDestroy(matching_entries)
+                                        }
+                                    }
+                                }
+                                command_handled = 1
+                            }
+                            
+                            // LPUSH - Add elements to the head of a list
+                            is_lpush = StringCompare(command, "LPUSH")
+                            IfCondition And(EqualTo(is_lpush, 0), GreaterEqual(array_len, 3)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                list_ptr = 0
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        list_ptr = Dereference(Add(wrapper, 16))
+                                    }
+                                } ElseBlock: {
+                                    list_ptr = XList.XCreate()
+                                    wrapper = Allocate(24)
+                                    StoreValue(wrapper, DataTypes.TYPE_LIST)
+                                    StoreValue(Add(wrapper, 8), 0)
+                                    StoreValue(Add(wrapper, 16), list_ptr)
+                                    XSHash.XInsert(store, key, wrapper)
+                                }
+                                
+                                // If we have a valid list_ptr, proceed
+                                IfCondition NotEqual(list_ptr, 0) ThenBlock: {
+                                    // Push all values to the head of the list
+                                    i = 2
+                                    WhileLoop LessThan(i, array_len) {
+                                        value_to_push = ArrayGet(command_array, i)
+                                        value_copy = Helpers.StringCopy(value_to_push)
+                                        Debug("command.lpush", level=1) {
+                                            PrintMessage("[DEBUG] LPUSH Key:")
+                                            PrintMessage(key)
+                                            PrintMessage("[DEBUG] LPUSH Value:")
+                                            PrintMessage(value_to_push)
+                                        }
+                                        XList.XPrepend(list_ptr, value_copy)
+                                        i = Add(i, 1)
+                                    }
+                                    
+                                    new_len = XList.XSize(list_ptr)
+                                    response = RESP.Integer(new_len)
+                                }
+                                command_handled = 1
+                            }
+
+                            // RPUSH - Add elements to the tail of a list
+                            is_rpush = StringCompare(command, "RPUSH")
+                            IfCondition And(EqualTo(is_rpush, 0), GreaterEqual(array_len, 3)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                list_ptr = 0
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        list_ptr = Dereference(Add(wrapper, 16))
+                                    }
+                                } ElseBlock: {
+                                    list_ptr = XList.XCreate()
+                                    wrapper = Allocate(24)
+                                    StoreValue(wrapper, DataTypes.TYPE_LIST)
+                                    StoreValue(Add(wrapper, 8), 0)
+                                    StoreValue(Add(wrapper, 16), list_ptr)
+                                    XSHash.XInsert(store, key, wrapper)
+                                }
+                                
+                                // If we have a valid list_ptr, proceed
+                                IfCondition NotEqual(list_ptr, 0) ThenBlock: {
+                                    // Append all values to the tail of the list
+                                    i = 2
+                                    WhileLoop LessThan(i, array_len) {
+                                        value_to_push = ArrayGet(command_array, i)
+                                        value_copy = Helpers.StringCopy(value_to_push)
+                                        Debug("command.rpush", level=1) {
+                                            PrintMessage("[DEBUG] RPUSH Key:")
+                                            PrintMessage(key)
+                                            PrintMessage("[DEBUG] RPUSH Value:")
+                                            PrintMessage(value_to_push)
+                                        }
+                                        XList.XAppend(list_ptr, value_copy)
+                                        i = Add(i, 1)
+                                    }
+                                    
+                                    new_len = XList.XSize(list_ptr)
+                                    response = RESP.Integer(new_len)
+                                }
+                                command_handled = 1
+                            }
+
+                            // LRANGE - Get a range of elements from a list
+                            is_lrange = StringCompare(command, "LRANGE")
+                            IfCondition And(EqualTo(is_lrange, 0), GreaterEqual(array_len, 4)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition Not(is_found) ThenBlock: {
+                                    empty_arr = ArrayCreate(0)
+                                    response = RESP.Array(empty_arr)
+                                    ArrayDestroy(empty_arr)
+                                } ElseBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        Debug("command.lrange", level=2) { // Keep this less verbose for now
+                                            PrintMessage("[DEBUG] LRANGE Key:")
+                                            PrintMessage(key)
+                                            PrintMessage("[DEBUG] LRANGE Start:")
+                                            PrintMessage(ArrayGet(command_array, 2))
+                                            PrintMessage("[DEBUG] LRANGE Stop:")
+                                            PrintMessage(ArrayGet(command_array, 3))
+                                        }
+                                        list_ptr = Dereference(Add(wrapper, 16))
+
+                                        start_str = ArrayGet(command_array, 2)
+                                        stop_str = ArrayGet(command_array, 3)
+                                        
+                                        start_idx = Helpers.StringToInt(start_str)
+                                        stop_idx = Helpers.StringToInt(stop_str)
+                                        list_size = XList.XSize(list_ptr)
+                                        
+                                        // Handle negative indices and clamp to bounds
+                                        IfCondition LessThan(start_idx, 0) ThenBlock: { start_idx = Add(list_size, start_idx) }
+                                        IfCondition LessThan(stop_idx, 0) ThenBlock: { stop_idx = Add(list_size, stop_idx) }
+                                        IfCondition LessThan(start_idx, 0) ThenBlock: { start_idx = 0 }
+                                        IfCondition GreaterEqual(stop_idx, list_size) ThenBlock: { stop_idx = Subtract(list_size, 1) }
+                                        
+                                        range_len = 0
+                                        IfCondition LessEqual(start_idx, stop_idx) ThenBlock: { range_len = Add(Subtract(stop_idx, start_idx), 1) }
+                                        
+                                        results_array = ArrayCreate(range_len)
+                                        
+                                        // --- PERFORMANCE OPTIMIZATION for LRANGE ---
+                                        IfCondition GreaterThan(range_len, 0) ThenBlock: {
+                                            current_node = Dereference(list_ptr)
+
+                                            // 1. Traverse to the starting node
+                                            i = 0
+                                            WhileLoop LessThan(i, start_idx) {
+                                                current_node = Dereference(Add(current_node, 8))
+                                                i = Add(i, 1)
+                                            }
+
+                                            // 2. Collect 'range_len' elements from that point
+                                            i = 0
+                                            WhileLoop LessThan(i, range_len) {
+                                                element = Dereference(current_node)
+                                                ArraySet(results_array, i, element)
+                                                current_node = Dereference(Add(current_node, 8))
+                                                i = Add(i, 1)
+                                            }
+                                        }
+                                        response = RESP.Array(results_array)
+                                        ArrayDestroy(results_array)
+                                    }
+                                }
+                                command_handled = 1
+                            }
+
+                            // APPEND
+                            is_append = StringCompare(command, "APPEND")
+                            IfCondition And(EqualTo(is_append, 0), GreaterEqual(array_len, 3)) ThenBlock: {
+                                // --- FIX: Update APPEND to work with the type system ---
+                                key = ArrayGet(command_array, 1)
+                                append_val = ArrayGet(command_array, 2)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        current_str = Dereference(Add(wrapper, 16))
+                                        new_str = StringConcat(current_str, append_val)
+                                        new_len = StringLength(new_str)
+                                        
+                                        // Free the old string and update the wrapper
+                                        Deallocate(current_str, 0)
+                                        StoreValue(Add(wrapper, 16), new_str)
+                                        response = RESP.Integer(new_len)
+                                    }
+                                } ElseBlock: {
+                                    // Key doesn't exist, create it with the appended value
+                                    new_str = Helpers.StringCopy(append_val)
+                                    new_len = StringLength(new_str)
+                                    new_wrapper = Allocate(24)
+                                    StoreValue(new_wrapper, DataTypes.TYPE_STRING)
+                                    StoreValue(Add(new_wrapper, 8), 0)
+                                    StoreValue(Add(new_wrapper, 16), new_str)
+                                    XSHash.XInsert(store, key, new_wrapper)
+                                    response = RESP.Integer(new_len)
+                                }
+                                command_handled = 1
+                            }
+                            
+                            // STRLEN
+                            is_strlen = StringCompare(command, "STRLEN")
+                            IfCondition And(EqualTo(is_strlen, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                // --- FIX: Update STRLEN to work with the type system ---
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                        // Redis returns an error for STRLEN on a non-string key
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        val_str = Dereference(Add(wrapper, 16))
+                                        len = StringLength(val_str)
+                                        response = RESP.Integer(len)
+                                    }
+                                } ElseBlock: {
+                                    // Key does not exist, return 0
+                                    response = RESP.Integer(0)
+                                }
+                                command_handled = 1
+                            }
+
+                            // EXPIRE - Set a timeout on a key
+                            is_expire = StringCompare(command, "EXPIRE")
+                            IfCondition And(EqualTo(is_expire, 0), EqualTo(array_len, 3)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                seconds_str = ArrayGet(command_array, 2)
+                                seconds = Helpers.StringToInt(seconds_str)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition is_found ThenBlock: {
+                                    now = Helpers.GetSystemTime()
+                                    expire_time_ms = Add(now, Multiply(seconds, 1000))
+                                    StoreValue(Add(wrapper, 8), expire_time_ms)
+                                    response = RESP.Integer(1)
+                                } ElseBlock: {
+                                    response = RESP.Integer(0) // Key does not exist
+                                }
+                                command_handled = 1
+                            }
+
+                            // TTL - Get the time to live for a key
+                            is_ttl = StringCompare(command, "TTL")
+                            IfCondition And(EqualTo(is_ttl, 0), EqualTo(array_len, 2)) ThenBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+
+                                IfCondition Not(is_found) ThenBlock: {
+                                    response = RESP.Integer(-2) // Key does not exist
+                                } ElseBlock: {
+                                    expiration_ms = Dereference(Add(wrapper, 8))
+                                    IfCondition EqualTo(expiration_ms, 0) ThenBlock: {
+                                        response = RESP.Integer(-1) // Key exists but has no associated expire
+                                    } ElseBlock: {
+                                        now = Helpers.GetSystemTime()
+                                        remaining_ms = Subtract(expiration_ms, now)
+                                        IfCondition LessThan(remaining_ms, 0) ThenBlock: { remaining_ms = 0 }
+                                        remaining_s = Divide(remaining_ms, 1000)
+                                        response = RESP.Integer(remaining_s)
+                                    }
+                                }
+                                command_handled = 1
+                            }
+                            
+                            // QUIT
+                            is_quit = StringCompare(command, "QUIT")
+                            IfCondition EqualTo(is_quit, 0) ThenBlock: {
+                                response = RESP.SimpleString("OK")
+                                client_connected = 0
+                                command_handled = 1
+                            }
+
+                            // CONFIG command handler
+                            is_config = StringCompare(command, "CONFIG")
+                            IfCondition And(EqualTo(is_config, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                subcommand = ArrayGet(command_array, 1)
+                                subcommand_upper = StringToUpper(subcommand)
+                                
+                                // CONFIG GET
+                                is_get = StringCompare(subcommand_upper, "GET")
+                                IfCondition EqualTo(is_get, 0) ThenBlock: {
+                                    // redis-benchmark often asks for specific configs
+                                    IfCondition GreaterEqual(array_len, 3) ThenBlock: {
+                                        param = ArrayGet(command_array, 2)
+
+                                        // Check for save parameter (common benchmark query)
+                                        is_save = StringCompare(param, "save")
+                                        is_appendonly = StringCompare(param, "appendonly")
+                                        is_wildcard = StringCompare(param, "*")
+
+                                        IfCondition EqualTo(is_save, 0) ThenBlock: {
+                                            // Return array with ["save", ""] - indicating no save
+                                            config_array = ArrayCreate(2)
+                                            ArraySet(config_array, 0, "save")
+                                            ArraySet(config_array, 1, "")
+                                            response = RESP.Array(config_array)
+                                            ArrayDestroy(config_array)
+                                        } ElseBlock: {
+                                            IfCondition EqualTo(is_appendonly, 0) ThenBlock: {
+                                                // Return array with ["appendonly", "no"]
+                                                config_array = ArrayCreate(2)
+                                                ArraySet(config_array, 0, "appendonly")
+                                                ArraySet(config_array, 1, "no")
+                                                response = RESP.Array(config_array)
+                                                ArrayDestroy(config_array)
+                                            } ElseBlock: {
+                                                IfCondition EqualTo(is_wildcard, 0) ThenBlock: {
+                                                    // Handle CONFIG GET * by returning a minimal set of configs
+                                                    config_array = ArrayCreate(4)
+                                                    ArraySet(config_array, 0, "save")
+                                                    ArraySet(config_array, 1, "")
+                                                    ArraySet(config_array, 2, "appendonly")
+                                                    ArraySet(config_array, 3, "no")
+                                                    response = RESP.Array(config_array)
+                                                    ArrayDestroy(config_array)
+                                                } ElseBlock: {
+                                                    // Return empty array for other params
+                                                    empty_array = ArrayCreate(0)
+                                                    response = RESP.Array(empty_array)
+                                                    ArrayDestroy(empty_array)
+                                                }
+                                            }
+                                        }
+                                    } ElseBlock: {
+                                        // No specific param, return empty array
+                                        empty_array = ArrayCreate(0)
+                                        response = RESP.Array(empty_array)
+                                        ArrayDestroy(empty_array)
+                                    }
+                                }
+                                
+                                // CONFIG SET (just return OK for now)
+                                is_set = StringCompare(subcommand_upper, "SET")
+                                IfCondition EqualTo(is_set, 0) ThenBlock: {
+                                    response = RESP.SimpleString("OK")
+                                }
+                                command_handled = 1
+                            }
+
+                            // INFO command (often requested by clients)
+                            is_info = StringCompare(command, "INFO")
+                            IfCondition EqualTo(is_info, 0) ThenBlock: {
+                                // Return minimal server info
+                                info_text = "# Server\r\nredis_version:AILANG-1.0\r\nprocess_id:1\r\ntcp_port:6379\r\n\r\n# Clients\r\nconnected_clients:1\r\n\r\n# Memory\r\nused_memory:1024\r\n\r\n# Stats\r\ntotal_connections_received:1\r\ntotal_commands_processed:1\r\n"
+                                response = RESP.BulkString(info_text)
+                                command_handled = 1
+                            }
+
+                            // MONITOR command (minimal implementation)
+                            is_monitor = StringCompare(command, "MONITOR")
+                            IfCondition EqualTo(is_monitor, 0) ThenBlock: {
+                                // A real monitor implementation is complex and requires concurrency
+                                // to watch other clients. This server is single-threaded and can only
+                                // handle one client at a time.
+                                // This minimal implementation just acknowledges the command
+                                // to satisfy redis-cli, then keeps the connection open.
+                                ok_response = RESP.SimpleString("OK")
+                                ok_len = StringLength(ok_response)
+                                SocketWrite(client_socket, ok_response, ok_len)
+                                Deallocate(ok_response, 0)
+
+                                // Now, we enter a state where this client does nothing but wait.
+                                // We loop here, consuming from the socket until the client disconnects.
+                                WhileLoop client_connected {
+                                    bytes_read = SocketRead(client_socket, buffer, 4096)
+                                    IfCondition LessEqual(bytes_read, 0) ThenBlock: { client_connected = 0 }
+                                }
+                                response = -1 // Special flag to skip the normal response logic below
+                                command_handled = 1
+                            }
+
+                            // COMMAND command (returns command info, needed by some clients)
+                            is_command = StringCompare(command, "COMMAND")
+                            IfCondition EqualTo(is_command, 0) ThenBlock: {
+                                // Return empty array - we don't provide detailed command info
+                                empty_array = ArrayCreate(0)
+                                response = RESP.Array(empty_array)
+                                ArrayDestroy(empty_array)
+                                command_handled = 1
+                            }
+
+                            // SELECT command (select database - we only have db 0)
+                            is_select = StringCompare(command, "SELECT")
+                            IfCondition And(EqualTo(is_select, 0), GreaterEqual(array_len, 2)) ThenBlock: {
+                                db_num_str = ArrayGet(command_array, 1)
+                                // We only support database 0
+                                is_zero = StringCompare(db_num_str, "0")
+                                IfCondition EqualTo(is_zero, 0) ThenBlock: {
+                                    response = RESP.SimpleString("OK")
+                                } ElseBlock: {
+                                    response = RESP.Error("ERR DB index out of range")
+                                }
+                                command_handled = 1
+                            }
+
+                            // FLUSHDB command (clear current database)
+                            is_flushdb = StringCompare(command, "FLUSHDB")
+                            IfCondition EqualTo(is_flushdb, 0) ThenBlock: {
+                                Debug("command.flushdb", level=1) {
+                                    PrintMessage("[DEBUG] FLUSHDB: Starting deep clean of data store...")
+                                }
+                                
+                                // --- FIX: Iterate and destroy all values to prevent memory leaks ---
+                                bucket_count = Dereference(store)
+                                buckets = Dereference(Add(store, 16))
+                                
+                                i = 0
+                                WhileLoop LessThan(i, bucket_count) {
+                                    current_node = ArrayGet(buckets, i)
+                                    WhileLoop NotEqual(current_node, 0) {
+                                        // This is a node in the hash table's linked list.
+                                        // It contains [key_ptr, value_wrapper_ptr, next_node_ptr]
+                                        value_wrapper_ptr = Dereference(Add(current_node, 8))
+                                        
+                                        // Now, inspect the wrapper to free the actual value
+                                        type = Dereference(value_wrapper_ptr)
+                                        value_ptr = Dereference(Add(value_wrapper_ptr, 16))
+                                        
+                                        IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                            Deallocate(value_ptr, 0) // Free the string
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                            XList.XDestroyDeep(value_ptr) // Free the list and its contents
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: {
+                                            XSHash.XDestroy(value_ptr) // Free the inner hash table
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: {
+                                            XStream.XDestroy(value_ptr) // Free the stream and all its entries
+                                        }
+                                        
+                                        Deallocate(value_wrapper_ptr, 0) // Free the wrapper itself
+                                        
+                                        current_node = Dereference(Add(current_node, 16))
+                                    }
+                                    i = Add(i, 1)
+                                }
+
+                                // Now that all values are freed, destroy the old hash table structure
+                                XSHash.XDestroy(store)
+                                store = XSHash.XCreate(1024)
+                                response = RESP.SimpleString("OK")
+                                command_handled = 1
+                            }
+
+                            // DBSIZE command (number of keys)
+                            is_dbsize = StringCompare(command, "DBSIZE")
+                            IfCondition EqualTo(is_dbsize, 0) ThenBlock: {
+                                // The XSHash library tracks the item count at offset 8 of the hash table struct.
+                                key_count = Dereference(Add(store, 8))
+                                response = RESP.Integer(key_count)
+                                command_handled = 1
+                            }
+                                                        
+                            // Send response
+                            // Use NotEqual(response, -1) to check against our special flag from MONITOR
+                            IfCondition NotEqual(response, -1) ThenBlock: {
+                                IfCondition command_handled ThenBlock: {
+                                    // Command was handled. If it produced a response, send it.
+                                    IfCondition NotEqual(response, 0) ThenBlock: {
+                                        Debug("client.write", level=1) {
+                                            PrintMessage("[DEBUG] Sending response to client:")
+                                            PrintMessage(response)
+                                        }
+                                        response_len = StringLength(response)
+                                        SocketWrite(client_socket, response, response_len)
+                                        Deallocate(response, 0)
+                                    }
+                                } ElseBlock: {
+                                    // Command was not handled by any block, so it's unknown.
+                                    error_msg = RESP.Error("unknown command")
+                                    error_len = StringLength(error_msg)
+                                    SocketWrite(client_socket, error_msg, error_len)
+                                    Deallocate(error_msg, 0)
+                                }
+                            }
+                            
+                            // Clean up array
+                            i = 0
+                            WhileLoop LessThan(i, array_len) {
+                                element = ArrayGet(command_array, i)
+                                IfCondition NotEqual(element, 0) ThenBlock: {
+                                    Deallocate(element, 0)
+                                }
+                                i = Add(i, 1)
+                            }
+                        }
+                        
+                        ArrayDestroy(command_array)
+                    } ElseBlock: {
+                        // Parser returned null, but consumed bytes. Indicates a protocol error.
+                        // Disconnect the client to be safe.
+                        client_connected = 0
+                    }
+                } // --- End of inner processing loop ---
+
+                // If the client is still connected, manage the buffer for the next read
+                IfCondition client_connected ThenBlock: {
+                    // If we've processed the whole buffer, reset it
+                    IfCondition EqualTo(buffer_offset, buffer_data_len) ThenBlock: {
+                        buffer_offset = 0
+                        buffer_data_len = 0
+                    } ElseBlock: {
+                        // If there's a partial command left, move it to the start of the buffer
+                        remaining_data = Subtract(buffer_data_len, buffer_offset)
+                        MemoryCopy(buffer, Add(buffer, buffer_offset), remaining_data)
+                        buffer_offset = 0
+                        buffer_data_len = remaining_data
+                    }
+
+                    // Read more data from the socket, appending to what's left in the buffer
+                    read_target_ptr = Add(buffer, buffer_data_len)
+                    read_max_len = Subtract(4096, buffer_data_len)
+                    bytes_read = SocketRead(client_socket, read_target_ptr, read_max_len)
+                    IfCondition GreaterThan(bytes_read, 0) ThenBlock: {
+                        buffer_data_len = Add(buffer_data_len, bytes_read)
+                    } ElseBlock: {
+                        client_connected = 0
+                    }
+                } ElseBlock: {
+                    client_connected = 0
+                    Debug("client.disconnect", level=1) { PrintMessage("[DEBUG] Client disconnected (read 0 bytes).") }
+                }
+            }
+            
+            SocketClose(client_socket)
+            Debug("client.close", level=1) {
+                PrintMessage("[DEBUG] Client socket closed.")
+            }
+            Deallocate(buffer, 0)
+        }
+    }
+    
+    SocketClose(server_socket)
+}
+
+RunTask(Main)

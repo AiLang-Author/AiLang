@@ -1,0 +1,35 @@
+// test_error_conditions.ailang
+// Test handling of edge cases and potential errors
+
+PrintMessage("Error Conditions Test")
+PrintMessage("=====================")
+
+// Test divide by zero protection
+numerator = 10
+denominator = 0
+is_zero = EqualTo(denominator, 0)
+IfCondition is_zero ThenBlock {
+    PrintMessage("Avoided divide by zero")
+    result = 0
+} ElseBlock {
+    result = Divide(numerator, denominator)
+}
+
+// Test array bounds (don't access out of bounds)
+arr = ArrayCreate(3)
+ArraySet(arr, 0, 100)
+ArraySet(arr, 1, 200)
+ArraySet(arr, 2, 300)
+// Don't do: ArraySet(arr, 3, 400) - would be out of bounds
+
+PrintMessage("Array bounds respected")
+
+// Test empty conditions
+empty = 0
+IfCondition empty ThenBlock {
+    PrintMessage("This should not print")
+} ElseBlock {
+    PrintMessage("Empty condition handled correctly")
+}
+
+PrintMessage("Error conditions test complete!")

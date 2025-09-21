@@ -1,0 +1,96 @@
+// string_pool_optimized.ailang
+// Optimized string operations using pre-allocated pool
+
+PrintMessage("String Pool Optimization Test")
+PrintMessage("==============================")
+
+// Pre-allocate a large string pool
+FixedPool.StringPool {
+    "buffer": Initialize=0
+    "next_offset": Initialize=0
+    "pool_size": Initialize=65536
+}
+
+// Initialize the pool with a single allocation
+Function.StringPool.Init {
+    Body: {
+        StringPool.buffer = 1
+        StringPool.next_offset = 0
+        PrintMessage("String pool initialized (64KB)")
+        ReturnValue(1)
+    }
+}
+
+// Optimized concatenation
+Function.StringPool.FastConcat {
+    Input: str1:
+    Input: str2:
+    Body: {
+        result = StringConcat(str1, str2)
+        
+        len1 = StringLength(str1)
+        len2 = StringLength(str2)
+        total = Add(len1, len2)
+        total = Add(total, 1)
+        
+        old_offset = StringPool.next_offset
+        StringPool.next_offset = Add(StringPool.next_offset, total)
+        
+        PrintMessage("Allocated from pool offset:")
+        PrintNumber(old_offset)
+        
+        ReturnValue(result)
+    }
+}
+
+// Initialize pool once
+init = StringPool.Init()
+
+// Test 1: Standard concatenation
+PrintMessage("")
+PrintMessage("Standard StringConcat:")
+DebugPerf.Start("standard_concat")
+s1 = StringConcat("Hello", "World")
+s2 = StringConcat(s1, "Test")
+s3 = StringConcat(s2, "123")
+DebugPerf.End("standard_concat")
+
+// Test 2: Pooled concatenation
+PrintMessage("")
+PrintMessage("Pooled FastConcat:")
+DebugPerf.Start("pooled_concat")
+p1 = StringPool.FastConcat("Hello", "World")
+p2 = StringPool.FastConcat(p1, "Test")
+p3 = StringPool.FastConcat(p2, "123")
+DebugPerf.End("pooled_concat")
+
+// Test 3: Bulk operations
+PrintMessage("")
+PrintMessage("Bulk test - 10 concatenations")
+
+DebugPerf.Start("bulk_standard")
+i = 0
+result1 = "Start"
+WhileLoop LessThan(i, 10) {
+    result1 = StringConcat(result1, "X")
+    i = Add(i, 1)
+}
+DebugPerf.End("bulk_standard")
+
+DebugPerf.Start("bulk_pooled")
+j = 0
+result2 = "Start"
+WhileLoop LessThan(j, 10) {
+    result2 = StringPool.FastConcat(result2, "X")
+    j = Add(j, 1)
+}
+DebugPerf.End("bulk_pooled")
+
+// Show pool utilization
+PrintMessage("")
+PrintMessage("Pool utilization:")
+PrintNumber(StringPool.next_offset)
+PrintMessage("bytes of 65536")
+
+PrintMessage("")
+PrintMessage("Optimization test complete!")

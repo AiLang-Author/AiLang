@@ -1,0 +1,12 @@
+LibraryImport.Library.RESP
+LibraryImport.Library.XArrays
+
+DynamicPool.DataPool {
+    "size": Initialize=1048576
+}
+
+SubRoutine.Main {
+    PrintMessage("Libraries + DynamicPool loaded OK")
+    Exit(0)
+}
+RunTask(Main)

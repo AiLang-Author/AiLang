@@ -1,0 +1,46 @@
+// minimal_syntax_test.ailang
+// Test to verify exact IfCondition syntax
+
+// Test 1: Top-level IfCondition
+x = 5
+IfCondition GreaterThan(x, 0) {
+ThenBlock: {
+    PrintMessage("Top level: x is positive")
+}
+}
+
+// Test 2: Function with IfCondition
+Function.TestIf {
+    Input: n:
+    Body: {
+        IfCondition GreaterThan(n, 0) {
+        ThenBlock: {
+            PrintMessage("In function: n is positive")
+        }
+        ElseBlock: {
+            PrintMessage("In function: n is not positive")
+        }
+        }
+        ReturnValue(1)
+    }
+}
+
+result = TestIf(10)
+
+// Test 3: WhileLoop with IfCondition
+counter = 0
+WhileLoop LessThan(counter, 2) {
+    Body: {
+        IfCondition EqualTo(counter, 0) {
+        ThenBlock: {
+            PrintMessage("Counter is 0")
+        }
+        ElseBlock: {
+            PrintMessage("Counter is not 0")
+        }
+        }
+        counter = Add(counter, 1)
+    }
+}
+
+PrintMessage("Test complete")

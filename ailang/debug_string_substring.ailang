@@ -1,0 +1,106 @@
+// debug_string_substring.ailang
+// Comprehensive test suite for StringSubstring behavior
+
+PrintMessage("=== StringSubstring Debug Suite ===")
+PrintMessage("")
+
+// Test 1: Basic substring extraction
+PrintMessage("Test 1: Basic extraction")
+test1 = "Hello World"
+sub1a = StringSubstring(test1, 0, 5)   // Should be "Hello"
+sub1b = StringSubstring(test1, 6, 11)  // Should be "World" or entire rest?
+PrintMessage("Original: Hello World")
+PrintMessage("Substring(0,5):")
+PrintMessage(sub1a)
+PrintMessage("Substring(6,11):")
+PrintMessage(sub1b)
+PrintMessage("")
+
+// Test 2: Is second param length or end position?
+PrintMessage("Test 2: Length vs End Position")
+test2 = "ABCDEFGHIJ"
+sub2a = StringSubstring(test2, 0, 3)   // "ABC" if length, "ABC" if end
+sub2b = StringSubstring(test2, 2, 5)   // "CDE" if length=5, "CDE" if end=5
+sub2c = StringSubstring(test2, 5, 3)   // "FGH" if length=3, "" if end<start
+PrintMessage("Original: ABCDEFGHIJ")
+PrintMessage("Substring(0,3):")
+PrintMessage(sub2a)
+PrintMessage("Substring(2,5):")
+PrintMessage(sub2b)
+PrintMessage("Substring(5,3):")
+PrintMessage(sub2c)
+PrintMessage("")
+
+// Test 3: Edge cases
+PrintMessage("Test 3: Edge cases")
+test3 = "XYZ"
+sub3a = StringSubstring(test3, 0, 0)   // Empty or first char?
+sub3b = StringSubstring(test3, 0, 100) // Entire string or error?
+sub3c = StringSubstring(test3, 10, 20) // Past end - error or empty?
+PrintMessage("Original: XYZ")
+PrintMessage("Substring(0,0):")
+PrintMessage(sub3a)
+PrintMessage("Substring(0,100):")
+PrintMessage(sub3b)
+PrintMessage("Substring(10,20):")
+PrintMessage(sub3c)
+PrintMessage("")
+
+// Test 4: Parser-like usage
+PrintMessage("Test 4: Parser simulation")
+line = "func hello():"
+PrintMessage("Original: func hello():")
+
+// Try to extract "func" (0-4)
+word1 = StringSubstring(line, 0, 4)
+PrintMessage("Extract 'func' with (0,4):")
+PrintMessage(word1)
+
+// Try to extract "hello" (5-10)
+word2 = StringSubstring(line, 5, 10)
+PrintMessage("Extract 'hello' with (5,10):")
+PrintMessage(word2)
+
+// Alternative if it's length-based
+word3 = StringSubstring(line, 5, 5)  // Start at 5, length 5
+PrintMessage("Extract 'hello' with (5,5) if length-based:")
+PrintMessage(word3)
+PrintMessage("")
+
+// Test 5: Find pattern in string
+PrintMessage("Test 5: Pattern finding")
+source = "return value;"
+PrintMessage("Original: return value;")
+
+// Find semicolon position
+i = 0
+semi_pos = -1
+WhileLoop LessThan(i, StringLength(source)) {
+    ch = StringCharAt(source, i)
+    IfCondition EqualTo(ch, 59) ThenBlock {  // ;
+        semi_pos = i
+        PrintMessage("Found semicolon at position:")
+        PrintNumber(semi_pos)
+    }
+    i = Add(i, 1)
+}
+
+// Extract before semicolon
+IfCondition GreaterThan(semi_pos, 0) ThenBlock {
+    before = StringSubstring(source, 0, semi_pos)
+    PrintMessage("Before semicolon using (0, semi_pos):")
+    PrintMessage(before)
+    
+    // Alternative calculation
+    length_to_semi = semi_pos
+    before2 = StringSubstring(source, 0, length_to_semi)
+    PrintMessage("Before semicolon using (0, length):")
+    PrintMessage(before2)
+}
+
+PrintMessage("")
+PrintMessage("=== Summary ===")
+PrintMessage("Based on results above, StringSubstring uses:")
+PrintMessage("- Second parameter as END position if results match position")
+PrintMessage("- Second parameter as LENGTH if results match length count")
+PrintMessage("- Need consistent behavior for parser to work correctly")

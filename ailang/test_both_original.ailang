@@ -1,0 +1,8 @@
+LibraryImport.Library.RESP
+LibraryImport.Library.XArrays
+
+SubRoutine.Main {
+    PrintMessage("Both libraries loaded OK")
+    Exit(0)
+}
+RunTask(Main)

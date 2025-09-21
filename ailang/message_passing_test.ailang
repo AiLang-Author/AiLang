@@ -1,0 +1,30 @@
+// message_passing_test.ailang
+// Test SendMessage and ReceiveMessage constructs
+
+PrintMessage("=== MESSAGE PASSING TEST ===")
+PrintMessage("")
+
+// First, let's test these inside a SubRoutine where they should be valid statements
+PrintMessage("Testing message passing in SubRoutine...")
+
+SubRoutine.MessageTest {
+    PrintMessage("Inside SubRoutine...")
+    
+    // Test SendMessage
+    SendMessage.Channel1 {
+        PrintMessage("Sending message to Channel1")
+    }
+    
+    // Test ReceiveMessage
+    ReceiveMessage.Channel2 {
+        PrintMessage("Receiving from Channel2")
+    }
+    
+    PrintMessage("SubRoutine complete")
+}
+
+// Execute the subroutine
+RunTask(MessageTest)
+
+PrintMessage("")
+PrintMessage("=== MESSAGE TEST COMPLETE ===")

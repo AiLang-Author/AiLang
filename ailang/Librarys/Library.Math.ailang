@@ -5,7 +5,7 @@ LibraryImport.Core.Math {
         Input: (dividend: Integer, divisor: Integer)
         Output: Integer
         Body: {
-            IfCondition EqualTo(divisor, 0) ThenBlock {
+            IfCondition EqualTo(divisor, 0) ThenBlock: {
                 PrintMessage("Error: Division by zero in modulo")
                 ReturnValue(0)
             }
@@ -19,7 +19,7 @@ LibraryImport.Core.Math {
         Input: (dividend: FloatingPoint, divisor: FloatingPoint)
         Output: FloatingPoint
         Body: {
-            IfCondition EqualTo(divisor, 0.0) ThenBlock {
+            IfCondition EqualTo(divisor, 0.0) ThenBlock: {
                 PrintMessage("Error: Division by zero in modulo")
                 ReturnValue(0.0)
             }
@@ -35,7 +35,7 @@ LibraryImport.Core.Math {
         Input: (value: FloatingPoint)
         Output: FloatingPoint
         Body: {
-            IfCondition LessThan(value, 0.0) ThenBlock {
+            IfCondition LessThan(value, 0.0) ThenBlock: {
                 ReturnValue(Multiply(value, -1.0))
             }
             ReturnValue(value)
@@ -46,7 +46,7 @@ LibraryImport.Core.Math {
         Input: (a: FloatingPoint, b: FloatingPoint)
         Output: FloatingPoint
         Body: {
-            IfCondition LessThan(a, b) ThenBlock {
+            IfCondition LessThan(a, b) ThenBlock: {
                 ReturnValue(a)
             }
             ReturnValue(b)
@@ -57,7 +57,7 @@ LibraryImport.Core.Math {
         Input: (a: FloatingPoint, b: FloatingPoint)
         Output: FloatingPoint
         Body: {
-            IfCondition GreaterThan(a, b) ThenBlock {
+            IfCondition GreaterThan(a, b) ThenBlock: {
                 ReturnValue(a)
             }
             ReturnValue(b)

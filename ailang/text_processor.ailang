@@ -1,0 +1,320 @@
+// text_processor.ailang - INSTRUMENTED WITH IMPLEMENTED DEBUG FEATURES
+// A practical text processing utility with debugging
+// Reads a file, performs analysis and transformations, writes results
+
+PrintMessage("AILANG Text Processor v1.0 [DEBUG BUILD]")
+PrintMessage("===========================")
+
+Debug("Initialization", level=1) {
+    PrintMessage("DEBUG: Starting initialization")
+}
+
+// === Configuration ===
+input_file = "input.txt"
+output_file = "analysis.txt"
+
+Debug("Config", level=1) {
+    PrintMessage("DEBUG: Configuration set")
+    PrintMessage("DEBUG: input_file = input.txt")
+    PrintMessage("DEBUG: output_file = analysis.txt")
+}
+
+// === SubRoutines for text processing ===
+
+SubRoutine.CountWords {
+    Debug("CountWords.Entry", level=1) {
+        PrintMessage("DEBUG: Entering CountWords")
+    }
+    
+    word_count = 0
+    in_word = 0
+    i = 0
+    text_len = StringLength(text)
+    
+    Debug("CountWords.Init", level=2) {
+        PrintMessage("DEBUG: text_len = ")
+        PrintNumber(text_len)
+    }
+    
+    WhileLoop LessThan(i, text_len) {
+        // Get current character
+        char = StringSubstring(text, i, 1)
+        
+        // Check if it's a space
+        is_space = StringEquals(char, " ")
+        is_newline = StringEquals(char, "\n")
+        is_separator = BitwiseOr(is_space, is_newline)
+        
+        IfCondition EqualTo(is_separator, 1) ThenBlock {
+            IfCondition EqualTo(in_word, 1) ThenBlock {
+                word_count = Add(word_count, 1)
+                in_word = 0
+            }
+        } ElseBlock {
+            in_word = 1
+        }
+        
+        i = Add(i, 1)
+    }
+    
+    IfCondition EqualTo(in_word, 1) ThenBlock {
+        word_count = Add(word_count, 1)
+    }
+    
+    Debug("CountWords.Exit", level=1) {
+        PrintMessage("DEBUG: CountWords complete, final count=")
+        PrintNumber(word_count)
+    }
+}
+
+SubRoutine.FindFirstWord {
+    Debug("FirstWord.Entry", level=1) {
+        PrintMessage("DEBUG: Entering FindFirstWord")
+    }
+    
+    i = 0
+    text_len = StringLength(text)
+    start = -1
+    end_pos = -1
+    
+    // Find first non-space
+    WhileLoop LessThan(i, text_len) {
+        char = StringSubstring(text, i, 1)
+        is_space = StringEquals(char, " ")
+        
+        IfCondition EqualTo(is_space, 0) ThenBlock {
+            start = i
+            i = text_len  // Break loop
+        }
+        
+        i = Add(i, 1)
+    }
+    
+    // Find end of first word
+    IfCondition GreaterEqual(start, 0) ThenBlock {
+        i = start
+        WhileLoop LessThan(i, text_len) {
+            char = StringSubstring(text, i, 1)
+            is_space = StringEquals(char, " ")
+            
+            IfCondition EqualTo(is_space, 1) ThenBlock {
+                end_pos = i
+                i = text_len  // Break
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        IfCondition EqualTo(end_pos, -1) ThenBlock {
+            end_pos = text_len
+        }
+        
+        word_len = Subtract(end_pos, start)
+        first_word = StringSubstring(text, start, word_len)
+    } ElseBlock {
+        first_word = ""
+    }
+    
+    Debug("FirstWord.Exit", level=1) {
+        PrintMessage("DEBUG: FirstWord complete:")
+        PrintMessage(first_word)
+    }
+}
+
+SubRoutine.ExtractLines {
+    Debug("ExtractLines.Entry", level=1) {
+        PrintMessage("DEBUG: Entering ExtractLines")
+    }
+    
+    line_count = 0
+    current_pos = 0
+    text_len = StringLength(text)
+    preview_end = 0
+    
+    WhileLoop LessThan(current_pos, text_len) {
+        char = StringSubstring(text, current_pos, 1)
+        is_newline = StringEquals(char, "\n")
+        
+        IfCondition EqualTo(is_newline, 1) ThenBlock {
+            line_count = Add(line_count, 1)
+            
+            IfCondition EqualTo(line_count, 3) ThenBlock {
+                preview_end = current_pos
+                current_pos = text_len  // Break
+            }
+        }
+        
+        current_pos = Add(current_pos, 1)
+    }
+    
+    IfCondition GreaterThan(preview_end, 0) ThenBlock {
+        preview = StringSubstring(text, 0, preview_end)
+    } ElseBlock {
+        preview = text
+    }
+    
+    Debug("ExtractLines.Exit", level=1) {
+        PrintMessage("DEBUG: ExtractLines complete")
+    }
+}
+
+SubRoutine.GenerateReport {
+    Debug("GenerateReport.Entry", level=1) {
+        PrintMessage("DEBUG: Entering GenerateReport")
+    }
+    
+    report = "=== Text Analysis Report ===\n"
+    
+    // Add file info
+    report = StringConcat(report, "Input file: ")
+    report = StringConcat(report, input_file)
+    report = StringConcat(report, "\n\n")
+    
+    // Add statistics
+    report = StringConcat(report, "Statistics:\n")
+    report = StringConcat(report, "- Total characters: ")
+    len_str = NumberToString(text_len)
+    report = StringConcat(report, len_str)
+    report = StringConcat(report, "\n")
+    
+    report = StringConcat(report, "- Word count: ")
+    count_str = NumberToString(word_count)
+    report = StringConcat(report, count_str)
+    report = StringConcat(report, "\n")
+    
+    report = StringConcat(report, "- First word: ")
+    report = StringConcat(report, first_word)
+    report = StringConcat(report, "\n\n")
+    
+    report = StringConcat(report, "Preview (first 3 lines):\n")
+    report = StringConcat(report, "------------------------\n")
+    report = StringConcat(report, preview)
+    report = StringConcat(report, "\n------------------------\n")
+    
+    report = StringConcat(report, "\nEnd of report.\n")
+    
+    Debug("GenerateReport.Exit", level=1) {
+        PrintMessage("DEBUG: Report generation complete")
+    }
+}
+
+// === Main Processing ===
+
+Debug("Main.Start", level=1) {
+    PrintMessage("DEBUG: ==== MAIN PROCESSING START ====")
+}
+
+PrintMessage("Reading input file...")
+PrintMessage("File: ")
+PrintMessage(input_file)
+
+Debug("Main.PreFileExists", level=1) {
+    PrintMessage("DEBUG: About to call FileExists")
+    PrintMessage("DEBUG: Checking file: input.txt")
+}
+
+// Check if file exists
+exists = FileExists(input_file)
+
+Debug("Main.PostFileExists", level=1) {
+    PrintMessage("DEBUG: FileExists returned:")
+    PrintNumber(exists)
+}
+
+IfCondition EqualTo(exists, 0) ThenBlock {
+    Debug("Main.FileNotFound", level=1) {
+        PrintMessage("DEBUG: File not found branch taken")
+    }
+    PrintMessage("ERROR: Input file not found!")
+    PrintMessage("Please create 'input.txt' with some text to analyze")
+    HaltProgram("No input file")
+}
+
+Debug("Main.PreReadTextFile", level=1) {
+    PrintMessage("DEBUG: About to call ReadTextFile")
+    PrintMessage("DEBUG: Reading from: input.txt")
+}
+
+// Read the file
+text = ReadTextFile(input_file)
+
+// Critical check - is text NULL?
+PrintMessage("DEBUG: Checking if text is NULL...")
+IfCondition EqualTo(text, 0) ThenBlock {
+    PrintMessage("ERROR: ReadTextFile returned NULL!")
+    HaltProgram("NULL pointer from ReadTextFile")
+}
+// Don't use ElseBlock - just continue if not NULL
+
+text_len = StringLength(text)
+
+Debug("Main.PostStringLength", level=1) {
+    PrintMessage("DEBUG: StringLength returned:")
+    PrintNumber(text_len)
+    // Simple sanity check
+    DebugAssert(GreaterEqual(text_len, 0), "text_len is negative!")
+}
+
+PrintMessage("File read successfully")
+PrintMessage("Size:")
+PrintNumber(text_len)
+PrintMessage(" characters")
+
+// Perform analysis
+PrintMessage("\nAnalyzing text...")
+
+DebugPerf.Start("Analysis")
+
+Debug("Main.PreCountWords", level=1) {
+    PrintMessage("DEBUG: About to RunTask CountWords")
+}
+
+RunTask("CountWords")
+
+Debug("Main.PostCountWords", level=1) {
+    PrintMessage("DEBUG: CountWords complete")
+}
+
+PrintMessage("- Counted words")
+
+RunTask("FindFirstWord")
+PrintMessage("- Found first word")
+
+RunTask("ExtractLines")
+PrintMessage("- Extracted preview")
+
+RunTask("GenerateReport")
+PrintMessage("- Generated report")
+
+DebugPerf.End("Analysis")
+
+// Write the report
+PrintMessage("\nWriting analysis report...")
+
+Debug("Main.PreWriteFile", level=1) {
+    PrintMessage("DEBUG: About to WriteTextFile")
+    PrintMessage("DEBUG: Writing to: analysis.txt")
+}
+
+WriteTextFile(output_file, report)
+
+Debug("Main.PostWriteFile", level=1) {
+    PrintMessage("DEBUG: WriteTextFile complete")
+}
+
+PrintMessage("Report written to:")
+PrintMessage(output_file)
+
+// Display summary
+PrintMessage("\n=== Summary ===")
+PrintMessage("Words found:")
+PrintNumber(word_count)
+PrintMessage("First word:")
+PrintMessage(first_word)
+
+Debug("Main.Complete", level=1) {
+    PrintMessage("DEBUG: ==== MAIN PROCESSING COMPLETE ====")
+}
+
+PrintMessage("\nText processor complete!")
+PrintMessage("Check 'analysis.txt' for full report")

@@ -1,0 +1,100 @@
+// test_byte_operations.ailang
+// Test to confirm Dereference behavior and find proper byte access
+
+PrintMessage("=== BYTE OPERATION TEST ===")
+PrintMessage("")
+
+PrintMessage("[1] Testing Dereference behavior")
+buffer = Allocate(100)
+
+// Clear buffer completely with 8-byte stores
+i = 0
+WhileLoop LessThan(i, 12) {
+    Body: {
+        offset = Multiply(i, 8)
+        StoreValue(Add(buffer, offset), 0)
+        i = Add(i, 1)
+    }
+    }
+
+// Store single byte value
+PrintMessage("Storing value 42 at offset 0...")
+StoreValue(buffer, 42)
+
+// Read it back
+value = Dereference(buffer)
+PrintMessage("Dereference returned: ")
+PrintNumber(value)
+
+// Check if it's reading 8 bytes
+IfCondition GreaterThan(value, 255) ThenBlock {
+    PrintMessage("ERROR: Dereference is reading more than 1 byte!")
+    PrintMessage("It appears to be reading 8 bytes (64-bit)")
+    
+    // Try to extract just the first byte
+    byte = BitwiseAnd(value, 255)
+    PrintMessage("First byte extracted with BitwiseAnd(value, 255): ")
+    PrintNumber(byte)
+    
+    IfCondition EqualTo(byte, 42) ThenBlock {
+        PrintMessage("✓ SUCCESS - Can extract byte with masking")
+    }
+}
+
+PrintMessage("")
+PrintMessage("[2] Testing proper byte storage")
+
+// Try storing values that won't interfere
+test_buf = Allocate(64)
+
+// Clear it
+j = 0  
+WhileLoop LessThan(j, 8) {
+    Body: {
+        StoreValue(Add(test_buf, Multiply(j, 8)), 0)
+        j = Add(j, 1)
+    }
+    }
+
+// Store RESP array marker at aligned position
+StoreValue(test_buf, 42)  // Just 42, should work
+
+// Read back
+raw = Dereference(test_buf)
+masked = BitwiseAnd(raw, 255)
+
+PrintMessage("Raw dereference: ")
+PrintNumber(raw)
+PrintMessage("Masked to byte: ")
+PrintNumber(masked)
+
+PrintMessage("")
+PrintMessage("[3] Solution for RESP parsing")
+PrintMessage("Use BitwiseAnd(Dereference(buffer), 255) to get single byte")
+
+// Demonstrate fix
+resp_buf = Allocate(32)
+StoreValue(resp_buf, 42)  // '*'
+
+first_byte_wrong = Dereference(resp_buf)
+first_byte_right = BitwiseAnd(Dereference(resp_buf), 255)
+
+PrintMessage("Wrong way (full 64-bit): ")
+PrintNumber(first_byte_wrong)
+PrintMessage("Right way (masked byte): ")
+PrintNumber(first_byte_right)
+
+IfCondition EqualTo(first_byte_right, 42) ThenBlock {
+    PrintMessage("✓ This will fix the RESP parsing!")
+}
+
+Deallocate(buffer, 100)
+Deallocate(test_buf, 64)
+Deallocate(resp_buf, 32)
+
+PrintMessage("")
+PrintMessage("=== END TEST ===")
+PrintMessage("")
+PrintMessage("CRITICAL FINDING:")
+PrintMessage("Dereference returns 8 bytes, not 1 byte!")
+PrintMessage("Must use BitwiseAnd(Dereference(addr), 255) for byte access")

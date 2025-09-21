@@ -1,0 +1,52 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/main.py", line 38, in compile_ailang_to_executable
+    executable = compiler.compile(ast)
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 883, in compile
+    self.memory.compile_pool(decl, pre_pass_only=True)
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/modules/memory_manager.py", line 407, in compile_pool
+    return self.compile_dynamic_pool(node)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/modules/memory_manager.py", line 483, in compile_dynamic_pool
+    stack_offset = self.compiler.variables[pool_name]
+                   ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: 'DynamicPool.Dynamic'
+
+==================================================
+🚀 Starting compilation for: test_pools_comprehensive.ailang -> test_pools_comprehensive_exec
+==================================================
+🔨 Compiling AILANG source...
+DEBUG: Using USER MODE SAFE VM operations
+
+=== COMPILATION STARTING ===
+Phase 0: Registering all global symbols...
+DEBUG: Discovered pool var 'FixedPool.Static.counter' at pool index 0
+DEBUG: Discovered pool var 'FixedPool.Static.flag' at pool index 1
+DEBUG: Compiling DYNAMIC pool DynamicPool.Dynamic
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x9', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 9
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 0
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x30', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RSI, 48
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 3
+DEBUG: Emitted bytes: ['0x49', '0xba']
+DEBUG: Emitted bytes: ['0x22', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV R10, 34
+DEBUG: Emitted bytes: ['0x49', '0xb8']
+DEBUG: Emitted bytes: ['0xff', '0xff', '0xff', '0xff', '0xff', '0xff', '0xff', '0xff']
+DEBUG: MOV R8, 18446744073709551615
+DEBUG: Emitted bytes: ['0x49', '0xb9']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV R9, 0
+DEBUG: Emitted bytes: ['0xf', '0x5']
+ERROR: DynamicPool compilation failed: 'DynamicPool.Dynamic'
+❌ ERROR: 'DynamicPool.Dynamic'
+🔥 FAILED! Compilation of test_pools_comprehensive.ailang encountered an error.
+
+❌ One or more files failed to compile.

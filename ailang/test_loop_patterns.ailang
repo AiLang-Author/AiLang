@@ -1,0 +1,42 @@
+// test_loop_patterns.ailang
+// Test various loop patterns
+
+PrintMessage("Loop Patterns Test")
+PrintMessage("==================")
+
+// Test countdown loop
+count = 5
+PrintMessage("Countdown:")
+WhileLoop GreaterThan(count, 0) {
+    Body: {
+        PrintNumber(count)
+        count = Subtract(count, 1)
+    }
+    }
+
+// Test accumulator pattern
+sum = 0
+i = 1
+PrintMessage("Sum 1 to 5:")
+WhileLoop LessEqual(i, 5) {
+    Body: {
+        sum = Add(sum, i)
+        i = Add(i, 1)
+    }
+    }
+PrintNumber(sum)
+
+// Test factorial calculation
+n = 5
+fact = 1
+counter = 1
+WhileLoop LessEqual(counter, n) {
+    Body: {
+        fact = Multiply(fact, counter)
+        counter = Add(counter, 1)
+    }
+    }
+PrintMessage("5! (should be 120):")
+PrintNumber(fact)
+
+PrintMessage("Loop patterns test complete!")

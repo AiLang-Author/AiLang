@@ -1,0 +1,28 @@
+// Test_RESP_Basic.ailang
+LibraryImport.Library.RESP
+
+SubRoutine.Main {
+    PrintMessage("=== Testing RESP Library ===\n")
+    
+    PrintMessage("\nSimpleString:\n")
+    r1 = RESP.SimpleString("OK")
+    PrintMessage(r1)
+    PrintMessage("\n")
+    Deallocate(r1, 0)
+    
+    PrintMessage("\nBulkString:\n")
+    r2 = RESP.BulkString("hello")
+    PrintMessage(r2)
+    PrintMessage("\n")
+    Deallocate(r2, 0)
+    
+    PrintMessage("\nInteger:\n")
+    r3 = RESP.Integer(42)
+    PrintMessage(r3)
+    PrintMessage("\n")
+    Deallocate(r3, 0)
+    
+    PrintMessage("Test complete\n")
+}
+
+RunTask(Main)

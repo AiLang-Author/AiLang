@@ -315,8 +315,6 @@
 
 <for_statement> ::= "ForEvery" IDENTIFIER "in" <expression> "{" { <statement> } "}"
 
-<choose_statement> ::= "ChoosePath" "(" <expression> ")" "{" { <case_option> } [ <default_option> ] "}"
-
 <case_option> ::= "CaseOption" STRING ":" <statement>
 
 <default_option> ::= "DefaultOption" ":" <statement>

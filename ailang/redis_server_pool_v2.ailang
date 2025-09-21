@@ -1,0 +1,877 @@
+// redis_server_complete_pooled.ailang
+// Complete Redis Server with Pool-Based Memory Management
+// Preserves all original functionality while fixing memory corruption
+
+// ============================================================================
+// Memory Pool Architecture (Added for corruption prevention)
+// ============================================================================
+
+FixedPool.MemoryPools {
+    "request_base": Initialize=6291456
+    "request_size": Initialize=8192
+    "request_used": Initialize=0
+    "scratch_base": Initialize=7340032
+    "scratch_size": Initialize=4096
+    "scratch_used": Initialize=0
+    "response_base": Initialize=8388608
+    "response_size": Initialize=4096
+    "response_used": Initialize=0
+}
+
+// ============================================================================
+// Original Memory Pools and Storage (Preserved)
+// ============================================================================
+
+DynamicPool.Redis.MainStorage {
+    "redis_data": ElementType=Address, CanChange=True
+    "cache_policy": Initialize="L2", CanChange=False
+}
+
+FixedPool.Redis.ClientConnections {
+    "client_sockets": ElementType=Integer, MaximumLength=1000
+    "cache_policy": Initialize="L1", CanChange=False
+}
+
+TemporalPool.Redis.ResponseBuffers {
+    "response_data": ElementType=Byte, MaximumLength=1048576
+    "lifetime": Initialize="request_scope", CanChange=False
+}
+
+// ============================================================================
+// Global Storage and Server State (Original)
+// ============================================================================
+
+FixedPool.Redis.ServerState {
+    "redis_store": Initialize=0
+    "server_port": Initialize=6379
+    "max_connections": Initialize=1000
+    "server_running": Initialize=1
+    "active_connections": Initialize=0
+    "total_commands_processed": Initialize=0
+    "server_start_time": Initialize=0
+}
+
+// ============================================================================
+// Pool Management Functions (Added)
+// ============================================================================
+
+Function.Pool.Allocate {
+    Input: pool_id: Number
+    Input: size: Number
+    Output: Number
+    Body: {
+        // 1=Request, 2=Scratch, 3=Response
+        IfCondition EqualTo(pool_id, 1) ThenBlock {
+            current = MemoryPools.request_used
+            IfCondition GreaterThan(Add(current, size), MemoryPools.request_size) ThenBlock {
+                // Pool overflow - fallback to system allocate
+                ReturnValue(Allocate(size))
+            }
+            addr = Add(MemoryPools.request_base, current)
+            MemoryPools.request_used = Add(current, size)
+            ReturnValue(addr)
+        }
+        
+        IfCondition EqualTo(pool_id, 2) ThenBlock {
+            current = MemoryPools.scratch_used
+            IfCondition GreaterThan(Add(current, size), MemoryPools.scratch_size) ThenBlock {
+                ReturnValue(Allocate(size))
+            }
+            addr = Add(MemoryPools.scratch_base, current)
+            MemoryPools.scratch_used = Add(current, size)
+            ReturnValue(addr)
+        }
+        
+        IfCondition EqualTo(pool_id, 3) ThenBlock {
+            current = MemoryPools.response_used
+            IfCondition GreaterThan(Add(current, size), MemoryPools.response_size) ThenBlock {
+                ReturnValue(Allocate(size))
+            }
+            addr = Add(MemoryPools.response_base, current)
+            MemoryPools.response_used = Add(current, size)
+            ReturnValue(addr)
+        }
+        
+        // Default to system allocate
+        ReturnValue(Allocate(size))
+    }
+}
+
+Function.Pool.Reset {
+    Input: pool_id: Number
+    Body: {
+        IfCondition EqualTo(pool_id, 1) ThenBlock {
+            MemoryPools.request_used = 0
+        }
+        IfCondition EqualTo(pool_id, 2) ThenBlock {
+            MemoryPools.scratch_used = 0
+        }
+        IfCondition EqualTo(pool_id, 3) ThenBlock {
+            MemoryPools.response_used = 0
+        }
+    }
+}
+
+// ============================================================================
+// Safe String Operations (Added for pool safety)
+// ============================================================================
+
+Function.SafeStringToUpper {
+    Input: src: Text
+    Output: Text
+    Body: {
+        // Allocate in scratch pool
+        dest = Pool.Allocate(2, 256)
+        i = 0
+        max_len = 255
+        
+        WhileLoop LessThan(i, max_len) {
+            ch = StringCharAt(src, i)
+            IfCondition EqualTo(ch, 0) ThenBlock {
+                StoreValue(Add(dest, i), 0)
+                ReturnValue(dest)
+            }
+            
+            // Convert to uppercase
+            IfCondition And(GreaterEqual(ch, 97), LessEqual(ch, 122)) ThenBlock {
+                ch = Subtract(ch, 32)
+            }
+            
+            StoreValue(Add(dest, i), ch)
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(dest, max_len), 0)  // Ensure null termination
+        ReturnValue(dest)
+    }
+}
+
+// ============================================================================
+// RESP Protocol Functions (Original with pool allocation)
+// ============================================================================
+
+Function.RESP.ParseCommand {
+    Input: buffer: Address
+    Input: buffer_size: Integer
+    Output: Array
+    Body: {
+        Debug("RESP.ParseCommand.Entry", level=2) {
+            PrintMessage("=== RESP PARSE START ===")
+            PrintMessage("  Buffer address: ")
+            PrintNumber(buffer)
+            PrintMessage("  Buffer size: ")
+            PrintNumber(buffer_size)
+        }
+        
+        // Validate buffer
+        DebugAssert(NotEqual(buffer, 0), "RESP parser received null buffer")
+        DebugAssert(GreaterThan(buffer_size, 0), "RESP parser received empty buffer")
+        DebugAssert(LessThan(buffer_size, 65536), "RESP buffer suspiciously large")
+        
+        // Inspect first bytes for debugging
+        Debug("RESP.ParseCommand.ByteInspect", level=3) {
+            PrintMessage("  First 16 bytes:")
+            inspect_idx = 0
+            WhileLoop And(LessThan(inspect_idx, 16), LessThan(inspect_idx, buffer_size)) {
+                byte = Dereference(Add(buffer, inspect_idx))
+                PrintMessage("    [")
+                PrintNumber(inspect_idx)
+                PrintMessage("] = ")
+                PrintNumber(byte)
+                
+                // Decode RESP characters
+                IfCondition EqualTo(byte, 42) ThenBlock { PrintMessage(" '*' (Array)") }
+                IfCondition EqualTo(byte, 36) ThenBlock { PrintMessage(" '$' (Bulk)") }
+                IfCondition EqualTo(byte, 43) ThenBlock { PrintMessage(" '+' (Simple)") }
+                IfCondition EqualTo(byte, 45) ThenBlock { PrintMessage(" '-' (Error)") }
+                IfCondition EqualTo(byte, 13) ThenBlock { PrintMessage(" CR") }
+                IfCondition EqualTo(byte, 10) ThenBlock { PrintMessage(" LF") }
+                
+                inspect_idx = Add(inspect_idx, 1)
+            }
+        }
+        
+        // Check first byte is '*' for array
+        first_byte = Dereference(buffer)
+        
+        IfCondition NotEqual(first_byte, 42) ThenBlock {  // 42 = '*'
+            Debug("RESP.ParseCommand.NotArray", level=1) {
+                PrintMessage("  ERROR: Not a RESP array")
+            }
+            ReturnValue(ArrayCreate(0))
+        }
+        
+        // Parse array count
+        offset = 1
+        count_str = StringExtractUntil(buffer, offset, "\r\n")
+        
+        DebugAssert(NotEqual(count_str, 0), "Failed to extract array count")
+        
+        array_count = StringToNumber(count_str)
+        
+        Debug("RESP.ParseCommand.ArrayCount", level=2) {
+            PrintMessage("  Array count: ")
+            PrintNumber(array_count)
+        }
+        
+        offset = Add(offset, StringLength(count_str))
+        offset = Add(offset, 2)  // Skip \r\n
+        
+        // Parse each bulk string - use request pool
+        command_parts = ArrayCreate(array_count)
+        
+        command_idx = 0
+        WhileLoop LessThan(command_idx, array_count) {
+            Debug("RESP.ParseCommand.BulkString", level=3) {
+                PrintMessage("    === Parsing element ")
+                PrintNumber(command_idx)
+                PrintMessage(" at offset ")
+                PrintNumber(offset)
+                PrintMessage(" ===")
+            }
+            
+            // Expect '$' for bulk string
+            bulk_marker = Dereference(Add(buffer, offset))
+            
+            IfCondition NotEqual(bulk_marker, 36) ThenBlock {  // 36 = '$'
+                Debug("RESP.ParseCommand.InvalidBulk", level=1) {
+                    PrintMessage("    ERROR: Invalid bulk string marker")
+                }
+                ReturnValue(ArrayCreate(0))
+            }
+            
+            offset = Add(offset, 1)
+            
+            // Get length
+            length_str = StringExtractUntil(buffer, offset, "\r\n")
+            bulk_length = StringToNumber(length_str)
+            
+            offset = Add(offset, StringLength(length_str))
+            offset = Add(offset, 2)  // Skip \r\n
+            
+            // Extract data using pool allocation
+            data_string = StringExtract(buffer, offset, bulk_length)
+            
+            ArraySet(command_parts, command_idx, data_string)
+            
+            Debug("RESP.ParseCommand.ExtractedData", level=2) {
+                PrintMessage("    Extracted: '")
+                PrintMessage(data_string)
+                PrintMessage("' (length: ")
+                PrintNumber(bulk_length)
+                PrintMessage(")")
+            }
+            
+            command_idx = Add(command_idx, 1)
+            offset = Add(offset, bulk_length)
+            offset = Add(offset, 2)  // Skip \r\n
+        }
+        
+        Debug("RESP.ParseCommand.Complete", level=2) {
+            PrintMessage("  Successfully parsed ")
+            PrintNumber(array_count)
+            PrintMessage(" parts")
+            PrintMessage("=== RESP PARSE COMPLETE ===")
+        }
+        
+        ReturnValue(command_parts)
+    }
+}
+
+// All original RESP building functions preserved as-is
+Function.RESP.BuildSimpleString {
+    Input: message: Text
+    Output: Address
+    Body: {
+        // Use response pool
+        response_buffer = Pool.Allocate(3, 1024)
+        
+        StoreValue(response_buffer, 43)  // '+'
+        offset = 1
+        
+        // Copy message
+        i = 0
+        msg_len = StringLength(message)
+        
+        WhileLoop LessThan(i, msg_len) {
+            char = StringCharAt(message, i)
+            StoreValue(Add(response_buffer, offset), char)
+            offset = Add(offset, 1)
+            i = Add(i, 1)
+        }
+        
+        // Add \r\n
+        StoreValue(Add(response_buffer, offset), 13)      // \r
+        StoreValue(Add(response_buffer, Add(offset, 1)), 10)  // \n
+        
+        ReturnValue(response_buffer)
+    }
+}
+
+Function.RESP.BuildBulkString {
+    Input: data: Text
+    Output: Address
+    Body: {
+        response_buffer = Pool.Allocate(3, 1024)
+        
+        data_length = StringLength(data)
+        length_str = NumberToString(data_length)
+        
+        offset = 0
+        
+        StoreValue(Add(response_buffer, offset), 36)  // '$'
+        offset = Add(offset, 1)
+        
+        // Write length
+        i = 0
+        len_str_len = StringLength(length_str)
+        WhileLoop LessThan(i, len_str_len) {
+            char = StringCharAt(length_str, i)
+            StoreValue(Add(response_buffer, offset), char)
+            offset = Add(offset, 1)
+            i = Add(i, 1)
+        }
+        
+        // Store \r\n
+        StoreValue(Add(response_buffer, offset), 13)      // \r
+        StoreValue(Add(response_buffer, Add(offset, 1)), 10)  // \n
+        offset = Add(offset, 2)
+        
+        // Store data
+        i = 0
+        WhileLoop LessThan(i, data_length) {
+            char = StringCharAt(data, i)
+            StoreValue(Add(response_buffer, offset), char)
+            offset = Add(offset, 1)
+            i = Add(i, 1)
+        }
+        
+        // Final \r\n
+        StoreValue(Add(response_buffer, offset), 13)      // \r
+        StoreValue(Add(response_buffer, Add(offset, 1)), 10)  // \n
+        
+        ReturnValue(response_buffer)
+    }
+}
+
+Function.RESP.BuildNullBulkString {
+    Output: Address
+    Body: {
+        response_buffer = Pool.Allocate(3, 16)
+        
+        StoreValue(response_buffer, 36)       // '$'
+        StoreValue(Add(response_buffer, 1), 45)   // '-'
+        StoreValue(Add(response_buffer, 2), 49)   // '1'
+        StoreValue(Add(response_buffer, 3), 13)   // \r
+        StoreValue(Add(response_buffer, 4), 10)   // \n
+        
+        ReturnValue(response_buffer)
+    }
+}
+
+Function.RESP.BuildInteger {
+    Input: number: Integer
+    Output: Address
+    Body: {
+        response_buffer = Pool.Allocate(3, 64)
+        
+        number_str = NumberToString(number)
+        offset = 0
+        
+        StoreValue(Add(response_buffer, offset), 58)  // ':'
+        offset = Add(offset, 1)
+        
+        i = 0
+        num_str_len = StringLength(number_str)
+        WhileLoop LessThan(i, num_str_len) {
+            char = StringCharAt(number_str, i)
+            StoreValue(Add(response_buffer, offset), char)
+            offset = Add(offset, 1)
+            i = Add(i, 1)
+        }
+        
+        // Store \r\n
+        StoreValue(Add(response_buffer, offset), 13)      // \r
+        StoreValue(Add(response_buffer, Add(offset, 1)), 10)  // \n
+        
+        ReturnValue(response_buffer)
+    }
+}
+
+// ============================================================================
+// Redis Commands Implementation (Original, preserved)
+// ============================================================================
+
+Function.Redis.Command.GET {
+    Input: key: Text
+    Output: Address
+    Body: {
+        Debug("Redis.Command.GET", level=2) {
+            PrintMessage("  GET command")
+            PrintMessage("    Key: '")
+            PrintMessage(key)
+            PrintMessage("'")
+        }
+        
+        value = HashGet(Redis.ServerState.redis_store, key)
+        
+        IfCondition EqualTo(value, 0) ThenBlock {
+            ReturnValue(RESP.BuildNullBulkString())
+        } ElseBlock {
+            value_str = value
+            ReturnValue(RESP.BuildBulkString(value_str))
+        }
+    }
+}
+
+Function.Redis.Command.SET {
+    Input: key: Text
+    Input: value: Text
+    Output: Address
+    Body: {
+        Debug("Redis.Command.SET", level=2) {
+            PrintMessage("  SET command")
+            PrintMessage("    Key: '")
+            PrintMessage(key)
+            PrintMessage("'")
+            PrintMessage("    Value: '")
+            PrintMessage(value)
+            PrintMessage("'")
+        }
+        
+        HashSet(Redis.ServerState.redis_store, key, value)
+        
+        ReturnValue(RESP.BuildSimpleString("OK"))
+    }
+}
+
+Function.Redis.Command.DEL {
+    Input: keys: Array
+    Output: Address
+    Body: {
+        deleted_count = 0
+        i = 0
+        len = ArrayLength(keys)
+        
+        WhileLoop LessThan(i, len) {
+            key = ArrayGet(keys, i)
+            exists = HashExists(Redis.ServerState.redis_store, key)
+            
+            IfCondition exists ThenBlock {
+                HashDelete(Redis.ServerState.redis_store, key)
+                deleted_count = Add(deleted_count, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(RESP.BuildInteger(deleted_count))
+    }
+}
+
+Function.Redis.Command.PING {
+    Input: message: Text
+    Output: Address
+    Body: {
+        Debug("Redis.Command.PING", level=2) {
+            PrintMessage("  PING command")
+        }
+        
+        IfCondition EqualTo(message, 0) ThenBlock {
+            ReturnValue(RESP.BuildSimpleString("PONG"))
+        } ElseBlock {
+            ReturnValue(RESP.BuildBulkString(message))
+        }
+    }
+}
+
+Function.Redis.Command.INFO {
+    Output: Address
+    Body: {
+        info = "# Server\r\n"
+        info = StringConcat(info, "redis_version:7.0-ailang\r\n")
+        info = StringConcat(info, "redis_mode:standalone\r\n")
+        info = StringConcat(info, "tcp_port:")
+        info = StringConcat(info, NumberToString(Redis.ServerState.server_port))
+        info = StringConcat(info, "\r\n")
+        
+        info = StringConcat(info, "\r\n# Clients\r\n")
+        info = StringConcat(info, "connected_clients:")
+        info = StringConcat(info, NumberToString(Redis.ServerState.active_connections))
+        info = StringConcat(info, "\r\n")
+        
+        info = StringConcat(info, "\r\n# Stats\r\n")
+        info = StringConcat(info, "total_commands_processed:")
+        info = StringConcat(info, NumberToString(Redis.ServerState.total_commands_processed))
+        info = StringConcat(info, "\r\n")
+        
+        ReturnValue(RESP.BuildBulkString(info))
+    }
+}
+
+// ============================================================================
+// Command Dispatcher (Modified for pool safety)
+// ============================================================================
+
+Function.Redis.DispatchCommand {
+    Input: command_parts: Array
+    Output: Address
+    Body: {
+        Debug("Redis.Dispatch.Entry", level=1) {
+            PrintMessage(">>> DISPATCH COMMAND <<<")
+        }
+        
+        // Reset scratch pool for this dispatch
+        Pool.Reset(2)
+        
+        array_len = ArrayLength(command_parts)
+        
+        IfCondition EqualTo(array_len, 0) ThenBlock {
+            ReturnValue(RESP.BuildSimpleString("-ERR empty command"))
+        }
+        
+        raw_command = ArrayGet(command_parts, 0)
+        
+        Debug("Redis.Dispatch.RawCommand", level=2) {
+            PrintMessage("  Raw command: '")
+            PrintMessage(raw_command)
+            PrintMessage("'")
+        }
+        
+        // Use safe uppercase conversion with pool
+        command = SafeStringToUpper(raw_command)
+        
+        Debug("Redis.Dispatch.UpperCommand", level=2) {
+            PrintMessage("  Upper command: '")
+            PrintMessage(command)
+            PrintMessage("'")
+        }
+        
+        // Update stats safely
+        Redis.ServerState.total_commands_processed = Add(
+            Redis.ServerState.total_commands_processed, 1
+        )
+        
+        // Command matching
+        is_ping = StringEquals(command, "PING")
+        is_get = StringEquals(command, "GET")
+        is_set = StringEquals(command, "SET")
+        is_del = StringEquals(command, "DEL")
+        is_info = StringEquals(command, "INFO")
+        
+        // PING handler
+        IfCondition is_ping ThenBlock {
+            IfCondition EqualTo(array_len, 1) ThenBlock {
+                response = Redis.Command.PING(0)
+                ReturnValue(response)
+            } ElseBlock {
+                message = ArrayGet(command_parts, 1)
+                ReturnValue(Redis.Command.PING(message))
+            }
+        }
+        
+        // GET handler
+        IfCondition is_get ThenBlock {
+            IfCondition GreaterEqual(array_len, 2) ThenBlock {
+                key = ArrayGet(command_parts, 1)
+                ReturnValue(Redis.Command.GET(key))
+            } ElseBlock {
+                ReturnValue(RESP.BuildSimpleString("-ERR wrong number of arguments for 'get' command"))
+            }
+        }
+        
+        // SET handler
+        IfCondition is_set ThenBlock {
+            IfCondition GreaterEqual(array_len, 3) ThenBlock {
+                key = ArrayGet(command_parts, 1)
+                value = ArrayGet(command_parts, 2)
+                ReturnValue(Redis.Command.SET(key, value))
+            } ElseBlock {
+                ReturnValue(RESP.BuildSimpleString("-ERR wrong number of arguments for 'set' command"))
+            }
+        }
+        
+        // DEL handler
+        IfCondition is_del ThenBlock {
+            IfCondition GreaterEqual(array_len, 2) ThenBlock {
+                key_count = Subtract(array_len, 1)
+                keys = ArrayCreate(key_count)
+                
+                i = 0
+                WhileLoop LessThan(i, key_count) {
+                    key = ArrayGet(command_parts, Add(i, 1))
+                    ArraySet(keys, i, key)
+                    i = Add(i, 1)
+                }
+                
+                ReturnValue(Redis.Command.DEL(keys))
+            } ElseBlock {
+                ReturnValue(RESP.BuildSimpleString("-ERR wrong number of arguments for 'del' command"))
+            }
+        }
+        
+        // INFO handler
+        IfCondition is_info ThenBlock {
+            ReturnValue(Redis.Command.INFO())
+        }
+        
+        // Unknown command
+        error_msg = StringConcat("-ERR unknown command '", command)
+        error_msg = StringConcat(error_msg, "'")
+        
+        ReturnValue(RESP.BuildSimpleString(error_msg))
+    }
+}
+
+// ============================================================================
+// Client Connection Handling (Modified for pool management)
+// ============================================================================
+
+Function.Redis.HandleClient {
+    Input: client_socket: Integer
+    Body: {
+        Debug("Redis.HandleClient.Start", level=1) {
+            PrintMessage("=== CLIENT HANDLER START ===")
+            PrintMessage("  Client socket: ")
+            PrintNumber(client_socket)
+        }
+        
+        Redis.ServerState.active_connections = Add(Redis.ServerState.active_connections, 1)
+        
+        // Reset pools for this client
+        Pool.Reset(1)  // Request pool
+        Pool.Reset(2)  // Scratch pool
+        Pool.Reset(3)  // Response pool
+        
+        // Client request buffer - use request pool
+        request_buffer = Pool.Allocate(1, 4096)
+        
+        // Main client loop
+        client_connected = 1
+        
+        WhileLoop And(Redis.ServerState.server_running, client_connected) {
+            bytes_read = SocketRead(client_socket, request_buffer, 4095)
+            
+            Debug("Redis.HandleClient.BytesRead", level=2) {
+                PrintMessage("  Bytes read: ")
+                PrintNumber(bytes_read)
+            }
+            
+            IfCondition LessEqual(bytes_read, 0) ThenBlock {
+                client_connected = 0
+            } ElseBlock {
+                // Parse RESP command
+                command_parts = RESP.ParseCommand(request_buffer, bytes_read)
+                
+                IfCondition EqualTo(ArrayLength(command_parts), 0) ThenBlock {
+                    error_response = RESP.BuildSimpleString("-ERR Protocol error")
+                    response_size = StringLength(error_response)
+                    SocketWrite(client_socket, error_response, response_size)
+                } ElseBlock {
+                    // Dispatch command
+                    response = Redis.DispatchCommand(command_parts)
+                    response_size = StringLength(response)
+                    
+                    bytes_sent = SocketWrite(client_socket, response, response_size)
+                    
+                    Debug("Redis.HandleClient.BytesSent", level=3) {
+                        PrintMessage("    Bytes sent: ")
+                        PrintNumber(bytes_sent)
+                    }
+                }
+                
+                // Reset scratch pool after each command
+                Pool.Reset(2)
+            }
+        }
+        
+        // Cleanup
+        SocketClose(client_socket)
+        Redis.ServerState.active_connections = Subtract(Redis.ServerState.active_connections, 1)
+        
+        // Reset all pools after client disconnects
+        Pool.Reset(1)
+        Pool.Reset(2)
+        Pool.Reset(3)
+        
+        Debug("Redis.HandleClient.End", level=1) {
+            PrintMessage("=== CLIENT HANDLER END ===")
+        }
+    }
+}
+
+// ============================================================================
+// Main Server Loop (Original with pool init)
+// ============================================================================
+
+Function.Redis.StartServer {
+    Body: {
+        PrintMessage("=== STARTING REDIS SERVER ===")
+        PrintMessage("  Version: 7.0-ailang-pooled")
+        PrintMessage("  Port: ")
+        PrintNumber(Redis.ServerState.server_port)
+        
+        // Initialize memory pools
+        MemoryPools.request_base = Allocate(8192)
+        MemoryPools.scratch_base = Allocate(4096)
+        MemoryPools.response_base = Allocate(4096)
+        
+        PrintMessage("  Memory pools initialized")
+        
+        // Create server socket
+        server_socket = SocketCreate()
+        
+        DebugAssert(GreaterThan(server_socket, 0), "Failed to create server socket")
+        
+        // Set SO_REUSEADDR
+        result = SocketSetOption(server_socket, 1, 2, 1)
+        
+        // Bind the socket
+        result = SocketBind(server_socket, 0, Redis.ServerState.server_port)
+        
+        DebugAssert(GreaterEqual(result, 0), "Failed to bind server socket")
+        
+        // Listen for incoming connections
+        result = SocketListen(server_socket, 128)
+        
+        DebugAssert(GreaterEqual(result, 0), "Failed to listen on server socket")
+        
+        PrintMessage("Server listening on port ")
+        PrintNumber(Redis.ServerState.server_port)
+        PrintMessage("\nReady to accept connections\n")
+        
+        // Main accept loop
+        WhileLoop Redis.ServerState.server_running {
+            client_socket = SocketAccept(server_socket)
+            
+            IfCondition GreaterThan(client_socket, 0) ThenBlock {
+                // Check connection limit
+                IfCondition GreaterEqual(Redis.ServerState.active_connections, Redis.ServerState.max_connections) ThenBlock {
+                    PrintMessage("Maximum connections reached\n")
+                    SocketClose(client_socket)
+                } ElseBlock {
+                    Redis.HandleClient(client_socket)
+                }
+            }
+        }
+        
+        // Cleanup
+        SocketClose(server_socket)
+        
+        PrintMessage("=== REDIS SERVER STOPPED ===")
+    }
+}
+
+// ============================================================================
+// Helper Functions (Original, preserved)
+// ============================================================================
+
+Function.InspectBuffer {
+    Input: buffer: Address
+    Input: size: Integer
+    Input: label: Text
+    Body: {
+        PrintMessage("=== BUFFER: ")
+        PrintMessage(label)
+        PrintMessage(" ===\n")
+        PrintMessage("  Address: ")
+        PrintNumber(buffer)
+        PrintMessage("  Size: ")
+        PrintNumber(size)
+        PrintMessage("\n")
+        
+        row = 0
+        WhileLoop LessThan(row, size) {
+            PrintMessage("  ")
+            PrintNumber(row)
+            PrintMessage(": ")
+            
+            col = 0
+            WhileLoop And(LessThan(col, 16), LessThan(Add(row, col), size)) {
+                byte = Dereference(Add(buffer, Add(row, col)))
+                
+                IfCondition LessThan(byte, 16) ThenBlock {
+                    PrintMessage("0")
+                }
+                PrintNumber(byte)
+                PrintMessage(" ")
+                
+                col = Add(col, 1)
+            }
+            
+            PrintMessage("  |")
+            
+            col = 0
+            WhileLoop And(LessThan(col, 16), LessThan(Add(row, col), size)) {
+                byte = Dereference(Add(buffer, Add(row, col)))
+                
+                IfCondition And(GreaterEqual(byte, 32), LessEqual(byte, 126)) ThenBlock {
+                    char_str = StringFromChar(byte)
+                    PrintMessage(char_str)
+                } ElseBlock {
+                    PrintMessage(".")
+                }
+                
+                col = Add(col, 1)
+            }
+            
+            PrintMessage("|\n")
+            row = Add(row, 16)
+        }
+        
+        PrintMessage("=== END BUFFER ===\n")
+    }
+}
+
+Function.ShowServerStatus {
+    Body: {
+        PrintMessage("=== REDIS SERVER STATS ===\n")
+        PrintMessage("  Active connections: ")
+        PrintNumber(Redis.ServerState.active_connections)
+        PrintMessage("\n  Total commands: ")
+        PrintNumber(Redis.ServerState.total_commands_processed)
+        PrintMessage("\n  Server port: ")
+        PrintNumber(Redis.ServerState.server_port)
+        PrintMessage("\n  Server running: ")
+        PrintNumber(Redis.ServerState.server_running)
+        PrintMessage("\n  Max connections: ")
+        PrintNumber(Redis.ServerState.max_connections)
+        PrintMessage("\n=========================\n")
+    }
+}
+
+// ============================================================================
+// Entry Point (Corrected)
+// ============================================================================
+
+SubRoutine.Main {
+    PrintMessage("AILANG Redis Server v1.0-pooled\n")
+    PrintMessage("================================\n")
+    
+    PrintMessage("Initializing Redis store...\n")
+    
+    // Initialize the hash table
+    Redis.ServerState.redis_store = HashCreate(4096)
+    
+    DebugAssert(NotEqual(Redis.ServerState.redis_store, 0), "Failed to create Redis hash store")
+    
+    PrintMessage("Hash store created successfully\n")
+    PrintMessage("  Address: ")
+    PrintNumber(Redis.ServerState.redis_store)
+    PrintMessage("\n")
+    
+    // Show initial stats
+    ShowServerStatus()
+    
+    // Start the server
+    Redis.StartServer()
+    
+    PrintMessage("Server shutdown complete\n")
+    
+    // Show final stats
+    ShowServerStatus()
+    
+    PrintMessage("Goodbye!\n")
+}
+
+RunTask(Main)

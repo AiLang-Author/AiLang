@@ -1,0 +1,25 @@
+// test_pool_ops.ailang
+DynamicPool.TestPool {
+    "buffer": Initialize-0,
+    "size": Initialize-256
+}
+
+// Test resize
+new_size = 1024
+resized = PoolResize(TestPool, new_size)
+PrintMessage("Pool resized")
+
+// Test allocation with size tracking
+data = PoolAllocate(TestPool, 64)
+PrintMessage("Allocated 64 bytes")
+
+// Test move (will now work with size from header)
+DynamicPool.DestPool {
+    "buffer": Initialize-0
+}
+moved = PoolMove(data, TestPool, DestPool)
+PrintMessage("Data moved between pools")
+
+// Test compaction
+reclaimed = PoolCompact(TestPool)
+PrintMessage("Pool compacted")

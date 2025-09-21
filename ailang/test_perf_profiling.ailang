@@ -1,0 +1,96 @@
+// test_perf_profiling.ailang
+// Test performance profiling with RDTSC
+
+PrintMessage("Performance Profiling Test")
+PrintMessage("==========================")
+
+// Test 1: Simple timing of arithmetic operations
+DebugPerf.Start("arithmetic_test")
+
+// Do some work
+sum = 0
+i = 0
+WhileLoop LessThan(i, 1000) {
+    sum = Add(sum, i)
+    i = Add(i, 1)
+}
+
+DebugPerf.End("arithmetic_test")
+
+PrintMessage("")
+PrintMessage("Sum of 0 to 999:")
+PrintNumber(sum)
+
+// Test 2: Compare string operations performance  
+DebugPerf.Start("string_concat")
+
+str1 = "Hello"
+str2 = "World"
+result = StringConcat(str1, str2)
+
+DebugPerf.End("string_concat")
+
+PrintMessage("")
+PrintMessage("Concatenated string:")
+PrintMessage(result)
+
+// Test 3: Function call overhead
+Function.Test.SimpleWork {
+    Body: {
+        x = Multiply(42, 2)
+        ReturnValue(x)
+    }
+}
+
+DebugPerf.Start("function_calls")
+
+result1 = Test.SimpleWork()
+result2 = Test.SimpleWork()
+result3 = Test.SimpleWork()
+
+DebugPerf.End("function_calls")
+
+PrintMessage("")
+PrintMessage("Function results:")
+PrintNumber(result1)
+
+// Test 4: Array operations
+DebugPerf.Start("array_ops")
+
+arr = ArrayCreate(100)
+j = 0
+WhileLoop LessThan(j, 100) {
+    ArraySet(arr, j, j)
+    j = Add(j, 1)
+}
+
+DebugPerf.End("array_ops")
+
+PrintMessage("")
+PrintMessage("Array initialized with 100 elements")
+
+// Test 5: Nested timing
+DebugPerf.Start("outer_operation")
+
+PrintMessage("")
+PrintMessage("Starting nested operation...")
+
+DebugPerf.Start("inner_operation")
+// Some inner work
+k = 0
+WhileLoop LessThan(k, 100) {
+    k = Add(k, 1)
+}
+DebugPerf.End("inner_operation")
+
+// More outer work
+m = 0
+WhileLoop LessThan(m, 200) {
+    m = Add(m, 1)
+}
+
+DebugPerf.End("outer_operation")
+
+PrintMessage("")
+PrintMessage("==========================")
+PrintMessage("Performance test complete!")

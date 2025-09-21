@@ -1,0 +1,24 @@
+SubRoutine.Main {
+    PrintMessage("UNIQUE MARKER 12345 - THIS IS THE CORRECT VERSION")
+    PrintMessage("")
+    
+    server_socket = SocketCreate()
+    SocketSetOption(server_socket, 1, 2, 1)
+    SocketBind(server_socket, 0, 6379)
+    SocketListen(server_socket, 128)
+    
+    PrintMessage("Listening on 6379...")
+    
+    WhileLoop 1 {
+        client = SocketAccept(server_socket)
+        IfCondition GreaterThan(client, 0) ThenBlock {
+            PrintMessage("Client connected")
+            buffer = Allocate(1024)
+            SocketRead(client, buffer, 1024)
+            SocketWrite(client, "+PONG\r\n", 7)
+            SocketClose(client)
+            Deallocate(buffer, 1024)
+        }
+    }
+}
+RunTask(Main)

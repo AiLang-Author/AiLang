@@ -41,6 +41,35 @@ class ExpressionCompiler:
                         self.asm.emit_bytes(*struct.pack('<i', -offset))
                         return
                 
+                # CHECK: Is this a DynamicPool member?
+                parts = resolved_name.split('.')
+                if len(parts) == 2:
+                    pool_name = f"DynamicPool.{parts[0]}"
+                    member_name = parts[1]
+                    
+                    # Check if this is a known DynamicPool member
+                    if hasattr(self.compiler, 'memory') and hasattr(self.compiler.memory, 'dynamic_pool_metadata'):
+                        if pool_name in self.compiler.memory.dynamic_pool_metadata:
+                            if member_name in self.compiler.memory.dynamic_pool_metadata[pool_name]['members']:
+                                # This is a DynamicPool member - load from heap
+                                print(f"DEBUG: Reading DynamicPool member {resolved_name}")
+                                
+                                # Get pool pointer from stack
+                                if pool_name in self.compiler.variables:
+                                    pool_stack_offset = self.compiler.variables[pool_name]
+                                    self.asm.emit_bytes(0x48, 0x8B, 0x85, *struct.pack('<i', -pool_stack_offset))  # MOV RAX, [RBP-offset]
+                                    
+                                    # Add member offset
+                                    member_offset = self.compiler.memory.dynamic_pool_metadata[pool_name]['members'][member_name]
+                                    if member_offset > 0:
+                                        self.asm.emit_bytes(0x48, 0x05, *struct.pack('<I', member_offset))  # ADD RAX, offset
+                                    
+                                    # Dereference to get value
+                                    self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, [RAX]
+                                    
+                                    print(f"DEBUG: Loaded {resolved_name} from DynamicPool at offset {member_offset}")
+                                    return
+                
                 # Try to find the variable
                 if resolved_name not in self.compiler.variables:
                     # Try with pool type prefixes
