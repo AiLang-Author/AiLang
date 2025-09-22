@@ -1,0 +1,37 @@
+// test_loop_minimal.ailang
+// Minimal test for the loop crash issue
+
+PrintMessage("Minimal Loop Test")
+PrintMessage("=================")
+PrintMessage("")
+
+// Test the exact pattern from Section 4
+i = 0
+WhileLoop LessThan(i, 5) {
+    PrintMessage("Iteration: ")
+    PrintNumber(i)
+    
+    // This is the exact pattern that crashes
+    batch_name = StringConcat("batch_", NumberToString(i))
+    batch_name = StringConcat(batch_name, ".txt")
+    
+    PrintMessage("  Filename: ")
+    PrintMessage(batch_name)
+    
+    batch_content = StringConcat("File number: ", NumberToString(i))
+    
+    PrintMessage("  Content: ")
+    PrintMessage(batch_content)
+    
+    WriteTextFile(batch_name, batch_content)
+    PrintMessage("  Written")
+    
+    exists = FileExists(batch_name)
+    PrintMessage("  Exists: ")
+    PrintNumber(exists)
+    PrintMessage("")
+    
+    i = Add(i, 1)
+}
+
+PrintMessage("Test complete!")

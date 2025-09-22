@@ -1,0 +1,68 @@
+// test_inline_vs_stored.ailang
+// Test inline NumberToString vs stored variable
+
+PrintMessage("Testing Inline vs Stored NumberToString")
+PrintMessage("========================================")
+PrintMessage("")
+
+// Test 1: Store NumberToString result first (WORKS)
+PrintMessage("Test 1: Store then concat (safe pattern)")
+i = 0
+WhileLoop LessThan(i, 3) {
+    PrintMessage("  Iteration ")
+    PrintNumber(i)
+    
+    // Store NumberToString result first
+    num_str = NumberToString(i)
+    result = StringConcat("stored_", num_str)
+    
+    PrintMessage("  Result: ")
+    PrintMessage(result)
+    PrintMessage("")
+    
+    i = Add(i, 1)
+}
+
+PrintMessage("Test 1 complete!")
+PrintMessage("")
+
+// Test 2: Inline NumberToString (MIGHT CRASH)
+PrintMessage("Test 2: Inline NumberToString (problematic pattern)")
+j = 0
+WhileLoop LessThan(j, 3) {
+    PrintMessage("  Iteration ")
+    PrintNumber(j)
+    PrintMessage("  About to do inline concat...")
+    
+    // This is the problematic pattern
+    result2 = StringConcat("inline_", NumberToString(j))
+    
+    PrintMessage("  Result: ")
+    PrintMessage(result2)
+    PrintMessage("")
+    
+    j = Add(j, 1)
+}
+
+PrintMessage("Test 2 complete!")
+PrintMessage("")
+
+// Test 3: Multiple inline calls
+PrintMessage("Test 3: Multiple inline operations")
+k = 0
+WhileLoop LessThan(k, 2) {
+    PrintMessage("  Iteration ")
+    PrintNumber(k)
+    
+    // Even more complex inline pattern
+    temp = StringConcat("file_", NumberToString(k))
+    final = StringConcat(temp, ".txt")
+    
+    PrintMessage("  Final: ")
+    PrintMessage(final)
+    PrintMessage("")
+    
+    k = Add(k, 1)
+}
+
+PrintMessage("All tests complete!")

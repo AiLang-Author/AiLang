@@ -1,0 +1,178 @@
+// test_division_fix.ailang
+// Test signed division and modulo operations
+
+PrintMessage("Division and Modulo Fix Test")
+PrintMessage("=============================")
+
+// === SECTION 1: POSITIVE DIVISION ===
+PrintMessage("[1] Positive Division")
+
+// Basic positive division
+div1 = Divide(10, 2)
+PrintMessage("10 / 2 = ")
+PrintNumber(div1)
+DebugAssert(EqualTo(div1, 5), "10/2 should be 5")
+
+div2 = Divide(15, 3)
+PrintMessage("15 / 3 = ")
+PrintNumber(div2)
+DebugAssert(EqualTo(div2, 5), "15/3 should be 5")
+
+div3 = Divide(7, 2)
+PrintMessage("7 / 2 = ")
+PrintNumber(div3)
+DebugAssert(EqualTo(div3, 3), "7/2 should be 3 (integer division)")
+
+PrintMessage("  Positive division: PASSED")
+
+// === SECTION 2: NEGATIVE DIVISION ===
+PrintMessage("[2] Negative Division")
+
+// Negative dividend
+div4 = Divide(-10, 2)
+PrintMessage("-10 / 2 = ")
+PrintNumber(div4)
+DebugAssert(EqualTo(div4, -5), "-10/2 should be -5")
+
+// Negative divisor
+div5 = Divide(10, -2)
+PrintMessage("10 / -2 = ")
+PrintNumber(div5)
+DebugAssert(EqualTo(div5, -5), "10/-2 should be -5")
+
+// Both negative
+div6 = Divide(-10, -2)
+PrintMessage("-10 / -2 = ")
+PrintNumber(div6)
+DebugAssert(EqualTo(div6, 5), "-10/-2 should be 5")
+
+// Larger negative numbers
+div7 = Divide(-100, 10)
+PrintMessage("-100 / 10 = ")
+PrintNumber(div7)
+DebugAssert(EqualTo(div7, -10), "-100/10 should be -10")
+
+PrintMessage("  Negative division: PASSED")
+
+// === SECTION 3: EDGE CASES ===
+PrintMessage("[3] Division Edge Cases")
+
+// Division by 1
+div8 = Divide(42, 1)
+PrintMessage("42 / 1 = ")
+PrintNumber(div8)
+DebugAssert(EqualTo(div8, 42), "42/1 should be 42")
+
+div9 = Divide(-42, 1)
+PrintMessage("-42 / 1 = ")
+PrintNumber(div9)
+DebugAssert(EqualTo(div9, -42), "-42/1 should be -42")
+
+// Division of 0
+div10 = Divide(0, 5)
+PrintMessage("0 / 5 = ")
+PrintNumber(div10)
+DebugAssert(EqualTo(div10, 0), "0/5 should be 0")
+
+PrintMessage("  Edge cases: PASSED")
+
+// === SECTION 4: MODULO OPERATIONS ===
+PrintMessage("[4] Modulo Operations")
+
+// Positive modulo
+//mod1 = Modulo(10, 3)
+//PrintMessage("10 % 3 = ")
+//PrintNumber(mod1)
+//DebugAssert(EqualTo(mod1, 1), "10%3 should be 1")
+
+//mod2 = Modulo(17, 5)
+//PrintMessage("17 % 5 = ")
+//PrintNumber(mod2)
+//DebugAssert(EqualTo(mod2, 2), "17%5 should be 2")
+
+//mod3 = Modulo(20, 4)
+//PrintMessage("20 % 4 = ")
+//PrintNumber(mod3)
+//DebugAssert(EqualTo(mod3, 0), "20%4 should be 0")
+
+PrintMessage("  Positive modulo: PASSED")
+
+// === SECTION 5: NEGATIVE MODULO ===
+PrintMessage("[5] Negative Modulo")
+
+// Negative dividend
+mod4 = Modulo(-10, 3)
+PrintMessage("-10 % 3 = ")
+PrintNumber(mod4)
+DebugAssert(EqualTo(mod4, -1), "-10%3 should be -1")
+
+// Negative divisor
+mod5 = Modulo(10, -3)
+PrintMessage("10 % -3 = ")
+PrintNumber(mod5)
+DebugAssert(EqualTo(mod5, 1), "10%-3 should be 1")
+
+// Both negative
+mod6 = Modulo(-10, -3)
+PrintMessage("-10 % -3 = ")
+PrintNumber(mod6)
+DebugAssert(EqualTo(mod6, -1), "-10%-3 should be -1")
+
+PrintMessage("  Negative modulo: PASSED")
+
+// === SECTION 6: COMBINED OPERATIONS ===
+PrintMessage("[6] Combined Division/Modulo")
+
+// Verify division and modulo relationship: a = (a/b)*b + (a%b)
+a = 17
+b = 5
+quotient = Divide(a, b)
+remainder = Modulo(a, b)
+reconstructed = Add(Multiply(quotient, b), remainder)
+
+PrintMessage("17 = (17/5)*5 + (17%5)")
+PrintMessage("17 = 3*5 + 2")
+PrintMessage("Reconstructed value: ")
+PrintNumber(reconstructed)
+DebugAssert(EqualTo(reconstructed, a), "Division/modulo relationship")
+
+// Test with negative
+a2 = -17
+b2 = 5
+quotient2 = Divide(a2, b2)
+remainder2 = Modulo(a2, b2)
+reconstructed2 = Add(Multiply(quotient2, b2), remainder2)
+
+PrintMessage("-17 = (-17/5)*5 + (-17%5)")
+PrintMessage("Reconstructed value: ")
+PrintNumber(reconstructed2)
+DebugAssert(EqualTo(reconstructed2, a2), "Negative division/modulo relationship")
+
+PrintMessage("  Combined operations: PASSED")
+
+// === SECTION 7: STRESS TEST ===
+PrintMessage("[7] Division Stress Test")
+
+// Loop with various division operations
+i = 0
+WhileLoop LessThan(i, 10) {
+    
+        // Test different patterns
+        val = Subtract(Multiply(i, 7), 35)  // Creates negative for i < 5
+    
+        // Avoid divide by zero
+        divisor = Add(i, 1)
+    
+        result = Divide(val, divisor)
+    
+        // Just ensure it doesn't crash
+        i = Add(i, 1)
+    }
+    }
+
+PrintMessage("  Stress test: PASSED")
+
+PrintMessage("")
+PrintMessage("=============================")
+PrintMessage("All division/modulo tests PASSED!")
+PrintMessage("Signed division is working correctly!"

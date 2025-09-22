@@ -1,0 +1,157 @@
+// test_string_pool_edge.ailang
+// Edge cases for string pool and concatenation
+
+PrintMessage("String Pool Edge Cases Test")
+PrintMessage("============================")
+
+// Test 1: Alternating concat pattern (catches alignment issues)
+PrintMessage("[1] Alternating pattern test")
+s1 = "A"
+s2 = "BB"
+result = ""
+i = 0
+WhileLoop LessThan(i, 10) {
+    Body: {
+        mod = Modulo(i, 2)
+        IfCondition EqualTo(mod, 0) ThenBlock {
+            result = StringConcat(result, s1)
+        } ElseBlock {
+            result = StringConcat(result, s2)
+        }
+        i = Add(i, 1)
+    }
+    }
+// Should be: ABBAABBAAB
+expected_len = 15  // 5 A's + 10 B's
+actual_len = StringLength(result)
+DebugAssert(EqualTo(actual_len, expected_len), "Alternating concat length")
+PrintMessage(result)
+
+// Test 2: Repeated small concats (pool fragmentation test)
+PrintMessage("[2] Small repeated concats")
+tiny = "x"
+accum = ""
+j = 0
+WhileLoop LessThan(j, 100) {
+    Body: {
+        accum = StringConcat(accum, tiny)
+        j = Add(j, 1)
+    }
+    }
+len100 = StringLength(accum)
+DebugAssert(EqualTo(len100, 100), "100 single char concats")
+
+// Test 3: Large string then small (boundary test)
+PrintMessage("[3] Large then small concat")
+large = "THIS_IS_A_MUCH_LONGER_STRING_FOR_TESTING_POOL_BOUNDARIES"
+small = "."
+mixed_concat = StringConcat(large, small)
+mixed_len = StringLength(mixed_concat)
+expected_mixed = Add(StringLength(large), 1)
+DebugAssert(EqualTo(mixed_len, expected_mixed), "Large+small concat")
+
+// Test 4: Empty string spam (zero-length handling)
+PrintMessage("[4] Empty string operations")
+empty_result = ""
+k = 0
+WhileLoop LessThan(k, 50) {
+    Body: {
+        empty_result = StringConcat(empty_result, "")
+        k = Add(k, 1)
+    }
+    }
+empty_final_len = StringLength(empty_result)
+DebugAssert(EqualTo(empty_final_len, 0), "50 empty concats = empty")
+
+// Test 5: Interleaved strings (catch corruption)
+PrintMessage("[5] Interleaved string test")
+str_a = "AAA"
+str_b = "BBB"
+str_c = "CCC"
+
+// Create multiple concatenations
+combo1 = StringConcat(str_a, str_b)  // AAABBB
+combo2 = StringConcat(str_b, str_c)  // BBBCCC
+combo3 = StringConcat(str_a, str_c)  // AAACCC
+
+// Verify they didn't corrupt each other
+check1 = StringEquals(combo1, "AAABBB")
+check2 = StringEquals(combo2, "BBBCCC")
+check3 = StringEquals(combo3, "AAACCC")
+
+DebugAssert(EqualTo(check1, 1), "Combo1 integrity")
+DebugAssert(EqualTo(check2, 1), "Combo2 integrity")
+DebugAssert(EqualTo(check3, 1), "Combo3 integrity")
+
+// Test 6: Concat chain (A+B)+C vs A+(B+C)
+PrintMessage("[6] Associativity test")
+a = "Hello"
+b = "World"
+c = "!"
+
+left_assoc = StringConcat(StringConcat(a, b), c)
+right_assoc = StringConcat(a, StringConcat(b, c))
+assoc_equal = StringEquals(left_assoc, right_assoc)
+DebugAssert(EqualTo(assoc_equal, 1), "Concat associativity")
+
+// Test 7: Number string mixing
+PrintMessage("[7] Number-string mixing")
+num1 = 42
+str1 = NumberToString(num1)
+prefix = "Value: "
+suffix = " units"
+formatted = StringConcat(StringConcat(prefix, str1), suffix)
+format_check = StringEquals(formatted, "Value: 42 units")
+DebugAssert(EqualTo(format_check, 1), "Number formatting")
+
+// Test 8: Reuse test (string should be immutable)
+PrintMessage("[8] String immutability test")
+original = "ORIGINAL"
+copy1 = original
+modified = StringConcat(original, "_MODIFIED")
+still_same = StringEquals(copy1, "ORIGINAL")
+DebugAssert(EqualTo(still_same, 1), "Original unchanged after concat")
+
+// Test 9: Boundary string lengths
+PrintMessage("[9] Boundary lengths")
+// Powers of 2 and near values
+len7 = "AAAAAAA"
+len8 = "BBBBBBBB"
+len9 = "CCCCCCCCC"
+len15 = "DDDDDDDDDDDDDDD"
+len16 = "EEEEEEEEEEEEEEEE"
+len17 = "FFFFFFFFFFFFFFFFQ"
+
+concat789 = StringConcat(StringConcat(len7, len8), len9)
+total_len = StringLength(concat789)
+DebugAssert(EqualTo(total_len, 24), "7+8+9 length")
+
+// Test 10: Stress the pool
+PrintMessage("[10] Pool stress test")
+stress_result = "START"
+m = 0
+WhileLoop LessThan(m, 200) {
+    Body: {
+        // Alternate between different operations
+        mod3 = Modulo(m, 3)
+        IfCondition EqualTo(mod3, 0) ThenBlock {
+            stress_result = StringConcat(stress_result, "A")
+        } ElseBlock {
+            IfCondition EqualTo(mod3, 1) ThenBlock {
+                stress_result = StringConcat(stress_result, "BB")
+            } ElseBlock {
+                stress_result = StringConcat(stress_result, "CCC")
+            }
+        }
+        m = Add(m, 1)
+    }
+    }
+
+// Verify final length: START(5) + 67*A(67) + 67*BB(134) + 66*CCC(198) = 404
+final_stress_len = StringLength(stress_result)
+PrintMessage("Final stress test length:")
+PrintNumber(final_stress_len)
+// Should be around 404
+
+PrintMessage("============================")
+PrintMessage("String pool edge cases PASSED!")

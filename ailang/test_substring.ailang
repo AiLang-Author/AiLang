@@ -18,13 +18,12 @@ PrintMessage(sub2)
 test2 = "return result;"
 pos = 0
 WhileLoop LessThan(pos, StringLength(test2)) {
-    Body: {
+    
         ch = StringCharAt(test2, pos)
-        IfCondition EqualTo(ch, 59) ThenBlock {  // found ;
+        IfCondition EqualTo(ch, 59) ThenBlock: {  // found ;
             before_semi = StringSubstring(test2, 0, pos)
             PrintMessage("Before semicolon:")
             PrintMessage(before_semi)
         }
         pos = Add(pos, 1)
-    }
     }

@@ -1,0 +1,38 @@
+// test_resp_exact.ailang
+// Exact reproduction of the failing test
+
+LibraryImport.Library.RESP
+
+SubRoutine.TestArray {
+    PrintMessage("Testing Array...")
+    
+    arr = ArrayCreate(3)
+    ArraySet(arr, 0, "first")
+    ArraySet(arr, 1, "second")
+    ArraySet(arr, 2, "third")
+    
+    response = RESP.Array(arr)
+    PrintMessage("  Response: ")
+    PrintMessage(response)
+    
+    // Check format: *3\r\n$5\r\nfirst\r\n...
+    byte0 = GetByte(response, 0)
+    IfCondition EqualTo(byte0, 42) ThenBlock: {  // '*'
+        PrintMessage("  ✓ Starts with *")
+    } ElseBlock: {
+        PrintMessage("  ✗ Wrong prefix")
+    }
+    
+    // THIS MIGHT BE THE ISSUE - destroying array while response still references it?
+    PrintMessage("About to destroy array...")
+    ArrayDestroy(arr)
+    PrintMessage("Array destroyed")
+    
+    PrintMessage("About to deallocate response...")
+    Deallocate(response, 0)
+    PrintMessage("Response deallocated")
+}
+
+PrintMessage("=== Test Start ===")
+RunTask(TestArray)
+PrintMessage("=== Test Complete ===")

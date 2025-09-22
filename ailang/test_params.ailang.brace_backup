@@ -1,0 +1,109 @@
+// test_params.ailang
+// Test parameter passing in registers (RDI, RSI, RDX, RCX, R8, R9)
+
+PrintMessage("Parameter Passing Test")
+PrintMessage("======================")
+
+// Test with 1 parameter (RDI)
+Function.Test.One {
+    Input: a:
+    Body: {
+        ReturnValue(a)
+    }
+}
+
+r1 = Test.One(11)
+PrintMessage("One param (11):")
+PrintNumber(r1)
+
+// Test with 2 parameters (RDI, RSI)
+Function.Test.Two {
+    Input: a:
+    Input: b:
+    Body: {
+        sum = Add(a, b)
+        ReturnValue(sum)
+    }
+}
+
+r2 = Test.Two(10, 20)
+PrintMessage("Two params (10+20):")
+PrintNumber(r2)
+
+// Test with 3 parameters (RDI, RSI, RDX)
+Function.Test.Three {
+    Input: a:
+    Input: b:
+    Input: c:
+    Body: {
+        sum1 = Add(a, b)
+        sum2 = Add(sum1, c)
+        ReturnValue(sum2)
+    }
+}
+
+r3 = Test.Three(10, 20, 30)
+PrintMessage("Three params (10+20+30):")
+PrintNumber(r3)
+
+// Test with 4 parameters (RDI, RSI, RDX, RCX)
+Function.Test.Four {
+    Input: a:
+    Input: b:
+    Input: c:
+    Input: d:
+    Body: {
+        sum1 = Add(a, b)
+        sum2 = Add(c, d)
+        total = Add(sum1, sum2)
+        ReturnValue(total)
+    }
+}
+
+r4 = Test.Four(10, 20, 30, 40)
+PrintMessage("Four params (10+20+30+40):")
+PrintNumber(r4)
+
+// Test with 5 parameters (RDI, RSI, RDX, RCX, R8)
+Function.Test.Five {
+    Input: a:
+    Input: b:
+    Input: c:
+    Input: d:
+    Input: e:
+    Body: {
+        sum1 = Add(a, b)
+        sum2 = Add(c, d)
+        sum3 = Add(sum1, sum2)
+        total = Add(sum3, e)
+        ReturnValue(total)
+    }
+}
+
+r5 = Test.Five(10, 20, 30, 40, 50)
+PrintMessage("Five params (10+20+30+40+50):")
+PrintNumber(r5)
+
+// Test with 6 parameters (RDI, RSI, RDX, RCX, R8, R9)
+Function.Test.Six {
+    Input: a:
+    Input: b:
+    Input: c:
+    Input: d:
+    Input: e:
+    Input: f:
+    Body: {
+        sum1 = Add(a, b)
+        sum2 = Add(c, d)
+        sum3 = Add(e, f)
+        temp = Add(sum1, sum2)
+        total = Add(temp, sum3)
+        ReturnValue(total)
+    }
+}
+
+r6 = Test.Six(10, 20, 30, 40, 50, 60)
+PrintMessage("Six params (10+20+30+40+50+60):")
+PrintNumber(r6)
+
+PrintMessage("Parameter test complete!")

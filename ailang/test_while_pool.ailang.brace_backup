@@ -1,0 +1,27 @@
+// Test if WhileLoop works with pool variables
+
+FixedPool.TestPool {
+    "running": Initialize=1
+}
+
+PrintMessage("Before loop")
+PrintMessage("Pool value is:")
+PrintNumber(TestPool.running)
+
+// Simple test - just 3 iterations
+counter = 0
+WhileLoop TestPool.running {
+    
+        PrintMessage("In loop, iteration:")
+        PrintNumber(counter)
+        counter = Add(counter, 1)
+    
+        // Exit after 3 iterations
+        is_three = EqualTo(counter, 3)
+        IfCondition is_three ThenBlock: {
+            TestPool.running = 0
+        }
+    }
+    }
+
+PrintMessage("After loop")

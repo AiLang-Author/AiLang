@@ -32,10 +32,10 @@ SubRoutine Test3 {
     PrintMessage("Test3: Testing early exit")
     
     x = 1
-    IfCondition EqualTo(x, 1) ThenBlock {
+    IfCondition EqualTo(x, 1) ThenBlock: {
         PrintMessage("X is 1, should exit here")
         // Don't use ReturnValue - just let it fall through
-    } ElseBlock {
+    } ElseBlock: {
         PrintMessage("This should NOT print")
     }
     
@@ -83,11 +83,10 @@ SubRoutine Test6 {
     PrintMessage("Test6: Loop test")
     i = 0
     WhileLoop LessThan(i, 3) {
-        Body: {
+        
             PrintMessage("  Loop iteration: ")
             PrintNumber(i)
             i = Add(i, 1)
-        }
         }
     PrintMessage("Test6: Loop done")
 }

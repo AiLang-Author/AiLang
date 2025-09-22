@@ -38,9 +38,9 @@ class AILANGCompiler:
         # Process imports first (depth-first) to build the full symbol dependency tree
         for decl in ast.declarations:
             if isinstance(decl, Library):
-                # Convention: Library.XArrays -> Libraries/Library/Library.XArrays.ailang
+                # Convention: Library.XArrays -> Librarys/Library/Library.XArrays.ailang
                 lib_filename = f"{decl.name}.ailang"
-                lib_path = os.path.join(project_root, 'Libraries', 'Library', lib_filename)
+                lib_path = os.path.join(project_root, 'Librarys', 'Library', lib_filename)
                 self._parse_and_collect(lib_path, project_root)
         
         # Then collect symbols from the current file

@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_library_pattern.ailang -> test_library_pattern_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -265,7 +267,7 @@ DEBUG: Emitted bytes: ['0x41', '0x56']
 DEBUG: Function 'RESP.MakeSimpleString' requires space for 0 params and 2 locals (32 bytes).
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
 DEBUG: Allocated 32 bytes for function locals
-DEBUG: Assignment to arr, value: FunctionCall(line=16, column=15, function='ArrayCreate', arguments=[Number(line=16, column=27, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=16, column=26, function='ArrayCreate', arguments=[Number(line=16, column=27, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -532,7 +534,7 @@ DEBUG: Emitted bytes: ['0x48', '0x83', '0xc0', '0x8']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x8']
-DEBUG: Assignment to Shared.resp_buffer, value: Identifier(line=24, column=30, name='arr'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to Shared.resp_buffer, value: Identifier(line=24, column=30, name='arr', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'arr' as registered global variable at offset 16
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
@@ -590,7 +592,7 @@ DEBUG: Emitted bytes: ['0x41', '0x56']
 DEBUG: Function 'RESP.MakeError' requires space for 0 params and 2 locals (32 bytes).
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
 DEBUG: Allocated 32 bytes for function locals
-DEBUG: Assignment to arr, value: FunctionCall(line=32, column=15, function='ArrayCreate', arguments=[Number(line=32, column=27, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=32, column=26, function='ArrayCreate', arguments=[Number(line=32, column=27, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -857,7 +859,7 @@ DEBUG: Emitted bytes: ['0x48', '0x83', '0xc0', '0x8']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x8']
-DEBUG: Assignment to Shared.resp_buffer, value: Identifier(line=40, column=30, name='arr'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to Shared.resp_buffer, value: Identifier(line=40, column=30, name='arr', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'arr' as registered global variable at offset 16
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
@@ -915,7 +917,7 @@ DEBUG: Emitted bytes: ['0x41', '0x56']
 DEBUG: Function 'RESP.GetType' requires space for 0 params and 5 locals (80 bytes).
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x50']
 DEBUG: Allocated 80 bytes for function locals
-DEBUG: Assignment to buffer, value: Identifier(line=49, column=18, name='Shared.resp_buffer'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to buffer, value: Identifier(line=49, column=18, name='Shared.resp_buffer', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: 'Shared.resp_buffer' not found in local or global scope
 DEBUG: Resolved pool variable Shared.resp_buffer -> FixedPool.Shared.resp_buffer
 DEBUG: Loading pool var FixedPool.Shared.resp_buffer from pool[0]
@@ -925,7 +927,7 @@ DEBUG: Allocated buffer at stack offset 16
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to buffer completed
-DEBUG: Assignment to first, value: FunctionCall(line=50, column=17, function='ArrayGet', arguments=[Identifier(line=50, column=26, name='buffer'), Number(line=50, column=34, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to first, value: FunctionCall(line=50, column=25, function='ArrayGet', arguments=[Identifier(line=50, column=26, name='buffer', original_name=None), Number(line=50, column=34, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -965,7 +967,7 @@ DEBUG: Allocated first at stack offset 32
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to first completed
-DEBUG: Assignment to is_simple, value: FunctionCall(line=53, column=21, function='EqualTo', arguments=[Identifier(line=53, column=29, name='first'), Number(line=53, column=36, value='43')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_simple, value: FunctionCall(line=53, column=21, function='EqualTo', arguments=[Identifier(line=53, column=29, name='first', original_name=None), Number(line=53, column=36, value='43')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: EqualTo
 DEBUG: Dispatching EqualTo to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1020,7 +1022,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L9 at position 1565
 DEBUG: Marked label L10 at position 1565
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_error, value: FunctionCall(line=59, column=20, function='EqualTo', arguments=[Identifier(line=59, column=28, name='first'), Number(line=59, column=35, value='45')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_error, value: FunctionCall(line=59, column=20, function='EqualTo', arguments=[Identifier(line=59, column=28, name='first', original_name=None), Number(line=59, column=35, value='45')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: EqualTo
 DEBUG: Dispatching EqualTo to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1075,7 +1077,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L11 at position 1643
 DEBUG: Marked label L12 at position 1643
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_array, value: FunctionCall(line=65, column=20, function='EqualTo', arguments=[Identifier(line=65, column=28, name='first'), Number(line=65, column=35, value='42')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_array, value: FunctionCall(line=65, column=20, function='EqualTo', arguments=[Identifier(line=65, column=28, name='first', original_name=None), Number(line=65, column=35, value='42')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: EqualTo
 DEBUG: Dispatching EqualTo to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1163,7 +1165,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L8 at position 1765
 DEBUG ScopeManager: Popping function 'RESP.GetType'
 DEBUG: Function RESP.GetType compiled successfully
-DEBUG: Assignment to dummy, value: FunctionCall(line=76, column=9, function='RESP.MakeSimpleString', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to dummy, value: FunctionCall(line=76, column=30, function='RESP.MakeSimpleString', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.MakeSimpleString
 DEBUG: Found registered function: RESP.MakeSimpleString
 DEBUG: Calling user function RESP.MakeSimpleString
@@ -1205,7 +1207,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
-DEBUG: Assignment to ok_type, value: FunctionCall(line=79, column=11, function='RESP.GetType', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to ok_type, value: FunctionCall(line=79, column=23, function='RESP.GetType', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.GetType
 DEBUG: Found registered function: RESP.GetType
 DEBUG: Calling user function RESP.GetType
@@ -1348,7 +1350,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to dummy, value: FunctionCall(line=83, column=9, function='RESP.MakeError', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to dummy, value: FunctionCall(line=83, column=23, function='RESP.MakeError', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.MakeError
 DEBUG: Found registered function: RESP.MakeError
 DEBUG: Calling user function RESP.MakeError
@@ -1390,7 +1392,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
-DEBUG: Assignment to err_type, value: FunctionCall(line=86, column=12, function='RESP.GetType', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to err_type, value: FunctionCall(line=86, column=24, function='RESP.GetType', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.GetType
 DEBUG: Found registered function: RESP.GetType
 DEBUG: Calling user function RESP.GetType
@@ -1568,7 +1570,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to less, value: FunctionCall(line=96, column=16, function='LessThan', arguments=[Identifier(line=96, column=25, name='a'), Identifier(line=96, column=28, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to less, value: FunctionCall(line=96, column=16, function='LessThan', arguments=[Identifier(line=96, column=25, name='a', original_name=None), Identifier(line=96, column=28, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1691,7 +1693,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to greater, value: FunctionCall(line=109, column=19, function='GreaterThan', arguments=[Identifier(line=109, column=31, name='a'), Identifier(line=109, column=34, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to greater, value: FunctionCall(line=109, column=19, function='GreaterThan', arguments=[Identifier(line=109, column=31, name='a', original_name=None), Identifier(line=109, column=34, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1779,7 +1781,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L22 at position 2885
 DEBUG ScopeManager: Popping function 'Math.Max'
 DEBUG: Function Math.Max compiled successfully
-DEBUG: Assignment to min_val, value: FunctionCall(line=118, column=11, function='Math.Min', arguments=[Number(line=118, column=20, value='10'), Number(line=118, column=24, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to min_val, value: FunctionCall(line=118, column=19, function='Math.Min', arguments=[Number(line=118, column=20, value='10'), Number(line=118, column=24, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Min
 DEBUG: Found registered function: Math.Min
 DEBUG: Calling user function Math.Min
@@ -1932,7 +1934,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to max_val, value: FunctionCall(line=122, column=11, function='Math.Max', arguments=[Number(line=122, column=20, value='10'), Number(line=122, column=24, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to max_val, value: FunctionCall(line=122, column=19, function='Math.Max', arguments=[Number(line=122, column=20, value='10'), Number(line=122, column=24, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Max
 DEBUG: Found registered function: Math.Max
 DEBUG: Calling user function Math.Max
@@ -2164,7 +2166,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (194 bytes)
 
 === COMPILATION COMPLETE (8386 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_library_pattern_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_library_pattern_exec
 ✅ Wrote 8386 bytes
 ✅ Made executable
 ✅ Compiled to test_library_pattern_exec (8386 bytes)

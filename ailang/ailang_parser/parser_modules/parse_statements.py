@@ -5,10 +5,12 @@ from typing import Optional
 from ..lexer import TokenType
 from ..ailang_ast import *
 
+
 class ParserStatementsMixin:
     """Mixin for statement parsing methods"""
     
     def parse_statement(self) -> Optional[ASTNode]:
+        """Parse statement - using your ORIGINAL version with updated else clause"""
         self.skip_newlines()
         if self.match(TokenType.COMMENT, TokenType.DOC_COMMENT, TokenType.COM_COMMENT, TokenType.TAG_COMMENT):
             self.advance()
@@ -66,28 +68,75 @@ class ParserStatementsMixin:
                     TokenType.TLB, TokenType.MEMORYBARRIER):
             return self.parse_vm_operation()
         else:
-            # This branch handles both expression statements (like function calls)
-            # and assignments. We parse the left-hand side as an expression.
-            expr = self.parse_expression()
-
-            # If the next token is '=', it's an assignment.
-            if self.match(TokenType.EQUALS):
-                if not isinstance(expr, Identifier):
-                    self.error(f"Invalid assignment target. Cannot assign to a {type(expr).__name__}.")
-                
-                self.consume(TokenType.EQUALS)
-                value = self.parse_expression()
-                return Assignment(target=expr.name, value=value, line=expr.line, column=expr.column)
+            # Safety check for tokens that shouldn't start statements
+            if self.current_token and self.current_token.type in (
+                TokenType.RBRACE, TokenType.ELSEBLOCK, TokenType.EOF,
+                TokenType.CATCHERROR, TokenType.FINALLYBLOCK):
+                return None
             
-            # Otherwise, it's just an expression statement.
+            # UPDATED: Use postfix parser for left-hand side
+            expr = self.parse_postfix_expression()
+            
+            # If the next token is '=', it's an assignment
+            if self.match(TokenType.EQUALS):
+                # Handle both simple identifiers and member access
+                if isinstance(expr, Identifier):
+                    # Simple assignment - keep as string for compatibility
+                    self.consume(TokenType.EQUALS)
+                    value = self.parse_expression()
+                    return Assignment(
+                        target=expr.name,  # String for compatibility
+                        value=value,
+                        line=expr.line,
+                        column=expr.column
+                    )
+                elif isinstance(expr, MemberAccess):
+                    # Member assignment - convert to dotted string for compatibility
+                    self.consume(TokenType.EQUALS)
+                    value = self.parse_expression()
+                    
+                    # Build dotted name from MemberAccess
+                    dotted_name = self.build_dotted_name(expr)
+                    
+                    return Assignment(
+                        target=dotted_name,  # String for compatibility
+                        value=value,
+                        line=expr.line,
+                        column=expr.column
+                    )
+                else:
+                    self.error(f"Invalid assignment target. Cannot assign to a {type(expr).__name__}.")
+            
+            # Otherwise, it's just an expression statement
             if expr:
                 return expr
             
             # If parsing an expression returned nothing and we're not at EOF,
-            # advance to avoid getting stuck.
+            # advance to avoid getting stuck
             if self.current_token and self.current_token.type != TokenType.EOF:
                 self.advance()
+            
             return None
+        
+    # Add this helper method to the class:
+    def build_dotted_name(self, node: ASTNode) -> str:
+        """
+        Convert MemberAccess chain to dotted string for backward compatibility.
+        Add this method to the StatementParserMixin class.
+        """
+        if isinstance(node, Identifier):
+            return node.name
+        elif isinstance(node, MemberAccess):
+            base = self.build_dotted_name(node.obj)
+            if isinstance(node.member, Identifier):
+                member_name = node.member.name
+            else:
+                member_name = str(node.member)
+            return f"{base}.{member_name}"
+        else:
+            # Fallback for unexpected node types
+            return str(node)  
+        
 
     def parse_runtask(self) -> RunTask:
         """Parse RunTask with function call syntax for consistency"""

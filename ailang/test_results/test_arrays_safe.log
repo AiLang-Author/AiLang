@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_arrays_safe.ailang -> test_arrays_safe_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -185,7 +187,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
-DEBUG: Assignment to arr, value: FunctionCall(line=8, column=7, function='ArrayCreate', arguments=[Number(line=8, column=19, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=8, column=18, function='ArrayCreate', arguments=[Number(line=8, column=19, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -429,7 +431,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
-DEBUG: Assignment to val0, value: FunctionCall(line=18, column=8, function='ArrayGet', arguments=[Identifier(line=18, column=17, name='arr'), Number(line=18, column=22, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val0, value: FunctionCall(line=18, column=16, function='ArrayGet', arguments=[Identifier(line=18, column=17, name='arr', original_name=None), Number(line=18, column=22, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -468,7 +470,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val0 completed
-DEBUG: Assignment to val1, value: FunctionCall(line=19, column=8, function='ArrayGet', arguments=[Identifier(line=19, column=17, name='arr'), Number(line=19, column=22, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val1, value: FunctionCall(line=19, column=16, function='ArrayGet', arguments=[Identifier(line=19, column=17, name='arr', original_name=None), Number(line=19, column=22, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -507,7 +509,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val1 completed
-DEBUG: Assignment to val9, value: FunctionCall(line=20, column=8, function='ArrayGet', arguments=[Identifier(line=20, column=17, name='arr'), Number(line=20, column=22, value='9')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val9, value: FunctionCall(line=20, column=16, function='ArrayGet', arguments=[Identifier(line=20, column=17, name='arr', original_name=None), Number(line=20, column=22, value='9')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -951,7 +953,7 @@ DEBUG: Emitted bytes: ['0x49', '0x89', '0x87']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0']
 DEBUG: Initialized FixedPool.ArrayPool.shared_array = 0
 DEBUG: Pool FixedPool.ArrayPool completed
-DEBUG: Assignment to ArrayPool.shared_array, value: Identifier(line=35, column=26, name='arr'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to ArrayPool.shared_array, value: Identifier(line=35, column=26, name='arr', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'arr' as registered global variable at offset 8
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
@@ -989,14 +991,14 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
-DEBUG: Assignment to retrieved, value: Identifier(line=39, column=13, name='ArrayPool.shared_array'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to retrieved, value: Identifier(line=39, column=13, name='ArrayPool.shared_array', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'ArrayPool.shared_array' as registered global variable at offset 40
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to retrieved completed
-DEBUG: Assignment to val_from_pool, value: FunctionCall(line=40, column=17, function='ArrayGet', arguments=[Identifier(line=40, column=26, name='retrieved'), Number(line=40, column=37, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val_from_pool, value: FunctionCall(line=40, column=25, function='ArrayGet', arguments=[Identifier(line=40, column=26, name='retrieved', original_name=None), Number(line=40, column=37, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1236,7 +1238,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (275 bytes)
 
 === COMPILATION COMPLETE (8467 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_arrays_safe_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_arrays_safe_exec
 ✅ Wrote 8467 bytes
 ✅ Made executable
 ✅ Compiled to test_arrays_safe_exec (8467 bytes)

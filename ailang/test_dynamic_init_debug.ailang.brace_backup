@@ -1,0 +1,13 @@
+// test_dynamic_init_debug.ailang
+PrintMessage("Testing DynamicPool Init")
+
+DynamicPool.Test {
+    "value": Initialize=999
+}
+
+PrintMessage("Pool created")
+
+// Manually set a value to verify write works
+Test.value = 777
+PrintMessage("After manual set to 777:")
+PrintNumber(Test.value)

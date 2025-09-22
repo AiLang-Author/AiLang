@@ -1,23 +1,24 @@
-# ailang_parser/ast_modules/ast_expressions.py
-"""Expression and literal AST nodes"""
+# File: ailang_parser/ast_modules/ast_expressions.py
+# COMPLETE VERSION with MemberAccess
 
-from dataclasses import dataclass, field
-from typing import List, Optional, Union, Tuple
+from dataclasses import dataclass
+from typing import List, Tuple, Any, Optional, Union
 from .ast_base import ASTNode
 
 @dataclass
 class TypeExpression(ASTNode):
     base_type: str
-    parameters: List[ASTNode] = field(default_factory=list)
-    constraints: Optional[ASTNode] = None
+    element_type: Optional[str] = None
 
 @dataclass
 class MathExpression(ASTNode):
-    expression: ASTNode
+    operator: str
+    left: ASTNode
+    right: ASTNode
 
 @dataclass
 class FunctionCall(ASTNode):
-    function: str
+    function: Union[str, ASTNode]  # Accept both for transition
     arguments: List[ASTNode]
 
 @dataclass
@@ -33,10 +34,11 @@ class RunMacro(ASTNode):
 @dataclass
 class Identifier(ASTNode):
     name: str
+    original_name: Optional[str] = None
 
 @dataclass
 class Number(ASTNode):
-    value: Union[int, float]
+    value: Union[int, float, str]
 
 @dataclass
 class String(ASTNode):
@@ -54,5 +56,11 @@ class ArrayLiteral(ASTNode):
 class MapLiteral(ASTNode):
     pairs: List[Tuple[ASTNode, ASTNode]]
 
+@dataclass
+class MemberAccess(ASTNode):
+    """Represents accessing a member of an object, e.g., my_object.field"""
+    obj: ASTNode
+    member: ASTNode  # Using ASTNode instead of Identifier for flexibility
+
 # Convenience alias
-Array = ArrayLiteral  # Some code might use Array instead of ArrayLiteral
+Array = ArrayLiteral

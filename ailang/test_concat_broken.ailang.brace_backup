@@ -1,0 +1,16 @@
+// test_concat_broken.ailang
+str1 = "ABC"
+str2 = "DEF"
+
+PrintMessage("Regular concat:")
+regular = StringConcat(str1, str2)
+PrintMessage(regular)  // Should print "ABCDEF"
+
+PrintMessage("Pooled concat:")
+pool = StringPool.Init(1024)
+pooled = StringConcatPooled(str1, str2)
+PrintMessage(pooled)  // Currently prints "ABC" - BROKEN!
+
+PrintMessage("Lengths:")
+PrintNumber(StringLength(regular))  // 6
+PrintNumber(StringLength(pooled))   // 3 - WRONG!

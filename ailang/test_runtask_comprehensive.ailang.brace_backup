@@ -1,0 +1,142 @@
+// test_runtask_comprehensive.ailang
+// Comprehensive test of RunTask for SubRoutine calls
+
+PrintMessage("RunTask Comprehensive Test")
+PrintMessage("==========================")
+
+// Global state for testing
+call_count = 0
+result_value = 0
+
+// Test 1: Basic RunTask
+SubRoutine.Basic {
+    PrintMessage("[1] Basic subroutine called")
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 1: Basic RunTask")
+RunTask(Basic)
+PrintMessage("Call count:")
+PrintNumber(call_count)
+
+// Test 2: RunTask with state modification
+SubRoutine.ModifyState {
+    PrintMessage("[2] Modifying state")
+    result_value = 42
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 2: State modification")
+PrintMessage("Result before:")
+PrintNumber(result_value)
+RunTask(ModifyState)
+PrintMessage("Result after:")
+PrintNumber(result_value)
+
+// Test 3: Multiple RunTask calls
+SubRoutine.Increment {
+    result_value = Add(result_value, 10)
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 3: Multiple calls")
+RunTask(Increment)
+RunTask(Increment)
+RunTask(Increment)
+PrintMessage("Result after 3 increments:")
+PrintNumber(result_value)
+
+// Test 4: Nested RunTask
+SubRoutine.Outer {
+    PrintMessage("[4] Outer called")
+    RunTask(Inner)
+    PrintMessage("[4] Outer continuing")
+    call_count = Add(call_count, 1)
+}
+
+SubRoutine.Inner {
+    PrintMessage("[4]   Inner called")
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 4: Nested RunTask")
+RunTask(Outer)
+
+// Test 5: Conditional RunTask
+SubRoutine.ConditionalTask {
+    PrintMessage("[5] Conditional task executed")
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 5: Conditional RunTask")
+should_run = 1
+IfCondition EqualTo(should_run, 1) ThenBlock: {
+    RunTask(ConditionalTask)
+}
+
+// Test 6: RunTask in loop
+SubRoutine.LoopTask {
+    PrintMessage("[6] Loop task")
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 6: RunTask in loop")
+i = 0
+WhileLoop LessThan(i, 3) {
+    
+        RunTask(LoopTask)
+        i = Add(i, 1)
+    }
+    }
+
+// Test 7: RunTask with complex names (if supported)
+SubRoutine.Module.Component.Task {
+    PrintMessage("[7] Dotted name task")
+    call_count = Add(call_count, 1)
+}
+
+PrintMessage("Test 7: Dotted name RunTask")
+RunTask(Module.Component.Task)
+
+// Test 8: Recursive-like pattern
+SubRoutine.CountDown {
+    PrintMessage("[8] Countdown:")
+    PrintNumber(result_value)
+    result_value = Subtract(result_value, 10)
+    call_count = Add(call_count, 1)
+    
+    // Conditional recursive call
+    IfCondition GreaterThan(result_value, 50) ThenBlock: {
+        RunTask(CountDown)
+    }
+}
+
+PrintMessage("Test 8: Recursive-like pattern")
+result_value = 72  // Will count down to 52
+RunTask(CountDown)
+
+// Test 9: Task not found handling (comment out if it crashes)
+// PrintMessage("Test 9: Nonexistent task")
+// RunTask("NonexistentTask")  // Should handle gracefully
+
+// Test 10: Empty task name (comment out if it crashes)
+// PrintMessage("Test 10: Empty task")
+// RunTask("")  // Should handle gracefully
+
+// Final summary
+PrintMessage("==========================")
+PrintMessage("Test Summary:")
+PrintMessage("Total call count:")
+PrintNumber(call_count)
+PrintMessage("Final result value:")
+PrintNumber(result_value)
+
+// Verify expected values
+expected_calls = 14  // Count all the Add(call_count, 1) operations
+IfCondition EqualTo(call_count, expected_calls) ThenBlock: {
+    PrintMessage("✓ Call count correct!")
+} ElseBlock: {
+    PrintMessage("✗ Call count mismatch!")
+}
+
+PrintMessage("RunTask test complete!")

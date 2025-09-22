@@ -98,10 +98,9 @@ PrintMessage("[8] Loop concatenation")
 result = "Loop"
 i = 0
 WhileLoop (i < 5) {
-    Body: {
+    
         result = StringConcat(result, ".")
         i = Add(i, 1)
-    }
     }
 PrintMessage("After 5 concats: ")
 PrintMessage(result)

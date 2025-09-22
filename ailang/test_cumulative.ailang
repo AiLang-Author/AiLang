@@ -1,0 +1,33 @@
+// test_cumulative.ailang
+// Test if the crash is from cumulative operations
+
+PrintMessage("Testing cumulative effect")
+PrintMessage("========================")
+
+// Run Section 2 operations first (like the comprehensive test)
+PrintMessage("Section 2 operations:")
+
+WriteTextFile("empty.txt", "")
+WriteTextFile("single.txt", "A")
+num_str = NumberToString(42)
+WriteTextFile("number.txt", num_str)
+PrintMessage("  Section 2 complete")
+
+// Now try Section 3 - this is where it crashes
+PrintMessage("Section 3 - Multiple files:")
+
+i = 0
+WhileLoop LessThan(i, 5) {
+    PrintMessage("  Creating file")
+    PrintNumber(i)
+    
+    filename = StringConcat("file_", NumberToString(i))
+    filename = StringConcat(filename, ".txt")
+    content = StringConcat("Content ", NumberToString(i))
+    
+    WriteTextFile(filename, content)
+    
+    i = Add(i, 1)
+}
+
+PrintMessage("Test complete")

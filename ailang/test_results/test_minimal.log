@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_minimal.ailang -> test_minimal_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -158,7 +160,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L2 at position 319
 DEBUG ScopeManager: Popping function 'Test.Get42'
 DEBUG: Function Test.Get42 compiled successfully
-DEBUG: Assignment to result, value: FunctionCall(line=14, column=10, function='Test.Get42', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=14, column=20, function='Test.Get42', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Get42
 DEBUG: Found registered function: Test.Get42
 DEBUG: Calling user function Test.Get42
@@ -365,7 +367,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (30 bytes)
 
 === COMPILATION COMPLETE (8222 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_minimal_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_minimal_exec
 ✅ Wrote 8222 bytes
 ✅ Made executable
 ✅ Compiled to test_minimal_exec (8222 bytes)

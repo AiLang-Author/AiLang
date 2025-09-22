@@ -23,10 +23,9 @@ RunTask(SimpleTask)
 PrintMessage("Test 3: WhileLoop")
 i = 0
 WhileLoop LessThan(i, 2) {
-    Body: {
+    
         PrintMessage("  WhileLoop iteration")
         i = Add(i, 1)
-    }
     }
 
 PrintMessage("===========================")

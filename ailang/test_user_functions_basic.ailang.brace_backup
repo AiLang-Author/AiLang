@@ -1,0 +1,48 @@
+// test_user_functions_basic.ailang
+// Basic user-defined function call tests
+
+PrintMessage("User Function Tests - Basic")
+PrintMessage("===========================")
+
+// Test 1: Simple function definition and call
+Function.Math.AddNumbers {
+    Input: a: Integer
+    Input: b: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Add(a, b))
+    }
+}
+
+result1 = Math.AddNumbers(5, 3)
+PrintMessage("Test 1 - Add(5,3):")
+PrintNumber(result1)
+DebugAssert(EqualTo(result1, 8), "Simple function call")
+
+// Test 2: Function with single parameter
+Function.Math.Double {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Multiply(x, 2))
+    }
+}
+
+result2 = Math.Double(7)
+PrintMessage("Test 2 - Double(7):")
+PrintNumber(result2)
+DebugAssert(EqualTo(result2, 14), "Single param function")
+
+// Test 3: Function in expression
+y = Add(Math.Double(3), 4)
+PrintMessage("Test 3 - Add(Double(3), 4):")
+PrintNumber(y)
+DebugAssert(EqualTo(y, 10), "Function in expression")
+
+// Test 4: Nested function calls
+z = Math.Double(Math.Double(2))
+PrintMessage("Test 4 - Double(Double(2)):")
+PrintNumber(z)
+DebugAssert(EqualTo(z, 8), "Nested function calls")
+
+PrintMessage("Basic tests PASSED")

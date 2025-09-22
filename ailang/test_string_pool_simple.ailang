@@ -80,10 +80,9 @@ PrintMessage("[6] Pooled concat in loop")
 loop_result = "Start"
 i = 0
 WhileLoop (i < 10) {
-    Body: {
+    
         loop_result = StringConcatPooled(loop_result, "X")
         i = Add(i, 1)
-    }
     }
 PrintMessage("After 10 pooled concats: ")
 PrintMessage(loop_result)

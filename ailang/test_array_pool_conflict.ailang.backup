@@ -1,0 +1,94 @@
+// test_array_pool_conflict.ailang
+// Test if array operations can corrupt pools
+
+PrintMessage("=== ARRAY-POOL CONFLICT TEST ===")
+PrintMessage("")
+
+// Create pool first
+FixedPool.TestPool {
+    "value1": Initialize=100
+    "value2": Initialize=200
+    "value3": Initialize=300
+}
+
+PrintMessage("Initial pool value: ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+// Test 1: Small array
+PrintMessage("[1] Small array (10 elements)")
+arr_small = ArrayCreate(10)
+ArraySet(arr_small, 0, 999)
+PrintMessage("After small array: ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+// Test 2: Medium array 
+PrintMessage("[2] Medium array (100 elements)")
+arr_medium = ArrayCreate(100)
+ArraySet(arr_medium, 50, 999)
+PrintMessage("After medium array: ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+// Test 3: Array with loop (exactly as in Section 17)
+PrintMessage("[3] Array with loop fill")
+arr_loop = ArrayCreate(10)
+idx = 0
+WhileLoop LessThan(idx, 10) {
+    Body: {
+        ArraySet(arr_loop, idx, Multiply(idx, 10))
+        idx = Add(idx, 1)
+    }
+    }
+PrintMessage("After array loop: ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+// Test 4: Multiple arrays
+PrintMessage("[4] Multiple arrays")
+arr1 = ArrayCreate(50)
+arr2 = ArrayCreate(50)
+arr3 = ArrayCreate(50)
+PrintMessage("After multiple arrays: ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+// Test 5: Exact Section 17 code
+PrintMessage("[5] Exact Section 17 code")
+
+// Large array
+big_arr = ArrayCreate(100)
+ArraySet(big_arr, 0, 111)
+ArraySet(big_arr, 50, 555)
+ArraySet(big_arr, 99, 999)
+
+test40 = ArrayGet(big_arr, 50)
+
+// Array in loop
+arr_loop2 = ArrayCreate(10)
+idx2 = 0
+WhileLoop LessThan(idx2, 10) {
+    Body: {
+        ArraySet(arr_loop2, idx2, Multiply(idx2, 10))
+        idx2 = Add(idx2, 1)
+    }
+    }
+
+test41 = ArrayGet(arr_loop2, 5)
+
+PrintMessage("After Section 17 code: ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+// Test 6: Check all pool values
+PrintMessage("[6] All pool values:")
+PrintMessage("  value1: ")
+PrintNumber(TestPool.value1)
+PrintMessage("  value2: ")
+PrintNumber(TestPool.value2)
+PrintMessage("  value3: ")
+PrintNumber(TestPool.value3)
+PrintMessage("")
+
+PrintMessage("=== END TEST ===")

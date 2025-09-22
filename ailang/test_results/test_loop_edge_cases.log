@@ -1,42 +1,2929 @@
-Traceback (most recent call last):
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/main.py", line 14, in compile_ailang_to_executable
-    ast = parser.compile(source_code)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/compiler.py", line 60, in compile
-    ast = parser.parse()
-          ^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 95, in parse
-    decl = self.parse_declaration()
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_declarations.py", line 48, in parse_declaration
-    stmt = self.parse_statement()
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 32, in parse_statement
-    return self.parse_while()
-           ^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 192, in parse_while
-    stmt = self.parse_statement()
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_statements.py", line 71, in parse_statement
-    expr = self.parse_expression()
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_expressions.py", line 14, in parse_expression
-    return self.parse_strict_expression()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_expressions.py", line 55, in parse_strict_expression
-    return self.parse_primary()
-           ^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parse_expressions.py", line 489, in parse_primary
-    self.error(f"Unexpected token in expression: {self.current_token.value if self.current_token else 'EOF'}")
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_parser/parser_modules/parser_class.py", line 43, in error
-    raise ParseError(f"In {context}: {message}", self.current_token)
-ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 25, column 5: In program > WhileLoop: Unexpected token in expression: Body
 
 ==================================================
 🚀 Starting compilation for: test_loop_edge_cases.ailang -> test_loop_edge_cases_exec
 ==================================================
 🔨 Compiling AILANG source...
-❌ ERROR: Parse error at line 25, column 5: In program > WhileLoop: Unexpected token in expression: Body
-🔥 FAILED! Compilation of test_loop_edge_cases.ailang encountered an error.
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
+DEBUG: Using USER MODE SAFE VM operations
 
-❌ One or more files failed to compile.
+=== COMPILATION STARTING ===
+Phase 0: Registering all global symbols...
+DEBUG: Pre-registered global variable 'global_var' at offset 8
+DEBUG: Pre-registered global variable 'i' at offset 16
+DEBUG: Pre-registered global variable 'counter' at offset 24
+DEBUG: Pre-registered global variable 'a' at offset 32
+DEBUG: Pre-registered global variable 'b' at offset 40
+DEBUG: Pre-registered global variable 'c' at offset 48
+DEBUG: Pre-registered global variable 'start' at offset 56
+DEBUG: Pre-registered global variable 'big_counter' at offset 64
+DEBUG: Pre-registered global variable 'sum' at offset 72
+DEBUG: Pre-registered global variable 'x' at offset 80
+DEBUG: Pre-registered global variable 'y' at offset 88
+DEBUG: Pre-registered global variable 'complex_cond' at offset 96
+DEBUG: Pre-registered global variable 'limit' at offset 104
+DEBUG: Pre-registered global variable 'current' at offset 112
+Phase 1: Generating machine code...
+DEBUG: Starting program compilation
+DEBUG: Discovered 0 LoopActor declarations.
+DEBUG: Allocated local_var at stack offset 128
+DEBUG: Allocated i_saved at stack offset 144
+DEBUG: Allocated system_acb_table at stack offset 152
+DEBUG: Allocated system_current_actor at stack offset 160
+DEBUG: Total Allocate space needed: 0
+DEBUG: Stack calculation - 18 vars = 160 bytes, ACB table = 0 bytes, total allocated: 480
+DEBUG: Emitted bytes: ['0x55']
+DEBUG: PUSH RBP
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xe5']
+DEBUG: Emitted bytes: ['0x48', '0x81', '0xec']
+DEBUG: Emitted bytes: ['0xe0', '0x1', '0x0', '0x0']
+DEBUG: Emitted stack frame prologue, allocated 480 bytes
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized global_var at [rbp - 8]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized i at [rbp - 16]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized counter at [rbp - 24]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized a at [rbp - 32]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized b at [rbp - 40]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized c at [rbp - 48]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized start at [rbp - 56]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized big_counter at [rbp - 64]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized sum at [rbp - 72]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xb0', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized x at [rbp - 80]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized y at [rbp - 88]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xa0', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized complex_cond at [rbp - 96]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized limit at [rbp - 104]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized current at [rbp - 112]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x80', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized local_var at [rbp - 128]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x70', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized i_saved at [rbp - 144]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x68', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized system_acb_table at [rbp - 152]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x60', '0xff', '0xff', '0xff']
+DEBUG: Zero-initialized system_current_actor at [rbp - 160]
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x85']
+DEBUG: Emitted bytes: ['0x20', '0xfe', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x68', '0xff', '0xff', '0xff']
+DEBUG: Initialized ACB table pointer at [RBP - 480]
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x60', '0xff', '0xff', '0xff']
+DEBUG: Initialized current_actor to 0
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x41', '0x54']
+DEBUG: Emitted bytes: ['0x41', '0x55']
+DEBUG: Emitted bytes: ['0x41', '0x56']
+DEBUG: Allocating global pool table at program start.
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x9', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 9
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 0
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x10', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RSI, 4096
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 3
+DEBUG: Emitted bytes: ['0x49', '0xba']
+DEBUG: Emitted bytes: ['0x22', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV R10, 34
+DEBUG: Emitted bytes: ['0x49', '0xb8']
+DEBUG: Emitted bytes: ['0xff', '0xff', '0xff', '0xff', '0xff', '0xff', '0xff', '0xff']
+DEBUG: MOV R8, 18446744073709551615
+DEBUG: Emitted bytes: ['0x49', '0xb9']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV R9, 0
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x49', '0x89', '0xc7']
+DEBUG: Pool table allocated, base in R15
+DEBUG: Added string 'Loop Edge Cases Test' to data section at offset 0
+DEBUG: Printing string 'Loop Edge Cases Test...', offset 0, length 20
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 0
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x14', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 20
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Added string '
+' to data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Added string '====================' to data section at offset 23
+DEBUG: Printing string '====================...', offset 23, length 20
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 23
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x14', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 20
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to global_var, value: Number(line=8, column=14, value='100'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x64', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 100
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to global_var completed
+DEBUG: Compiling SubRoutine.ModifyGlobal
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L2 at position 615
+DEBUG: Marked label L1 at position 620
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Assignment to global_var, value: FunctionCall(line=11, column=18, function='Add', arguments=[Identifier(line=11, column=22, name='global_var', original_name=None), Number(line=11, column=34, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(global_var, 50)
+DEBUG ScopeManager: Found 'global_var' as registered global variable at offset 8
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x32', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 50
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to global_var completed
+DEBUG: Assignment to local_var, value: Number(line=12, column=17, value='999'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0xe7', '0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 999
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x80', '0xff', '0xff', '0xff']
+DEBUG: Assignment to local_var completed
+DEBUG: Marked label L3 at position 670
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0xc3']
+DEBUG: Marked label L2 at position 672
+DEBUG: Added string 'Global before subroutine:' to data section at offset 44
+DEBUG: Printing string 'Global before subroutine:...', offset 44, length 25
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 44
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x19', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 25
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'global_var' as registered global variable at offset 8
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L4 at position 771
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Added string '-' to data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L4 at position 824
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L5 at position 844
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L5 at position 853
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Compiling RunTask.ModifyGlobal
+DEBUG: Emitted bytes: ['0xe8']
+DEBUG: Emitted bytes: ['0x96', '0xfe', '0xff', '0xff']
+DEBUG: Added string 'Global after subroutine:' to data section at offset 72
+DEBUG: Printing string 'Global after subroutine:...', offset 72, length 24
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 72
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x18', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 24
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'global_var' as registered global variable at offset 8
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L6 at position 1081
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L6 at position 1134
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L7 at position 1154
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L7 at position 1163
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Added string 'Nested loops with shadowing:' to data section at offset 97
+DEBUG: Printing string 'Nested loops with shadowing:...', offset 97, length 28
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 97
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1c', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 28
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to i, value: Number(line=23, column=5, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to i completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L8 at position 1388
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(i, 2)
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 2
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L9 at position 1424
+DEBUG: Added string 'Outer i:' to data section at offset 126
+DEBUG: Printing string 'Outer i:...', offset 126, length 8
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 126
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x8', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 8
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L10 at position 1529
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L10 at position 1582
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L11 at position 1602
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L11 at position 1611
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Assignment to i_saved, value: Identifier(line=29, column=15, name='i', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x70', '0xff', '0xff', '0xff']
+DEBUG: Assignment to i_saved completed
+DEBUG: Assignment to i, value: Number(line=30, column=9, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to i completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L12 at position 1766
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(i, 2)
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 2
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L13 at position 1802
+DEBUG: Added string '  Inner i:' to data section at offset 135
+DEBUG: Printing string '  Inner i:...', offset 135, length 10
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 135
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 10
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L14 at position 1907
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L14 at position 1960
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L15 at position 1980
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L15 at position 1989
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Assignment to i, value: FunctionCall(line=34, column=13, function='Add', arguments=[Identifier(line=34, column=17, name='i', original_name=None), Number(line=34, column=20, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(i, 1)
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to i completed
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L12 at position 2145
+DEBUG: Marked label L13 at position 2150
+DEBUG: While loop compilation completed (label system)
+DEBUG: Assignment to i, value: Identifier(line=36, column=9, name='i_saved', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG ScopeManager: Found 'i_saved' as registered global variable at offset 144
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0x70', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to i completed
+DEBUG: Assignment to i, value: FunctionCall(line=37, column=9, function='Add', arguments=[Identifier(line=37, column=13, name='i', original_name=None), Number(line=37, column=16, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(i, 1)
+DEBUG ScopeManager: Found 'i' as registered global variable at offset 16
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to i completed
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L8 at position 2196
+DEBUG: Marked label L9 at position 2201
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Loop with immediate exit:' to data section at offset 146
+DEBUG: Printing string 'Loop with immediate exit:...', offset 146, length 25
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 146
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x19', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 25
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to counter, value: Number(line=42, column=11, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to counter completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L16 at position 2302
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(counter, 100)
+DEBUG ScopeManager: Found 'counter' as registered global variable at offset 24
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x64', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 100
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L17 at position 2338
+DEBUG: Added string 'Single iteration only' to data section at offset 172
+DEBUG: Printing string 'Single iteration only...', offset 172, length 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 172
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x15', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 21
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to counter, value: Number(line=45, column=15, value='100'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x64', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 100
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to counter completed
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L16 at position 2445
+DEBUG: Marked label L17 at position 2450
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Deep nesting test:' to data section at offset 194
+DEBUG: Printing string 'Deep nesting test:...', offset 194, length 18
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 194
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x12', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 18
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to a, value: Number(line=50, column=5, value='1'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to a completed
+DEBUG: Assignment to b, value: Number(line=51, column=5, value='2'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 2
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to b completed
+DEBUG: Assignment to c, value: Number(line=52, column=5, value='3'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 3
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to c completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L18 at position 2585
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(a, 2)
+DEBUG ScopeManager: Found 'a' as registered global variable at offset 32
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 2
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L19 at position 2621
+DEBUG: Compiling If condition (using label system)
+DEBUG: Compiling FunctionCall condition: EqualTo
+DEBUG: Compiling function call: EqualTo
+DEBUG: Dispatching EqualTo to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling EqualTo(b, 2)
+DEBUG ScopeManager: Found 'b' as registered global variable at offset 40
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 2
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x94', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: EqualTo operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L20 at position 2663
+DEBUG: Compiling If condition (using label system)
+DEBUG: Compiling FunctionCall condition: EqualTo
+DEBUG: Compiling function call: EqualTo
+DEBUG: Dispatching EqualTo to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling EqualTo(c, 3)
+DEBUG ScopeManager: Found 'c' as registered global variable at offset 48
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 3
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x94', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: EqualTo operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L22 at position 2705
+DEBUG: Added string 'Triple nested condition met' to data section at offset 213
+DEBUG: Printing string 'Triple nested condition met...', offset 213, length 27
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 213
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1b', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 27
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Marked label L22 at position 2795
+DEBUG: Marked label L23 at position 2795
+DEBUG: If condition compilation completed (label system)
+DEBUG: Marked label L20 at position 2795
+DEBUG: Marked label L21 at position 2795
+DEBUG: If condition compilation completed (label system)
+DEBUG: Assignment to a, value: FunctionCall(line=59, column=9, function='Add', arguments=[Identifier(line=59, column=13, name='a', original_name=None), Number(line=59, column=16, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(a, 1)
+DEBUG ScopeManager: Found 'a' as registered global variable at offset 32
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to a completed
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L18 at position 2827
+DEBUG: Marked label L19 at position 2832
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Zero-iteration loop:' to data section at offset 241
+DEBUG: Printing string 'Zero-iteration loop:...', offset 241, length 20
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 241
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x14', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 20
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to start, value: Number(line=64, column=9, value='10'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 10
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to start completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L24 at position 2933
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(start, 5)
+DEBUG ScopeManager: Found 'start' as registered global variable at offset 56
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x5', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 5
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L25 at position 2969
+DEBUG: Added string 'This should never print' to data section at offset 262
+DEBUG: Printing string 'This should never print...', offset 262, length 23
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 262
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x17', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 23
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L24 at position 3059
+DEBUG: Marked label L25 at position 3064
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Zero-iteration handled correctly' to data section at offset 286
+DEBUG: Printing string 'Zero-iteration handled correct...', offset 286, length 32
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 286
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x20', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 32
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Added string 'Stress test - 100 iterations:' to data section at offset 319
+DEBUG: Printing string 'Stress test - 100 iterations:...', offset 319, length 29
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 319
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1d', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 29
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to big_counter, value: Number(line=72, column=15, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to big_counter completed
+DEBUG: Assignment to sum, value: Number(line=73, column=7, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to sum completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L26 at position 3266
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(big_counter, 100)
+DEBUG ScopeManager: Found 'big_counter' as registered global variable at offset 64
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x64', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 100
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L27 at position 3302
+DEBUG: Assignment to sum, value: FunctionCall(line=75, column=11, function='Add', arguments=[Identifier(line=75, column=15, name='sum', original_name=None), Number(line=75, column=20, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(sum, 1)
+DEBUG ScopeManager: Found 'sum' as registered global variable at offset 72
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to sum completed
+DEBUG: Assignment to big_counter, value: FunctionCall(line=76, column=19, function='Add', arguments=[Identifier(line=76, column=23, name='big_counter', original_name=None), Number(line=76, column=36, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(big_counter, 1)
+DEBUG ScopeManager: Found 'big_counter' as registered global variable at offset 64
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to big_counter completed
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L26 at position 3372
+DEBUG: Marked label L27 at position 3377
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Sum after 100 iterations:' to data section at offset 349
+DEBUG: Printing string 'Sum after 100 iterations:...', offset 349, length 25
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 349
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x19', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 25
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'sum' as registered global variable at offset 72
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L28 at position 3476
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L28 at position 3529
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L29 at position 3549
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L29 at position 3558
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Compiling SubRoutine.Caller
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L31 at position 3682
+DEBUG: Marked label L30 at position 3687
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Added string 'Caller: before call' to data section at offset 375
+DEBUG: Printing string 'Caller: before call...', offset 375, length 19
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 375
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x13', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 19
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling RunTask.Callee
+DEBUG: Emitted bytes: ['0xe8', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Added string 'Caller: after call' to data section at offset 395
+DEBUG: Printing string 'Caller: after call...', offset 395, length 18
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 395
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x12', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 18
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Marked label L32 at position 3861
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0xc3']
+DEBUG: Marked label L31 at position 3863
+DEBUG: Compiling SubRoutine.Callee
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L34 at position 3863
+DEBUG: Marked label L33 at position 3868
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Added string '  Callee: executed' to data section at offset 414
+DEBUG: Printing string '  Callee: executed...', offset 414, length 18
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 414
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x12', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 18
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Marked label L35 at position 3953
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0xc3']
+DEBUG: Marked label L34 at position 3955
+DEBUG: Added string 'Nested subroutine test:' to data section at offset 433
+DEBUG: Printing string 'Nested subroutine test:...', offset 433, length 23
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 433
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x17', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 23
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling RunTask.Caller
+DEBUG: Emitted bytes: ['0xe8']
+DEBUG: Emitted bytes: ['0x9b', '0xfe', '0xff', '0xff']
+DEBUG: Added string 'Complex condition test:' to data section at offset 457
+DEBUG: Printing string 'Complex condition test:...', offset 457, length 23
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 457
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x17', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 23
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to x, value: Number(line=98, column=5, value='5'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x5', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 5
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xb0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to x completed
+DEBUG: Assignment to y, value: Number(line=99, column=5, value='10'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 10
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
+DEBUG: Assignment to y completed
+DEBUG: Assignment to complex_cond, value: FunctionCall(line=100, column=16, function='BitwiseAnd', arguments=[FunctionCall(line=101, column=5, function='GreaterThan', arguments=[Identifier(line=101, column=17, name='x', original_name=None), Number(line=101, column=20, value='0')]), FunctionCall(line=102, column=5, function='LessThan', arguments=[Identifier(line=102, column=14, name='y', original_name=None), Number(line=102, column=17, value='20')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: BitwiseAnd
+DEBUG: Dispatching BitwiseAnd to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling BitwiseAnd(GreaterThan(...), LessThan(...))
+DEBUG: Compiling function call: GreaterThan
+DEBUG: Dispatching GreaterThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling GreaterThan(x, 0)
+DEBUG ScopeManager: Found 'x' as registered global variable at offset 80
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xb0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9f', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: GreaterThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(y, 20)
+DEBUG ScopeManager: Found 'y' as registered global variable at offset 88
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x14', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 20
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x21', '0xd8']
+DEBUG: BitwiseAnd operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xa0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to complex_cond completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L36 at position 4241
+DEBUG: Compiling FunctionCall condition: EqualTo
+DEBUG: Compiling function call: EqualTo
+DEBUG: Dispatching EqualTo to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling EqualTo(complex_cond, 1)
+DEBUG ScopeManager: Found 'complex_cond' as registered global variable at offset 96
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xa0', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x94', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: EqualTo operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L37 at position 4277
+DEBUG: Added string 'Complex condition true' to data section at offset 481
+DEBUG: Printing string 'Complex condition true...', offset 481, length 22
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 481
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x16', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 22
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to complex_cond, value: Number(line=106, column=20, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0xa0', '0xff', '0xff', '0xff']
+DEBUG: Assignment to complex_cond completed
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L36 at position 4384
+DEBUG: Marked label L37 at position 4389
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Self-modifying loop:' to data section at offset 504
+DEBUG: Printing string 'Self-modifying loop:...', offset 504, length 20
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 504
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x14', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 20
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Assignment to limit, value: Number(line=111, column=9, value='3'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 3
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
+DEBUG: Assignment to limit completed
+DEBUG: Assignment to current, value: Number(line=112, column=11, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Assignment to current completed
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L38 at position 4507
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(current, limit)
+DEBUG ScopeManager: Found 'current' as registered global variable at offset 112
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG ScopeManager: Found 'limit' as registered global variable at offset 104
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L39 at position 4540
+DEBUG: Added string 'Current:' to data section at offset 525
+DEBUG: Printing string 'Current:...', offset 525, length 8
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 525
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x8', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 8
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'current' as registered global variable at offset 112
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L40 at position 4645
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L40 at position 4698
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L41 at position 4718
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L41 at position 4727
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Assignment to current, value: FunctionCall(line=116, column=15, function='Add', arguments=[Identifier(line=116, column=19, name='current', original_name=None), Number(line=116, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Compiling function call: Add
+DEBUG: Dispatching Add to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling Add(current, 1)
+DEBUG ScopeManager: Found 'current' as registered global variable at offset 112
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
+DEBUG: Add operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Assignment to current completed
+DEBUG: Compiling If condition (using label system)
+DEBUG: Compiling FunctionCall condition: EqualTo
+DEBUG: Compiling function call: EqualTo
+DEBUG: Dispatching EqualTo to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling EqualTo(current, 2)
+DEBUG ScopeManager: Found 'current' as registered global variable at offset 112
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 2
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x94', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: EqualTo operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L42 at position 4919
+DEBUG: Assignment to limit, value: Number(line=119, column=17, value='5'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x5', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 5
+DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
+DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
+DEBUG: Assignment to limit completed
+DEBUG: Added string 'Extended loop limit to 5' to data section at offset 534
+DEBUG: Printing string 'Extended loop limit to 5...', offset 534, length 24
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 534
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x18', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 24
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Marked label L42 at position 5026
+DEBUG: Marked label L43 at position 5026
+DEBUG: If condition compilation completed (label system)
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L38 at position 5026
+DEBUG: Marked label L39 at position 5031
+DEBUG: While loop compilation completed (label system)
+DEBUG: Added string 'Empty structures:' to data section at offset 559
+DEBUG: Printing string 'Empty structures:...', offset 559, length 17
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 559
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x11', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 17
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling While loop (using label system)
+DEBUG: Marked label L44 at position 5115
+DEBUG: Compiling FunctionCall condition: LessThan
+DEBUG: Compiling function call: LessThan
+DEBUG: Dispatching LessThan to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: Compiling LessThan(0, 0)
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Pushed first argument
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
+DEBUG: MOV RBX, RAX
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0x39', '0xd8']
+DEBUG: Emitted bytes: ['0xf', '0x9c', '0xc0']
+DEBUG: Emitted bytes: ['0x48', '0xf', '0xb6', '0xc0']
+DEBUG: LessThan operation completed
+DEBUG: ArithmeticOps.compile_operation returned True
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L45 at position 5154
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L44 at position 5160
+DEBUG: Marked label L45 at position 5165
+DEBUG: While loop compilation completed (label system)
+DEBUG: Compiling SubRoutine.Empty
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L47 at position 5165
+DEBUG: Marked label L46 at position 5170
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Marked label L48 at position 5171
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0xc3']
+DEBUG: Marked label L47 at position 5173
+DEBUG: Compiling RunTask.Empty
+DEBUG: Emitted bytes: ['0xe8']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Added string 'Empty structures handled' to data section at offset 577
+DEBUG: Printing string 'Empty structures handled...', offset 577, length 24
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 577
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x18', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 24
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: String '====================' already in data section at offset 23
+DEBUG: Printing string '====================...', offset 23, length 20
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 23
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x14', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 20
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Added string 'All edge cases completed!' to data section at offset 602
+DEBUG: Printing string 'All edge cases completed!...', offset 602, length 25
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 602
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x19', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 25
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Added string 'Final global_var:' to data section at offset 628
+DEBUG: Printing string 'Final global_var:...', offset 628, length 17
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 628
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x11', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 17
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'global_var' as registered global variable at offset 8
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L49 at position 5529
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L49 at position 5582
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L50 at position 5602
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L50 at position 5611
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Added string 'Final sum:' to data section at offset 646
+DEBUG: Printing string 'Final sum:...', offset 646, length 10
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 646
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 10
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+Added newline after string
+DEBUG: Compiling function call: PrintNumber
+DEBUG: Dispatching PrintNumber to modules...
+DEBUG: Trying module FunctionDispatch
+DEBUG: FunctionDispatch.compile_operation returned False
+DEBUG: Trying module MathOperations
+DEBUG: MathOperations.compile_operation returned False
+DEBUG: Trying module ArithmeticOps
+DEBUG: ArithmeticOps.compile_operation returned False
+DEBUG: Trying module FileIOOps
+DEBUG: FileIOOps.compile_operation returned False
+DEBUG: Trying module StringOps
+DEBUG: StringOps.compile_operation returned False
+DEBUG: Trying module LowLevelOps
+DEBUG: LowLevelOps.compile_operation returned False
+DEBUG: Trying module HashOps
+DEBUG: HashOps.compile_operation returned False
+DEBUG: Trying module NetworkOps
+DEBUG: NetworkOps.compile_operation returned False
+DEBUG: Trying module VirtualMemoryOpsUserMode
+DEBUG: VirtualMemoryOpsUserMode.compile_operation returned False
+DEBUG: Trying module AtomicOps
+DEBUG: AtomicOps.compile_operation returned False
+DEBUG ScopeManager: Found 'sum' as registered global variable at offset 72
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
+DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
+DEBUG: Number printing with sign checking
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x53']
+DEBUG: Emitted bytes: ['0x52']
+DEBUG: Emitted bytes: ['0x56']
+DEBUG: Emitted bytes: ['0x57']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L51 at position 5834
+DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: String '-' already in data section at offset 70
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 70
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L51 at position 5887
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x20']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x74', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x8b', '0x44', '0x24', '0x40']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0xf', '0x89', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JNS to L52 at position 5907
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xd8']
+DEBUG: Marked label L52 at position 5916
+DEBUG: Emitted bytes: ['0x48', '0xbb', '0xa', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0x8']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0xc6', '0x6', '0x30']
+DEBUG: Emitted bytes: ['0xeb', '0x14']
+DEBUG: Emitted bytes: ['0x48', '0x31', '0xd2']
+DEBUG: Emitted bytes: ['0x48', '0xf7', '0xf3']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc2', '0x30']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xce']
+DEBUG: Emitted bytes: ['0x88', '0x16']
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
+DEBUG: Emitted bytes: ['0x75', '0xec']
+DEBUG: Emitted bytes: ['0x48', '0x8d', '0x54', '0x24', '0x1f']
+DEBUG: Emitted bytes: ['0x48', '0x29', '0xf2']
+DEBUG: Emitted bytes: ['0x48', '0xb8', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0x48', '0xbf', '0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x20']
+DEBUG: Emitted bytes: ['0x5f']
+DEBUG: Emitted bytes: ['0x5e']
+DEBUG: Emitted bytes: ['0x5a']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x58']
+DEBUG: String '
+' already in data section at offset 21
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 1
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 1
+DEBUG: Emitted bytes: ['0x48', '0xbe']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted load data address to rsi for offset 21
+DEBUG: Emitted bytes: ['0x48', '0xba']
+DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDX, 1
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: PrintNumber completed
+DEBUG: Emitted bytes: ['0x41', '0x5e']
+DEBUG: Emitted bytes: ['0x41', '0x5d']
+DEBUG: Emitted bytes: ['0x41', '0x5c']
+DEBUG: Emitted bytes: ['0x5b']
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xec']
+DEBUG: Emitted bytes: ['0x5d']
+DEBUG: POP RBP
+DEBUG: Emitted stack frame epilogue
+DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x3c', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RAX, 60
+DEBUG: Emitted bytes: ['0x48', '0xbf']
+DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
+DEBUG: MOV RDI, 0
+DEBUG: Emitted bytes: ['0xf', '0x5']
+DEBUG: Program compilation completed
+DEBUG: Fixing 1 forward references
+DEBUG: Available subroutines: {'ModifyGlobal': 'L1', 'Caller': 'L30', 'Callee': 'L33', 'Empty': 'L46'}
+DEBUG: Available labels in asm: {'L1': 620, 'L3': 670, 'L2': 672, 'L4': 824, 'L5': 853, 'L6': 1134, 'L7': 1163, 'L8': 1388, 'L10': 1582, 'L11': 1611, 'L12': 1766, 'L14': 1960, 'L15': 1989, 'L13': 2150, 'L9': 2201, 'L16': 2302, 'L17': 2450, 'L18': 2585, 'L22': 2795, 'L23': 2795, 'L20': 2795, 'L21': 2795, 'L19': 2832, 'L24': 2933, 'L25': 3064, 'L26': 3266, 'L27': 3377, 'L28': 3529, 'L29': 3558, 'L30': 3687, 'L32': 3861, 'L31': 3863, 'L33': 3868, 'L35': 3953, 'L34': 3955, 'L36': 4241, 'L37': 4389, 'L38': 4507, 'L40': 4698, 'L41': 4727, 'L42': 5026, 'L43': 5026, 'L39': 5031, 'L44': 5115, 'L45': 5165, 'L46': 5170, 'L48': 5171, 'L47': 5173, 'L49': 5582, 'L50': 5611, 'L51': 5887, 'L52': 5916}
+DEBUG: Fixing call to Callee at position 3772
+DEBUG: Subroutine Callee has label L33
+DEBUG: Fixed call to Callee: offset=91 (0x5b)
+Phase 2: Resolving internal jump offsets...
+DEBUG: Jump at 615 to label at 672: offset=52
+DEBUG: Jump at 771 to label at 824: offset=47
+DEBUG: Jump at 844 to label at 853: offset=3
+DEBUG: Jump at 1081 to label at 1134: offset=47
+DEBUG: Jump at 1154 to label at 1163: offset=3
+DEBUG: Jump at 1424 to label at 2201: offset=771
+DEBUG: Jump at 1529 to label at 1582: offset=47
+DEBUG: Jump at 1602 to label at 1611: offset=3
+DEBUG: Jump at 1802 to label at 2150: offset=342
+DEBUG: Jump at 1907 to label at 1960: offset=47
+DEBUG: Jump at 1980 to label at 1989: offset=3
+DEBUG: Jump at 2145 to label at 1766: offset=-384
+DEBUG: Jump at 2196 to label at 1388: offset=-813
+DEBUG: Jump at 2338 to label at 2450: offset=106
+DEBUG: Jump at 2445 to label at 2302: offset=-148
+DEBUG: Jump at 2621 to label at 2832: offset=205
+DEBUG: Jump at 2663 to label at 2795: offset=126
+DEBUG: Jump at 2705 to label at 2795: offset=84
+DEBUG: Jump at 2827 to label at 2585: offset=-247
+DEBUG: Jump at 2969 to label at 3064: offset=89
+DEBUG: Jump at 3059 to label at 2933: offset=-131
+DEBUG: Jump at 3302 to label at 3377: offset=69
+DEBUG: Jump at 3372 to label at 3266: offset=-111
+DEBUG: Jump at 3476 to label at 3529: offset=47
+DEBUG: Jump at 3549 to label at 3558: offset=3
+DEBUG: Jump at 3682 to label at 3863: offset=176
+DEBUG: Jump at 3863 to label at 3955: offset=87
+DEBUG: Jump at 4277 to label at 4389: offset=106
+DEBUG: Jump at 4384 to label at 4241: offset=-148
+DEBUG: Jump at 4540 to label at 5031: offset=485
+DEBUG: Jump at 4645 to label at 4698: offset=47
+DEBUG: Jump at 4718 to label at 4727: offset=3
+DEBUG: Jump at 4919 to label at 5026: offset=101
+DEBUG: Jump at 5026 to label at 4507: offset=-524
+DEBUG: Jump at 5154 to label at 5165: offset=5
+DEBUG: Jump at 5160 to label at 5115: offset=-50
+DEBUG: Jump at 5165 to label at 5173: offset=3
+DEBUG: Jump at 5529 to label at 5582: offset=47
+DEBUG: Jump at 5602 to label at 5611: offset=3
+DEBUG: Jump at 5834 to label at 5887: offset=47
+DEBUG: Jump at 5907 to label at 5916: offset=3
+DEBUG: Successfully resolved 41 global jumps
+Phase 3: Building executable...
+Dynamic addresses set - Code: 0x00401000, Data: 0x00403000
+Applied 78 relocations
+
+Dynamic ELF Layout:
+  Code: 0x401000 (6073 bytes)
+  Data: 0x403000 (657 bytes)
+
+=== COMPILATION COMPLETE (12945 bytes) ===
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_loop_edge_cases_exec
+✅ Wrote 12945 bytes
+✅ Made executable
+✅ Compiled to test_loop_edge_cases_exec (12945 bytes)
+🎉 SUCCESS! Compilation of test_loop_edge_cases.ailang completed successfully!
+Loop Edge Cases Test
+====================
+Global before subroutine:
+100
+Global after subroutine:
+150
+Nested loops with shadowing:
+Outer i:
+0
+  Inner i:
+0
+  Inner i:
+1
+Outer i:
+1
+  Inner i:
+0
+  Inner i:
+1
+Loop with immediate exit:
+Single iteration only
+Deep nesting test:
+Triple nested condition met
+Zero-iteration loop:
+Zero-iteration handled correctly
+Stress test - 100 iterations:
+Sum after 100 iterations:
+100
+Nested subroutine test:
+Caller: before call
+  Callee: executed
+Caller: after call
+Complex condition test:
+Complex condition true
+Self-modifying loop:
+Current:
+0
+Current:
+1
+Extended loop limit to 5
+Current:
+2
+Current:
+3
+Current:
+4
+Empty structures:
+Empty structures handled
+====================
+All edge cases completed!
+Final global_var:
+150
+Final sum:
+100

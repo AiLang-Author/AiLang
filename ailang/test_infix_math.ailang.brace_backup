@@ -1,0 +1,465 @@
+// test_infix_comprehensive.ailang
+// Comprehensive test of AILANG infix notation with both named and symbol operators
+
+PrintMessage("AILANG Comprehensive Infix Notation Test")
+PrintMessage("=========================================")
+
+// ============== SECTION 1: SYMBOL OPERATORS ==============
+PrintMessage("")
+PrintMessage("Section 1: Math Symbol Operators")
+
+// Basic arithmetic with symbols
+result1 = (2 + 3)
+PrintMessage("(2 + 3) = ")
+PrintNumber(result1)
+PrintMessage("Expected: 5")
+
+result2 = (10 - 4)
+PrintMessage("(10 - 4) = ")
+PrintNumber(result2)
+PrintMessage("Expected: 6")
+
+result3 = (7 * 8)
+PrintMessage("(7 * 8) = ")
+PrintNumber(result3)
+PrintMessage("Expected: 56")
+
+result4 = (24 / 6)
+PrintMessage("(24 / 6) = ")
+PrintNumber(result4)
+PrintMessage("Expected: 4")
+
+result5 = (17 % 5)
+PrintMessage("(17 % 5) = ")
+PrintNumber(result5)
+PrintMessage("Expected: 2")
+
+result6 = (2 ^ 8)
+PrintMessage("(2 ^ 8) = ")
+PrintNumber(result6)
+PrintMessage("Expected: 256")
+
+// ============== SECTION 2: COMPARISON SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 2: Comparison Symbol Operators")
+
+result7 = (10 > 5)
+PrintMessage("(10 > 5) = ")
+PrintNumber(result7)
+PrintMessage("Expected: 1")
+
+result8 = (3 < 7)
+PrintMessage("(3 < 7) = ")
+PrintNumber(result8)
+PrintMessage("Expected: 1")
+
+result9 = (5 == 5)
+PrintMessage("(5 == 5) = ")
+PrintNumber(result9)
+PrintMessage("Expected: 1")
+
+result10 = (4 != 4)
+PrintMessage("(4 != 4) = ")
+PrintNumber(result10)
+PrintMessage("Expected: 0")
+
+result11 = (7 >= 7)
+PrintMessage("(7 >= 7) = ")
+PrintNumber(result11)
+PrintMessage("Expected: 1")
+
+result12 = (9 <= 8)
+PrintMessage("(9 <= 8) = ")
+PrintNumber(result12)
+PrintMessage("Expected: 0")
+
+// ============== SECTION 3: LOGICAL SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 3: Logical Symbol Operators")
+
+result13 = (1 && 1)
+PrintMessage("(1 && 1) = ")
+PrintNumber(result13)
+PrintMessage("Expected: 1")
+
+result14 = (1 || 0)
+PrintMessage("(1 || 0) = ")
+PrintNumber(result14)
+PrintMessage("Expected: 1")
+
+result15 = (!0)
+PrintMessage("(!0) = ")
+PrintNumber(result15)
+PrintMessage("Expected: 1")
+
+result16 = (!1)
+PrintMessage("(!1) = ")
+PrintNumber(result16)
+PrintMessage("Expected: 0")
+
+// ============== SECTION 4: BITWISE SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 4: Bitwise Symbol Operators")
+
+result17 = (12 & 10)
+PrintMessage("(12 & 10) = ")
+PrintNumber(result17)
+PrintMessage("Expected: 8")
+
+result18 = (8 | 4)
+PrintMessage("(8 | 4) = ")
+PrintNumber(result18)
+PrintMessage("Expected: 12")
+
+result19 = (5 << 2)
+PrintMessage("(5 << 2) = ")
+PrintNumber(result19)
+PrintMessage("Expected: 20")
+
+result20 = (20 >> 2)
+PrintMessage("(20 >> 2) = ")
+PrintNumber(result20)
+PrintMessage("Expected: 5")
+
+// ============== SECTION 5: COMPLEX NESTED SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 5: Complex Nested Symbol Expressions")
+
+result21 = ((2 + 3) * (4 + 1))
+PrintMessage("((2 + 3) * (4 + 1)) = ")
+PrintNumber(result21)
+PrintMessage("Expected: 25")
+
+result22 = (((10 - 2) / 2) + 3)
+PrintMessage("(((10 - 2) / 2) + 3) = ")
+PrintNumber(result22)
+PrintMessage("Expected: 7")
+
+result23 = ((2 ^ 3) * (5 - 2))
+PrintMessage("((2 ^ 3) * (5 - 2)) = ")
+PrintNumber(result23)
+PrintMessage("Expected: 24")
+
+result24 = (((100 / 5) % 7) + 2)
+PrintMessage("(((100 / 5) % 7) + 2) = ")
+PrintNumber(result24)
+PrintMessage("Expected: 8")
+
+// ============== SECTION 6: MIXED SYMBOLS AND NAMES ==============
+PrintMessage("")
+PrintMessage("Section 6: Mixed Symbol and Named Operators")
+
+// Mix symbols with named functions
+result25 = Add((2 * 3), (4 + 1))
+PrintMessage("Add((2 * 3), (4 + 1)) = ")
+PrintNumber(result25)
+PrintMessage("Expected: 11")
+
+result26 = ((5 + 3) Multiply (2 ^ 2))
+PrintMessage("((5 + 3) Multiply (2 ^ 2)) = ")
+PrintNumber(result26)
+PrintMessage("Expected: 32")
+
+result27 = Divide(((10 + 5) * 2), 6)
+PrintMessage("Divide(((10 + 5) * 2), 6) = ")
+PrintNumber(result27)
+PrintMessage("Expected: 5")
+
+// ============== SECTION 7: VARIABLES WITH SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 7: Variables with Symbol Operators")
+
+a = 10
+b = 3
+c = 2
+
+result28 = (a + b)
+PrintMessage("a=10, b=3: (a + b) = ")
+PrintNumber(result28)
+PrintMessage("Expected: 13")
+
+result29 = ((a * b) - c)
+PrintMessage("((a * b) - c) = ")
+PrintNumber(result29)
+PrintMessage("Expected: 28")
+
+result30 = ((a / c) + (b * c))
+PrintMessage("((a / c) + (b * c)) = ")
+PrintNumber(result30)
+PrintMessage("Expected: 11")
+
+// ============== SECTION 8: BOOLEAN LOGIC WITH SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 8: Boolean Logic with Symbols")
+
+x = 5
+y = 10
+z = 5
+
+result31 = ((x == z) && (y > x))
+PrintMessage("x=5, y=10, z=5: ((x == z) && (y > x)) = ")
+PrintNumber(result31)
+PrintMessage("Expected: 1")
+
+result32 = ((x != y) || (x == y))
+PrintMessage("((x != y) || (x == y)) = ")
+PrintNumber(result32)
+PrintMessage("Expected: 1")
+
+result33 = (!(x > y))
+PrintMessage("(!(x > y)) = ")
+PrintNumber(result33)
+PrintMessage("Expected: 1")
+
+result34 = (((x + z) == y) && ((y - x) == z))
+PrintMessage("(((x + z) == y) && ((y - x) == z)) = ")
+PrintNumber(result34)
+PrintMessage("Expected: 1")
+
+// ============== SECTION 9: STRESS TEST ==============
+PrintMessage("")
+PrintMessage("Section 9: Deep Nesting Stress Test")
+
+// Really deep nesting
+result35 = ((((((2 + 1) * 3) - 2) / 2) + 3) * 2)
+PrintMessage("((((((2 + 1) * 3) - 2) / 2) + 3) * 2) = ")
+PrintNumber(result35)
+PrintMessage("Expected: 14")
+
+// Complex boolean expression
+result36 = ((((5 > 3) && (2 < 4)) || ((10 == 10) && (7 != 8))) && (!(0 == 1)))
+PrintMessage("Complex boolean = ")
+PrintNumber(result36)
+PrintMessage("Expected: 1")
+
+// ============== SECTION 10: QUADRATIC FORMULA SIMULATION ==============
+PrintMessage("")
+PrintMessage("Section 10: Real-World Math - Quadratic Formula Parts")
+
+// For ax² + bx + c = 0, calculate discriminant
+a_coef = 1
+b_coef = 5
+c_coef = 6
+
+// discriminant = b² - 4ac
+discriminant = ((b_coef ^ 2) - ((4 * a_coef) * c_coef))
+PrintMessage("For x² + 5x + 6 = 0:")
+PrintMessage("Discriminant (b² - 4ac) = ")
+PrintNumber(discriminant)
+PrintMessage("Expected: 1")
+
+// ============== SECTION 11: FIBONACCI STEP ==============
+PrintMessage("")
+PrintMessage("Section 11: Fibonacci Calculation")
+
+fib1 = 8
+fib2 = 13
+fib3 = (fib1 + fib2)
+PrintMessage("Fib(8, 13) next = ")
+PrintNumber(fib3)
+PrintMessage("Expected: 21")
+
+// Verify with more complex expression
+fib_check = ((fib3 - fib2) == fib1)
+PrintMessage("Verification ((21 - 13) == 8) = ")
+PrintNumber(fib_check)
+PrintMessage("Expected: 1")
+
+// ============== SECTION 12: BIT MANIPULATION PATTERNS ==============
+PrintMessage("")
+PrintMessage("Section 12: Bit Manipulation Patterns")
+
+// Set bit pattern
+val = 0
+val = (val | (1 << 0))  // Set bit 0
+val = (val | (1 << 2))  // Set bit 2
+val = (val | (1 << 4))  // Set bit 4
+PrintMessage("Set bits 0,2,4: ")
+PrintNumber(val)
+PrintMessage("Expected: 21")
+
+// Clear bit 2
+val = (val & (~(1 << 2)))
+PrintMessage("Clear bit 2: ")
+PrintNumber(val)
+PrintMessage("Expected: 17")
+
+// ============== SUMMARY ==============
+PrintMessage("")
+PrintMessage("=========================================")
+PrintMessage("Test Summary:")
+PrintMessage("✓ Math symbols: + - * / % ^")
+PrintMessage("✓ Comparison: > < == != >= <=")
+PrintMessage("✓ Logical: && || !")
+PrintMessage("✓ Bitwise: & | << >>")
+PrintMessage("✓ Deep nesting works")
+PrintMessage("✓ Mixed notation works")
+PrintMessage("✓ Variables work with symbols")
+PrintMessage("✓ Parentheses enforce grouping")
+PrintMessage("")
+PrintMessage("AILANG infix notation: Clean, explicit, bug-free!")
+
+
+// test_infix_comprehensive.ailang
+// Comprehensive test of AILANG infix notation with both named and symbol operators
+
+PrintMessage("AILANG Comprehensive Infix Notation Test")
+PrintMessage("=========================================")
+
+// [Sections 1-4 remain the same...]
+
+// ============== SECTION 4: BITWISE SYMBOLS ==============
+PrintMessage("")
+PrintMessage("Section 4: Bitwise Symbol Operators")
+
+result17 = (12 & 10)
+PrintMessage("(12 & 10) = ")
+PrintNumber(result17)
+PrintMessage("Expected: 8")
+
+result18 = (8 | 4)
+PrintMessage("(8 | 4) = ")
+PrintNumber(result18)
+PrintMessage("Expected: 12")
+
+result19 = (5 << 2)
+PrintMessage("(5 << 2) = ")
+PrintNumber(result19)
+PrintMessage("Expected: 20")
+
+result20 = (20 >> 2)
+PrintMessage("(20 >> 2) = ")
+PrintNumber(result20)
+PrintMessage("Expected: 5")
+
+// NEW: Comprehensive BitwiseNot tests
+PrintMessage("")
+PrintMessage("Section 4b: BitwiseNot Testing")
+
+// Basic NOT
+result_not1 = (~0)
+PrintMessage("(~0) = ")
+PrintNumber(result_not1)
+PrintMessage("Expected: -1 (all bits set)")
+
+result_not2 = (~1)
+PrintMessage("(~1) = ")
+PrintNumber(result_not2)
+PrintMessage("Expected: -2")
+
+result_not3 = (~255)
+PrintMessage("(~255) = ")
+PrintNumber(result_not3)
+PrintMessage("Expected: -256")
+
+// Double NOT should restore original
+original = 42
+result_not4 = (~(~original))
+PrintMessage("(~(~42)) = ")
+PrintNumber(result_not4)
+PrintMessage("Expected: 42")
+
+// NOT with other operations
+result_not5 = ((~5) & 255)
+PrintMessage("((~5) & 255) = ")
+PrintNumber(result_not5)
+PrintMessage("Expected: 250")
+
+// De Morgan's Law test: ~(A & B) == (~A | ~B)
+a_val = 12
+b_val = 10
+left_side = (~(a_val & b_val))
+right_side = ((~a_val) | (~b_val))
+demorgan1 = (left_side == right_side)
+PrintMessage("De Morgan's Law ~(A&B) == (~A|~B): ")
+PrintNumber(demorgan1)
+PrintMessage("Expected: 1 (true)")
+
+// De Morgan's Law test: ~(A | B) == (~A & ~B)
+left_side2 = (~(a_val | b_val))
+right_side2 = ((~a_val) & (~b_val))
+demorgan2 = (left_side2 == right_side2)
+PrintMessage("De Morgan's Law ~(A|B) == (~A&~B): ")
+PrintNumber(demorgan2)
+PrintMessage("Expected: 1 (true)")
+
+// Bit manipulation with NOT
+mask = 0x0F  // 00001111
+result_not6 = (~mask)
+PrintMessage("(~0x0F) = ")
+PrintNumber(result_not6)
+PrintMessage("Expected: -16")
+
+// Complex expression with NOT
+result_not7 = ((~(1 << 3)) & 255)
+PrintMessage("((~(1 << 3)) & 255) = ")
+PrintNumber(result_not7)
+PrintMessage("Expected: 247")
+
+// [Rest of sections continue...]
+
+// ============== SECTION 9: STRESS TEST ==============
+PrintMessage("")
+PrintMessage("Section 9: Deep Nesting Stress Test")
+
+// Really deep nesting - FIX THE EXPECTED VALUE
+result35 = ((((((2 + 1) * 3) - 2) / 2) + 3) * 2)
+PrintMessage("((((((2 + 1) * 3) - 2) / 2) + 3) * 2) = ")
+PrintNumber(result35)
+PrintMessage("Expected: 12")  // Fixed: integer division 7/2 = 3
+
+// [Section 12 already uses ~, keep it...]
+
+// ============== SECTION 13: XOR TESTS ==============
+PrintMessage("")
+PrintMessage("Section 13: BitwiseXor Tests (no symbol yet)")
+
+// Since ^ is Power, test XOR with function calls
+xor1 = BitwiseXor(12, 10)
+PrintMessage("BitwiseXor(12, 10) = ")
+PrintNumber(xor1)
+PrintMessage("Expected: 6")
+
+xor2 = BitwiseXor(255, 255)
+PrintMessage("BitwiseXor(255, 255) = ")
+PrintNumber(xor2)
+PrintMessage("Expected: 0")
+
+xor3 = BitwiseXor(0xFF, 0x0F)
+PrintMessage("BitwiseXor(0xFF, 0x0F) = ")
+PrintNumber(xor3)
+PrintMessage("Expected: 240")
+
+// XOR swap algorithm test
+x_swap = 5
+y_swap = 7
+x_swap = BitwiseXor(x_swap, y_swap)  // x = x ^ y
+y_swap = BitwiseXor(x_swap, y_swap)  // y = (x^y) ^ y = x
+x_swap = BitwiseXor(x_swap, y_swap)  // x = (x^y) ^ x = y
+PrintMessage("XOR swap(5,7) x=")
+PrintNumber(x_swap)
+PrintMessage("Expected: 7")
+PrintMessage("XOR swap(5,7) y=")
+PrintNumber(y_swap)
+PrintMessage("Expected: 5")
+
+// ============== SUMMARY ==============
+PrintMessage("")
+PrintMessage("=========================================")
+PrintMessage("Test Summary:")
+PrintMessage("✓ Math symbols: + - * / % ^ (power)")
+PrintMessage("✓ Comparison: > < == != >= <=")
+PrintMessage("✓ Logical: && || !")
+PrintMessage("✓ Bitwise: & | << >> ~")
+PrintMessage("✓ BitwiseXor function (no symbol)")
+PrintMessage("✓ BitwiseNot with ~ symbol")
+PrintMessage("✓ De Morgan's Laws verified")
+PrintMessage("✓ Deep nesting works")
+PrintMessage("✓ Mixed notation works")
+PrintMessage("✓ Variables work with symbols")
+PrintMessage("✓ Parentheses enforce grouping")
+PrintMessage("")
+PrintMessage("AILANG infix notation: Clean, explicit, bug-free!")
+
+
+

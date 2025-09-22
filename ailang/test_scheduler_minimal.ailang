@@ -60,25 +60,24 @@ LoopMain.Scheduler {
     // Run a few scheduling cycles
     scheduler_cycles = 0
     WhileLoop LessThan(scheduler_cycles, 5) {
-        Body: {
+        
             PrintMessage("Schedule cycle:")
             PrintNumber(scheduler_cycles)
         
             // Try to execute actors based on current_actor
-            IfCondition EqualTo(current_actor, 0) ThenBlock {
+            IfCondition EqualTo(current_actor, 0) ThenBlock: {
                 PrintMessage("  Would run Actor1 here")
                 // Can we somehow jump to Actor1's code?
                 // The actor code has a skip jump at the start...
             }
         
-            IfCondition EqualTo(current_actor, 1) ThenBlock {
+            IfCondition EqualTo(current_actor, 1) ThenBlock: {
                 PrintMessage("  Would run Actor2 here")
             }
         
             // Round-robin scheduling
             current_actor = Modulo(Add(current_actor, 1), actor_count)
             scheduler_cycles = Add(scheduler_cycles, 1)
-        }
         }
     
     PrintMessage("Scheduler finished")
@@ -111,16 +110,15 @@ LoopMain.SubRoutineScheduler {
     
     cycle = 0
     WhileLoop LessThan(cycle, 3) {
-        Body: {
+        
             // Schedule SubRoutine "actors"
-            IfCondition EqualTo(Modulo(cycle, 2), 0) ThenBlock {
+            IfCondition EqualTo(Modulo(cycle, 2), 0) ThenBlock: {
                 RunTask(ActorSim1)
-            } ElseBlock {
+            } ElseBlock: {
                 RunTask(ActorSim2)
             }
         
             cycle = Add(cycle, 1)
-        }
         }
 }
 
@@ -132,9 +130,9 @@ PrintMessage("actor2_ran (expect 20 from SubRoutine):")
 PrintNumber(actor2_ran)
 PrintMessage("")
 
-IfCondition Or(EqualTo(actor1_ran, 1), EqualTo(actor2_ran, 1)) ThenBlock {
+IfCondition Or(EqualTo(actor1_ran, 1), EqualTo(actor2_ran, 1)) ThenBlock: {
     PrintMessage("SUCCESS: Real LoopActor blocks executed!")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("Result: LoopActor blocks don't execute")
     PrintMessage("But SubRoutine-based simulation works")
     PrintMessage("")

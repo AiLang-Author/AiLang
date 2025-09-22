@@ -10,11 +10,10 @@ buffer = Allocate(100)
 // Clear buffer completely with 8-byte stores
 i = 0
 WhileLoop LessThan(i, 12) {
-    Body: {
+    
         offset = Multiply(i, 8)
         StoreValue(Add(buffer, offset), 0)
         i = Add(i, 1)
-    }
     }
 
 // Store single byte value
@@ -27,7 +26,7 @@ PrintMessage("Dereference returned: ")
 PrintNumber(value)
 
 // Check if it's reading 8 bytes
-IfCondition GreaterThan(value, 255) ThenBlock {
+IfCondition GreaterThan(value, 255) ThenBlock: {
     PrintMessage("ERROR: Dereference is reading more than 1 byte!")
     PrintMessage("It appears to be reading 8 bytes (64-bit)")
     
@@ -36,7 +35,7 @@ IfCondition GreaterThan(value, 255) ThenBlock {
     PrintMessage("First byte extracted with BitwiseAnd(value, 255): ")
     PrintNumber(byte)
     
-    IfCondition EqualTo(byte, 42) ThenBlock {
+    IfCondition EqualTo(byte, 42) ThenBlock: {
         PrintMessage("✓ SUCCESS - Can extract byte with masking")
     }
 }
@@ -50,10 +49,9 @@ test_buf = Allocate(64)
 // Clear it
 j = 0  
 WhileLoop LessThan(j, 8) {
-    Body: {
+    
         StoreValue(Add(test_buf, Multiply(j, 8)), 0)
         j = Add(j, 1)
-    }
     }
 
 // Store RESP array marker at aligned position
@@ -84,7 +82,7 @@ PrintNumber(first_byte_wrong)
 PrintMessage("Right way (masked byte): ")
 PrintNumber(first_byte_right)
 
-IfCondition EqualTo(first_byte_right, 42) ThenBlock {
+IfCondition EqualTo(first_byte_right, 42) ThenBlock: {
     PrintMessage("✓ This will fix the RESP parsing!")
 }
 

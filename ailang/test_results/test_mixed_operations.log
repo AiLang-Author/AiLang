@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_mixed_operations.ailang -> test_mixed_operations_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -401,7 +403,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L4 at position 846
 DEBUG ScopeManager: Popping function 'Utils.GetTen'
 DEBUG: Function Utils.GetTen compiled successfully
-DEBUG: Assignment to result, value: FunctionCall(line=20, column=10, function='Multiply', arguments=[FunctionCall(line=20, column=19, function='Utils.GetTen', arguments=[]), Number(line=20, column=35, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=20, column=10, function='Multiply', arguments=[FunctionCall(line=20, column=31, function='Utils.GetTen', arguments=[]), Number(line=20, column=35, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -563,7 +565,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to arr, value: FunctionCall(line=25, column=7, function='ArrayCreate', arguments=[Number(line=25, column=19, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=25, column=18, function='ArrayCreate', arguments=[Number(line=25, column=19, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -633,7 +635,7 @@ DEBUG: MOV RAX, 3
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to index, value: FunctionCall(line=28, column=9, function='Add', arguments=[Identifier(line=28, column=13, name='base'), Identifier(line=28, column=19, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to index, value: FunctionCall(line=28, column=9, function='Add', arguments=[Identifier(line=28, column=13, name='base', original_name=None), Identifier(line=28, column=19, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -701,7 +703,7 @@ DEBUG: Emitted bytes: ['0x48', '0x83', '0xc0', '0x8']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x8']
-DEBUG: Assignment to val, value: FunctionCall(line=30, column=7, function='ArrayGet', arguments=[Identifier(line=30, column=16, name='arr'), Number(line=30, column=21, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=30, column=15, function='ArrayGet', arguments=[Identifier(line=30, column=16, name='arr', original_name=None), Number(line=30, column=21, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -940,7 +942,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (140 bytes)
 
 === COMPILATION COMPLETE (8332 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_mixed_operations_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_mixed_operations_exec
 ✅ Wrote 8332 bytes
 ✅ Made executable
 ✅ Compiled to test_mixed_operations_exec (8332 bytes)

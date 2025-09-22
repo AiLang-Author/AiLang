@@ -547,128 +547,155 @@ class StringOps:
 
         return True
 
+        # ABI-compliant fix for string_ops.py - compile_string_concat
+    # Following System V AMD64 ABI calling conventions
+
     def compile_string_concat(self, node):
-        """Concatenate two strings with dynamic sizing - NULL-safe"""
+        """Concatenate two strings - ABI-compliant version"""
         if len(node.arguments) < 2:
             raise ValueError("StringConcat requires 2 arguments")
         
-        # --- FIX: Save callee-saved RBX register ---
+        # According to System V AMD64 ABI, we must preserve:
+        # RBX, RBP (already handled by frame), R12-R15
+        # Since NumberToString uses RBX and R12, we must save them
+        
+        print("DEBUG: StringConcat - ABI compliant version")
+        
+        # Save callee-saved registers that might be used
         self.asm.emit_push_rbx()
+        self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
+        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13  
+        self.asm.emit_bytes(0x41, 0x56)  # PUSH R14
         
-        print("DEBUG: StringConcat with dynamic sizing")
+        # Evaluate arguments and save results
+        # IMPORTANT: Each compile_expression can clobber RAX, RCX, RDX, RSI, RDI, R8-R11
+        # but MUST preserve RBX, R12-R15
         
-        # Evaluate and push both arguments
         self.compiler.compile_expression(node.arguments[0])
-        self.asm.emit_push_rax()  # Stack: [str1]
-        self.compiler.compile_expression(node.arguments[1])
-        self.asm.emit_push_rax()  # Stack: [str1][str2]
+        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX - save str1 in R13
         
-        # Calculate len1 (NULL-safe)
-        self.asm.emit_bytes(0x48, 0x8B, 0x7C, 0x24, 0x08)  # MOV RDI, [RSP+8] (str1)
-        self.asm.emit_test_rdi_rdi()
-        len1_zero = self.asm.create_label()
+        self.compiler.compile_expression(node.arguments[1])  
+        self.asm.emit_bytes(0x49, 0x89, 0xC6)  # MOV R14, RAX - save str2 in R14
+        
+        # Now work with R13 (str1) and R14 (str2)
+        
+        # Calculate len1 - use R13 as source
+        self.asm.emit_bytes(0x4C, 0x89, 0xEF)  # MOV RDI, R13
+        self.asm.emit_mov_rcx_imm64(0)
+        
+        # Null check str1
+        self.asm.emit_bytes(0x48, 0x85, 0xFF)  # TEST RDI, RDI
+        null1_label = self.asm.create_label()
+        self.asm.emit_jump_to_label(null1_label, "JZ")
+        
+        # Calculate length of str1
+        len1_loop = self.asm.create_label()
         len1_done = self.asm.create_label()
-        self.asm.emit_jump_to_label(len1_zero, "JZ")
-        self._emit_strlen()  # Returns length in RAX
-        self.asm.emit_jump_to_label(len1_done, "JMP")
-        self.asm.mark_label(len1_zero)
-        self.asm.emit_mov_rax_imm64(0)
+        self.asm.mark_label(len1_loop)
+        self.asm.emit_bytes(0x80, 0x3C, 0x0F, 0x00)  # CMP BYTE [RDI+RCX], 0
+        self.asm.emit_jump_to_label(len1_done, "JE")
+        self.asm.emit_bytes(0x48, 0xFF, 0xC1)  # INC RCX
+        self.asm.emit_jump_to_label(len1_loop, "JMP")
         self.asm.mark_label(len1_done)
-        self.asm.emit_mov_rbx_rax()  # Save len1 in RBX
         
-        # Calculate len2 (NULL-safe)
-        self.asm.emit_bytes(0x48, 0x8B, 0x3C, 0x24)  # MOV RDI, [RSP] (str2)
-        self.asm.emit_test_rdi_rdi()
-        len2_zero = self.asm.create_label()
+        self.asm.mark_label(null1_label)
+        self.asm.emit_mov_rbx_rax()  # Save len1 in RBX
+        self.asm.emit_bytes(0x48, 0x89, 0xCB)  # MOV RBX, RCX
+        
+        # Calculate len2 - use R14 as source
+        self.asm.emit_bytes(0x4C, 0x89, 0xF7)  # MOV RDI, R14
+        self.asm.emit_mov_rcx_imm64(0)
+        
+        # Null check str2
+        self.asm.emit_bytes(0x48, 0x85, 0xFF)  # TEST RDI, RDI
+        null2_label = self.asm.create_label()
+        self.asm.emit_jump_to_label(null2_label, "JZ")
+        
+        # Calculate length of str2
+        len2_loop = self.asm.create_label()
         len2_done = self.asm.create_label()
-        self.asm.emit_jump_to_label(len2_zero, "JZ")
-        self._emit_strlen()  # Returns length in RAX
-        self.asm.emit_jump_to_label(len2_done, "JMP")
-        self.asm.mark_label(len2_zero)
-        self.asm.emit_mov_rax_imm64(0)
+        self.asm.mark_label(len2_loop)
+        self.asm.emit_bytes(0x80, 0x3C, 0x0F, 0x00)  # CMP BYTE [RDI+RCX], 0
+        self.asm.emit_jump_to_label(len2_done, "JE")
+        self.asm.emit_bytes(0x48, 0xFF, 0xC1)  # INC RCX
+        self.asm.emit_jump_to_label(len2_loop, "JMP")
         self.asm.mark_label(len2_done)
         
-        # Calculate total size = len1 + len2 + 1
-        self.asm.emit_bytes(0x48, 0x01, 0xD8)  # ADD RAX, RBX (RAX = len1 + len2)
-        self.asm.emit_bytes(0x48, 0xFF, 0xC0)  # INC RAX (for null terminator)
-        self.asm.emit_mov_rsi_rax()  # RSI = total size
+        self.asm.mark_label(null2_label)
+        # RCX = len2, RBX = len1
         
-        # Allocate exact size with mmap
-        self.asm.emit_mov_rax_imm64(9)  # sys_mmap
+        # Calculate total size (len1 + len2 + 1)
+        self.asm.emit_bytes(0x48, 0x01, 0xD9)  # ADD RCX, RBX
+        self.asm.emit_bytes(0x48, 0xFF, 0xC1)  # INC RCX (for null terminator)
+        
+        # Allocate new buffer using mmap
+        # Setup syscall arguments
+        self.asm.emit_mov_rax_imm64(9)  # mmap syscall
         self.asm.emit_mov_rdi_imm64(0)  # addr = NULL
-        # RSI already has size
-        self.asm.emit_mov_rdx_imm64(3)  # PROT_READ | PROT_WRITE
+        self.asm.emit_mov_rsi_rcx()  # length = total size
+        self.asm.emit_mov_rdx_imm64(0x3)  # PROT_READ | PROT_WRITE
         self.asm.emit_mov_r10_imm64(0x22)  # MAP_PRIVATE | MAP_ANONYMOUS
         self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)  # MOV R8, -1
-        self.asm.emit_mov_r9_imm64(0)
+        self.asm.emit_mov_r9_imm64(0)  # offset = 0
         self.asm.emit_syscall()
         
-        # Check for failure
-        self.asm.emit_bytes(0x48, 0x83, 0xF8, 0xFF)  # CMP RAX, -1
-        fail_label = self.asm.create_label()
-        done_label = self.asm.create_label()
-        self.asm.emit_jump_to_label(fail_label, "JE")
+        # RAX = new buffer, save it
+        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX - save result in R12
+        self.asm.emit_mov_rdi_rax()  # RDI = destination for copying
         
-        # Success - save base immediately!
-        self.asm.emit_push_rax()  # Save buffer base on stack
-        self.asm.emit_mov_rdi_rax()  # RDI = destination
-        
-        # Copy str1 (NULL-safe) - FIXED OFFSET
-        self.asm.emit_bytes(0x48, 0x8B, 0x74, 0x24, 0x10)  # MOV RSI, [RSP+16] (str1)
-        self.asm.emit_test_rsi_rsi()
-        skip_str1 = self.asm.create_label()
-        self.asm.emit_jump_to_label(skip_str1, "JZ")
+        # Copy str1 (from R13)
+        self.asm.emit_bytes(0x4C, 0x89, 0xEE)  # MOV RSI, R13
+        self.asm.emit_bytes(0x48, 0x85, 0xF6)  # TEST RSI, RSI
+        skip_copy1 = self.asm.create_label()
+        self.asm.emit_jump_to_label(skip_copy1, "JZ")
         
         copy1_loop = self.asm.create_label()
         copy1_done = self.asm.create_label()
         self.asm.mark_label(copy1_loop)
-        self.asm.emit_bytes(0x8A, 0x06)  # MOV AL, [RSI]
-        self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL
+        self.asm.emit_bytes(0x8A, 0x0E)  # MOV CL, [RSI]
+        self.asm.emit_bytes(0x84, 0xC9)  # TEST CL, CL
         self.asm.emit_jump_to_label(copy1_done, "JZ")
-        self.asm.emit_bytes(0x88, 0x07)  # MOV [RDI], AL
+        self.asm.emit_bytes(0x88, 0x0F)  # MOV [RDI], CL
         self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
         self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
         self.asm.emit_jump_to_label(copy1_loop, "JMP")
         self.asm.mark_label(copy1_done)
-        self.asm.mark_label(skip_str1)
         
-        # Copy str2 (NULL-safe) - FIXED OFFSET
-        self.asm.emit_bytes(0x48, 0x8B, 0x74, 0x24, 0x08)  # MOV RSI, [RSP+8] (str2)
-        self.asm.emit_test_rsi_rsi()
-        skip_str2 = self.asm.create_label()
-        self.asm.emit_jump_to_label(skip_str2, "JZ")
+        self.asm.mark_label(skip_copy1)
+        
+        # Copy str2 (from R14)
+        self.asm.emit_bytes(0x4C, 0x89, 0xF6)  # MOV RSI, R14
+        self.asm.emit_bytes(0x48, 0x85, 0xF6)  # TEST RSI, RSI
+        skip_copy2 = self.asm.create_label()
+        self.asm.emit_jump_to_label(skip_copy2, "JZ")
         
         copy2_loop = self.asm.create_label()
         copy2_done = self.asm.create_label()
         self.asm.mark_label(copy2_loop)
-        self.asm.emit_bytes(0x8A, 0x06)  # MOV AL, [RSI]
-        self.asm.emit_bytes(0x88, 0x07)  # MOV [RDI], AL
-        self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL
+        self.asm.emit_bytes(0x8A, 0x0E)  # MOV CL, [RSI]
+        self.asm.emit_bytes(0x84, 0xC9)  # TEST CL, CL
         self.asm.emit_jump_to_label(copy2_done, "JZ")
+        self.asm.emit_bytes(0x88, 0x0F)  # MOV [RDI], CL
         self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
         self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
         self.asm.emit_jump_to_label(copy2_loop, "JMP")
         self.asm.mark_label(copy2_done)
-        self.asm.mark_label(skip_str2)
+        
+        self.asm.mark_label(skip_copy2)
         
         # Null terminate
         self.asm.emit_bytes(0xC6, 0x07, 0x00)  # MOV BYTE [RDI], 0
         
-        # Return base pointer (saved on stack)
-        self.asm.emit_pop_rax()  # Get saved base
-        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x10)  # ADD RSP, 16 (clean str1, str2)
-        self.asm.emit_jump_to_label(done_label, "JMP")
+        # Move result from R12 to RAX
+        self.asm.emit_bytes(0x4C, 0x89, 0xE0)  # MOV RAX, R12
         
-        # Failure path - return str1
-        self.asm.mark_label(fail_label)
-        self.asm.emit_pop_rax()  # Pop str2
-        self.asm.emit_pop_rax()  # Return str1
-        
-        self.asm.mark_label(done_label)
-        # --- FIX: Restore callee-saved RBX register ---
+        # Restore callee-saved registers in reverse order
+        self.asm.emit_bytes(0x41, 0x5E)  # POP R14
+        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
+        self.asm.emit_bytes(0x41, 0x5C)  # POP R12
         self.asm.emit_pop_rbx()
         
-        print("DEBUG: Dynamic StringConcat complete")
+        print("DEBUG: StringConcat completed (ABI compliant)")
         return True
 
     def compile_string_compare(self, node):

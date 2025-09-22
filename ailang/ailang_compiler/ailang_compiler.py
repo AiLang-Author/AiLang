@@ -169,12 +169,12 @@ class AILANGToX64Compiler:
             if library_node.name in self.loaded_libraries:
                 return
 
-            # Try current directory first, then Libraries subdirectory
+            # Try current directory first, then Librarys subdirectory
             file_name = f"Library.{library_path_parts[-1]}.ailang"
             library_file_path = file_name
             
             if not os.path.exists(library_file_path):
-                search_path_parts = ['Libraries'] + library_path_parts[:-1] + [file_name]
+                search_path_parts = ['Librarys'] + library_path_parts[:-1] + [file_name]
                 library_file_path = os.path.join(*search_path_parts)
 
             if not os.path.exists(library_file_path):
@@ -886,7 +886,7 @@ class AILANGToX64Compiler:
             if node_type in ('Function', 'FunctionDefinition'):
                 self.user_functions.register_function(decl)
             elif node_type == 'Library':
-                # Libraries handle their own registration in compile_library
+                # Librarys handle their own registration in compile_library
                 pass
             elif node_type == 'Pool':
                 # Pre-pass to discover pool variables so they are globally visible

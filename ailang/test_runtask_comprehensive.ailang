@@ -70,7 +70,7 @@ SubRoutine.ConditionalTask {
 
 PrintMessage("Test 5: Conditional RunTask")
 should_run = 1
-IfCondition EqualTo(should_run, 1) ThenBlock {
+IfCondition EqualTo(should_run, 1) ThenBlock: {
     RunTask(ConditionalTask)
 }
 
@@ -83,10 +83,9 @@ SubRoutine.LoopTask {
 PrintMessage("Test 6: RunTask in loop")
 i = 0
 WhileLoop LessThan(i, 3) {
-    Body: {
+    
         RunTask(LoopTask)
         i = Add(i, 1)
-    }
     }
 
 // Test 7: RunTask with complex names (if supported)
@@ -106,7 +105,7 @@ SubRoutine.CountDown {
     call_count = Add(call_count, 1)
     
     // Conditional recursive call
-    IfCondition GreaterThan(result_value, 50) ThenBlock {
+    IfCondition GreaterThan(result_value, 50) ThenBlock: {
         RunTask(CountDown)
     }
 }
@@ -133,9 +132,9 @@ PrintNumber(result_value)
 
 // Verify expected values
 expected_calls = 14  // Count all the Add(call_count, 1) operations
-IfCondition EqualTo(call_count, expected_calls) ThenBlock {
+IfCondition EqualTo(call_count, expected_calls) ThenBlock: {
     PrintMessage("✓ Call count correct!")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("✗ Call count mismatch!")
 }
 

@@ -1,0 +1,14 @@
+// test_single_function.ailang
+PrintMessage("Before function definition")
+
+Function.Test.Simple {
+    Body: {
+        PrintMessage("Inside function")
+        ReturnValue(42)
+    }
+}
+
+PrintMessage("After function definition")
+result = Test.Simple()
+PrintMessage("After function call")
+PrintNumber(result)

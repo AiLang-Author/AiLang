@@ -8,10 +8,9 @@ DebugPerf.Start("regular_100")
 str1 = "A"
 i = 0
 WhileLoop LessThan(i, 100) {
-    Body: {
+    
         str1 = StringConcat(str1, "B")
         i = Add(i, 1)
-    }
     }
 DebugPerf.End("regular_100")
 
@@ -20,10 +19,9 @@ DebugPerf.Start("pooled_100")
 str2 = "A"
 j = 0
 WhileLoop LessThan(j, 100) {
-    Body: {
+    
         str2 = StringConcatPooled(str2, "B")
         j = Add(j, 1)
-    }
     }
 DebugPerf.End("pooled_100")
 

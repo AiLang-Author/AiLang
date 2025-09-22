@@ -1,0 +1,48 @@
+// Test using memory pools to avoid array passing bug
+PrintMessage("Testing pool-based array sharing")
+
+// Shared pool for array storage
+FixedPool.Shared {
+    "array_storage": Initialize-0
+    "result_value": Initialize-0
+}
+
+Function.Test.CreateArray {
+    Body: {
+        arr = ArrayCreate(5)
+        ArraySet(arr, 0, 99)
+        ArraySet(arr, 1, 88)
+        ArraySet(arr, 2, 77)
+        PrintMessage("Created array in function")
+        
+        // Store in pool
+        Shared.array_storage = arr
+        ReturnValue(1)
+    }
+}
+
+Function.Test.ProcessArray {
+    Body: {
+        PrintMessage("Processing array from pool")
+        
+        // Read from pool
+        buffer = Shared.array_storage
+        val = ArrayGet(buffer, 0)
+        PrintNumber(val)
+        
+        // Store result in pool
+        Shared.result_value = val
+        ReturnValue(1)
+    }
+}
+
+PrintMessage("Creating array via function...")
+status = Test.CreateArray()
+
+PrintMessage("Processing array via pool...")
+status = Test.ProcessArray()
+
+PrintMessage("Result from pool:")
+PrintNumber(Shared.result_value)
+
+PrintMessage("Success - no segfault!")

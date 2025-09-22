@@ -42,12 +42,11 @@ LoopShadow.BackgroundWorker {
     PrintMessage("Background worker started")
     
     WhileLoop LessThan(shadow_cycles, 3) {
-        Body: {
+        
             shadow_work = Add(shadow_work, 10)
             shadow_cycles = Add(shadow_cycles, 1)
             PrintMessage("Background cycle:")
             PrintNumber(shadow_cycles)
-        }
         }
     
     PrintMessage("Background worker finished")
@@ -68,7 +67,7 @@ LoopShadow.IntegrationBackground {
 LoopMain.IntegrationMain {
     PrintMessage("Integration main started")
     
-    IfCondition EqualTo(integration_ready, 1) ThenBlock {
+    IfCondition EqualTo(integration_ready, 1) ThenBlock: {
         main_result = 555
         PrintMessage("Main processing complete")
     }

@@ -1,0 +1,101 @@
+// test_loopactor_debug.ailang
+// Debugging why LoopActor blocks don't execute
+
+PrintMessage("=== LoopActor Debug Test ===")
+PrintMessage("")
+
+// Initialize counter
+msg_count = 0
+actor_executed = 0
+
+PrintMessage("BEFORE: msg_count =")
+PrintNumber(msg_count)
+PrintMessage("BEFORE: actor_executed =")
+PrintNumber(actor_executed)
+PrintMessage("")
+
+// Add debug blocks to trace execution
+Debug("pre_actor", level=1) {
+    PrintMessage("[DEBUG] About to define LoopActor.MessageHandler")
+}
+
+// Define LoopActor with debug tracing
+LoopActor.MessageHandler {
+    PrintMessage(">>> LoopActor.MessageHandler ENTERED <<<")
+    actor_executed = 1
+    
+    Debug("actor_start", level=1) {
+        PrintMessage("[DEBUG] Inside LoopActor, starting loop")
+    }
+    
+    // Simple work
+    msg_count = Add(msg_count, 1)
+    PrintMessage("Actor incremented msg_count to:")
+    PrintNumber(msg_count)
+    
+    Debug("actor_end", level=1) {
+        PrintMessage("[DEBUG] LoopActor finishing")
+    }
+    
+    PrintMessage(">>> LoopActor.MessageHandler EXITED <<<")
+}
+
+Debug("post_actor", level=1) {
+    PrintMessage("[DEBUG] After LoopActor definition")
+}
+
+PrintMessage("")
+PrintMessage("AFTER: msg_count =")
+PrintNumber(msg_count)
+PrintMessage("AFTER: actor_executed =")
+PrintNumber(actor_executed)
+PrintMessage("")
+
+// Try explicit spawn if function exists
+Debug("spawn_attempt", level=1) {
+    PrintMessage("[DEBUG] Attempting LoopSpawn...")
+}
+
+// Test if LoopSpawn exists and works
+// Commented out for now - uncomment if LoopSpawn is implemented
+// handle = LoopSpawn("MessageHandler")
+// PrintMessage("Spawn handle:")
+// PrintNumber(handle)
+
+// Also test with a simpler actor
+PrintMessage("=== Simple Actor Test ===")
+simple_counter = 0
+
+LoopActor.SimpleActor {
+    PrintMessage("!!! SimpleActor EXECUTED !!!")
+    simple_counter = 999
+}
+
+PrintMessage("simple_counter value:")
+PrintNumber(simple_counter)
+
+// Compare with working SubRoutine
+PrintMessage("")
+PrintMessage("=== SubRoutine Comparison ===")
+subroutine_counter = 0
+
+SubRoutine.WorkingTask {
+    PrintMessage("SubRoutine executed")
+    subroutine_counter = 777
+}
+
+RunTask(WorkingTask)
+PrintMessage("subroutine_counter value:")
+PrintNumber(subroutine_counter)
+
+PrintMessage("")
+PrintMessage("=== Test Complete ===")
+PrintMessage("Summary:")
+PrintMessage("  msg_count (should be >0 if actor ran):")
+PrintNumber(msg_count)
+PrintMessage("  actor_executed (should be 1 if actor ran):")
+PrintNumber(actor_executed)
+PrintMessage("  simple_counter (should be 999 if actor ran):")
+PrintNumber(simple_counter)
+PrintMessage("  subroutine_counter (should be 777):")
+PrintNumber(subroutine_counter)

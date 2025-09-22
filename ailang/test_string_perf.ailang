@@ -44,10 +44,9 @@ DebugPerf.Start("bulk_string_ops")
 i = 0
 result = "Start"
 WhileLoop LessThan(i, 10) {
-    Body: {
+    
         result = StringConcat(result, "X")
         i = Add(i, 1)
-    }
     }
 DebugPerf.End("bulk_string_ops")
 PrintMessage("Bulk result:")

@@ -19,7 +19,7 @@ store = XSHash.XCreate(1024)
 // All strings, wrappers, and buffers will be allocated from this pool
 // to improve stability and reduce memory fragmentation.
 DynamicPool.DataPool {
-    "size": Initialize=1048576 // 1MB
+    "size": Initialize=1048576 
 }
 
 // State for stream ID generation

@@ -36,10 +36,9 @@ PrintMessage("[3] Array with loop fill")
 arr_loop = ArrayCreate(10)
 idx = 0
 WhileLoop LessThan(idx, 10) {
-    Body: {
+    
         ArraySet(arr_loop, idx, Multiply(idx, 10))
         idx = Add(idx, 1)
-    }
     }
 PrintMessage("After array loop: ")
 PrintNumber(TestPool.value1)
@@ -69,10 +68,9 @@ test40 = ArrayGet(big_arr, 50)
 arr_loop2 = ArrayCreate(10)
 idx2 = 0
 WhileLoop LessThan(idx2, 10) {
-    Body: {
+    
         ArraySet(arr_loop2, idx2, Multiply(idx2, 10))
         idx2 = Add(idx2, 1)
-    }
     }
 
 test41 = ArrayGet(arr_loop2, 5)

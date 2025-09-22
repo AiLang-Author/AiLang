@@ -9,10 +9,10 @@ class ParserExpressionsMixin:
     """Mixin for expression parsing methods"""
     
     def parse_expression(self) -> ASTNode:
-        # Skip newlines at the start of expressions
+        """Main entry point - now uses postfix parsing"""
         self.skip_newlines()
-        return self.parse_strict_expression()
-
+        return self.parse_postfix_expression()
+    
     def parse_strict_expression(self) -> ASTNode:
         self.skip_newlines()
         if self.match(TokenType.LPAREN):
@@ -522,48 +522,18 @@ class ParserExpressionsMixin:
                         line=start_token.line, column=start_token.column)
 
     def parse_identifier(self) -> ASTNode:
-        """Parse an identifier, which might be a variable or function call"""
+        """
+        Simple identifier parsing - no function calls here
+        """
         start_token = self.current_token
         name = self.parse_qualified_name()
         
-        # Check if this is a function call
-        if self.match(TokenType.LPAREN):
-            self.consume(TokenType.LPAREN)
-            arguments = []
-            
-            if not self.check(TokenType.RPAREN):
-                arguments.append(self.parse_expression())
-                while self.match(TokenType.COMMA):
-                    self.consume(TokenType.COMMA)
-                    arguments.append(self.parse_expression())
-            
-            self.consume(TokenType.RPAREN)
-
-            # Handle Negate(x) as syntactic sugar for Subtract(0, x)
-            if name == "Negate":
-                if len(arguments) != 1:
-                    self.error(f"Negate function expects 1 argument, but got {len(arguments)}")
-                
-                zero_node = Number(value="0", line=start_token.line, column=start_token.column)
-                
-                return FunctionCall(
-                    function="Subtract",
-                    arguments=[zero_node, arguments[0]],
-                    line=start_token.line,
-                    column=start_token.column
-                )
-
-            return FunctionCall(
-                function=name,
-                arguments=arguments,
-                line=start_token.line,
-                column=start_token.column
-            )
-        # Just a variable reference
+        # Just return identifier - postfix handles calls
         return Identifier(
             name=name,
             line=start_token.line,
-            column=start_token.column)
+            column=start_token.column
+        )
 
     def parse_array_literal(self):
         """Parse array literal [...]"""
@@ -648,4 +618,118 @@ class ParserExpressionsMixin:
             fields=fields,
             line=start_token.line,
             column=start_token.column
+        )
+        
+        
+    def parse_postfix_expression(self) -> ASTNode:
+        """
+        Handles member access and function calls properly
+        """
+        # Start with primary expression (use existing method)
+        # If parse_strict_expression exists, use it; otherwise use parse_primary
+        if hasattr(self, 'parse_strict_expression'):
+            expr = self.parse_strict_expression()
+        else:
+            expr = self.parse_primary()
+        
+        # Handle postfix operators
+        while True:
+            if self.match(TokenType.DOT):
+                # Member access
+                self.consume(TokenType.DOT)
+                
+                if not self.match(TokenType.IDENTIFIER):
+                    self.error(f"Expected identifier after '.' at line {self.current_token.line}")
+                
+                member_token = self.consume(TokenType.IDENTIFIER)
+                member_ident = Identifier(
+                    name=member_token.value,
+                    line=member_token.line,
+                    column=member_token.column
+                )
+                
+                # Create MemberAccess node
+                expr = MemberAccess(
+                    obj=expr,
+                    member=member_ident,
+                    line=expr.line,
+                    column=expr.column
+                )
+                
+            elif self.match(TokenType.LPAREN):
+                # Function call
+                lparen_token = self.current_token
+                self.consume(TokenType.LPAREN)
+                
+                arguments = []
+                if not self.check(TokenType.RPAREN):
+                    arguments.append(self.parse_expression())
+                    
+                    while self.match(TokenType.COMMA):
+                        self.consume(TokenType.COMMA)
+                        self.skip_newlines()
+                        arguments.append(self.parse_expression())
+                
+                self.consume(TokenType.RPAREN)
+                
+                # Handle special case for Negate
+                if isinstance(expr, Identifier) and expr.name == "Negate":
+                    if len(arguments) != 1:
+                        self.error(f"Negate function expects 1 argument, but got {len(arguments)}")
+                    
+                    zero_node = Number(value=0, line=lparen_token.line, column=lparen_token.column)
+                    
+                    return FunctionCall(
+                        function="Subtract",  # Keep as string for compatibility
+                        arguments=[zero_node, arguments[0]],
+                        line=lparen_token.line,
+                        column=lparen_token.column
+                    )
+                
+                # For compatibility, convert simple identifiers back to strings
+                if isinstance(expr, Identifier):
+                    function_ref = expr.name
+                else:
+                    function_ref = expr  # Keep as AST node for member access
+                
+                expr = FunctionCall(
+                    function=function_ref,
+                    arguments=arguments,
+                    line=lparen_token.line,
+                    column=lparen_token.column
+                )
+                
+            else:
+                # No more postfix operators
+                break
+        
+        return expr
+    
+    # ============= NEW METHOD - ADD THIS =============
+    def parse_function_call_with_base(self, function_expr: ASTNode) -> FunctionCall:
+        """
+        NEW METHOD - Parses function call arguments for a given function expression.
+        This is different from your existing function call parsing.
+        """
+        # Save position for error reporting
+        lparen_token = self.current_token
+        self.consume(TokenType.LPAREN)
+        
+        # Parse arguments
+        arguments = []
+        if not self.check(TokenType.RPAREN):
+            arguments.append(self.parse_expression())
+            
+            while self.match(TokenType.COMMA):
+                self.consume(TokenType.COMMA)
+                self.skip_newlines()
+                arguments.append(self.parse_expression())
+        
+        self.consume(TokenType.RPAREN)
+        
+        return FunctionCall(
+            function=function_expr,  # Now an AST node, not a string
+            arguments=arguments,
+            line=lparen_token.line,
+            column=lparen_token.column
         )

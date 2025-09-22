@@ -11,15 +11,14 @@ s2 = "BB"
 result = ""
 i = 0
 WhileLoop LessThan(i, 10) {
-    Body: {
+    
         mod = Modulo(i, 2)
-        IfCondition EqualTo(mod, 0) ThenBlock {
+        IfCondition EqualTo(mod, 0) ThenBlock: {
             result = StringConcat(result, s1)
-        } ElseBlock {
+        } ElseBlock: {
             result = StringConcat(result, s2)
         }
         i = Add(i, 1)
-    }
     }
 // Should be: ABBAABBAAB
 expected_len = 15  // 5 A's + 10 B's
@@ -33,10 +32,9 @@ tiny = "x"
 accum = ""
 j = 0
 WhileLoop LessThan(j, 100) {
-    Body: {
+    
         accum = StringConcat(accum, tiny)
         j = Add(j, 1)
-    }
     }
 len100 = StringLength(accum)
 DebugAssert(EqualTo(len100, 100), "100 single char concats")
@@ -55,10 +53,9 @@ PrintMessage("[4] Empty string operations")
 empty_result = ""
 k = 0
 WhileLoop LessThan(k, 50) {
-    Body: {
+    
         empty_result = StringConcat(empty_result, "")
         k = Add(k, 1)
-    }
     }
 empty_final_len = StringLength(empty_result)
 DebugAssert(EqualTo(empty_final_len, 0), "50 empty concats = empty")
@@ -131,20 +128,18 @@ PrintMessage("[10] Pool stress test")
 stress_result = "START"
 m = 0
 WhileLoop LessThan(m, 200) {
-    Body: {
+    
         // Alternate between different operations
         mod3 = Modulo(m, 3)
-        IfCondition EqualTo(mod3, 0) ThenBlock {
+        IfCondition EqualTo(mod3, 0) ThenBlock: {
             stress_result = StringConcat(stress_result, "A")
-        } ElseBlock {
-            IfCondition EqualTo(mod3, 1) ThenBlock {
+        } ElseBlock: {
+            IfCondition EqualTo(mod3, 1) ThenBlock: {
                 stress_result = StringConcat(stress_result, "BB")
-            } ElseBlock {
+            } ElseBlock: {
                 stress_result = StringConcat(stress_result, "CCC")
-            }
         }
         m = Add(m, 1)
-    }
     }
 
 // Verify final length: START(5) + 67*A(67) + 67*BB(134) + 66*CCC(198) = 404

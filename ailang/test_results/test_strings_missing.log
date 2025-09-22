@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_strings_missing.ailang -> test_strings_missing_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -363,7 +365,7 @@ DEBUG: Loaded string literal at data offset 86
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to str completed
-DEBUG: Assignment to sub1, value: FunctionCall(line=11, column=9, function='StringSubstring', arguments=[Identifier(line=11, column=25, name='str'), Number(line=11, column=30, value='0'), Number(line=11, column=33, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sub1, value: FunctionCall(line=11, column=9, function='StringSubstring', arguments=[Identifier(line=11, column=25, name='str', original_name=None), Number(line=11, column=30, value='0'), Number(line=11, column=33, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringSubstring
 DEBUG: Dispatching StringSubstring to modules...
 DEBUG: Trying module FunctionDispatch
@@ -479,7 +481,7 @@ DEBUG: StringOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sub1 completed
-DEBUG: Assignment to sub2, value: FunctionCall(line=12, column=9, function='StringSubstring', arguments=[Identifier(line=12, column=25, name='str'), Number(line=12, column=30, value='6'), Number(line=12, column=33, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sub2, value: FunctionCall(line=12, column=9, function='StringSubstring', arguments=[Identifier(line=12, column=25, name='str', original_name=None), Number(line=12, column=30, value='6'), Number(line=12, column=33, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringSubstring
 DEBUG: Dispatching StringSubstring to modules...
 DEBUG: Trying module FunctionDispatch
@@ -595,7 +597,7 @@ DEBUG: StringOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sub2 completed
-DEBUG: Assignment to sub3, value: FunctionCall(line=13, column=9, function='StringSubstring', arguments=[Identifier(line=13, column=25, name='str'), Number(line=13, column=30, value='6'), Number(line=13, column=33, value='100')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sub3, value: FunctionCall(line=13, column=9, function='StringSubstring', arguments=[Identifier(line=13, column=25, name='str', original_name=None), Number(line=13, column=30, value='6'), Number(line=13, column=33, value='100')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringSubstring
 DEBUG: Dispatching StringSubstring to modules...
 DEBUG: Trying module FunctionDispatch
@@ -665,43 +667,43 @@ DEBUG: Emitted bytes: ['0xf', '0x8c', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JL to L12 at position 1561
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc7']
 DEBUG: MOV RDI, RAX
+Traceback (most recent call last):
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 560, in compile_function_call
+    raise ValueError(f"Unknown function: {node.function}")
+ValueError: Unknown function: StringFind
+Traceback (most recent call last):
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/main.py", line 38, in compile_ailang_to_executable
+    executable = compiler.compile(ast)
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 904, in compile
+    self.compile_node(ast)
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 271, in compile_node
+    return self._node_dispatch[node_type](node)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 117, in <lambda>
+    'Program': lambda n: self.memory.compile_program(n),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/modules/memory_manager.py", line 126, in compile_program
+    self.compiler.compile_node(decl)
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 271, in compile_node
+    return self._node_dispatch[node_type](node)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 147, in <lambda>
+    'Assignment': lambda n: self.memory.compile_assignment(n),
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/modules/memory_manager.py", line 284, in compile_assignment
+    self.compiler.compile_expression(node.value)
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 870, in compile_expression
+    return self.expressions.compile_expression(expr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/modules/expression_compiler.py", line 110, in compile_expression
+    self.compiler.compile_function_call(expr)
+  File "/mnt/c/Users/Sean/Documents/Ailang/ailang/ailang_compiler/ailang_compiler.py", line 560, in compile_function_call
+    raise ValueError(f"Unknown function: {node.function}")
+ValueError: Unknown function: StringFind
 DEBUG: Emitted bytes: ['0x57']
 DEBUG: Emitted bytes: ['0x4c', '0x89', '0xe6']
 DEBUG: Emitted bytes: ['0x4c', '0x1', '0xee']
-Traceback (most recent call last):
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 550, in compile_function_call
-    raise ValueError(f"Unknown function: {node.function}")
-ValueError: Unknown function: StringFind
-Traceback (most recent call last):
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/main.py", line 38, in compile_ailang_to_executable
-    executable = compiler.compile(ast)
-                 ^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 894, in compile
-    self.compile_node(ast)
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 261, in compile_node
-    return self._node_dispatch[node_type](node)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 111, in <lambda>
-    'Program': lambda n: self.memory.compile_program(n),
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/modules/memory_manager.py", line 126, in compile_program
-    self.compiler.compile_node(decl)
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 261, in compile_node
-    return self._node_dispatch[node_type](node)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 137, in <lambda>
-    'Assignment': lambda n: self.memory.compile_assignment(n),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/modules/memory_manager.py", line 304, in compile_assignment
-    self.compiler.compile_expression(node.value)
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 860, in compile_expression
-    return self.expressions.compile_expression(expr)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/modules/expression_compiler.py", line 81, in compile_expression
-    self.compiler.compile_function_call(expr)
-  File "/mnt/c/Users/Sean/Documents/AiLang/ailang/ailang_compiler/ailang_compiler.py", line 550, in compile_function_call
-    raise ValueError(f"Unknown function: {node.function}")
-ValueError: Unknown function: StringFind
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xd9']
 DEBUG: MOV RCX, RBX
 DEBUG: Marked label L14 at position 1580
@@ -785,7 +787,7 @@ DEBUG: Loaded string literal at data offset 114
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to haystack completed
-DEBUG: Assignment to pos1, value: FunctionCall(line=20, column=9, function='StringFind', arguments=[Identifier(line=20, column=20, name='haystack'), String(line=20, column=30, value='quick'), Number(line=20, column=39, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos1, value: FunctionCall(line=20, column=19, function='StringFind', arguments=[Identifier(line=20, column=20, name='haystack', original_name=None), String(line=20, column=30, value='quick'), Number(line=20, column=39, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringFind
 DEBUG: Dispatching StringFind to modules...
 DEBUG: Trying module FunctionDispatch

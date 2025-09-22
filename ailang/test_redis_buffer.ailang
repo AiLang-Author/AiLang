@@ -13,10 +13,9 @@ request_buffer = Allocate(4096)
 // Clear buffer (important!)
 i = 0
 WhileLoop LessThan(i, 100) {
-    Body: {
+    
         StoreValue(Add(request_buffer, i), 0)
         i = Add(i, 1)
-    }
     }
 PrintMessage("  Buffer allocated and cleared")
 
@@ -49,7 +48,7 @@ PrintMessage("[3] Buffer Contents Check")
 PrintMessage("  First 20 bytes:")
 j = 0
 WhileLoop LessThan(j, 20) {
-    Body: {
+    
         byte = Dereference(Add(request_buffer, j))
         PrintMessage("    [")
         PrintNumber(j)
@@ -57,37 +56,37 @@ WhileLoop LessThan(j, 20) {
         PrintNumber(byte)
     
         // Decode
-        IfCondition EqualTo(byte, 42) ThenBlock {
+        IfCondition EqualTo(byte, 42) ThenBlock: {
             PrintMessage(" ('*' ARRAY)")
         }
-        IfCondition EqualTo(byte, 36) ThenBlock {
+        IfCondition EqualTo(byte, 36) ThenBlock: {
             PrintMessage(" ('$' BULK)")
         }
-        IfCondition EqualTo(byte, 49) ThenBlock {
+        IfCondition EqualTo(byte, 49) ThenBlock: {
             PrintMessage(" ('1')")
         }
-        IfCondition EqualTo(byte, 52) ThenBlock {
+        IfCondition EqualTo(byte, 52) ThenBlock: {
             PrintMessage(" ('4')")
         }
-        IfCondition EqualTo(byte, 80) ThenBlock {
+        IfCondition EqualTo(byte, 80) ThenBlock: {
             PrintMessage(" ('P')")
         }
-        IfCondition EqualTo(byte, 73) ThenBlock {
+        IfCondition EqualTo(byte, 73) ThenBlock: {
             PrintMessage(" ('I')")
         }
-        IfCondition EqualTo(byte, 78) ThenBlock {
+        IfCondition EqualTo(byte, 78) ThenBlock: {
             PrintMessage(" ('N')")
         }
-        IfCondition EqualTo(byte, 71) ThenBlock {
+        IfCondition EqualTo(byte, 71) ThenBlock: {
             PrintMessage(" ('G')")
         }
-        IfCondition EqualTo(byte, 13) ThenBlock {
+        IfCondition EqualTo(byte, 13) ThenBlock: {
             PrintMessage(" ('\\r')")
         }
-        IfCondition EqualTo(byte, 10) ThenBlock {
+        IfCondition EqualTo(byte, 10) ThenBlock: {
             PrintMessage(" ('\\n')")
         }
-        IfCondition EqualTo(byte, 0) ThenBlock {
+        IfCondition EqualTo(byte, 0) ThenBlock: {
             PrintMessage(" (NULL)")
             j = 100  // Stop loop
         }
@@ -105,9 +104,9 @@ PrintMessage("  First byte value: ")
 PrintNumber(first_byte)
 PrintMessage("  Expected: 42 (for '*')")
 
-IfCondition EqualTo(first_byte, 42) ThenBlock {
+IfCondition EqualTo(first_byte, 42) ThenBlock: {
     PrintMessage("  ✓ PASS - Valid RESP array marker")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("  ✗ FAIL - Not a valid RESP array!")
     PrintMessage("    This would trigger the error you're seeing")
 }
@@ -122,9 +121,9 @@ PrintMessage("  Count character: ")
 PrintNumber(count_byte)
 PrintMessage("  Expected: 49 (for '1')")
 
-IfCondition EqualTo(count_byte, 49) ThenBlock {
+IfCondition EqualTo(count_byte, 49) ThenBlock: {
     PrintMessage("  ✓ PASS - Valid count")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("  ✗ FAIL - Invalid count character")
 }
 
@@ -153,9 +152,9 @@ PrintNumber(p3)
 PrintMessage(", ")
 PrintNumber(p4)
 
-IfCondition And(EqualTo(p1, 80), And(EqualTo(p2, 73), And(EqualTo(p3, 78), EqualTo(p4, 71)))) ThenBlock {
+IfCondition And(EqualTo(p1, 80), And(EqualTo(p2, 73), And(EqualTo(p3, 78), EqualTo(p4, 71)))) ThenBlock: {
     PrintMessage("  ✓ PASS - Spells 'PING'")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("  ✗ FAIL - Does not spell 'PING'")
 }
 

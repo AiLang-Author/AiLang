@@ -308,3 +308,98 @@ class MemoryOperations:
             else:
                 print(f"ERROR: Unresolved label: {label}")
                 # Leave as zero - will likely crash but compilation continues
+                
+                
+                
+        # Add these methods to the X64Assembler class in memory.py or create a new module
+    # These are the missing methods needed for string operations
+
+    def emit_mov_rdi_from_stack(self, offset):
+        """MOV RDI, [RSP + offset] - Load from stack into RDI"""
+        if offset == 0:
+            # MOV RDI, [RSP]
+            self.emit_bytes(0x48, 0x8B, 0x3C, 0x24)
+        elif offset <= 127:
+            # MOV RDI, [RSP + offset] (8-bit displacement)
+            self.emit_bytes(0x48, 0x8B, 0x7C, 0x24, offset)
+        else:
+            # MOV RDI, [RSP + offset] (32-bit displacement)
+            self.emit_bytes(0x48, 0x8B, 0xBC, 0x24)
+            self.emit_bytes(*struct.pack('<I', offset))
+        print(f"DEBUG: MOV RDI, [RSP + {offset}]")
+
+    def emit_mov_rsi_from_stack(self, offset):
+        """MOV RSI, [RSP + offset] - Load from stack into RSI"""
+        if offset == 0:
+            # MOV RSI, [RSP]
+            self.emit_bytes(0x48, 0x8B, 0x34, 0x24)
+        elif offset <= 127:
+            # MOV RSI, [RSP + offset] (8-bit displacement)
+            self.emit_bytes(0x48, 0x8B, 0x74, 0x24, offset)
+        else:
+            # MOV RSI, [RSP + offset] (32-bit displacement)
+            self.emit_bytes(0x48, 0x8B, 0xB4, 0x24)
+            self.emit_bytes(*struct.pack('<I', offset))
+        print(f"DEBUG: MOV RSI, [RSP + {offset}]")
+
+    def emit_inc_rdi(self):
+        """INC RDI - Increment RDI by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC7)
+        print("DEBUG: INC RDI")
+
+    def emit_inc_rsi(self):
+        """INC RSI - Increment RSI by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC6)
+        print("DEBUG: INC RSI")
+
+    def emit_xor_esi_esi(self):
+        """XOR ESI, ESI - Zero ESI/RSI register"""
+        self.emit_bytes(0x31, 0xF6)
+        print("DEBUG: XOR ESI, ESI")
+
+    def emit_xor_edx_edx(self):
+        """XOR EDX, EDX - Zero EDX/RDX register"""
+        self.emit_bytes(0x31, 0xD2)
+        print("DEBUG: XOR EDX, EDX")
+
+    def emit_xor_edi_edi(self):
+        """XOR EDI, EDI - Zero EDI/RDI register"""
+        self.emit_bytes(0x31, 0xFF)
+        print("DEBUG: XOR EDI, EDI")
+
+    def emit_mov_rdi_rbx(self):
+        """MOV RDI, RBX"""
+        self.emit_bytes(0x48, 0x89, 0xDF)
+        print("DEBUG: MOV RDI, RBX")
+
+    def emit_mov_rsi_rdi(self):
+        """MOV RSI, RDI"""
+        self.emit_bytes(0x48, 0x89, 0xFE)
+        print("DEBUG: MOV RSI, RDI")
+
+    # Also add this utility for better register management
+    def emit_push_all_volatile(self):
+        """Push all volatile registers (caller-saved)"""
+        self.emit_push_rax()
+        self.emit_push_rcx()
+        self.emit_push_rdx()
+        self.emit_push_rsi()
+        self.emit_push_rdi()
+        self.emit_push_r8()
+        self.emit_push_r9()
+        self.emit_push_r10()
+        self.emit_push_r11()
+        print("DEBUG: Pushed all volatile registers")
+
+    def emit_pop_all_volatile(self):
+        """Pop all volatile registers in reverse order"""
+        self.emit_pop_r11()
+        self.emit_pop_r10()
+        self.emit_pop_r9()
+        self.emit_pop_r8()
+        self.emit_pop_rdi()
+        self.emit_pop_rsi()
+        self.emit_pop_rdx()
+        self.emit_pop_rcx()
+        self.emit_pop_rax()
+        print("DEBUG: Popped all volatile registers")

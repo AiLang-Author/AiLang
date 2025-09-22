@@ -30,7 +30,7 @@ PrintNumber(val3)
 PrintMessage("\n[4] The exact Redis buffer loop")
 j = 0
 WhileLoop LessThan(j, 4) {
-    Body: {
+    
         // This matches the Redis buffer test format
         byte = Dereference(Add(buffer, j))
         PrintMessage("    [")
@@ -39,21 +39,20 @@ WhileLoop LessThan(j, 4) {
         PrintNumber(byte)
     
         // Check for specific values
-        IfCondition EqualTo(byte, 42) ThenBlock {
+        IfCondition EqualTo(byte, 42) ThenBlock: {
             PrintMessage(" ('*')")
         }
-        IfCondition EqualTo(byte, 49) ThenBlock {
+        IfCondition EqualTo(byte, 49) ThenBlock: {
             PrintMessage(" ('1')")
         }
-        IfCondition EqualTo(byte, 13) ThenBlock {
+        IfCondition EqualTo(byte, 13) ThenBlock: {
             PrintMessage(" ('\\r')")
         }
-        IfCondition EqualTo(byte, 10) ThenBlock {
+        IfCondition EqualTo(byte, 10) ThenBlock: {
             PrintMessage(" ('\\n')")
         }
     
         j = Add(j, 1)
-    }
     }
 
 PrintMessage("\n[5] Alternative: Store values, then print")

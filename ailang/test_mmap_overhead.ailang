@@ -10,9 +10,8 @@ PrintMessage("Test 1: Empty loop (baseline)")
 DebugPerf.Start("empty_loop")
 i = 0
 WhileLoop LessThan(i, 10) {
-    Body: {
+    
         i = Add(i, 1)
-    }
     }
 DebugPerf.End("empty_loop")
 
@@ -23,10 +22,9 @@ DebugPerf.Start("concat_loop")
 j = 0
 str = "A"
 WhileLoop LessThan(j, 10) {
-    Body: {
+    
         str = StringConcat(str, "B")
         j = Add(j, 1)
-    }
     }
 DebugPerf.End("concat_loop")
 PrintMessage("Result:")
@@ -39,10 +37,9 @@ DebugPerf.Start("arithmetic_loop")
 k = 0
 sum = 0
 WhileLoop LessThan(k, 10) {
-    Body: {
+    
         sum = Add(sum, k)
         k = Add(k, 1)
-    }
     }
 DebugPerf.End("arithmetic_loop")
 PrintMessage("Sum:")

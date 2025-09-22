@@ -22,9 +22,9 @@ SubRoutine.IncrementOps {
 }
 
 SubRoutine.CheckSystem {
-    IfCondition EqualTo(system_state, 0) ThenBlock {
+    IfCondition EqualTo(system_state, 0) ThenBlock: {
         PrintMessage("[ERROR] System not initialized!")
-    } ElseBlock {
+    } ElseBlock: {
         PrintMessage("[OK] System check passed")
     }
 }
@@ -36,13 +36,11 @@ LoopActor.DataProcessor {
     // Process data items
     items_processed = 0
     WhileLoop LessThan(items_processed, 3) {
-        Body: {
-            PrintMessage("  [ACTOR] Processing item:")
-            PrintNumber(items_processed)
-            RunTask(IncrementOps)  
-            items_processed = Add(items_processed, 1)
-        }
-        }
+        PrintMessage("  [ACTOR] Processing item:")
+        PrintNumber(items_processed)
+        RunTask(IncrementOps)  
+        items_processed = Add(items_processed, 1)
+    }
     
     PrintMessage("[ACTOR] DataProcessor complete")
 }
@@ -54,12 +52,10 @@ LoopShadow.Monitor {
     // Check system periodically
     checks = 0
     WhileLoop LessThan(checks, 2) {
-        Body: {
-            RunTask(CheckSystem)
-            RunTask(IncrementOps)
-            checks = Add(checks, 1)
-        }
-        }
+        RunTask(CheckSystem)
+        RunTask(IncrementOps)
+        checks = Add(checks, 1)
+    }
     
     PrintMessage("[SHADOW] Monitor stopped")
 }
@@ -69,28 +65,26 @@ LoopMain.Application {
     PrintMessage("[MAIN] Application starting")
     
     // Verify initialization
-    IfCondition EqualTo(system_state, 1) ThenBlock {
+    IfCondition EqualTo(system_state, 1) ThenBlock: {
         PrintMessage("[MAIN] Init verified")
-    } ElseBlock {
+    } ElseBlock: {
         PrintMessage("[MAIN] ERROR: Not initialized!")
     }
     
     // Main processing loop
     main_counter = 0
     WhileLoop LessThan(main_counter, 5) {
-        Body: {
-            // Call subroutine
-            RunTask(IncrementOps)
+        // Call subroutine
+        RunTask(IncrementOps)
         
-            // Nested decision
-            IfCondition EqualTo(main_counter, 2) ThenBlock {
-                PrintMessage("[MAIN] Midpoint reached")
-                RunTask(CheckSystem)
-            }
+        // Nested decision
+        IfCondition EqualTo(main_counter, 2) ThenBlock: {
+            PrintMessage("[MAIN] Midpoint reached")
+            RunTask(CheckSystem)
+        }
         
-            main_counter = Add(main_counter, 1)
-        }
-        }
+        main_counter = Add(main_counter, 1)
+    }
     
     PrintMessage("[MAIN] Application complete")
 }
@@ -123,7 +117,7 @@ PrintMessage("Testing nested subroutines:")
 RunTask(Nested1)
 
 // Edge case: Empty loop structures
- SubRoutine.Empty { 
+SubRoutine.Empty {
     // Empty body - should handle gracefully
 }
 
@@ -138,17 +132,15 @@ done = 0
 iterations = 0
 PrintMessage("Loop with conditional exit:")
 WhileLoop EqualTo(done, 0) {
-    Body: {
-        PrintNumber(iterations)
-        iterations = Add(iterations, 1)
+    PrintNumber(iterations)
+    iterations = Add(iterations, 1)
     
-        // Exit condition
-        IfCondition GreaterEqual(iterations, 3) ThenBlock {
-            PrintMessage("Exit condition met")
-            done = 1
-        }
+    // Exit condition
+    IfCondition GreaterEqual(iterations, 3) ThenBlock: {
+        PrintMessage("Exit condition met")
+        done = 1
     }
-    }
+}
 
 PrintMessage("======================================")
 PrintMessage("All loop structure tests complete!")

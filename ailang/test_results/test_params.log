@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_params.ailang -> test_params_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -282,7 +284,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L7 at position 598
 DEBUG ScopeManager: Popping function 'Test.One'
 DEBUG: Function Test.One compiled successfully
-DEBUG: Assignment to r1, value: FunctionCall(line=15, column=6, function='Test.One', arguments=[Number(line=15, column=15, value='11')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r1, value: FunctionCall(line=15, column=14, function='Test.One', arguments=[Number(line=15, column=15, value='11')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.One
 DEBUG: Found registered function: Test.One
 DEBUG: Calling user function Test.One
@@ -464,7 +466,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to sum, value: FunctionCall(line=24, column=15, function='Add', arguments=[Identifier(line=24, column=19, name='a'), Identifier(line=24, column=22, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum, value: FunctionCall(line=24, column=15, function='Add', arguments=[Identifier(line=24, column=19, name='a', original_name=None), Identifier(line=24, column=22, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -524,7 +526,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L10 at position 1031
 DEBUG ScopeManager: Popping function 'Test.Two'
 DEBUG: Function Test.Two compiled successfully
-DEBUG: Assignment to r2, value: FunctionCall(line=29, column=6, function='Test.Two', arguments=[Number(line=29, column=15, value='10'), Number(line=29, column=19, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r2, value: FunctionCall(line=29, column=14, function='Test.Two', arguments=[Number(line=29, column=15, value='10'), Number(line=29, column=19, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Two
 DEBUG: Found registered function: Test.Two
 DEBUG: Calling user function Test.Two
@@ -719,7 +721,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0xd0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe8']
 DEBUG: Param c stored at [RBP-24]
-DEBUG: Assignment to sum1, value: FunctionCall(line=39, column=16, function='Add', arguments=[Identifier(line=39, column=20, name='a'), Identifier(line=39, column=23, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum1, value: FunctionCall(line=39, column=16, function='Add', arguments=[Identifier(line=39, column=20, name='a', original_name=None), Identifier(line=39, column=23, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -746,7 +748,7 @@ DEBUG: Allocated sum1 at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum1 completed
-DEBUG: Assignment to sum2, value: FunctionCall(line=40, column=16, function='Add', arguments=[Identifier(line=40, column=20, name='sum1'), Identifier(line=40, column=26, name='c')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum2, value: FunctionCall(line=40, column=16, function='Add', arguments=[Identifier(line=40, column=20, name='sum1', original_name=None), Identifier(line=40, column=26, name='c', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -806,7 +808,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L13 at position 1512
 DEBUG ScopeManager: Popping function 'Test.Three'
 DEBUG: Function Test.Three compiled successfully
-DEBUG: Assignment to r3, value: FunctionCall(line=45, column=6, function='Test.Three', arguments=[Number(line=45, column=17, value='10'), Number(line=45, column=21, value='20'), Number(line=45, column=25, value='30')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r3, value: FunctionCall(line=45, column=16, function='Test.Three', arguments=[Number(line=45, column=17, value='10'), Number(line=45, column=21, value='20'), Number(line=45, column=25, value='30')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Three
 DEBUG: Found registered function: Test.Three
 DEBUG: Calling user function Test.Three
@@ -1015,7 +1017,7 @@ DEBUG: MOV RAX, RCX
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe0']
 DEBUG: Param d stored at [RBP-32]
-DEBUG: Assignment to sum1, value: FunctionCall(line=56, column=16, function='Add', arguments=[Identifier(line=56, column=20, name='a'), Identifier(line=56, column=23, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum1, value: FunctionCall(line=56, column=16, function='Add', arguments=[Identifier(line=56, column=20, name='a', original_name=None), Identifier(line=56, column=23, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1042,7 +1044,7 @@ DEBUG: Allocated sum1 at stack offset 48
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum1 completed
-DEBUG: Assignment to sum2, value: FunctionCall(line=57, column=16, function='Add', arguments=[Identifier(line=57, column=20, name='c'), Identifier(line=57, column=23, name='d')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum2, value: FunctionCall(line=57, column=16, function='Add', arguments=[Identifier(line=57, column=20, name='c', original_name=None), Identifier(line=57, column=23, name='d', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1069,7 +1071,7 @@ DEBUG: Allocated sum2 at stack offset 64
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum2 completed
-DEBUG: Assignment to total, value: FunctionCall(line=58, column=17, function='Add', arguments=[Identifier(line=58, column=21, name='sum1'), Identifier(line=58, column=27, name='sum2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to total, value: FunctionCall(line=58, column=17, function='Add', arguments=[Identifier(line=58, column=21, name='sum1', original_name=None), Identifier(line=58, column=27, name='sum2', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1129,7 +1131,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L16 at position 2041
 DEBUG ScopeManager: Popping function 'Test.Four'
 DEBUG: Function Test.Four compiled successfully
-DEBUG: Assignment to r4, value: FunctionCall(line=63, column=6, function='Test.Four', arguments=[Number(line=63, column=16, value='10'), Number(line=63, column=20, value='20'), Number(line=63, column=24, value='30'), Number(line=63, column=28, value='40')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r4, value: FunctionCall(line=63, column=15, function='Test.Four', arguments=[Number(line=63, column=16, value='10'), Number(line=63, column=20, value='20'), Number(line=63, column=24, value='30'), Number(line=63, column=28, value='40')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Four
 DEBUG: Found registered function: Test.Four
 DEBUG: Calling user function Test.Four
@@ -1351,7 +1353,7 @@ DEBUG: Emitted bytes: ['0x4c', '0x89', '0xc0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xd8']
 DEBUG: Param e stored at [RBP-40]
-DEBUG: Assignment to sum1, value: FunctionCall(line=75, column=16, function='Add', arguments=[Identifier(line=75, column=20, name='a'), Identifier(line=75, column=23, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum1, value: FunctionCall(line=75, column=16, function='Add', arguments=[Identifier(line=75, column=20, name='a', original_name=None), Identifier(line=75, column=23, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1378,7 +1380,7 @@ DEBUG: Allocated sum1 at stack offset 56
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum1 completed
-DEBUG: Assignment to sum2, value: FunctionCall(line=76, column=16, function='Add', arguments=[Identifier(line=76, column=20, name='c'), Identifier(line=76, column=23, name='d')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum2, value: FunctionCall(line=76, column=16, function='Add', arguments=[Identifier(line=76, column=20, name='c', original_name=None), Identifier(line=76, column=23, name='d', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1405,7 +1407,7 @@ DEBUG: Allocated sum2 at stack offset 72
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum2 completed
-DEBUG: Assignment to sum3, value: FunctionCall(line=77, column=16, function='Add', arguments=[Identifier(line=77, column=20, name='sum1'), Identifier(line=77, column=26, name='sum2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum3, value: FunctionCall(line=77, column=16, function='Add', arguments=[Identifier(line=77, column=20, name='sum1', original_name=None), Identifier(line=77, column=26, name='sum2', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1432,7 +1434,7 @@ DEBUG: Allocated sum3 at stack offset 88
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum3 completed
-DEBUG: Assignment to total, value: FunctionCall(line=78, column=17, function='Add', arguments=[Identifier(line=78, column=21, name='sum3'), Identifier(line=78, column=27, name='e')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to total, value: FunctionCall(line=78, column=17, function='Add', arguments=[Identifier(line=78, column=21, name='sum3', original_name=None), Identifier(line=78, column=27, name='e', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1492,7 +1494,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L19 at position 2618
 DEBUG ScopeManager: Popping function 'Test.Five'
 DEBUG: Function Test.Five compiled successfully
-DEBUG: Assignment to r5, value: FunctionCall(line=83, column=6, function='Test.Five', arguments=[Number(line=83, column=16, value='10'), Number(line=83, column=20, value='20'), Number(line=83, column=24, value='30'), Number(line=83, column=28, value='40'), Number(line=83, column=32, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r5, value: FunctionCall(line=83, column=15, function='Test.Five', arguments=[Number(line=83, column=16, value='10'), Number(line=83, column=20, value='20'), Number(line=83, column=24, value='30'), Number(line=83, column=28, value='40'), Number(line=83, column=32, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Five
 DEBUG: Found registered function: Test.Five
 DEBUG: Calling user function Test.Five
@@ -1728,7 +1730,7 @@ DEBUG: Emitted bytes: ['0x4c', '0x89', '0xc8']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xd0']
 DEBUG: Param f stored at [RBP-48]
-DEBUG: Assignment to sum1, value: FunctionCall(line=96, column=16, function='Add', arguments=[Identifier(line=96, column=20, name='a'), Identifier(line=96, column=23, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum1, value: FunctionCall(line=96, column=16, function='Add', arguments=[Identifier(line=96, column=20, name='a', original_name=None), Identifier(line=96, column=23, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1755,7 +1757,7 @@ DEBUG: Allocated sum1 at stack offset 64
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum1 completed
-DEBUG: Assignment to sum2, value: FunctionCall(line=97, column=16, function='Add', arguments=[Identifier(line=97, column=20, name='c'), Identifier(line=97, column=23, name='d')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum2, value: FunctionCall(line=97, column=16, function='Add', arguments=[Identifier(line=97, column=20, name='c', original_name=None), Identifier(line=97, column=23, name='d', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1782,7 +1784,7 @@ DEBUG: Allocated sum2 at stack offset 80
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum2 completed
-DEBUG: Assignment to sum3, value: FunctionCall(line=98, column=16, function='Add', arguments=[Identifier(line=98, column=20, name='e'), Identifier(line=98, column=23, name='f')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum3, value: FunctionCall(line=98, column=16, function='Add', arguments=[Identifier(line=98, column=20, name='e', original_name=None), Identifier(line=98, column=23, name='f', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1809,7 +1811,7 @@ DEBUG: Allocated sum3 at stack offset 96
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum3 completed
-DEBUG: Assignment to temp, value: FunctionCall(line=99, column=16, function='Add', arguments=[Identifier(line=99, column=20, name='sum1'), Identifier(line=99, column=26, name='sum2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to temp, value: FunctionCall(line=99, column=16, function='Add', arguments=[Identifier(line=99, column=20, name='sum1', original_name=None), Identifier(line=99, column=26, name='sum2', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1836,7 +1838,7 @@ DEBUG: Allocated temp at stack offset 112
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x90', '0xff', '0xff', '0xff']
 DEBUG: Assignment to temp completed
-DEBUG: Assignment to total, value: FunctionCall(line=100, column=17, function='Add', arguments=[Identifier(line=100, column=21, name='temp'), Identifier(line=100, column=27, name='sum3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to total, value: FunctionCall(line=100, column=17, function='Add', arguments=[Identifier(line=100, column=21, name='temp', original_name=None), Identifier(line=100, column=27, name='sum3', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1896,7 +1898,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L22 at position 3247
 DEBUG ScopeManager: Popping function 'Test.Six'
 DEBUG: Function Test.Six compiled successfully
-DEBUG: Assignment to r6, value: FunctionCall(line=105, column=6, function='Test.Six', arguments=[Number(line=105, column=15, value='10'), Number(line=105, column=19, value='20'), Number(line=105, column=23, value='30'), Number(line=105, column=27, value='40'), Number(line=105, column=31, value='50'), Number(line=105, column=35, value='60')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r6, value: FunctionCall(line=105, column=14, function='Test.Six', arguments=[Number(line=105, column=15, value='10'), Number(line=105, column=19, value='20'), Number(line=105, column=23, value='30'), Number(line=105, column=27, value='40'), Number(line=105, column=31, value='50'), Number(line=105, column=35, value='60')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Six
 DEBUG: Found registered function: Test.Six
 DEBUG: Calling user function Test.Six
@@ -2148,7 +2150,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (225 bytes)
 
 === COMPILATION COMPLETE (8417 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_params_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_params_exec
 ✅ Wrote 8417 bytes
 ✅ Made executable
 ✅ Compiled to test_params_exec (8417 bytes)

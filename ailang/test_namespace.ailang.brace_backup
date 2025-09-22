@@ -1,0 +1,16 @@
+ImportLibrary.Library.RESP
+
+
+store = InitStore
+
+Function.Helper {
+    Input: elements
+    Output: Integer
+    
+    local_var = 10
+    result = RESP.Array(elements)
+    ReturnValue(result)
+}
+
+result = Helper(store)
+PrintMessage("Test completed")

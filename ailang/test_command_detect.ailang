@@ -29,9 +29,9 @@ SubRoutine.Main {
     
     PrintMessage("  Scanning for command...")
     WhileLoop And(LessThan(cmd_offset, 30), LessThan(found_count, 2)) {
-        Body: {
+        
             byte = GetByte(buffer_get, cmd_offset)
-            IfCondition EqualTo(byte, 10) ThenBlock {  // LF
+            IfCondition EqualTo(byte, 10) ThenBlock: {  // LF
                 found_count = Add(found_count, 1)
                 PrintMessage("    Newline ")
                 PrintNumber(found_count)
@@ -40,7 +40,6 @@ SubRoutine.Main {
                 PrintMessage("")
             }
             cmd_offset = Add(cmd_offset, 1)
-        }
         }
     
     PrintMessage("  Command starts at offset ")
@@ -73,13 +72,12 @@ SubRoutine.Main {
     
     PrintMessage("  Scanning for command...")
     WhileLoop And(LessThan(cmd_offset, 30), LessThan(found_count, 2)) {
-        Body: {
+        
             byte = GetByte(buffer_set, cmd_offset)
-            IfCondition EqualTo(byte, 10) ThenBlock {
+            IfCondition EqualTo(byte, 10) ThenBlock: {
                 found_count = Add(found_count, 1)
             }
             cmd_offset = Add(cmd_offset, 1)
-        }
         }
     
     first_cmd_char = GetByte(buffer_set, cmd_offset)
@@ -96,15 +94,15 @@ SubRoutine.Main {
     PrintNumber(test_char)
     PrintMessage("")
     
-    IfCondition EqualTo(test_char, 80) ThenBlock {
+    IfCondition EqualTo(test_char, 80) ThenBlock: {
         PrintMessage("  -> PING detected")
-    } ElseBlock {
-        IfCondition EqualTo(test_char, 71) ThenBlock {
+    } ElseBlock: {
+        IfCondition EqualTo(test_char, 71) ThenBlock: {
             PrintMessage("  -> GET detected")
-        } ElseBlock {
-            IfCondition EqualTo(test_char, 83) ThenBlock {
+        } ElseBlock: {
+            IfCondition EqualTo(test_char, 83) ThenBlock: {
                 PrintMessage("  -> SET detected (SHOULD PRINT)")
-            } ElseBlock {
+            } ElseBlock: {
                 PrintMessage("  -> Unknown command")
             }
         }

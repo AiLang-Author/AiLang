@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_string_ops.ailang -> test_string_ops_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -690,7 +692,7 @@ DEBUG: Emitted bytes: ['0x48', '0xba']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
-DEBUG: Assignment to result2, value: FunctionCall(line=22, column=19, function='StringEquals', arguments=[Identifier(line=22, column=32, name='upper'), String(line=22, column=39, value='PING')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result2, value: FunctionCall(line=22, column=19, function='StringEquals', arguments=[Identifier(line=22, column=32, name='upper', original_name=None), String(line=22, column=39, value='PING')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1309,7 +1311,7 @@ DEBUG: Emitted bytes: ['0x48', '0xba']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
-DEBUG: Assignment to result3, value: FunctionCall(line=38, column=19, function='StringEquals', arguments=[Identifier(line=38, column=32, name='alloc_str'), String(line=38, column=43, value='PING')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result3, value: FunctionCall(line=38, column=19, function='StringEquals', arguments=[Identifier(line=38, column=32, name='alloc_str', original_name=None), String(line=38, column=43, value='PING')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1726,7 +1728,7 @@ DEBUG: Emitted bytes: ['0x48', '0xba']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
-DEBUG: Assignment to upper2, value: FunctionCall(line=49, column=18, function='StringToUpper', arguments=[Identifier(line=49, column=32, name='extracted')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to upper2, value: FunctionCall(line=49, column=18, function='StringToUpper', arguments=[Identifier(line=49, column=32, name='extracted', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringToUpper
 DEBUG: Dispatching StringToUpper to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2000,7 +2002,7 @@ DEBUG: Emitted bytes: ['0x48', '0xba']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
-DEBUG: Assignment to result4, value: FunctionCall(line=55, column=19, function='StringEquals', arguments=[Identifier(line=55, column=32, name='upper2'), String(line=55, column=40, value='PING')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result4, value: FunctionCall(line=55, column=19, function='StringEquals', arguments=[Identifier(line=55, column=32, name='upper2', original_name=None), String(line=55, column=40, value='PING')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2336,7 +2338,7 @@ Dynamic ELF Layout:
   Data: 0x403000 (278 bytes)
 
 === COMPILATION COMPLETE (12566 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_string_ops_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_string_ops_exec
 ✅ Wrote 12566 bytes
 ✅ Made executable
 ✅ Compiled to test_string_ops_exec (12566 bytes)

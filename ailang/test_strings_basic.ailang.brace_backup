@@ -1,0 +1,127 @@
+// test_strings_basic.ailang
+// Basic string operations test - start simple
+
+PrintMessage("=== BASIC STRING TEST ===")
+PrintMessage("")
+
+// Test 1: Simple literals
+PrintMessage("[1] String literals")
+str1 = "Hello"
+str2 = "World"
+PrintMessage("str1: ")
+PrintMessage(str1)
+PrintMessage("str2: ")
+PrintMessage(str2)
+PrintMessage("")
+
+// Test 2: StringLength
+PrintMessage("[2] StringLength")
+len1 = StringLength("Hello")
+len2 = StringLength("")
+len3 = StringLength("A")
+PrintMessage("Length of 'Hello': ")
+PrintNumber(len1)
+PrintMessage("Length of '': ")
+PrintNumber(len2)
+PrintMessage("Length of 'A': ")
+PrintNumber(len3)
+DebugAssert(EqualTo(len1, 5), "Hello length")
+DebugAssert(EqualTo(len2, 0), "Empty length")
+DebugAssert(EqualTo(len3, 1), "Single char length")
+PrintMessage("")
+
+// Test 3: Simple StringConcat
+PrintMessage("[3] Simple StringConcat")
+concat1 = StringConcat("Hello", "World")
+PrintMessage("'Hello' + 'World': ")
+PrintMessage(concat1)
+len_concat = StringLength(concat1)
+PrintMessage("Length: ")
+PrintNumber(len_concat)
+DebugAssert(EqualTo(len_concat, 10), "Concat length")
+PrintMessage("")
+
+// Test 4: StringConcat with space
+PrintMessage("[4] Concat with space")
+hello_space = StringConcat("Hello", " ")
+full_greeting = StringConcat(hello_space, "World")
+PrintMessage("Result: ")
+PrintMessage(full_greeting)
+PrintMessage("")
+
+// Test 5: StringEquals
+PrintMessage("[5] StringEquals")
+eq1 = StringEquals("test", "test")
+eq2 = StringEquals("test", "Test")
+eq3 = StringEquals("", "")
+PrintMessage("'test' == 'test': ")
+PrintNumber(eq1)
+PrintMessage("'test' == 'Test': ")
+PrintNumber(eq2)
+PrintMessage("'' == '': ")
+PrintNumber(eq3)
+DebugAssert(EqualTo(eq1, 1), "Equal strings")
+DebugAssert(EqualTo(eq2, 0), "Case sensitive")
+DebugAssert(EqualTo(eq3, 1), "Empty equal")
+PrintMessage("")
+
+// Test 6: NumberToString
+PrintMessage("[6] NumberToString")
+num_str1 = NumberToString(0)
+num_str2 = NumberToString(123)
+num_str3 = NumberToString(-456)
+PrintMessage("0 -> ")
+PrintMessage(num_str1)
+PrintMessage("123 -> ")
+PrintMessage(num_str2)
+PrintMessage("-456 -> ")
+PrintMessage(num_str3)
+PrintMessage("")
+
+// Test 7: StringToNumber
+PrintMessage("[7] StringToNumber")
+str_num1 = StringToNumber("0")
+str_num2 = StringToNumber("789")
+str_num3 = StringToNumber("-321")
+PrintMessage("'0' -> ")
+PrintNumber(str_num1)
+PrintMessage("'789' -> ")
+PrintNumber(str_num2)
+PrintMessage("'-321' -> ")
+PrintNumber(str_num3)
+DebugAssert(EqualTo(str_num1, 0), "Parse 0")
+DebugAssert(EqualTo(str_num2, 789), "Parse 789")
+PrintMessage("")
+
+// Test 8: Concat in loop (stress test)
+PrintMessage("[8] Loop concatenation")
+result = "Loop"
+i = 0
+WhileLoop (i < 5) {
+    
+        result = StringConcat(result, ".")
+        i = Add(i, 1)
+    }
+    }
+PrintMessage("After 5 concats: ")
+PrintMessage(result)
+loop_len = StringLength(result)
+PrintMessage("Length: ")
+PrintNumber(loop_len)
+DebugAssert(EqualTo(loop_len, 9), "Loop concat length")
+PrintMessage("")
+
+// Test 9: Complex expression
+PrintMessage("[9] Complex string building")
+name = "AILANG"
+version = NumberToString(2025)
+msg = StringConcat("Welcome to ", name)
+msg = StringConcat(msg, " version ")
+msg = StringConcat(msg, version)
+PrintMessage(msg)
+final_check = StringEquals(msg, "Welcome to AILANG version 2025")
+DebugAssert(EqualTo(final_check, 1), "Complex build")
+PrintMessage("")
+
+PrintMessage("=== BASIC STRING TEST COMPLETE ===")
+PrintMessage("All basic string operations working!")

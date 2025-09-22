@@ -1,0 +1,45 @@
+// test_stringconcat_minimal.ailang
+// Minimal test to reproduce StringConcat segfault
+
+PrintMessage("StringConcat Loop Test")
+
+// Test 1: Single StringConcat
+PrintMessage("Test 1: Single concat")
+result1 = StringConcat("file_", "0")
+PrintMessage(result1)
+PrintMessage("Single concat OK")
+
+// Test 2: Multiple StringConcat without NumberToString
+PrintMessage("Test 2: Multiple concat no loop")
+result2 = StringConcat("file_", "1")
+PrintMessage(result2)
+result3 = StringConcat("file_", "2")
+PrintMessage(result3)
+PrintMessage("Multiple concat OK")
+
+// Test 3: StringConcat in loop without NumberToString
+PrintMessage("Test 3: Loop with hardcoded strings")
+i = 0
+WhileLoop LessThan(i, 3) {
+    // Use hardcoded string instead of NumberToString
+    result = StringConcat("file_", "X")
+    PrintMessage(result)
+    i = Add(i, 1)
+}
+PrintMessage("Loop with hardcoded OK")
+
+// Test 4: The problematic case - NumberToString in loop
+PrintMessage("Test 4: NumberToString + StringConcat in loop")
+j = 0
+WhileLoop LessThan(j, 3) {
+    num_str = NumberToString(j)
+    PrintMessage("Number string created")
+    
+    // This is where it likely crashes
+    filename = StringConcat("file_", num_str)
+    PrintMessage("Concatenated")
+    
+    j = Add(j, 1)
+}
+
+PrintMessage("All tests complete")

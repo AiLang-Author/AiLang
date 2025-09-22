@@ -1,0 +1,39 @@
+PrintMessage("Testing three RESP functions")
+
+Function.RESP.MakeSimpleString {
+    Body: {
+        arr = ArrayCreate(5)
+        ArraySet(arr, 0, 43)
+        ReturnValue(arr)
+    }
+}
+
+Function.RESP.MakeError {
+    Body: {
+        arr = ArrayCreate(5)
+        ArraySet(arr, 0, 45)
+        ReturnValue(arr)
+    }
+}
+
+Function.RESP.GetType {
+    Input: buffer:
+    Body: {
+        first = ArrayGet(buffer, 0)
+        ReturnValue(first)
+    }
+}
+
+PrintMessage("Calling MakeSimpleString...")
+ok_resp = RESP.MakeSimpleString()
+PrintMessage("Success")
+
+PrintMessage("Calling MakeError...")
+err_resp = RESP.MakeError()
+PrintMessage("Success")
+
+PrintMessage("Calling GetType...")
+result = RESP.GetType(ok_resp)
+PrintNumber(result)
+
+PrintMessage("All done!")

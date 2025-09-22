@@ -1,0 +1,143 @@
+// test_fileio_comprehensive.ailang
+// Comprehensive test of file I/O operations
+
+PrintMessage("File I/O Comprehensive Test")
+PrintMessage("===========================")
+
+// === SECTION 1: BASIC FILE OPERATIONS ===
+PrintMessage("[1] Basic File Write/Read")
+
+// Test WriteTextFile
+test_file = "test_output.txt"
+test_data = "Hello, AILANG File System!"
+WriteTextFile(test_file, test_data)
+PrintMessage("  Wrote test file")
+
+// Test FileExists
+exists = FileExists(test_file)
+DebugAssert(EqualTo(exists, 1), "File should exist after write")
+PrintMessage("  File exists check: PASSED")
+
+// Test FileExists on non-existent file
+not_exists = FileExists("nonexistent_file_12345.txt")
+DebugAssert(EqualTo(not_exists, 0), "Non-existent file check")
+PrintMessage("  Non-existent check: PASSED")
+
+// === SECTION 2: WRITE VARIATIONS ===
+PrintMessage("[2] Write Variations")
+
+// Empty file
+WriteTextFile("empty.txt", "")
+empty_exists = FileExists("empty.txt")
+DebugAssert(EqualTo(empty_exists, 1), "Empty file created")
+
+// Single character
+WriteTextFile("single.txt", "A")
+single_exists = FileExists("single.txt")
+DebugAssert(EqualTo(single_exists, 1), "Single char file")
+
+// Numeric content
+num_str = NumberToString(42)
+WriteTextFile("number.txt", num_str)
+num_exists = FileExists("number.txt")
+DebugAssert(EqualTo(num_exists, 1), "Numeric content file")
+
+PrintMessage("  Write variations: PASSED")
+
+// === SECTION 3: MULTIPLE FILES ===
+PrintMessage("[3] Multiple Files")
+
+// Create multiple files
+i = 0
+WhileLoop LessThan(i, 5) {
+    filename = StringConcat("file_", NumberToString(i))
+    filename = StringConcat(filename, ".txt")
+    content = StringConcat("Content ", NumberToString(i))
+    WriteTextFile(filename, content)
+    i = Add(i, 1)
+}
+
+// Verify they exist
+j = 0
+WhileLoop LessThan(j, 5) {
+    filename = StringConcat("file_", NumberToString(j))
+    filename = StringConcat(filename, ".txt")
+    exists = FileExists(filename)
+    DebugAssert(EqualTo(exists, 1), "Multiple file creation")
+    j = Add(j, 1)
+}
+
+PrintMessage("  Multiple files: PASSED")
+
+// === SECTION 4: OVERWRITE TEST ===
+PrintMessage("[4] File Overwrite")
+
+// Write initial content
+WriteTextFile("overwrite.txt", "Initial content")
+exists1 = FileExists("overwrite.txt")
+
+// Overwrite with new content
+WriteTextFile("overwrite.txt", "New content that is longer")
+exists2 = FileExists("overwrite.txt")
+
+DebugAssert(EqualTo(exists1, 1), "Initial write")
+DebugAssert(EqualTo(exists2, 1), "Overwrite succeeded")
+
+PrintMessage("  Overwrite: PASSED")
+
+// === SECTION 5: SPECIAL CHARACTERS IN CONTENT ===
+PrintMessage("[5] Special Content")
+
+// Newlines
+multiline = "Line 1\nLine 2\nLine 3"
+WriteTextFile("multiline.txt", multiline)
+ml_exists = FileExists("multiline.txt")
+DebugAssert(EqualTo(ml_exists, 1), "Multiline content")
+
+// Tabs and spaces
+tabbed = "Col1\tCol2\tCol3"
+WriteTextFile("tabbed.txt", tabbed)
+tab_exists = FileExists("tabbed.txt")
+DebugAssert(EqualTo(tab_exists, 1), "Tabbed content")
+
+PrintMessage("  Special content: PASSED")
+
+// === SECTION 6: FUNCTIONS WITH FILES ===
+PrintMessage("[6] Functions with Files")
+
+Function.File.WriteLog {
+    Input: message: String
+    Output: Integer
+    Body: {
+        filename = "log.txt"
+        WriteTextFile(filename, message)
+        exists = FileExists(filename)
+        ReturnValue(exists)
+    }
+}
+
+Function.File.WriteNumberedFile {
+    Input: num: Integer
+    Output: Integer
+    Body: {
+        filename = StringConcat("data_", NumberToString(num))
+        filename = StringConcat(filename, ".txt")
+        content = StringConcat("Data: ", NumberToString(num))
+        WriteTextFile(filename, content)
+        ReturnValue(1)
+    }
+}
+
+log_result = File.WriteLog("Test log entry")
+DebugAssert(EqualTo(log_result, 1), "Function file write")
+
+numbered_result = File.WriteNumberedFile(999)
+DebugAssert(EqualTo(numbered_result, 1), "Numbered file function")
+
+PrintMessage("  File functions: PASSED")
+
+PrintMessage("===========================")
+PrintMessage("All file I/O tests PASSED!")
+PrintMessage("")
+PrintMessage("Note: Created test files in current directory")
+PrintMessage("Cleanup may be needed after test")

@@ -1,0 +1,25 @@
+// test_numbertostring.ailang
+// Test if NumberToString has memory issues
+
+PrintMessage("Testing NumberToString memory issue")
+
+// First use of NumberToString with WriteTextFile
+num_str1 = NumberToString(42)
+PrintMessage("First NumberToString(42):")
+PrintMessage(num_str1)
+WriteTextFile("test42.txt", num_str1)
+PrintMessage("Wrote file with 42")
+
+// Second use of NumberToString - this might crash
+PrintMessage("About to call NumberToString(0)...")
+num_str2 = NumberToString(0)
+PrintMessage("NumberToString(0) succeeded:")
+PrintMessage(num_str2)
+
+// Try StringConcat with it
+PrintMessage("About to concat...")
+result = StringConcat("file_", num_str2)
+PrintMessage("Concat succeeded:")
+PrintMessage(result)
+
+PrintMessage("Test complete")

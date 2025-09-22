@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_performance.ailang -> test_performance_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -245,7 +247,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L3 at position 562
-DEBUG: Assignment to counter, value: FunctionCall(line=12, column=15, function='Add', arguments=[Identifier(line=12, column=19, name='counter'), Number(line=12, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to counter, value: FunctionCall(line=12, column=15, function='Add', arguments=[Identifier(line=12, column=19, name='counter', original_name=None), Number(line=12, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -491,7 +493,7 @@ DEBUG: MOV RAX, 0
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val completed
-DEBUG: Assignment to val, value: FunctionCall(line=26, column=7, function='Perf.Increment', arguments=[Identifier(line=26, column=22, name='val')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=26, column=21, function='Perf.Increment', arguments=[Identifier(line=26, column=22, name='val', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Perf.Increment
 DEBUG: Found registered function: Perf.Increment
 DEBUG: Calling user function Perf.Increment
@@ -507,7 +509,7 @@ DEBUG: User function Perf.Increment called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val completed
-DEBUG: Assignment to val, value: FunctionCall(line=27, column=7, function='Perf.Increment', arguments=[Identifier(line=27, column=22, name='val')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=27, column=21, function='Perf.Increment', arguments=[Identifier(line=27, column=22, name='val', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Perf.Increment
 DEBUG: Found registered function: Perf.Increment
 DEBUG: Calling user function Perf.Increment
@@ -523,7 +525,7 @@ DEBUG: User function Perf.Increment called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val completed
-DEBUG: Assignment to val, value: FunctionCall(line=28, column=7, function='Perf.Increment', arguments=[Identifier(line=28, column=22, name='val')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=28, column=21, function='Perf.Increment', arguments=[Identifier(line=28, column=22, name='val', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Perf.Increment
 DEBUG: Found registered function: Perf.Increment
 DEBUG: Calling user function Perf.Increment
@@ -539,7 +541,7 @@ DEBUG: User function Perf.Increment called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val completed
-DEBUG: Assignment to val, value: FunctionCall(line=29, column=7, function='Perf.Increment', arguments=[Identifier(line=29, column=22, name='val')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=29, column=21, function='Perf.Increment', arguments=[Identifier(line=29, column=22, name='val', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Perf.Increment
 DEBUG: Found registered function: Perf.Increment
 DEBUG: Calling user function Perf.Increment
@@ -555,7 +557,7 @@ DEBUG: User function Perf.Increment called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to val completed
-DEBUG: Assignment to val, value: FunctionCall(line=30, column=7, function='Perf.Increment', arguments=[Identifier(line=30, column=22, name='val')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=30, column=21, function='Perf.Increment', arguments=[Identifier(line=30, column=22, name='val', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Perf.Increment
 DEBUG: Found registered function: Perf.Increment
 DEBUG: Calling user function Perf.Increment
@@ -703,7 +705,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to big_array, value: FunctionCall(line=35, column=13, function='ArrayCreate', arguments=[Number(line=35, column=25, value='100')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to big_array, value: FunctionCall(line=35, column=24, function='ArrayCreate', arguments=[Number(line=35, column=25, value='100')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -885,7 +887,7 @@ DEBUG: Emitted bytes: ['0x48', '0x83', '0xc0', '0x8']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x8']
-DEBUG: Assignment to sum, value: FunctionCall(line=39, column=7, function='Add', arguments=[FunctionCall(line=39, column=11, function='ArrayGet', arguments=[Identifier(line=39, column=20, name='big_array'), Number(line=39, column=31, value='0')]), FunctionCall(line=39, column=35, function='Add', arguments=[FunctionCall(line=39, column=39, function='ArrayGet', arguments=[Identifier(line=39, column=48, name='big_array'), Number(line=39, column=59, value='50')]), FunctionCall(line=39, column=64, function='ArrayGet', arguments=[Identifier(line=39, column=73, name='big_array'), Number(line=39, column=84, value='99')])])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum, value: FunctionCall(line=39, column=7, function='Add', arguments=[FunctionCall(line=39, column=19, function='ArrayGet', arguments=[Identifier(line=39, column=20, name='big_array', original_name=None), Number(line=39, column=31, value='0')]), FunctionCall(line=39, column=35, function='Add', arguments=[FunctionCall(line=39, column=47, function='ArrayGet', arguments=[Identifier(line=39, column=48, name='big_array', original_name=None), Number(line=39, column=59, value='50')]), FunctionCall(line=39, column=72, function='ArrayGet', arguments=[Identifier(line=39, column=73, name='big_array', original_name=None), Number(line=39, column=84, value='99')])])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1228,7 +1230,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (165 bytes)
 
 === COMPILATION COMPLETE (8357 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_performance_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_performance_exec
 ✅ Wrote 8357 bytes
 ✅ Made executable
 ✅ Compiled to test_performance_exec (8357 bytes)

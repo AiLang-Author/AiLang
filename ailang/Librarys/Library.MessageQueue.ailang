@@ -1,90 +1,206 @@
 // Library.MessageQueue.ailang
+// Fixed version with proper syntax and scoping
 
 // Queue node structure (using memory allocation)
-Function.QueueNode.Create {
-    Input: (data: Integer, next: Address)
-    Output: Address
-    
-    node = Allocate(16)  // 8 bytes data + 8 bytes next pointer
-    StoreValue(node, data)
-    StoreValue(Add(node, 8), next)
-    ReturnValue(node)
+Function.MessageQueue.CreateNode {
+    Input: data: Integer, next: Integer
+    Output: Integer
+    Body: {
+        node = Allocate(16)  // 8 bytes data + 8 bytes next pointer
+        StoreValue(node, data)
+        StoreValue(Add(node, 8), next)
+        ReturnValue(node)
+    }
 }
 
 // Queue structure: head, tail, count
-Function.Queue.Create {
-    Output: Address
-    
-    queue = Allocate(24)  // head + tail + count
-    StoreValue(queue, 0)  // head = null
-    StoreValue(Add(queue, 8), 0)  // tail = null
-    StoreValue(Add(queue, 16), 0)  // count = 0
-    ReturnValue(queue)
-}
-
-Function.Queue.Enqueue {
-    Input: (queue: Address, data: Integer)
+Function.MessageQueue.Create {
     Output: Integer
-    
-    // Create new node
-    new_node = QueueNode.Create(data, 0)
-    
-    // Get current tail
-    tail = Dereference(Add(queue, 8))
-    
-    IfCondition EqualTo(tail, 0) ThenBlock: {
-        // Empty queue
-        StoreValue(queue, new_node)  // head = new_node
-        StoreValue(Add(queue, 8), new_node)  // tail = new_node
-    } ElseBlock: {
-        // Add to tail
-        StoreValue(Add(tail, 8), new_node)  // tail.next = new_node
-        StoreValue(Add(queue, 8), new_node)  // tail = new_node
-    }
-    
-    // Increment count
-    count = Dereference(Add(queue, 16))
-    StoreValue(Add(queue, 16), Add(count, 1))
-    
-    ReturnValue(1)
-}
-
-Function.Queue.Dequeue {
-    Input: queue: Address
-    Output: Integer
-    
-    // Check if empty
-    head = Dereference(queue)
-    IfCondition EqualTo(head, 0) ThenBlock: {
-        ReturnValue(-1)  // Error: empty queue
-    }
-    
-    // Get data from head
-    data = Dereference(head)
-    
-    // Move head to next
-    next = Dereference(Add(head, 8))
-    StoreValue(queue, next)
-    
-    // If queue is now empty, update tail
-    IfCondition EqualTo(next, 0) ThenBlock: {
+    Body: {
+        queue = Allocate(24)  // head + tail + count
+        StoreValue(queue, 0)  // head = null
         StoreValue(Add(queue, 8), 0)  // tail = null
+        StoreValue(Add(queue, 16), 0)  // count = 0
+        ReturnValue(queue)
     }
-    
-    // Decrement count
-    count = Dereference(Add(queue, 16))
-    StoreValue(Add(queue, 16), Subtract(count, 1))
-    
-    // Free old head
-    Deallocate(head, 16)
-    
-    ReturnValue(data)
 }
 
-Function.Queue.IsEmpty {
-    Input: queue: Address
+Function.MessageQueue.Destroy {
+    Input: queue: Integer
     Output: Integer
+    Body: {
+        // Dequeue all remaining items to free nodes
+        head = Dereference(queue)
+        WhileLoop NotEqualTo(head, 0) {
+            next = Dereference(Add(head, 8))
+            Deallocate(head, 16)
+            head = next
+        }
+        
+        // Free the queue structure itself
+        Deallocate(queue, 24)
+        ReturnValue(1)
+    }
+}
+
+Function.MessageQueue.Enqueue {
+    Input: queue: Integer, data: Integer
+    Output: Integer
+    Body: {
+        // Create new node - use full path
+        new_node = MessageQueue.CreateNode(data, 0)
+        
+        // Get current tail
+        tail = Dereference(Add(queue, 8))
+        
+        IfCondition EqualTo(tail, 0) ThenBlock: {
+            // Empty queue
+            StoreValue(queue, new_node)  // head = new_node
+            StoreValue(Add(queue, 8), new_node)  // tail = new_node
+        } ElseBlock: {
+            // Add to tail
+            StoreValue(Add(tail, 8), new_node)  // tail.next = new_node
+            StoreValue(Add(queue, 8), new_node)  // tail = new_node
+        }
+        
+        // Increment count
+        count = Dereference(Add(queue, 16))
+        StoreValue(Add(queue, 16), Add(count, 1))
+        
+        ReturnValue(1)
+    }
+}
+
+Function.MessageQueue.Dequeue {
+    Input: queue: Integer
+    Output: Integer
+    Body: {
+        // Check if empty
+        head = Dereference(queue)
+        IfCondition EqualTo(head, 0) ThenBlock: {
+            ReturnValue(-1)  // Error: empty queue
+        }
+        
+        // Get data from head
+        data = Dereference(head)
+        
+        // Move head to next
+        next = Dereference(Add(head, 8))
+        StoreValue(queue, next)
+        
+        // If queue is now empty, update tail
+        IfCondition EqualTo(next, 0) ThenBlock: {
+            StoreValue(Add(queue, 8), 0)  // tail = null
+        }
+        
+        // Decrement count
+        count = Dereference(Add(queue, 16))
+        StoreValue(Add(queue, 16), Subtract(count, 1))
+        
+        // Free old head
+        Deallocate(head, 16)
+        
+        ReturnValue(data)
+    }
+}
+
+Function.MessageQueue.Peek {
+    Input: queue: Integer
+    Output: Integer
+    Body: {
+        // Check if empty
+        head = Dereference(queue)
+        IfCondition EqualTo(head, 0) ThenBlock: {
+            ReturnValue(-1)  // Error: empty queue
+        }
+        
+        // Get data from head without removing
+        data = Dereference(head)
+        ReturnValue(data)
+    }
+}
+
+Function.MessageQueue.IsEmpty {
+    Input: queue: Integer
+    Output: Integer
+    Body: {
+        count = Dereference(Add(queue, 16))
+        ReturnValue(EqualTo(count, 0))
+    }
+}
+
+Function.MessageQueue.Size {
+    Input: queue: Integer
+    Output: Integer
+    Body: {
+        count = Dereference(Add(queue, 16))
+        ReturnValue(count)
+    }
+}
+
+Function.MessageQueue.Clear {
+    Input: queue: Integer
+    Output: Integer
+    Body: {
+        // Dequeue all items - use full path
+        empty_check = MessageQueue.IsEmpty(queue)
+        WhileLoop EqualTo(empty_check, 0) {
+            MessageQueue.Dequeue(queue)
+            empty_check = MessageQueue.IsEmpty(queue)
+        }
+        ReturnValue(1)
+    }
+}
+
+// Test harness for the message queue
+SubRoutine.MessageQueue.TestQueue {
+    PrintMessage("Testing Message Queue Library")
+    PrintMessage("=============================")
     
-    count = Dereference(Add(queue, 16))
-    ReturnValue(EqualTo(count, 0))
+    // Create a queue - use full path
+    q = MessageQueue.Create()
+    PrintMessage("Queue created")
+    
+    // Test empty queue
+    empty = MessageQueue.IsEmpty(q)
+    PrintMessage("Is empty: ")
+    PrintNumber(empty)
+    
+    // Enqueue some items
+    MessageQueue.Enqueue(q, 10)
+    MessageQueue.Enqueue(q, 20)
+    MessageQueue.Enqueue(q, 30)
+    PrintMessage("Enqueued: 10, 20, 30")
+    
+    // Check size
+    size = MessageQueue.Size(q)
+    PrintMessage("Queue size: ")
+    PrintNumber(size)
+    
+    // Peek at head
+    head_value = MessageQueue.Peek(q)
+    PrintMessage("Peek (should be 10): ")
+    PrintNumber(head_value)
+    
+    // Dequeue all items
+    PrintMessage("Dequeuing all items:")
+    empty_check = MessageQueue.IsEmpty(q)
+    WhileLoop EqualTo(empty_check, 0) {
+        value = MessageQueue.Dequeue(q)
+        PrintMessage("  Dequeued: ")
+        PrintNumber(value)
+        empty_check = MessageQueue.IsEmpty(q)
+    }
+    
+    // Test underflow
+    underflow = MessageQueue.Dequeue(q)
+    PrintMessage("Dequeue from empty (should be -1): ")
+    PrintNumber(underflow)
+    
+    // Clean up
+    MessageQueue.Destroy(q)
+    PrintMessage("Queue destroyed")
+    
+    PrintMessage("")
+    PrintMessage("Message Queue Test Complete!")
 }

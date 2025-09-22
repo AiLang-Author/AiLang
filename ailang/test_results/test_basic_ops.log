@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_basic_ops.ailang -> test_basic_ops_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -197,7 +199,7 @@ DEBUG: MOV RAX, 20
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to b completed
-DEBUG: Assignment to sum, value: FunctionCall(line=10, column=7, function='Add', arguments=[Identifier(line=10, column=11, name='a'), Identifier(line=10, column=14, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum, value: FunctionCall(line=10, column=7, function='Add', arguments=[Identifier(line=10, column=11, name='a', original_name=None), Identifier(line=10, column=14, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -355,7 +357,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to diff, value: FunctionCall(line=14, column=8, function='Subtract', arguments=[Identifier(line=14, column=17, name='b'), Identifier(line=14, column=20, name='a')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to diff, value: FunctionCall(line=14, column=8, function='Subtract', arguments=[Identifier(line=14, column=17, name='b', original_name=None), Identifier(line=14, column=20, name='a', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -514,7 +516,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to product, value: FunctionCall(line=18, column=11, function='Multiply', arguments=[Identifier(line=18, column=20, name='a'), Number(line=18, column=23, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to product, value: FunctionCall(line=18, column=11, function='Multiply', arguments=[Identifier(line=18, column=20, name='a', original_name=None), Number(line=18, column=23, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -672,7 +674,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to is_less, value: FunctionCall(line=23, column=11, function='LessThan', arguments=[Identifier(line=23, column=20, name='a'), Identifier(line=23, column=23, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_less, value: FunctionCall(line=23, column=11, function='LessThan', arguments=[Identifier(line=23, column=20, name='a', original_name=None), Identifier(line=23, column=23, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -832,7 +834,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to is_equal, value: FunctionCall(line=27, column=12, function='EqualTo', arguments=[Identifier(line=27, column=20, name='a'), Number(line=27, column=23, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_equal, value: FunctionCall(line=27, column=12, function='EqualTo', arguments=[Identifier(line=27, column=20, name='a', original_name=None), Number(line=27, column=23, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: EqualTo
 DEBUG: Dispatching EqualTo to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1063,7 +1065,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (161 bytes)
 
 === COMPILATION COMPLETE (8353 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_basic_ops_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_basic_ops_exec
 ✅ Wrote 8353 bytes
 ✅ Made executable
 ✅ Compiled to test_basic_ops_exec (8353 bytes)

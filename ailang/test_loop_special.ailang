@@ -29,14 +29,13 @@ LoopShadow.BackgroundTask {
     // Simulate background work
     bg_work = 0
     WhileLoop LessThan(bg_work, 3) {
-        Body: {
+        
             shadow_counter = Add(shadow_counter, 10)
             PrintMessage("  Shadow work unit:")
             PrintNumber(bg_work)
             PrintMessage("  Shadow counter now:")
             PrintNumber(shadow_counter)
             bg_work = Add(bg_work, 1)
-        }
         }
     
     PrintMessage("LoopShadow.BackgroundTask complete")

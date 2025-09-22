@@ -1,0 +1,143 @@
+// test_scheduler_minimal.ailang
+// Test if we can build a working scheduler using available primitives
+
+PrintMessage("=== Minimal Scheduler Test ===")
+PrintMessage("")
+
+// Global state
+actor1_ran = 0
+actor2_ran = 0
+spawn_worked = 0
+scheduler_cycles = 0
+
+// Define actors (these compile as subroutines with skip jumps)
+LoopActor.Actor1 {
+    PrintMessage("!!! Actor1 EXECUTED !!!")
+    actor1_ran = 1
+}
+
+LoopActor.Actor2 {
+    PrintMessage("!!! Actor2 EXECUTED !!!")
+    actor2_ran = 1
+}
+
+PrintMessage("Actors defined. Status:")
+PrintMessage("  actor1_ran:")
+PrintNumber(actor1_ran)
+PrintMessage("  actor2_ran:")
+PrintNumber(actor2_ran)
+PrintMessage("")
+
+// Try LoopSpawn to see if it returns handles
+PrintMessage("Testing LoopSpawn...")
+
+// If LoopSpawn compiles, try it
+// Note: This may not work but let's see what happens
+// handle1 = LoopSpawn("Actor1")
+// handle2 = LoopSpawn("Actor2")
+// PrintMessage("Spawn handles:")
+// PrintNumber(handle1)
+// PrintNumber(handle2)
+
+// Try calling actors as subroutines directly
+// The compiler registers them as "Actor.{name}"
+PrintMessage("Trying RunTask with actor names...")
+// RunTask(Actor.Actor1)  // This probably won't work
+// RunTask(Actor1)        // Neither will this
+
+// Build a manual scheduler using LoopMain
+PrintMessage("")
+PrintMessage("=== Manual Scheduler Attempt ===")
+
+// Store actor "handles" manually
+actor_count = 2
+current_actor = 0
+
+// LoopMain executes inline - use it as our scheduler
+LoopMain.Scheduler {
+    PrintMessage("Scheduler starting in LoopMain...")
+    
+    // Run a few scheduling cycles
+    scheduler_cycles = 0
+    WhileLoop LessThan(scheduler_cycles, 5) {
+        Body: {
+            PrintMessage("Schedule cycle:")
+            PrintNumber(scheduler_cycles)
+        
+            // Try to execute actors based on current_actor
+            IfCondition EqualTo(current_actor, 0) ThenBlock {
+                PrintMessage("  Would run Actor1 here")
+                // Can we somehow jump to Actor1's code?
+                // The actor code has a skip jump at the start...
+            }
+        
+            IfCondition EqualTo(current_actor, 1) ThenBlock {
+                PrintMessage("  Would run Actor2 here")
+            }
+        
+            // Round-robin scheduling
+            current_actor = Modulo(Add(current_actor, 1), actor_count)
+            scheduler_cycles = Add(scheduler_cycles, 1)
+        }
+        }
+    
+    PrintMessage("Scheduler finished")
+}
+
+PrintMessage("")
+PrintMessage("After scheduler attempt:")
+PrintMessage("  actor1_ran:")
+PrintNumber(actor1_ran)
+PrintMessage("  actor2_ran:")
+PrintNumber(actor2_ran)
+PrintMessage("")
+
+// Try using SubRoutines to create executable "actors"
+PrintMessage("=== SubRoutine-based Actor Simulation ===")
+
+SubRoutine.ActorSim1 {
+    PrintMessage("ActorSim1 running (SubRoutine)")
+    actor1_ran = 10
+}
+
+SubRoutine.ActorSim2 {
+    PrintMessage("ActorSim2 running (SubRoutine)")
+    actor2_ran = 20
+}
+
+// Manual scheduler for SubRoutine "actors"
+LoopMain.SubRoutineScheduler {
+    PrintMessage("Running SubRoutine scheduler...")
+    
+    cycle = 0
+    WhileLoop LessThan(cycle, 3) {
+        Body: {
+            // Schedule SubRoutine "actors"
+            IfCondition EqualTo(Modulo(cycle, 2), 0) ThenBlock {
+                RunTask(ActorSim1)
+            } ElseBlock {
+                RunTask(ActorSim2)
+            }
+        
+            cycle = Add(cycle, 1)
+        }
+        }
+}
+
+PrintMessage("")
+PrintMessage("=== Final Results ===")
+PrintMessage("actor1_ran (expect 10 from SubRoutine):")
+PrintNumber(actor1_ran)
+PrintMessage("actor2_ran (expect 20 from SubRoutine):")
+PrintNumber(actor2_ran)
+PrintMessage("")
+
+IfCondition Or(EqualTo(actor1_ran, 1), EqualTo(actor2_ran, 1)) ThenBlock {
+    PrintMessage("SUCCESS: Real LoopActor blocks executed!")
+} ElseBlock {
+    PrintMessage("Result: LoopActor blocks don't execute")
+    PrintMessage("But SubRoutine-based simulation works")
+    PrintMessage("")
+    PrintMessage("For manual: 'LoopActor - parsed but not executed'")
+    PrintMessage("           'Scheduler implementation needed'")
+}

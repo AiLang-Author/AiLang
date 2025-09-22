@@ -24,11 +24,10 @@ LoopMain.TestMain {
     // Test loop inside LoopMain
     i = 0
     WhileLoop LessThan(i, 3) {
-        Body: {
+        
             PrintMessage("  LoopMain iteration:")
             PrintNumber(i)
             i = Add(i, 1)
-        }
         }
     
     PrintMessage("LoopMain.TestMain complete")

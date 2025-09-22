@@ -1,0 +1,36 @@
+PrintMessage("Testing full qualified names")
+
+Function.A.B {
+    Body: {
+        PrintMessage("3 chars total")
+        ReturnValue(3)
+    }
+}
+
+Function.ABCD.EFGHIJKLMNO {
+    Body: {
+        PrintMessage("19 chars total")
+        ReturnValue(19)
+    }
+}
+
+Function.ABCD.EFGHIJKLMNOP {
+    Body: {
+        PrintMessage("20 chars total")
+        ReturnValue(20)
+    }
+}
+
+PrintMessage("Testing A.B (3 chars)")
+r1 = A.B()
+PrintNumber(r1)
+
+PrintMessage("Testing 19 char full name")
+r2 = ABCD.EFGHIJKLMNO()
+PrintNumber(r2)
+
+PrintMessage("Testing 20 char full name")
+r3 = ABCD.EFGHIJKLMNOP()
+PrintNumber(r3)
+
+PrintMessage("Done!")

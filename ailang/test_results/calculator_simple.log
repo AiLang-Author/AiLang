@@ -3,6 +3,8 @@
 🚀 Starting compilation for: calculator_simple.ailang -> calculator_simple_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -558,7 +560,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param elements stored at [RBP-8]
-DEBUG: Assignment to count, value: FunctionCall(line=72, column=17, function='ArrayLength', arguments=[Identifier(line=72, column=29, name='elements')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to count, value: FunctionCall(line=72, column=28, function='ArrayLength', arguments=[Identifier(line=72, column=29, name='elements', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayLength
 DEBUG: Dispatching ArrayLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -590,7 +592,7 @@ DEBUG: Allocated count at stack offset 24
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to count completed
-DEBUG: Assignment to count_str, value: FunctionCall(line=73, column=21, function='RESP.IntToString', arguments=[Identifier(line=73, column=38, name='count')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to count_str, value: FunctionCall(line=73, column=37, function='RESP.IntToString', arguments=[Identifier(line=73, column=38, name='count', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.IntToString
 DEBUG: Found registered function: RESP.IntToString
 DEBUG: Calling user function RESP.IntToString
@@ -607,7 +609,7 @@ DEBUG: Allocated count_str at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to count_str completed
-DEBUG: Assignment to count_len, value: FunctionCall(line=74, column=21, function='StringLength', arguments=[Identifier(line=74, column=34, name='count_str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to count_len, value: FunctionCall(line=74, column=21, function='StringLength', arguments=[Identifier(line=74, column=34, name='count_str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -646,7 +648,7 @@ DEBUG: Allocated count_len at stack offset 56
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to count_len completed
-DEBUG: Assignment to total_size, value: FunctionCall(line=78, column=22, function='Add', arguments=[Identifier(line=78, column=26, name='count_len'), Number(line=78, column=37, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to total_size, value: FunctionCall(line=78, column=22, function='Add', arguments=[Identifier(line=78, column=26, name='count_len', original_name=None), Number(line=78, column=37, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -711,7 +713,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L18 at position 1278
-DEBUG: Assignment to elem, value: FunctionCall(line=83, column=20, function='ArrayGet', arguments=[Identifier(line=83, column=29, name='elements'), Identifier(line=83, column=39, name='i')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem, value: FunctionCall(line=83, column=28, function='ArrayGet', arguments=[Identifier(line=83, column=29, name='elements', original_name=None), Identifier(line=83, column=39, name='i', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -751,7 +753,7 @@ DEBUG: Allocated elem at stack offset 104
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem completed
-DEBUG: Assignment to elem_len, value: FunctionCall(line=84, column=24, function='StringLength', arguments=[Identifier(line=84, column=37, name='elem')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem_len, value: FunctionCall(line=84, column=24, function='StringLength', arguments=[Identifier(line=84, column=37, name='elem', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -790,7 +792,7 @@ DEBUG: Allocated elem_len at stack offset 120
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x88', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem_len completed
-DEBUG: Assignment to elem_len_str, value: FunctionCall(line=85, column=28, function='RESP.IntToString', arguments=[Identifier(line=85, column=45, name='elem_len')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem_len_str, value: FunctionCall(line=85, column=44, function='RESP.IntToString', arguments=[Identifier(line=85, column=45, name='elem_len', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.IntToString
 DEBUG: Found registered function: RESP.IntToString
 DEBUG: Calling user function RESP.IntToString
@@ -807,7 +809,7 @@ DEBUG: Allocated elem_len_str at stack offset 136
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x78', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem_len_str completed
-DEBUG: Assignment to len_digits, value: FunctionCall(line=86, column=26, function='StringLength', arguments=[Identifier(line=86, column=39, name='elem_len_str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len_digits, value: FunctionCall(line=86, column=26, function='StringLength', arguments=[Identifier(line=86, column=39, name='elem_len_str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -875,7 +877,7 @@ DEBUG: MOV RAX, 11
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: Heap deallocation completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to elem_size, value: FunctionCall(line=90, column=25, function='Add', arguments=[FunctionCall(line=90, column=29, function='Add', arguments=[Identifier(line=90, column=33, name='len_digits'), Identifier(line=90, column=45, name='elem_len')]), Number(line=90, column=56, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem_size, value: FunctionCall(line=90, column=25, function='Add', arguments=[FunctionCall(line=90, column=29, function='Add', arguments=[Identifier(line=90, column=33, name='len_digits', original_name=None), Identifier(line=90, column=45, name='elem_len', original_name=None)]), Number(line=90, column=56, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -921,7 +923,7 @@ DEBUG: Allocated elem_size at stack offset 168
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x58', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem_size completed
-DEBUG: Assignment to total_size, value: FunctionCall(line=91, column=26, function='Add', arguments=[Identifier(line=91, column=30, name='total_size'), Identifier(line=91, column=42, name='elem_size')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to total_size, value: FunctionCall(line=91, column=26, function='Add', arguments=[Identifier(line=91, column=30, name='total_size', original_name=None), Identifier(line=91, column=42, name='elem_size', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -947,7 +949,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to total_size completed
-DEBUG: Assignment to i, value: FunctionCall(line=92, column=17, function='Add', arguments=[Identifier(line=92, column=21, name='i'), Number(line=92, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=92, column=17, function='Add', arguments=[Identifier(line=92, column=21, name='i', original_name=None), Number(line=92, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -977,7 +979,7 @@ DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JMP to L17 at position 1588
 DEBUG: Marked label L18 at position 1593
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to response, value: FunctionCall(line=96, column=20, function='Allocate', arguments=[FunctionCall(line=96, column=29, function='Add', arguments=[Identifier(line=96, column=33, name='total_size'), Number(line=96, column=45, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to response, value: FunctionCall(line=96, column=20, function='Allocate', arguments=[FunctionCall(line=96, column=29, function='Add', arguments=[Identifier(line=96, column=33, name='total_size', original_name=None), Number(line=96, column=45, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1092,7 +1094,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=101, column=15, function='Add', arguments=[Identifier(line=101, column=19, name='pos'), Number(line=101, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=101, column=15, function='Add', arguments=[Identifier(line=101, column=19, name='pos', original_name=None), Number(line=101, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1211,7 +1213,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=106, column=19, function='Add', arguments=[Identifier(line=106, column=23, name='pos'), Number(line=106, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=106, column=19, function='Add', arguments=[Identifier(line=106, column=23, name='pos', original_name=None), Number(line=106, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1237,7 +1239,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x38', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Assignment to i, value: FunctionCall(line=107, column=17, function='Add', arguments=[Identifier(line=107, column=21, name='i'), Number(line=107, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=107, column=17, function='Add', arguments=[Identifier(line=107, column=21, name='i', original_name=None), Number(line=107, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1298,7 +1300,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=111, column=15, function='Add', arguments=[Identifier(line=111, column=19, name='pos'), Number(line=111, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=111, column=15, function='Add', arguments=[Identifier(line=111, column=19, name='pos', original_name=None), Number(line=111, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1355,7 +1357,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=113, column=15, function='Add', arguments=[Identifier(line=113, column=19, name='pos'), Number(line=113, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=113, column=15, function='Add', arguments=[Identifier(line=113, column=19, name='pos', original_name=None), Number(line=113, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1418,7 +1420,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L26 at position 2147
-DEBUG: Assignment to elem, value: FunctionCall(line=118, column=20, function='ArrayGet', arguments=[Identifier(line=118, column=29, name='elements'), Identifier(line=118, column=39, name='i')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem, value: FunctionCall(line=118, column=28, function='ArrayGet', arguments=[Identifier(line=118, column=29, name='elements', original_name=None), Identifier(line=118, column=39, name='i', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1457,7 +1459,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem completed
-DEBUG: Assignment to elem_len, value: FunctionCall(line=119, column=24, function='StringLength', arguments=[Identifier(line=119, column=37, name='elem')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem_len, value: FunctionCall(line=119, column=24, function='StringLength', arguments=[Identifier(line=119, column=37, name='elem', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1495,7 +1497,7 @@ DEBUG: StringOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x88', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem_len completed
-DEBUG: Assignment to elem_len_str, value: FunctionCall(line=120, column=28, function='RESP.IntToString', arguments=[Identifier(line=120, column=45, name='elem_len')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem_len_str, value: FunctionCall(line=120, column=44, function='RESP.IntToString', arguments=[Identifier(line=120, column=45, name='elem_len', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.IntToString
 DEBUG: Found registered function: RESP.IntToString
 DEBUG: Calling user function RESP.IntToString
@@ -1511,7 +1513,7 @@ DEBUG: User function RESP.IntToString called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x78', '0xff', '0xff', '0xff']
 DEBUG: Assignment to elem_len_str completed
-DEBUG: Assignment to elem_len_digits, value: FunctionCall(line=121, column=31, function='StringLength', arguments=[Identifier(line=121, column=44, name='elem_len_str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to elem_len_digits, value: FunctionCall(line=121, column=31, function='StringLength', arguments=[Identifier(line=121, column=44, name='elem_len_str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1581,7 +1583,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=125, column=19, function='Add', arguments=[Identifier(line=125, column=23, name='pos'), Number(line=125, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=125, column=19, function='Add', arguments=[Identifier(line=125, column=23, name='pos', original_name=None), Number(line=125, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1701,7 +1703,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=130, column=23, function='Add', arguments=[Identifier(line=130, column=27, name='pos'), Number(line=130, column=32, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=130, column=23, function='Add', arguments=[Identifier(line=130, column=27, name='pos', original_name=None), Number(line=130, column=32, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1727,7 +1729,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x38', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Assignment to j, value: FunctionCall(line=131, column=21, function='Add', arguments=[Identifier(line=131, column=25, name='j'), Number(line=131, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to j, value: FunctionCall(line=131, column=21, function='Add', arguments=[Identifier(line=131, column=25, name='j', original_name=None), Number(line=131, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1788,7 +1790,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=135, column=19, function='Add', arguments=[Identifier(line=135, column=23, name='pos'), Number(line=135, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=135, column=19, function='Add', arguments=[Identifier(line=135, column=23, name='pos', original_name=None), Number(line=135, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1845,7 +1847,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=137, column=19, function='Add', arguments=[Identifier(line=137, column=23, name='pos'), Number(line=137, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=137, column=19, function='Add', arguments=[Identifier(line=137, column=23, name='pos', original_name=None), Number(line=137, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1964,7 +1966,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=143, column=23, function='Add', arguments=[Identifier(line=143, column=27, name='pos'), Number(line=143, column=32, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=143, column=23, function='Add', arguments=[Identifier(line=143, column=27, name='pos', original_name=None), Number(line=143, column=32, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1990,7 +1992,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x38', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Assignment to j, value: FunctionCall(line=144, column=21, function='Add', arguments=[Identifier(line=144, column=25, name='j'), Number(line=144, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to j, value: FunctionCall(line=144, column=21, function='Add', arguments=[Identifier(line=144, column=25, name='j', original_name=None), Number(line=144, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2051,7 +2053,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=149, column=19, function='Add', arguments=[Identifier(line=149, column=23, name='pos'), Number(line=149, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=149, column=19, function='Add', arguments=[Identifier(line=149, column=23, name='pos', original_name=None), Number(line=149, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2108,7 +2110,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=151, column=19, function='Add', arguments=[Identifier(line=151, column=23, name='pos'), Number(line=151, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=151, column=19, function='Add', arguments=[Identifier(line=151, column=23, name='pos', original_name=None), Number(line=151, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2163,7 +2165,7 @@ DEBUG: MOV RAX, 11
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: Heap deallocation completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to i, value: FunctionCall(line=154, column=17, function='Add', arguments=[Identifier(line=154, column=21, name='i'), Number(line=154, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=154, column=17, function='Add', arguments=[Identifier(line=154, column=21, name='i', original_name=None), Number(line=154, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2396,7 +2398,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L36 at position 3287
 DEBUG: Marked label L37 at position 3287
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to count, value: FunctionCall(line=181, column=17, function='RESP.ParseInteger', arguments=[Identifier(line=181, column=35, name='buffer'), Number(line=181, column=43, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to count, value: FunctionCall(line=181, column=34, function='RESP.ParseInteger', arguments=[Identifier(line=181, column=35, name='buffer', original_name=None), Number(line=181, column=43, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.ParseInteger
 DEBUG: Found registered function: RESP.ParseInteger
 DEBUG: Calling user function RESP.ParseInteger
@@ -2418,7 +2420,7 @@ DEBUG: Allocated count at stack offset 32
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to count completed
-DEBUG: Assignment to result, value: FunctionCall(line=184, column=18, function='ArrayCreate', arguments=[Identifier(line=184, column=30, name='count')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=184, column=29, function='ArrayCreate', arguments=[Identifier(line=184, column=30, name='count', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2580,7 +2582,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L39 at position 3539
-DEBUG: Assignment to offset, value: FunctionCall(line=189, column=22, function='Add', arguments=[Identifier(line=189, column=26, name='offset'), Number(line=189, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=189, column=22, function='Add', arguments=[Identifier(line=189, column=26, name='offset', original_name=None), Number(line=189, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2610,7 +2612,7 @@ DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JMP to L38 at position 3577
 DEBUG: Marked label L39 at position 3582
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to offset, value: FunctionCall(line=191, column=18, function='Add', arguments=[Identifier(line=191, column=22, name='offset'), Number(line=191, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=191, column=18, function='Add', arguments=[Identifier(line=191, column=22, name='offset', original_name=None), Number(line=191, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2674,7 +2676,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L41 at position 3664
-DEBUG: Assignment to element, value: FunctionCall(line=196, column=23, function='RESP.ParseElement', arguments=[Identifier(line=196, column=41, name='buffer'), Identifier(line=196, column=49, name='offset'), Identifier(line=196, column=57, name='size')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to element, value: FunctionCall(line=196, column=40, function='RESP.ParseElement', arguments=[Identifier(line=196, column=41, name='buffer', original_name=None), Identifier(line=196, column=49, name='offset', original_name=None), Identifier(line=196, column=57, name='size', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.ParseElement
 DEBUG: Found registered function: RESP.ParseElement
 DEBUG: Calling user function RESP.ParseElement
@@ -2743,7 +2745,7 @@ DEBUG: Emitted bytes: ['0x48', '0x83', '0xc0', '0x8']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x8']
-DEBUG: Assignment to offset, value: FunctionCall(line=200, column=22, function='RESP.SkipElement', arguments=[Identifier(line=200, column=39, name='buffer'), Identifier(line=200, column=47, name='offset'), Identifier(line=200, column=55, name='size')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=200, column=38, function='RESP.SkipElement', arguments=[Identifier(line=200, column=39, name='buffer', original_name=None), Identifier(line=200, column=47, name='offset', original_name=None), Identifier(line=200, column=55, name='size', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.SkipElement
 DEBUG: Found registered function: RESP.SkipElement
 DEBUG: Calling user function RESP.SkipElement
@@ -2769,7 +2771,7 @@ DEBUG: User function RESP.SkipElement called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to i, value: FunctionCall(line=202, column=17, function='Add', arguments=[Identifier(line=202, column=21, name='i'), Number(line=202, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=202, column=17, function='Add', arguments=[Identifier(line=202, column=21, name='i', original_name=None), Number(line=202, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2879,7 +2881,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0xd0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe8']
 DEBUG: Param size stored at [RBP-24]
-DEBUG: Assignment to type_byte, value: FunctionCall(line=216, column=21, function='GetByte', arguments=[Identifier(line=216, column=29, name='buffer'), Identifier(line=216, column=37, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to type_byte, value: FunctionCall(line=216, column=28, function='GetByte', arguments=[Identifier(line=216, column=29, name='buffer', original_name=None), Identifier(line=216, column=37, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GetByte
 DEBUG: Dispatching GetByte to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3073,7 +3075,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L47 at position 4150
-DEBUG: Assignment to num, value: FunctionCall(line=230, column=19, function='RESP.ParseInteger', arguments=[Identifier(line=230, column=37, name='buffer'), FunctionCall(line=230, column=45, function='Add', arguments=[Identifier(line=230, column=49, name='offset'), Number(line=230, column=57, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to num, value: FunctionCall(line=230, column=36, function='RESP.ParseInteger', arguments=[Identifier(line=230, column=37, name='buffer', original_name=None), FunctionCall(line=230, column=45, function='Add', arguments=[Identifier(line=230, column=49, name='offset', original_name=None), Number(line=230, column=57, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.ParseInteger
 DEBUG: Found registered function: RESP.ParseInteger
 DEBUG: Calling user function RESP.ParseInteger
@@ -3363,7 +3365,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0xd0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe8']
 DEBUG: Param size stored at [RBP-24]
-DEBUG: Assignment to offset, value: FunctionCall(line=251, column=18, function='Add', arguments=[Identifier(line=251, column=22, name='offset'), Number(line=251, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=251, column=18, function='Add', arguments=[Identifier(line=251, column=22, name='offset', original_name=None), Number(line=251, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3389,7 +3391,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to length, value: FunctionCall(line=254, column=18, function='RESP.ParseInteger', arguments=[Identifier(line=254, column=36, name='buffer'), Identifier(line=254, column=44, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to length, value: FunctionCall(line=254, column=35, function='RESP.ParseInteger', arguments=[Identifier(line=254, column=36, name='buffer', original_name=None), Identifier(line=254, column=44, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.ParseInteger
 DEBUG: Found registered function: RESP.ParseInteger
 DEBUG: Calling user function RESP.ParseInteger
@@ -3555,7 +3557,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L62 at position 4817
-DEBUG: Assignment to offset, value: FunctionCall(line=263, column=22, function='Add', arguments=[Identifier(line=263, column=26, name='offset'), Number(line=263, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=263, column=22, function='Add', arguments=[Identifier(line=263, column=26, name='offset', original_name=None), Number(line=263, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3585,7 +3587,7 @@ DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JMP to L61 at position 4855
 DEBUG: Marked label L62 at position 4860
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to offset, value: FunctionCall(line=265, column=18, function='Add', arguments=[Identifier(line=265, column=22, name='offset'), Number(line=265, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=265, column=18, function='Add', arguments=[Identifier(line=265, column=22, name='offset', original_name=None), Number(line=265, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3611,7 +3613,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to str, value: FunctionCall(line=268, column=15, function='Allocate', arguments=[FunctionCall(line=268, column=24, function='Add', arguments=[Identifier(line=268, column=28, name='length'), Number(line=268, column=36, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to str, value: FunctionCall(line=268, column=15, function='Allocate', arguments=[FunctionCall(line=268, column=24, function='Add', arguments=[Identifier(line=268, column=28, name='length', original_name=None), Number(line=268, column=36, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3800,7 +3802,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to i, value: FunctionCall(line=272, column=17, function='Add', arguments=[Identifier(line=272, column=21, name='i'), Number(line=272, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=272, column=17, function='Add', arguments=[Identifier(line=272, column=21, name='i', original_name=None), Number(line=272, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3941,7 +3943,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0xd0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe8']
 DEBUG: Param size stored at [RBP-24]
-DEBUG: Assignment to offset, value: FunctionCall(line=288, column=18, function='Add', arguments=[Identifier(line=288, column=22, name='offset'), Number(line=288, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=288, column=18, function='Add', arguments=[Identifier(line=288, column=22, name='offset', original_name=None), Number(line=288, column=30, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3967,7 +3969,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to start, value: Identifier(line=291, column=17, name='offset'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to start, value: Identifier(line=291, column=17, name='offset', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'offset' as local param at offset 16
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
@@ -4072,7 +4074,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L67 at position 5435
-DEBUG: Assignment to offset, value: FunctionCall(line=293, column=22, function='Add', arguments=[Identifier(line=293, column=26, name='offset'), Number(line=293, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=293, column=22, function='Add', arguments=[Identifier(line=293, column=26, name='offset', original_name=None), Number(line=293, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4102,7 +4104,7 @@ DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JMP to L66 at position 5473
 DEBUG: Marked label L67 at position 5478
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to length, value: FunctionCall(line=297, column=18, function='Subtract', arguments=[Identifier(line=297, column=27, name='offset'), Identifier(line=297, column=35, name='start')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to length, value: FunctionCall(line=297, column=18, function='Subtract', arguments=[Identifier(line=297, column=27, name='offset', original_name=None), Identifier(line=297, column=35, name='start', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4130,7 +4132,7 @@ DEBUG: Allocated length at stack offset 56
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to length completed
-DEBUG: Assignment to str, value: FunctionCall(line=298, column=15, function='Allocate', arguments=[FunctionCall(line=298, column=24, function='Add', arguments=[Identifier(line=298, column=28, name='length'), Number(line=298, column=36, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to str, value: FunctionCall(line=298, column=15, function='Allocate', arguments=[FunctionCall(line=298, column=24, function='Add', arguments=[Identifier(line=298, column=28, name='length', original_name=None), Number(line=298, column=36, value='1')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4319,7 +4321,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to i, value: FunctionCall(line=302, column=17, function='Add', arguments=[Identifier(line=302, column=21, name='i'), Number(line=302, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=302, column=17, function='Add', arguments=[Identifier(line=302, column=21, name='i', original_name=None), Number(line=302, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4529,7 +4531,7 @@ DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to negative completed
-DEBUG: Assignment to offset, value: FunctionCall(line=322, column=22, function='Add', arguments=[Identifier(line=322, column=26, name='offset'), Number(line=322, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=322, column=22, function='Add', arguments=[Identifier(line=322, column=26, name='offset', original_name=None), Number(line=322, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4567,7 +4569,7 @@ DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L74 at position 6048
-DEBUG: Assignment to byte, value: FunctionCall(line=327, column=20, function='GetByte', arguments=[Identifier(line=327, column=28, name='buffer'), Identifier(line=327, column=36, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to byte, value: FunctionCall(line=327, column=27, function='GetByte', arguments=[Identifier(line=327, column=28, name='buffer', original_name=None), Identifier(line=327, column=36, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GetByte
 DEBUG: Dispatching GetByte to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4722,7 +4724,7 @@ DEBUG: Emitted 32-bit JMP to L74 at position 6239
 DEBUG: Marked label L75 at position 6244
 DEBUG: Marked label L76 at position 6244
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to result, value: FunctionCall(line=335, column=22, function='Multiply', arguments=[Identifier(line=335, column=31, name='result'), Number(line=335, column=39, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=335, column=22, function='Multiply', arguments=[Identifier(line=335, column=31, name='result', original_name=None), Number(line=335, column=39, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4748,7 +4750,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to result completed
-DEBUG: Assignment to result, value: FunctionCall(line=336, column=22, function='Add', arguments=[Identifier(line=336, column=26, name='result'), FunctionCall(line=336, column=34, function='Subtract', arguments=[Identifier(line=336, column=43, name='byte'), Number(line=336, column=49, value='48')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=336, column=22, function='Add', arguments=[Identifier(line=336, column=26, name='result', original_name=None), FunctionCall(line=336, column=34, function='Subtract', arguments=[Identifier(line=336, column=43, name='byte', original_name=None), Number(line=336, column=49, value='48')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4794,7 +4796,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to result completed
-DEBUG: Assignment to offset, value: FunctionCall(line=338, column=22, function='Add', arguments=[Identifier(line=338, column=26, name='offset'), Number(line=338, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=338, column=22, function='Add', arguments=[Identifier(line=338, column=26, name='offset', original_name=None), Number(line=338, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4832,7 +4834,7 @@ DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L77 at position 6372
-DEBUG: Assignment to result, value: FunctionCall(line=342, column=22, function='Subtract', arguments=[Number(line=342, column=31, value='0'), Identifier(line=342, column=34, name='result')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=342, column=22, function='Subtract', arguments=[Number(line=342, column=31, value='0'), Identifier(line=342, column=34, name='result', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -4942,7 +4944,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0xd0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe8']
 DEBUG: Param size stored at [RBP-24]
-DEBUG: Assignment to type_byte, value: FunctionCall(line=356, column=21, function='GetByte', arguments=[Identifier(line=356, column=29, name='buffer'), Identifier(line=356, column=37, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to type_byte, value: FunctionCall(line=356, column=28, function='GetByte', arguments=[Identifier(line=356, column=29, name='buffer', original_name=None), Identifier(line=356, column=37, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GetByte
 DEBUG: Dispatching GetByte to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5189,7 +5191,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L83 at position 6784
-DEBUG: Assignment to offset, value: FunctionCall(line=361, column=26, function='Add', arguments=[Identifier(line=361, column=30, name='offset'), Number(line=361, column=38, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=361, column=26, function='Add', arguments=[Identifier(line=361, column=30, name='offset', original_name=None), Number(line=361, column=38, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5285,7 +5287,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L84 at position 6900
-DEBUG: Assignment to offset, value: FunctionCall(line=368, column=22, function='Add', arguments=[Identifier(line=368, column=26, name='offset'), Number(line=368, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=368, column=22, function='Add', arguments=[Identifier(line=368, column=26, name='offset', original_name=None), Number(line=368, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5311,7 +5313,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to length, value: FunctionCall(line=369, column=22, function='RESP.ParseInteger', arguments=[Identifier(line=369, column=40, name='buffer'), Identifier(line=369, column=48, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to length, value: FunctionCall(line=369, column=39, function='RESP.ParseInteger', arguments=[Identifier(line=369, column=40, name='buffer', original_name=None), Identifier(line=369, column=48, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.ParseInteger
 DEBUG: Found registered function: RESP.ParseInteger
 DEBUG: Calling user function RESP.ParseInteger
@@ -5430,7 +5432,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L87 at position 7075
-DEBUG: Assignment to offset, value: FunctionCall(line=373, column=26, function='Add', arguments=[Identifier(line=373, column=30, name='offset'), Number(line=373, column=38, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=373, column=26, function='Add', arguments=[Identifier(line=373, column=30, name='offset', original_name=None), Number(line=373, column=38, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5460,7 +5462,7 @@ DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JMP to L86 at position 7113
 DEBUG: Marked label L87 at position 7118
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to offset, value: FunctionCall(line=375, column=22, function='Add', arguments=[Identifier(line=375, column=26, name='offset'), Number(line=375, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=375, column=22, function='Add', arguments=[Identifier(line=375, column=26, name='offset', original_name=None), Number(line=375, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5486,7 +5488,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to offset, value: FunctionCall(line=378, column=22, function='Add', arguments=[Identifier(line=378, column=26, name='offset'), FunctionCall(line=378, column=34, function='Add', arguments=[Identifier(line=378, column=38, name='length'), Number(line=378, column=46, value='2')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=378, column=22, function='Add', arguments=[Identifier(line=378, column=26, name='offset', original_name=None), FunctionCall(line=378, column=34, function='Add', arguments=[Identifier(line=378, column=38, name='length', original_name=None), Number(line=378, column=46, value='2')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5578,7 +5580,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L88 at position 7252
-DEBUG: Assignment to offset, value: FunctionCall(line=384, column=22, function='Add', arguments=[Identifier(line=384, column=26, name='offset'), Number(line=384, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=384, column=22, function='Add', arguments=[Identifier(line=384, column=26, name='offset', original_name=None), Number(line=384, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5604,7 +5606,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to count, value: FunctionCall(line=385, column=21, function='RESP.ParseInteger', arguments=[Identifier(line=385, column=39, name='buffer'), Identifier(line=385, column=47, name='offset')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to count, value: FunctionCall(line=385, column=38, function='RESP.ParseInteger', arguments=[Identifier(line=385, column=39, name='buffer', original_name=None), Identifier(line=385, column=47, name='offset', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.ParseInteger
 DEBUG: Found registered function: RESP.ParseInteger
 DEBUG: Calling user function RESP.ParseInteger
@@ -5723,7 +5725,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L91 at position 7427
-DEBUG: Assignment to offset, value: FunctionCall(line=389, column=26, function='Add', arguments=[Identifier(line=389, column=30, name='offset'), Number(line=389, column=38, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=389, column=26, function='Add', arguments=[Identifier(line=389, column=30, name='offset', original_name=None), Number(line=389, column=38, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5753,7 +5755,7 @@ DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JMP to L90 at position 7465
 DEBUG: Marked label L91 at position 7470
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to offset, value: FunctionCall(line=391, column=22, function='Add', arguments=[Identifier(line=391, column=26, name='offset'), Number(line=391, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=391, column=22, function='Add', arguments=[Identifier(line=391, column=26, name='offset', original_name=None), Number(line=391, column=34, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5817,7 +5819,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L93 at position 7552
-DEBUG: Assignment to offset, value: FunctionCall(line=396, column=26, function='RESP.SkipElement', arguments=[Identifier(line=396, column=43, name='buffer'), Identifier(line=396, column=51, name='offset'), Identifier(line=396, column=59, name='size')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to offset, value: FunctionCall(line=396, column=42, function='RESP.SkipElement', arguments=[Identifier(line=396, column=43, name='buffer', original_name=None), Identifier(line=396, column=51, name='offset', original_name=None), Identifier(line=396, column=59, name='size', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.SkipElement
 DEBUG: Found registered function: RESP.SkipElement
 DEBUG: Calling user function RESP.SkipElement
@@ -5843,7 +5845,7 @@ DEBUG: User function RESP.SkipElement called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to offset completed
-DEBUG: Assignment to i, value: FunctionCall(line=397, column=21, function='Add', arguments=[Identifier(line=397, column=25, name='i'), Number(line=397, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=397, column=21, function='Add', arguments=[Identifier(line=397, column=25, name='i', original_name=None), Number(line=397, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5954,7 +5956,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param str stored at [RBP-8]
-DEBUG: Assignment to len, value: FunctionCall(line=421, column=15, function='StringLength', arguments=[Identifier(line=421, column=28, name='str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len, value: FunctionCall(line=421, column=15, function='StringLength', arguments=[Identifier(line=421, column=28, name='str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -5993,7 +5995,7 @@ DEBUG: Allocated len at stack offset 24
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to len completed
-DEBUG: Assignment to response, value: FunctionCall(line=422, column=20, function='Allocate', arguments=[FunctionCall(line=422, column=29, function='Add', arguments=[Identifier(line=422, column=33, name='len'), Number(line=422, column=38, value='4')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to response, value: FunctionCall(line=422, column=20, function='Allocate', arguments=[FunctionCall(line=422, column=29, function='Add', arguments=[Identifier(line=422, column=33, name='len', original_name=None), Number(line=422, column=38, value='4')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -6213,7 +6215,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to i, value: FunctionCall(line=429, column=17, function='Add', arguments=[Identifier(line=429, column=21, name='i'), Number(line=429, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=429, column=17, function='Add', arguments=[Identifier(line=429, column=21, name='i', original_name=None), Number(line=429, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -6641,7 +6643,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L100 at position 8584
 DEBUG: Marked label L101 at position 8584
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to len, value: FunctionCall(line=468, column=15, function='StringLength', arguments=[Identifier(line=468, column=28, name='str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len, value: FunctionCall(line=468, column=15, function='StringLength', arguments=[Identifier(line=468, column=28, name='str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -6680,7 +6682,7 @@ DEBUG: Allocated len at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to len completed
-DEBUG: Assignment to len_str, value: FunctionCall(line=469, column=19, function='RESP.IntToString', arguments=[Identifier(line=469, column=36, name='len')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len_str, value: FunctionCall(line=469, column=35, function='RESP.IntToString', arguments=[Identifier(line=469, column=36, name='len', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.IntToString
 DEBUG: Found registered function: RESP.IntToString
 DEBUG: Calling user function RESP.IntToString
@@ -6697,7 +6699,7 @@ DEBUG: Allocated len_str at stack offset 56
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to len_str completed
-DEBUG: Assignment to len_str_len, value: FunctionCall(line=470, column=23, function='StringLength', arguments=[Identifier(line=470, column=36, name='len_str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len_str_len, value: FunctionCall(line=470, column=23, function='StringLength', arguments=[Identifier(line=470, column=36, name='len_str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -6736,7 +6738,7 @@ DEBUG: Allocated len_str_len at stack offset 72
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to len_str_len completed
-DEBUG: Assignment to total, value: FunctionCall(line=473, column=17, function='Add', arguments=[FunctionCall(line=473, column=21, function='Add', arguments=[FunctionCall(line=473, column=25, function='Add', arguments=[Identifier(line=473, column=29, name='len_str_len'), Identifier(line=473, column=42, name='len')]), Number(line=473, column=48, value='6')]), Number(line=473, column=52, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to total, value: FunctionCall(line=473, column=17, function='Add', arguments=[FunctionCall(line=473, column=21, function='Add', arguments=[FunctionCall(line=473, column=25, function='Add', arguments=[Identifier(line=473, column=29, name='len_str_len', original_name=None), Identifier(line=473, column=42, name='len', original_name=None)]), Number(line=473, column=48, value='6')]), Number(line=473, column=52, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -6801,7 +6803,7 @@ DEBUG: Allocated total at stack offset 88
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to total completed
-DEBUG: Assignment to response, value: FunctionCall(line=474, column=20, function='Allocate', arguments=[Identifier(line=474, column=29, name='total')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to response, value: FunctionCall(line=474, column=20, function='Allocate', arguments=[Identifier(line=474, column=29, name='total', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -6897,7 +6899,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=480, column=15, function='Add', arguments=[Identifier(line=480, column=19, name='pos'), Number(line=480, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=480, column=15, function='Add', arguments=[Identifier(line=480, column=19, name='pos', original_name=None), Number(line=480, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7017,7 +7019,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=486, column=19, function='Add', arguments=[Identifier(line=486, column=23, name='pos'), Number(line=486, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=486, column=19, function='Add', arguments=[Identifier(line=486, column=23, name='pos', original_name=None), Number(line=486, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7043,7 +7045,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x88', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Assignment to i, value: FunctionCall(line=487, column=17, function='Add', arguments=[Identifier(line=487, column=21, name='i'), Number(line=487, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=487, column=17, function='Add', arguments=[Identifier(line=487, column=21, name='i', original_name=None), Number(line=487, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7104,7 +7106,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=492, column=15, function='Add', arguments=[Identifier(line=492, column=19, name='pos'), Number(line=492, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=492, column=15, function='Add', arguments=[Identifier(line=492, column=19, name='pos', original_name=None), Number(line=492, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7161,7 +7163,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=494, column=15, function='Add', arguments=[Identifier(line=494, column=19, name='pos'), Number(line=494, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=494, column=15, function='Add', arguments=[Identifier(line=494, column=19, name='pos', original_name=None), Number(line=494, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7280,7 +7282,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=500, column=19, function='Add', arguments=[Identifier(line=500, column=23, name='pos'), Number(line=500, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=500, column=19, function='Add', arguments=[Identifier(line=500, column=23, name='pos', original_name=None), Number(line=500, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7306,7 +7308,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x88', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Assignment to i, value: FunctionCall(line=501, column=17, function='Add', arguments=[Identifier(line=501, column=21, name='i'), Number(line=501, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=501, column=17, function='Add', arguments=[Identifier(line=501, column=21, name='i', original_name=None), Number(line=501, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7367,7 +7369,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=506, column=15, function='Add', arguments=[Identifier(line=506, column=19, name='pos'), Number(line=506, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=506, column=15, function='Add', arguments=[Identifier(line=506, column=19, name='pos', original_name=None), Number(line=506, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7424,7 +7426,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=508, column=15, function='Add', arguments=[Identifier(line=508, column=19, name='pos'), Number(line=508, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=508, column=15, function='Add', arguments=[Identifier(line=508, column=19, name='pos', original_name=None), Number(line=508, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7583,7 +7585,7 @@ DEBUG: Allocated prefix at stack offset 24
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to prefix completed
-DEBUG: Assignment to full_msg, value: FunctionCall(line=534, column=20, function='StringConcat', arguments=[Identifier(line=534, column=33, name='prefix'), Identifier(line=534, column=41, name='message')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to full_msg, value: FunctionCall(line=534, column=20, function='StringConcat', arguments=[Identifier(line=534, column=33, name='prefix', original_name=None), Identifier(line=534, column=41, name='message', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringConcat
 DEBUG: Dispatching StringConcat to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7595,86 +7597,64 @@ DEBUG: ArithmeticOps.compile_operation returned False
 DEBUG: Trying module FileIOOps
 DEBUG: FileIOOps.compile_operation returned False
 DEBUG: Trying module StringOps
+DEBUG: StringConcat - ABI compliant version
 DEBUG: Emitted bytes: ['0x53']
-DEBUG: StringConcat with dynamic sizing
+DEBUG: Emitted bytes: ['0x41', '0x54']
+DEBUG: Emitted bytes: ['0x41', '0x55']
+DEBUG: Emitted bytes: ['0x41', '0x56']
 DEBUG ScopeManager: Found 'prefix' as registered global variable at offset 24
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
-DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x49', '0x89', '0xc5']
 DEBUG ScopeManager: Found 'message' as local param at offset 8
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
-DEBUG: Emitted bytes: ['0x50']
-DEBUG: Emitted bytes: ['0x48', '0x8b', '0x7c', '0x24', '0x8']
-DEBUG: Emitted bytes: ['0x48', '0x85', '0xff']
-DEBUG: TEST RDI, RDI
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L113 at position 9741
-DEBUG: Emitted bytes: ['0x48', '0x31', '0xc0']
-DEBUG: Emitted bytes: ['0x48', '0x85', '0xff']
-DEBUG: TEST RDI, RDI
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L116 at position 9753
-DEBUG: Emitted bytes: ['0x57']
-DEBUG: Marked label L115 at position 9760
-DEBUG: Emitted bytes: ['0x80', '0x3f', '0x0']
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L117 at position 9763
-DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
-DEBUG: Emitted bytes: ['0x48', '0xff', '0xc0']
-DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L115 at position 9775
-DEBUG: Marked label L117 at position 9780
-DEBUG: Emitted bytes: ['0x5f']
-DEBUG: Marked label L116 at position 9781
-DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L114 at position 9781
-DEBUG: Marked label L113 at position 9786
-DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x49', '0x89', '0xc6']
+DEBUG: Emitted bytes: ['0x4c', '0x89', '0xef']
+DEBUG: Emitted bytes: ['0x48', '0xb9']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
-DEBUG: MOV RAX, 0
-DEBUG: Marked label L114 at position 9796
+DEBUG: MOV RCX, 0
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xff']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JZ to L113 at position 9759
+DEBUG: Marked label L114 at position 9765
+DEBUG: Emitted bytes: ['0x80', '0x3c', '0xf', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L115 at position 9769
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xc1']
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L114 at position 9778
+DEBUG: Marked label L115 at position 9783
+DEBUG: Marked label L113 at position 9783
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc3']
 DEBUG: MOV RBX, RAX
-DEBUG: Emitted bytes: ['0x48', '0x8b', '0x3c', '0x24']
-DEBUG: Emitted bytes: ['0x48', '0x85', '0xff']
-DEBUG: TEST RDI, RDI
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L118 at position 9806
-DEBUG: Emitted bytes: ['0x48', '0x31', '0xc0']
-DEBUG: Emitted bytes: ['0x48', '0x85', '0xff']
-DEBUG: TEST RDI, RDI
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L121 at position 9818
-DEBUG: Emitted bytes: ['0x57']
-DEBUG: Marked label L120 at position 9825
-DEBUG: Emitted bytes: ['0x80', '0x3f', '0x0']
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L122 at position 9828
-DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
-DEBUG: Emitted bytes: ['0x48', '0xff', '0xc0']
-DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L120 at position 9840
-DEBUG: Marked label L122 at position 9845
-DEBUG: Emitted bytes: ['0x5f']
-DEBUG: Marked label L121 at position 9846
-DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L119 at position 9846
-DEBUG: Marked label L118 at position 9851
-DEBUG: Emitted bytes: ['0x48', '0xb8']
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xcb']
+DEBUG: Emitted bytes: ['0x4c', '0x89', '0xf7']
+DEBUG: Emitted bytes: ['0x48', '0xb9']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
-DEBUG: MOV RAX, 0
-DEBUG: Marked label L119 at position 9861
-DEBUG: Emitted bytes: ['0x48', '0x1', '0xd8']
-DEBUG: Emitted bytes: ['0x48', '0xff', '0xc0']
-DEBUG: Emitted bytes: ['0x48', '0x89', '0xc6']
-DEBUG: MOV RSI, RAX
+DEBUG: MOV RCX, 0
+DEBUG: Emitted bytes: ['0x48', '0x85', '0xff']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JZ to L116 at position 9805
+DEBUG: Marked label L117 at position 9811
+DEBUG: Emitted bytes: ['0x80', '0x3c', '0xf', '0x0']
+DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JE to L118 at position 9815
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xc1']
+DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
+DEBUG: Emitted 32-bit JMP to L117 at position 9824
+DEBUG: Marked label L118 at position 9829
+DEBUG: Marked label L116 at position 9829
+DEBUG: Emitted bytes: ['0x48', '0x1', '0xd9']
+DEBUG: Emitted bytes: ['0x48', '0xff', '0xc1']
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x9', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 9
 DEBUG: Emitted bytes: ['0x48', '0xbf']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDI, 0
+DEBUG: Emitted bytes: ['0x48', '0x89', '0xce']
+DEBUG: MOV RSI, RCX
 DEBUG: Emitted bytes: ['0x48', '0xba']
 DEBUG: Emitted bytes: ['0x3', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 3
@@ -7686,63 +7666,54 @@ DEBUG: Emitted bytes: ['0x49', '0xb9']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV R9, 0
 DEBUG: Emitted bytes: ['0xf', '0x5']
-DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0xff']
-DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L123 at position 9933
-DEBUG: Emitted bytes: ['0x50']
+DEBUG: Emitted bytes: ['0x49', '0x89', '0xc4']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc7']
 DEBUG: MOV RDI, RAX
-DEBUG: Emitted bytes: ['0x48', '0x8b', '0x74', '0x24', '0x10']
+DEBUG: Emitted bytes: ['0x4c', '0x89', '0xee']
 DEBUG: Emitted bytes: ['0x48', '0x85', '0xf6']
-DEBUG: TEST RSI, RSI
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L125 at position 9951
-DEBUG: Marked label L126 at position 9957
-DEBUG: Emitted bytes: ['0x8a', '0x6']
-DEBUG: Emitted bytes: ['0x84', '0xc0']
+DEBUG: Emitted 32-bit JZ to L119 at position 9909
+DEBUG: Marked label L120 at position 9915
+DEBUG: Emitted bytes: ['0x8a', '0xe']
+DEBUG: Emitted bytes: ['0x84', '0xc9']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L127 at position 9961
-DEBUG: Emitted bytes: ['0x88', '0x7']
+DEBUG: Emitted 32-bit JZ to L121 at position 9919
+DEBUG: Emitted bytes: ['0x88', '0xf']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L126 at position 9975
-DEBUG: Marked label L127 at position 9980
-DEBUG: Marked label L125 at position 9980
-DEBUG: Emitted bytes: ['0x48', '0x8b', '0x74', '0x24', '0x8']
+DEBUG: Emitted 32-bit JMP to L120 at position 9933
+DEBUG: Marked label L121 at position 9938
+DEBUG: Marked label L119 at position 9938
+DEBUG: Emitted bytes: ['0x4c', '0x89', '0xf6']
 DEBUG: Emitted bytes: ['0x48', '0x85', '0xf6']
-DEBUG: TEST RSI, RSI
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L128 at position 9988
-DEBUG: Marked label L129 at position 9994
-DEBUG: Emitted bytes: ['0x8a', '0x6']
-DEBUG: Emitted bytes: ['0x88', '0x7']
-DEBUG: Emitted bytes: ['0x84', '0xc0']
+DEBUG: Emitted 32-bit JZ to L122 at position 9944
+DEBUG: Marked label L123 at position 9950
+DEBUG: Emitted bytes: ['0x8a', '0xe']
+DEBUG: Emitted bytes: ['0x84', '0xc9']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L130 at position 10000
+DEBUG: Emitted 32-bit JZ to L124 at position 9954
+DEBUG: Emitted bytes: ['0x88', '0xf']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L129 at position 10012
-DEBUG: Marked label L130 at position 10017
-DEBUG: Marked label L128 at position 10017
+DEBUG: Emitted 32-bit JMP to L123 at position 9968
+DEBUG: Marked label L124 at position 9973
+DEBUG: Marked label L122 at position 9973
 DEBUG: Emitted bytes: ['0xc6', '0x7', '0x0']
-DEBUG: Emitted bytes: ['0x58']
-DEBUG: Emitted bytes: ['0x48', '0x83', '0xc4', '0x10']
-DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L124 at position 10025
-DEBUG: Marked label L123 at position 10030
-DEBUG: Emitted bytes: ['0x58']
-DEBUG: Emitted bytes: ['0x58']
-DEBUG: Marked label L124 at position 10032
+DEBUG: Emitted bytes: ['0x4c', '0x89', '0xe0']
+DEBUG: Emitted bytes: ['0x41', '0x5e']
+DEBUG: Emitted bytes: ['0x41', '0x5d']
+DEBUG: Emitted bytes: ['0x41', '0x5c']
 DEBUG: Emitted bytes: ['0x5b']
-DEBUG: Dynamic StringConcat complete
+DEBUG: StringConcat completed (ABI compliant)
 DEBUG: StringOps.compile_operation returned True
 DEBUG: Allocated full_msg at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to full_msg completed
-DEBUG: Assignment to len, value: FunctionCall(line=535, column=15, function='StringLength', arguments=[Identifier(line=535, column=28, name='full_msg')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len, value: FunctionCall(line=535, column=15, function='StringLength', arguments=[Identifier(line=535, column=28, name='full_msg', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7764,16 +7735,16 @@ DEBUG: MOV RBX, RAX
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L131 at position 10062
+DEBUG: Marked label L125 at position 10015
 DEBUG: Emitted bytes: ['0x8a', '0xb']
 DEBUG: Emitted bytes: ['0x84', '0xc9']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L132 at position 10066
+DEBUG: Emitted 32-bit JZ to L126 at position 10019
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc0']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc3']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L131 at position 10078
-DEBUG: Marked label L132 at position 10083
+DEBUG: Emitted 32-bit JMP to L125 at position 10031
+DEBUG: Marked label L126 at position 10036
 DEBUG: Emitted bytes: ['0x59']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: StringOps.compile_operation returned True
@@ -7781,7 +7752,7 @@ DEBUG: Allocated len at stack offset 56
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to len completed
-DEBUG: Assignment to response, value: FunctionCall(line=537, column=20, function='Allocate', arguments=[FunctionCall(line=537, column=29, function='Add', arguments=[Identifier(line=537, column=33, name='len'), Number(line=537, column=38, value='4')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to response, value: FunctionCall(line=537, column=20, function='Allocate', arguments=[FunctionCall(line=537, column=29, function='Add', arguments=[Identifier(line=537, column=33, name='len', original_name=None), Number(line=537, column=38, value='4')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -7897,7 +7868,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to i completed
 DEBUG: Compiling While loop (using label system)
-DEBUG: Marked label L133 at position 10263
+DEBUG: Marked label L127 at position 10216
 DEBUG: Compiling FunctionCall condition: LessThan
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
@@ -7925,7 +7896,7 @@ DEBUG: LessThan operation completed
 DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L134 at position 10296
+DEBUG: Emitted 32-bit JE to L128 at position 10249
 DEBUG: Compiling function call: SetByte
 DEBUG: Dispatching SetByte to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8001,7 +7972,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to i, value: FunctionCall(line=544, column=17, function='Add', arguments=[Identifier(line=544, column=21, name='i'), Number(line=544, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=544, column=17, function='Add', arguments=[Identifier(line=544, column=21, name='i', original_name=None), Number(line=544, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8028,8 +7999,8 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to i completed
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L133 at position 10401
-DEBUG: Marked label L134 at position 10406
+DEBUG: Emitted 32-bit JMP to L127 at position 10354
+DEBUG: Marked label L128 at position 10359
 DEBUG: While loop compilation completed (label system)
 DEBUG: Compiling function call: SetByte
 DEBUG: Dispatching SetByte to modules...
@@ -8240,7 +8211,7 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L112 at position 10634
+DEBUG: Marked label L112 at position 10587
 DEBUG ScopeManager: Popping function 'RESP.Error'
 DEBUG: Function RESP.Error compiled successfully
 DEBUG: Compiling function RESP.IntToString
@@ -8251,8 +8222,8 @@ DEBUG: Preserved pool variable FixedPool.CalcState.operator in local scope
 DEBUG: Preserved pool variable FixedPool.CalcState.result in local scope
 DEBUG ScopeManager: Pushed function 'RESP.IntToString', current=RESP.IntToString
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L135 at position 10634
-DEBUG: Marked label L12 at position 10639
+DEBUG: Emitted 32-bit JMP to L129 at position 10587
+DEBUG: Marked label L12 at position 10592
 DEBUG: Emitted bytes: ['0x55']
 DEBUG: PUSH RBP
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xe5']
@@ -8302,7 +8273,7 @@ DEBUG: EqualTo operation completed
 DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L136 at position 10700
+DEBUG: Emitted 32-bit JE to L130 at position 10653
 DEBUG: Assignment to result, value: FunctionCall(line=569, column=22, function='Allocate', arguments=[Number(line=569, column=31, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
@@ -8437,10 +8408,10 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L136 at position 10900
-DEBUG: Marked label L137 at position 10900
+DEBUG: Marked label L130 at position 10853
+DEBUG: Marked label L131 at position 10853
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_negative, value: FunctionCall(line=576, column=23, function='LessThan', arguments=[Identifier(line=576, column=32, name='num'), Number(line=576, column=37, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_negative, value: FunctionCall(line=576, column=23, function='LessThan', arguments=[Identifier(line=576, column=32, name='num', original_name=None), Number(line=576, column=37, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8469,7 +8440,7 @@ DEBUG: Allocated is_negative at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to is_negative completed
-DEBUG: Assignment to absolute_value, value: Identifier(line=577, column=26, name='num'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to absolute_value, value: Identifier(line=577, column=26, name='num', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'num' as local param at offset 8
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xf8', '0xff', '0xff', '0xff']
@@ -8484,8 +8455,8 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L138 at position 10964
-DEBUG: Assignment to absolute_value, value: FunctionCall(line=579, column=30, function='Subtract', arguments=[Number(line=579, column=39, value='0'), Identifier(line=579, column=42, name='num')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Emitted 32-bit JE to L132 at position 10917
+DEBUG: Assignment to absolute_value, value: FunctionCall(line=579, column=30, function='Subtract', arguments=[Number(line=579, column=39, value='0'), Identifier(line=579, column=42, name='num', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8512,10 +8483,10 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to absolute_value completed
-DEBUG: Marked label L138 at position 11002
-DEBUG: Marked label L139 at position 11002
+DEBUG: Marked label L132 at position 10955
+DEBUG: Marked label L133 at position 10955
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to temp, value: Identifier(line=583, column=16, name='absolute_value'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to temp, value: Identifier(line=583, column=16, name='absolute_value', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'absolute_value' as registered global variable at offset 56
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
@@ -8532,7 +8503,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to digit_count completed
 DEBUG: Compiling While loop (using label system)
-DEBUG: Marked label L140 at position 11033
+DEBUG: Marked label L134 at position 10986
 DEBUG: Compiling FunctionCall condition: GreaterThan
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
@@ -8560,8 +8531,8 @@ DEBUG: GreaterThan operation completed
 DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L141 at position 11069
-DEBUG: Assignment to digit_count, value: FunctionCall(line=586, column=27, function='Add', arguments=[Identifier(line=586, column=31, name='digit_count'), Number(line=586, column=44, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Emitted 32-bit JE to L135 at position 11022
+DEBUG: Assignment to digit_count, value: FunctionCall(line=586, column=27, function='Add', arguments=[Identifier(line=586, column=31, name='digit_count', original_name=None), Number(line=586, column=44, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8587,7 +8558,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to digit_count completed
-DEBUG: Assignment to temp, value: FunctionCall(line=587, column=20, function='Divide', arguments=[Identifier(line=587, column=27, name='temp'), Number(line=587, column=33, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to temp, value: FunctionCall(line=587, column=20, function='Divide', arguments=[Identifier(line=587, column=27, name='temp', original_name=None), Number(line=587, column=33, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Divide
 DEBUG: Dispatching Divide to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8614,10 +8585,10 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to temp completed
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L140 at position 11141
-DEBUG: Marked label L141 at position 11146
+DEBUG: Emitted 32-bit JMP to L134 at position 11094
+DEBUG: Marked label L135 at position 11099
 DEBUG: While loop compilation completed (label system)
-DEBUG: Assignment to buffer_size, value: Identifier(line=591, column=23, name='digit_count'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to buffer_size, value: Identifier(line=591, column=23, name='digit_count', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'digit_count' as registered global variable at offset 88
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
@@ -8632,8 +8603,8 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L142 at position 11171
-DEBUG: Assignment to buffer_size, value: FunctionCall(line=593, column=27, function='Add', arguments=[Identifier(line=593, column=31, name='buffer_size'), Number(line=593, column=44, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Emitted 32-bit JE to L136 at position 11124
+DEBUG: Assignment to buffer_size, value: FunctionCall(line=593, column=27, function='Add', arguments=[Identifier(line=593, column=31, name='buffer_size', original_name=None), Number(line=593, column=44, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8659,10 +8630,10 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
 DEBUG: Assignment to buffer_size completed
-DEBUG: Marked label L142 at position 11209
-DEBUG: Marked label L143 at position 11209
+DEBUG: Marked label L136 at position 11162
+DEBUG: Marked label L137 at position 11162
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to buffer_size, value: FunctionCall(line=595, column=23, function='Add', arguments=[Identifier(line=595, column=27, name='buffer_size'), Number(line=595, column=40, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to buffer_size, value: FunctionCall(line=595, column=23, function='Add', arguments=[Identifier(line=595, column=27, name='buffer_size', original_name=None), Number(line=595, column=40, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8688,7 +8659,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
 DEBUG: Assignment to buffer_size completed
-DEBUG: Assignment to buffer, value: FunctionCall(line=597, column=18, function='Allocate', arguments=[Identifier(line=597, column=27, name='buffer_size')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to buffer, value: FunctionCall(line=597, column=18, function='Allocate', arguments=[Identifier(line=597, column=27, name='buffer_size', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8745,7 +8716,7 @@ DEBUG: Allocated buffer at stack offset 120
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x88', '0xff', '0xff', '0xff']
 DEBUG: Assignment to buffer completed
-DEBUG: Assignment to pos, value: FunctionCall(line=600, column=15, function='Subtract', arguments=[Identifier(line=600, column=24, name='digit_count'), Number(line=600, column=37, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=600, column=15, function='Subtract', arguments=[Identifier(line=600, column=24, name='digit_count', original_name=None), Number(line=600, column=37, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8780,8 +8751,8 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L144 at position 11384
-DEBUG: Assignment to pos, value: FunctionCall(line=602, column=19, function='Add', arguments=[Identifier(line=602, column=23, name='pos'), Number(line=602, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Emitted 32-bit JE to L138 at position 11337
+DEBUG: Assignment to pos, value: FunctionCall(line=602, column=19, function='Add', arguments=[Identifier(line=602, column=23, name='pos', original_name=None), Number(line=602, column=28, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8807,10 +8778,10 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x78', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Marked label L144 at position 11422
-DEBUG: Marked label L145 at position 11422
+DEBUG: Marked label L138 at position 11375
+DEBUG: Marked label L139 at position 11375
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to temp, value: Identifier(line=605, column=16, name='absolute_value'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to temp, value: Identifier(line=605, column=16, name='absolute_value', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'absolute_value' as registered global variable at offset 56
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
@@ -8818,7 +8789,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to temp completed
 DEBUG: Compiling While loop (using label system)
-DEBUG: Marked label L146 at position 11436
+DEBUG: Marked label L140 at position 11389
 DEBUG: Compiling FunctionCall condition: GreaterThan
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
@@ -8846,8 +8817,8 @@ DEBUG: GreaterThan operation completed
 DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L147 at position 11472
-DEBUG: Assignment to digit, value: FunctionCall(line=607, column=21, function='Modulo', arguments=[Identifier(line=607, column=28, name='temp'), Number(line=607, column=34, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Emitted 32-bit JE to L141 at position 11425
+DEBUG: Assignment to digit, value: FunctionCall(line=607, column=21, function='Modulo', arguments=[Identifier(line=607, column=28, name='temp', original_name=None), Number(line=607, column=34, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Modulo
 DEBUG: Dispatching Modulo to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8925,7 +8896,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to pos, value: FunctionCall(line=609, column=19, function='Subtract', arguments=[Identifier(line=609, column=28, name='pos'), Number(line=609, column=33, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to pos, value: FunctionCall(line=609, column=19, function='Subtract', arguments=[Identifier(line=609, column=28, name='pos', original_name=None), Number(line=609, column=33, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8952,7 +8923,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x78', '0xff', '0xff', '0xff']
 DEBUG: Assignment to pos completed
-DEBUG: Assignment to temp, value: FunctionCall(line=610, column=20, function='Divide', arguments=[Identifier(line=610, column=27, name='temp'), Number(line=610, column=33, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to temp, value: FunctionCall(line=610, column=20, function='Divide', arguments=[Identifier(line=610, column=27, name='temp', original_name=None), Number(line=610, column=33, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Divide
 DEBUG: Dispatching Divide to modules...
 DEBUG: Trying module FunctionDispatch
@@ -8979,8 +8950,8 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to temp completed
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L146 at position 11629
-DEBUG: Marked label L147 at position 11634
+DEBUG: Emitted 32-bit JMP to L140 at position 11582
+DEBUG: Marked label L141 at position 11587
 DEBUG: While loop compilation completed (label system)
 DEBUG: Compiling If condition (using label system)
 DEBUG: Compiling Identifier condition: is_negative
@@ -8989,7 +8960,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L148 at position 11645
+DEBUG: Emitted 32-bit JE to L142 at position 11598
 DEBUG: Compiling function call: SetByte
 DEBUG: Dispatching SetByte to modules...
 DEBUG: Trying module FunctionDispatch
@@ -9021,10 +8992,10 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Marked label L148 at position 11687
-DEBUG: Marked label L149 at position 11687
+DEBUG: Marked label L142 at position 11640
+DEBUG: Marked label L143 at position 11640
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to final_pos, value: Identifier(line=619, column=21, name='digit_count'), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
+DEBUG: Assignment to final_pos, value: Identifier(line=619, column=21, name='digit_count', original_name=None), type: <class 'ailang_parser.ast_modules.ast_expressions.Identifier'>
 DEBUG ScopeManager: Found 'digit_count' as registered global variable at offset 88
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
@@ -9039,8 +9010,8 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L150 at position 11712
-DEBUG: Assignment to final_pos, value: FunctionCall(line=621, column=25, function='Add', arguments=[Identifier(line=621, column=29, name='final_pos'), Number(line=621, column=40, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Emitted 32-bit JE to L144 at position 11665
+DEBUG: Assignment to final_pos, value: FunctionCall(line=621, column=25, function='Add', arguments=[Identifier(line=621, column=29, name='final_pos', original_name=None), Number(line=621, column=40, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -9066,8 +9037,8 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x58', '0xff', '0xff', '0xff']
 DEBUG: Assignment to final_pos completed
-DEBUG: Marked label L150 at position 11750
-DEBUG: Marked label L151 at position 11750
+DEBUG: Marked label L144 at position 11703
+DEBUG: Marked label L145 at position 11703
 DEBUG: If condition compilation completed (label system)
 DEBUG: Compiling function call: SetByte
 DEBUG: Dispatching SetByte to modules...
@@ -9130,7 +9101,7 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L135 at position 11824
+DEBUG: Marked label L129 at position 11777
 DEBUG ScopeManager: Popping function 'RESP.IntToString'
 DEBUG: Function RESP.IntToString compiled successfully
 DEBUG: Compiling function RESP.Integer
@@ -9141,8 +9112,8 @@ DEBUG: Preserved pool variable FixedPool.CalcState.operator in local scope
 DEBUG: Preserved pool variable FixedPool.CalcState.result in local scope
 DEBUG ScopeManager: Pushed function 'RESP.Integer', current=RESP.Integer
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L152 at position 11824
-DEBUG: Marked label L13 at position 11829
+DEBUG: Emitted 32-bit JMP to L146 at position 11777
+DEBUG: Marked label L13 at position 11782
 DEBUG: Emitted bytes: ['0x55']
 DEBUG: PUSH RBP
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xe5']
@@ -9163,7 +9134,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param num stored at [RBP-8]
-DEBUG: Assignment to num_str, value: FunctionCall(line=639, column=19, function='RESP.IntToString', arguments=[Identifier(line=639, column=36, name='num')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to num_str, value: FunctionCall(line=639, column=35, function='RESP.IntToString', arguments=[Identifier(line=639, column=36, name='num', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: RESP.IntToString
 DEBUG: Found registered function: RESP.IntToString
 DEBUG: Calling user function RESP.IntToString
@@ -9180,7 +9151,7 @@ DEBUG: Allocated num_str at stack offset 24
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to num_str completed
-DEBUG: Assignment to len, value: FunctionCall(line=640, column=15, function='StringLength', arguments=[Identifier(line=640, column=28, name='num_str')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to len, value: FunctionCall(line=640, column=15, function='StringLength', arguments=[Identifier(line=640, column=28, name='num_str', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringLength
 DEBUG: Dispatching StringLength to modules...
 DEBUG: Trying module FunctionDispatch
@@ -9202,16 +9173,16 @@ DEBUG: MOV RBX, RAX
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L153 at position 11894
+DEBUG: Marked label L147 at position 11847
 DEBUG: Emitted bytes: ['0x8a', '0xb']
 DEBUG: Emitted bytes: ['0x84', '0xc9']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L154 at position 11898
+DEBUG: Emitted 32-bit JZ to L148 at position 11851
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc0']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc3']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L153 at position 11910
-DEBUG: Marked label L154 at position 11915
+DEBUG: Emitted 32-bit JMP to L147 at position 11863
+DEBUG: Marked label L148 at position 11868
 DEBUG: Emitted bytes: ['0x59']
 DEBUG: Emitted bytes: ['0x5b']
 DEBUG: StringOps.compile_operation returned True
@@ -9219,7 +9190,7 @@ DEBUG: Allocated len at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to len completed
-DEBUG: Assignment to response, value: FunctionCall(line=642, column=20, function='Allocate', arguments=[FunctionCall(line=642, column=29, function='Add', arguments=[Identifier(line=642, column=33, name='len'), Number(line=642, column=38, value='4')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to response, value: FunctionCall(line=642, column=20, function='Allocate', arguments=[FunctionCall(line=642, column=29, function='Add', arguments=[Identifier(line=642, column=33, name='len', original_name=None), Number(line=642, column=38, value='4')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Allocate
 DEBUG: Dispatching Allocate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -9335,7 +9306,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to i completed
 DEBUG: Compiling While loop (using label system)
-DEBUG: Marked label L155 at position 12095
+DEBUG: Marked label L149 at position 12048
 DEBUG: Compiling FunctionCall condition: LessThan
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
@@ -9363,7 +9334,7 @@ DEBUG: LessThan operation completed
 DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L156 at position 12128
+DEBUG: Emitted 32-bit JE to L150 at position 12081
 DEBUG: Compiling function call: SetByte
 DEBUG: Dispatching SetByte to modules...
 DEBUG: Trying module FunctionDispatch
@@ -9439,7 +9410,7 @@ DEBUG: Emitted bytes: ['0x48', '0x1', '0xca']
 DEBUG: Emitted bytes: ['0x88', '0x2']
 DEBUG: SetByte completed
 DEBUG: LowLevelOps.compile_operation returned True
-DEBUG: Assignment to i, value: FunctionCall(line=649, column=17, function='Add', arguments=[Identifier(line=649, column=21, name='i'), Number(line=649, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to i, value: FunctionCall(line=649, column=17, function='Add', arguments=[Identifier(line=649, column=21, name='i', original_name=None), Number(line=649, column=24, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -9466,8 +9437,8 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to i completed
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L155 at position 12233
-DEBUG: Marked label L156 at position 12238
+DEBUG: Emitted 32-bit JMP to L149 at position 12186
+DEBUG: Marked label L150 at position 12191
 DEBUG: While loop compilation completed (label system)
 DEBUG: Compiling function call: SetByte
 DEBUG: Dispatching SetByte to modules...
@@ -9678,7 +9649,7 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L152 at position 12466
+DEBUG: Marked label L146 at position 12419
 DEBUG ScopeManager: Popping function 'RESP.Integer'
 DEBUG: Function RESP.Integer compiled successfully
 DEBUG: Added string '=====================================' to data section at offset 11
@@ -9950,8 +9921,8 @@ DEBUG: Preserved pool variable FixedPool.CalcState.operator in local scope
 DEBUG: Preserved pool variable FixedPool.CalcState.result in local scope
 DEBUG ScopeManager: Pushed function 'Calculator.ProcessInput', current=Calculator.ProcessInput
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L157 at position 13156
-DEBUG: Marked label L1 at position 13161
+DEBUG: Emitted 32-bit JMP to L151 at position 13109
+DEBUG: Marked label L1 at position 13114
 DEBUG: Emitted bytes: ['0x55']
 DEBUG: PUSH RBP
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xe5']
@@ -9973,7 +9944,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param input_str stored at [RBP-8]
-DEBUG: Assignment to is_quit, value: FunctionCall(line=39, column=19, function='StringEquals', arguments=[Identifier(line=39, column=32, name='input_str'), String(line=39, column=43, value='quit')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_quit, value: FunctionCall(line=39, column=19, function='StringEquals', arguments=[Identifier(line=39, column=32, name='input_str', original_name=None), String(line=39, column=43, value='quit')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -10002,30 +9973,30 @@ DEBUG: Emitted load data address to rax for offset 157
 DEBUG: Loaded string literal at data offset 157
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc6']
 DEBUG: MOV RSI, RAX
-DEBUG: Marked label L158 at position 13213
+DEBUG: Marked label L152 at position 13166
 DEBUG: Emitted bytes: ['0x8a', '0x7']
 DEBUG: Emitted bytes: ['0x8a', '0x16']
 DEBUG: Emitted bytes: ['0x38', '0xd0']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNE to L160 at position 13219
+DEBUG: Emitted 32-bit JNE to L154 at position 13172
 DEBUG: Emitted bytes: ['0x84', '0xc0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L159 at position 13227
+DEBUG: Emitted 32-bit JZ to L153 at position 13180
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L158 at position 13239
-DEBUG: Marked label L159 at position 13244
+DEBUG: Emitted 32-bit JMP to L152 at position 13192
+DEBUG: Marked label L153 at position 13197
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L161 at position 13254
-DEBUG: Marked label L160 at position 13259
+DEBUG: Emitted 32-bit JMP to L155 at position 13207
+DEBUG: Marked label L154 at position 13212
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L161 at position 13269
+DEBUG: Marked label L155 at position 13222
 DEBUG: Emitted bytes: ['0x5f']
 DEBUG: Emitted bytes: ['0x5e']
 DEBUG: Emitted bytes: ['0x5a']
@@ -10043,7 +10014,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L162 at position 13291
+DEBUG: Emitted 32-bit JE to L156 at position 13244
 DEBUG: Assignment to CalcState.running, value: Number(line=41, column=33, value='0'), type: <class 'ailang_parser.ast_modules.ast_expressions.Number'>
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
@@ -10098,10 +10069,10 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L162 at position 13420
-DEBUG: Marked label L163 at position 13420
+DEBUG: Marked label L156 at position 13373
+DEBUG: Marked label L157 at position 13373
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_test1, value: FunctionCall(line=50, column=20, function='StringEquals', arguments=[Identifier(line=50, column=33, name='input_str'), String(line=50, column=44, value='10 + 20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_test1, value: FunctionCall(line=50, column=20, function='StringEquals', arguments=[Identifier(line=50, column=33, name='input_str', original_name=None), String(line=50, column=44, value='10 + 20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -10130,30 +10101,30 @@ DEBUG: Emitted load data address to rax for offset 171
 DEBUG: Loaded string literal at data offset 171
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc6']
 DEBUG: MOV RSI, RAX
-DEBUG: Marked label L164 at position 13447
+DEBUG: Marked label L158 at position 13400
 DEBUG: Emitted bytes: ['0x8a', '0x7']
 DEBUG: Emitted bytes: ['0x8a', '0x16']
 DEBUG: Emitted bytes: ['0x38', '0xd0']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNE to L166 at position 13453
+DEBUG: Emitted 32-bit JNE to L160 at position 13406
 DEBUG: Emitted bytes: ['0x84', '0xc0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L165 at position 13461
+DEBUG: Emitted 32-bit JZ to L159 at position 13414
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L164 at position 13473
-DEBUG: Marked label L165 at position 13478
+DEBUG: Emitted 32-bit JMP to L158 at position 13426
+DEBUG: Marked label L159 at position 13431
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L167 at position 13488
-DEBUG: Marked label L166 at position 13493
+DEBUG: Emitted 32-bit JMP to L161 at position 13441
+DEBUG: Marked label L160 at position 13446
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L167 at position 13503
+DEBUG: Marked label L161 at position 13456
 DEBUG: Emitted bytes: ['0x5f']
 DEBUG: Emitted bytes: ['0x5e']
 DEBUG: Emitted bytes: ['0x5a']
@@ -10171,7 +10142,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L168 at position 13525
+DEBUG: Emitted 32-bit JE to L162 at position 13478
 DEBUG: Assignment to result, value: FunctionCall(line=52, column=22, function='Add', arguments=[Number(line=52, column=26, value='10'), Number(line=52, column=30, value='20')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
@@ -10245,10 +10216,10 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L168 at position 13672
-DEBUG: Marked label L169 at position 13672
+DEBUG: Marked label L162 at position 13625
+DEBUG: Marked label L163 at position 13625
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_test2, value: FunctionCall(line=58, column=20, function='StringEquals', arguments=[Identifier(line=58, column=33, name='input_str'), String(line=58, column=44, value='100 - 50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_test2, value: FunctionCall(line=58, column=20, function='StringEquals', arguments=[Identifier(line=58, column=33, name='input_str', original_name=None), String(line=58, column=44, value='100 - 50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -10277,30 +10248,30 @@ DEBUG: Emitted load data address to rax for offset 190
 DEBUG: Loaded string literal at data offset 190
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc6']
 DEBUG: MOV RSI, RAX
-DEBUG: Marked label L170 at position 13699
+DEBUG: Marked label L164 at position 13652
 DEBUG: Emitted bytes: ['0x8a', '0x7']
 DEBUG: Emitted bytes: ['0x8a', '0x16']
 DEBUG: Emitted bytes: ['0x38', '0xd0']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNE to L172 at position 13705
+DEBUG: Emitted 32-bit JNE to L166 at position 13658
 DEBUG: Emitted bytes: ['0x84', '0xc0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L171 at position 13713
+DEBUG: Emitted 32-bit JZ to L165 at position 13666
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L170 at position 13725
-DEBUG: Marked label L171 at position 13730
+DEBUG: Emitted 32-bit JMP to L164 at position 13678
+DEBUG: Marked label L165 at position 13683
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L173 at position 13740
-DEBUG: Marked label L172 at position 13745
+DEBUG: Emitted 32-bit JMP to L167 at position 13693
+DEBUG: Marked label L166 at position 13698
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L173 at position 13755
+DEBUG: Marked label L167 at position 13708
 DEBUG: Emitted bytes: ['0x5f']
 DEBUG: Emitted bytes: ['0x5e']
 DEBUG: Emitted bytes: ['0x5a']
@@ -10318,7 +10289,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xb8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L174 at position 13777
+DEBUG: Emitted 32-bit JE to L168 at position 13730
 DEBUG: Assignment to result, value: FunctionCall(line=60, column=22, function='Subtract', arguments=[Number(line=60, column=31, value='100'), Number(line=60, column=36, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
@@ -10392,10 +10363,10 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L174 at position 13924
-DEBUG: Marked label L175 at position 13924
+DEBUG: Marked label L168 at position 13877
+DEBUG: Marked label L169 at position 13877
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_test3, value: FunctionCall(line=66, column=20, function='StringEquals', arguments=[Identifier(line=66, column=33, name='input_str'), String(line=66, column=44, value='6 * 7')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_test3, value: FunctionCall(line=66, column=20, function='StringEquals', arguments=[Identifier(line=66, column=33, name='input_str', original_name=None), String(line=66, column=44, value='6 * 7')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -10424,30 +10395,30 @@ DEBUG: Emitted load data address to rax for offset 210
 DEBUG: Loaded string literal at data offset 210
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc6']
 DEBUG: MOV RSI, RAX
-DEBUG: Marked label L176 at position 13951
+DEBUG: Marked label L170 at position 13904
 DEBUG: Emitted bytes: ['0x8a', '0x7']
 DEBUG: Emitted bytes: ['0x8a', '0x16']
 DEBUG: Emitted bytes: ['0x38', '0xd0']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNE to L178 at position 13957
+DEBUG: Emitted 32-bit JNE to L172 at position 13910
 DEBUG: Emitted bytes: ['0x84', '0xc0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L177 at position 13965
+DEBUG: Emitted 32-bit JZ to L171 at position 13918
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L176 at position 13977
-DEBUG: Marked label L177 at position 13982
+DEBUG: Emitted 32-bit JMP to L170 at position 13930
+DEBUG: Marked label L171 at position 13935
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L179 at position 13992
-DEBUG: Marked label L178 at position 13997
+DEBUG: Emitted 32-bit JMP to L173 at position 13945
+DEBUG: Marked label L172 at position 13950
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L179 at position 14007
+DEBUG: Marked label L173 at position 13960
 DEBUG: Emitted bytes: ['0x5f']
 DEBUG: Emitted bytes: ['0x5e']
 DEBUG: Emitted bytes: ['0x5a']
@@ -10465,7 +10436,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L180 at position 14029
+DEBUG: Emitted 32-bit JE to L174 at position 13982
 DEBUG: Assignment to result, value: FunctionCall(line=68, column=22, function='Multiply', arguments=[Number(line=68, column=31, value='6'), Number(line=68, column=34, value='7')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
@@ -10538,10 +10509,10 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L180 at position 14177
-DEBUG: Marked label L181 at position 14177
+DEBUG: Marked label L174 at position 14130
+DEBUG: Marked label L175 at position 14130
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_test4, value: FunctionCall(line=74, column=20, function='StringEquals', arguments=[Identifier(line=74, column=33, name='input_str'), String(line=74, column=44, value='100 / 4')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_test4, value: FunctionCall(line=74, column=20, function='StringEquals', arguments=[Identifier(line=74, column=33, name='input_str', original_name=None), String(line=74, column=44, value='100 / 4')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: StringEquals
 DEBUG: Dispatching StringEquals to modules...
 DEBUG: Trying module FunctionDispatch
@@ -10570,30 +10541,30 @@ DEBUG: Emitted load data address to rax for offset 227
 DEBUG: Loaded string literal at data offset 227
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xc6']
 DEBUG: MOV RSI, RAX
-DEBUG: Marked label L182 at position 14204
+DEBUG: Marked label L176 at position 14157
 DEBUG: Emitted bytes: ['0x8a', '0x7']
 DEBUG: Emitted bytes: ['0x8a', '0x16']
 DEBUG: Emitted bytes: ['0x38', '0xd0']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNE to L184 at position 14210
+DEBUG: Emitted 32-bit JNE to L178 at position 14163
 DEBUG: Emitted bytes: ['0x84', '0xc0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JZ to L183 at position 14218
+DEBUG: Emitted 32-bit JZ to L177 at position 14171
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc6']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L182 at position 14230
-DEBUG: Marked label L183 at position 14235
+DEBUG: Emitted 32-bit JMP to L176 at position 14183
+DEBUG: Marked label L177 at position 14188
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L185 at position 14245
-DEBUG: Marked label L184 at position 14250
+DEBUG: Emitted 32-bit JMP to L179 at position 14198
+DEBUG: Marked label L178 at position 14203
 DEBUG: Emitted bytes: ['0x48', '0xb8']
 DEBUG: Emitted bytes: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RAX, 0
-DEBUG: Marked label L185 at position 14260
+DEBUG: Marked label L179 at position 14213
 DEBUG: Emitted bytes: ['0x5f']
 DEBUG: Emitted bytes: ['0x5e']
 DEBUG: Emitted bytes: ['0x5a']
@@ -10611,7 +10582,7 @@ DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0x98', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L186 at position 14282
+DEBUG: Emitted 32-bit JE to L180 at position 14235
 DEBUG: Assignment to result, value: FunctionCall(line=76, column=22, function='Divide', arguments=[Number(line=76, column=29, value='100'), Number(line=76, column=34, value='4')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Divide
 DEBUG: Dispatching Divide to modules...
@@ -10684,8 +10655,8 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L186 at position 14431
-DEBUG: Marked label L187 at position 14431
+DEBUG: Marked label L180 at position 14384
+DEBUG: Marked label L181 at position 14384
 DEBUG: If condition compilation completed (label system)
 DEBUG: Added string 'Unknown expression. Try: 10 + 20, 100 - 50, 6 * 7, or 100 / 4' to data section at offset 246
 DEBUG: Printing string 'Unknown expression. Try: 10 + ...', offset 246, length 61
@@ -10748,18 +10719,18 @@ DEBUG: Emitted bytes: ['0x5d']
 DEBUG: POP RBP
 DEBUG: Emitted bytes: ['0xc3']
 DEBUG: ReturnValue compiled
-DEBUG: Marked label L157 at position 14559
+DEBUG: Marked label L151 at position 14512
 DEBUG ScopeManager: Popping function 'Calculator.ProcessInput'
 DEBUG: Function Calculator.ProcessInput compiled successfully
 DEBUG: Compiling While loop (using label system)
-DEBUG: Marked label L188 at position 14559
+DEBUG: Marked label L182 at position 14512
 DEBUG: Compiling Identifier condition: CalcState.running
 DEBUG ScopeManager: Found 'CalcState.running' as registered global variable at offset 40
 DEBUG: Emitted bytes: ['0x48', '0x8b', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JE to L189 at position 14570
+DEBUG: Emitted 32-bit JE to L183 at position 14523
 DEBUG: Added string 'calc> ' to data section at offset 308
 DEBUG: Printing string 'calc> ...', offset 308, length 6
 DEBUG: Emitted bytes: ['0x48', '0xb8']
@@ -10840,33 +10811,33 @@ DEBUG: MOV RAX, 0
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: Emitted bytes: ['0x48', '0x85', '0xc0']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNZ to L191 at position 14770
-DEBUG: Marked label L190 at position 14776
+DEBUG: Emitted 32-bit JNZ to L185 at position 14723
+DEBUG: Marked label L184 at position 14729
 DEBUG: Emitted bytes: ['0xc6', '0x3', '0x0']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L192 at position 14779
-DEBUG: Marked label L191 at position 14784
+DEBUG: Emitted 32-bit JMP to L186 at position 14732
+DEBUG: Marked label L185 at position 14737
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xdf']
 DEBUG: MOV RDI, RBX
 DEBUG: Emitted bytes: ['0x48', '0x1', '0xc7']
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xcf']
 DEBUG: Emitted bytes: ['0x80', '0x3f', '0xa']
 DEBUG: Emitted bytes: ['0xf', '0x85', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JNE to L193 at position 14796
+DEBUG: Emitted 32-bit JNE to L187 at position 14749
 DEBUG: Emitted bytes: ['0xc6', '0x7', '0x0']
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L192 at position 14805
-DEBUG: Marked label L193 at position 14810
+DEBUG: Emitted 32-bit JMP to L186 at position 14758
+DEBUG: Marked label L187 at position 14763
 DEBUG: Emitted bytes: ['0x48', '0xff', '0xc7']
 DEBUG: Emitted bytes: ['0xc6', '0x7', '0x0']
-DEBUG: Marked label L192 at position 14816
+DEBUG: Marked label L186 at position 14769
 DEBUG: Emitted bytes: ['0x48', '0x89', '0xd8']
 DEBUG: ReadInput completed
 DEBUG: StringOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x78', '0xff', '0xff', '0xff']
 DEBUG: Assignment to input completed
-DEBUG: Assignment to status, value: FunctionCall(line=95, column=14, function='Calculator.ProcessInput', arguments=[Identifier(line=95, column=38, name='input')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to status, value: FunctionCall(line=95, column=37, function='Calculator.ProcessInput', arguments=[Identifier(line=95, column=38, name='input', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Calculator.ProcessInput
 DEBUG: Found registered function: Calculator.ProcessInput
 DEBUG: Calling user function Calculator.ProcessInput
@@ -10914,8 +10885,8 @@ DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
 DEBUG: Emitted bytes: ['0xe9', '0x0', '0x0', '0x0', '0x0']
-DEBUG: Emitted 32-bit JMP to L188 at position 14931
-DEBUG: Marked label L189 at position 14936
+DEBUG: Emitted 32-bit JMP to L182 at position 14884
+DEBUG: Marked label L183 at position 14889
 DEBUG: While loop compilation completed (label system)
 DEBUG: Added string 'Calculator terminated.' to data section at offset 315
 DEBUG: Printing string 'Calculator terminated....', offset 315, length 22
@@ -10966,14 +10937,14 @@ DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: Program compilation completed
 DEBUG: Fixing 0 forward references
 DEBUG: Available subroutines: {}
-DEBUG: Available labels in asm: {'L2': 1081, 'L15': 1166, 'L16': 1187, 'L17': 1245, 'L19': 1343, 'L20': 1364, 'L21': 1416, 'L22': 1437, 'L18': 1593, 'L23': 1810, 'L24': 1967, 'L25': 2114, 'L27': 2212, 'L28': 2233, 'L29': 2285, 'L30': 2306, 'L31': 2397, 'L32': 2554, 'L33': 2701, 'L34': 2858, 'L26': 3059, 'L14': 3167, 'L3': 3172, 'L36': 3287, 'L37': 3287, 'L38': 3432, 'L39': 3582, 'L40': 3631, 'L41': 3827, 'L35': 3868, 'L4': 3873, 'L43': 4028, 'L44': 4028, 'L45': 4114, 'L46': 4114, 'L49': 4304, 'L50': 4326, 'L51': 4337, 'L53': 4347, 'L54': 4376, 'L55': 4395, 'L52': 4398, 'L47': 4413, 'L48': 4413, 'L56': 4499, 'L57': 4499, 'L42': 4543, 'L5': 4548, 'L59': 4710, 'L60': 4710, 'L61': 4710, 'L62': 4860, 'L63': 5027, 'L64': 5167, 'L58': 5241, 'L6': 5246, 'L66': 5328, 'L67': 5478, 'L68': 5642, 'L69': 5782, 'L65': 5856, 'L7': 5861, 'L71': 6034, 'L72': 6034, 'L73': 6034, 'L75': 6244, 'L76': 6244, 'L74': 6361, 'L77': 6410, 'L78': 6410, 'L70': 6451, 'L8': 6456, 'L82': 6677, 'L83': 6827, 'L80': 6864, 'L81': 6864, 'L86': 6968, 'L87': 7118, 'L84': 7216, 'L85': 7216, 'L90': 7320, 'L91': 7470, 'L92': 7519, 'L93': 7634, 'L88': 7653, 'L89': 7653, 'L79': 7694, 'L9': 7699, 'L95': 7743, 'L96': 7764, 'L97': 7944, 'L98': 8087, 'L94': 8281, 'L10': 8286, 'L102': 8500, 'L103': 8519, 'L100': 8584, 'L101': 8584, 'L104': 8606, 'L105': 8627, 'L106': 8679, 'L107': 8700, 'L108': 8973, 'L109': 9130, 'L110': 9277, 'L111': 9434, 'L99': 9672, 'L11': 9677, 'L115': 9760, 'L117': 9780, 'L116': 9781, 'L113': 9786, 'L114': 9796, 'L120': 9825, 'L122': 9845, 'L121': 9846, 'L118': 9851, 'L119': 9861, 'L126': 9957, 'L127': 9980, 'L125': 9980, 'L129': 9994, 'L130': 10017, 'L128': 10017, 'L123': 10030, 'L124': 10032, 'L131': 10062, 'L132': 10083, 'L133': 10263, 'L134': 10406, 'L112': 10634, 'L12': 10639, 'L136': 10900, 'L137': 10900, 'L138': 11002, 'L139': 11002, 'L140': 11033, 'L141': 11146, 'L142': 11209, 'L143': 11209, 'L144': 11422, 'L145': 11422, 'L146': 11436, 'L147': 11634, 'L148': 11687, 'L149': 11687, 'L150': 11750, 'L151': 11750, 'L135': 11824, 'L13': 11829, 'L153': 11894, 'L154': 11915, 'L155': 12095, 'L156': 12238, 'L152': 12466, 'L1': 13161, 'L158': 13213, 'L159': 13244, 'L160': 13259, 'L161': 13269, 'L162': 13420, 'L163': 13420, 'L164': 13447, 'L165': 13478, 'L166': 13493, 'L167': 13503, 'L168': 13672, 'L169': 13672, 'L170': 13699, 'L171': 13730, 'L172': 13745, 'L173': 13755, 'L174': 13924, 'L175': 13924, 'L176': 13951, 'L177': 13982, 'L178': 13997, 'L179': 14007, 'L180': 14177, 'L181': 14177, 'L182': 14204, 'L183': 14235, 'L184': 14250, 'L185': 14260, 'L186': 14431, 'L187': 14431, 'L157': 14559, 'L188': 14559, 'L190': 14776, 'L191': 14784, 'L193': 14810, 'L192': 14816, 'L189': 14936}
+DEBUG: Available labels in asm: {'L2': 1081, 'L15': 1166, 'L16': 1187, 'L17': 1245, 'L19': 1343, 'L20': 1364, 'L21': 1416, 'L22': 1437, 'L18': 1593, 'L23': 1810, 'L24': 1967, 'L25': 2114, 'L27': 2212, 'L28': 2233, 'L29': 2285, 'L30': 2306, 'L31': 2397, 'L32': 2554, 'L33': 2701, 'L34': 2858, 'L26': 3059, 'L14': 3167, 'L3': 3172, 'L36': 3287, 'L37': 3287, 'L38': 3432, 'L39': 3582, 'L40': 3631, 'L41': 3827, 'L35': 3868, 'L4': 3873, 'L43': 4028, 'L44': 4028, 'L45': 4114, 'L46': 4114, 'L49': 4304, 'L50': 4326, 'L51': 4337, 'L53': 4347, 'L54': 4376, 'L55': 4395, 'L52': 4398, 'L47': 4413, 'L48': 4413, 'L56': 4499, 'L57': 4499, 'L42': 4543, 'L5': 4548, 'L59': 4710, 'L60': 4710, 'L61': 4710, 'L62': 4860, 'L63': 5027, 'L64': 5167, 'L58': 5241, 'L6': 5246, 'L66': 5328, 'L67': 5478, 'L68': 5642, 'L69': 5782, 'L65': 5856, 'L7': 5861, 'L71': 6034, 'L72': 6034, 'L73': 6034, 'L75': 6244, 'L76': 6244, 'L74': 6361, 'L77': 6410, 'L78': 6410, 'L70': 6451, 'L8': 6456, 'L82': 6677, 'L83': 6827, 'L80': 6864, 'L81': 6864, 'L86': 6968, 'L87': 7118, 'L84': 7216, 'L85': 7216, 'L90': 7320, 'L91': 7470, 'L92': 7519, 'L93': 7634, 'L88': 7653, 'L89': 7653, 'L79': 7694, 'L9': 7699, 'L95': 7743, 'L96': 7764, 'L97': 7944, 'L98': 8087, 'L94': 8281, 'L10': 8286, 'L102': 8500, 'L103': 8519, 'L100': 8584, 'L101': 8584, 'L104': 8606, 'L105': 8627, 'L106': 8679, 'L107': 8700, 'L108': 8973, 'L109': 9130, 'L110': 9277, 'L111': 9434, 'L99': 9672, 'L11': 9677, 'L114': 9765, 'L115': 9783, 'L113': 9783, 'L117': 9811, 'L118': 9829, 'L116': 9829, 'L120': 9915, 'L121': 9938, 'L119': 9938, 'L123': 9950, 'L124': 9973, 'L122': 9973, 'L125': 10015, 'L126': 10036, 'L127': 10216, 'L128': 10359, 'L112': 10587, 'L12': 10592, 'L130': 10853, 'L131': 10853, 'L132': 10955, 'L133': 10955, 'L134': 10986, 'L135': 11099, 'L136': 11162, 'L137': 11162, 'L138': 11375, 'L139': 11375, 'L140': 11389, 'L141': 11587, 'L142': 11640, 'L143': 11640, 'L144': 11703, 'L145': 11703, 'L129': 11777, 'L13': 11782, 'L147': 11847, 'L148': 11868, 'L149': 12048, 'L150': 12191, 'L146': 12419, 'L1': 13114, 'L152': 13166, 'L153': 13197, 'L154': 13212, 'L155': 13222, 'L156': 13373, 'L157': 13373, 'L158': 13400, 'L159': 13431, 'L160': 13446, 'L161': 13456, 'L162': 13625, 'L163': 13625, 'L164': 13652, 'L165': 13683, 'L166': 13698, 'L167': 13708, 'L168': 13877, 'L169': 13877, 'L170': 13904, 'L171': 13935, 'L172': 13950, 'L173': 13960, 'L174': 14130, 'L175': 14130, 'L176': 14157, 'L177': 14188, 'L178': 14203, 'L179': 14213, 'L180': 14384, 'L181': 14384, 'L151': 14512, 'L182': 14512, 'L184': 14729, 'L185': 14737, 'L187': 14763, 'L186': 14769, 'L183': 14889}
 DEBUG: Fixing 12 user function references
 DEBUG: Fixing call to user function RESP.IntToString at position 1132
-DEBUG: Fixed call to RESP.IntToString: offset=9502
+DEBUG: Fixed call to RESP.IntToString: offset=9455
 DEBUG: Fixing call to user function RESP.IntToString at position 1382
-DEBUG: Fixed call to RESP.IntToString: offset=9252
+DEBUG: Fixed call to RESP.IntToString: offset=9205
 DEBUG: Fixing call to user function RESP.IntToString at position 2251
-DEBUG: Fixed call to RESP.IntToString: offset=8383
+DEBUG: Fixed call to RESP.IntToString: offset=8336
 DEBUG: Fixing call to user function RESP.ParseInteger at position 3308
 DEBUG: Fixed call to RESP.ParseInteger: offset=2548
 DEBUG: Fixing call to user function RESP.ParseElement at position 3697
@@ -10991,7 +10962,7 @@ DEBUG: Fixed call to RESP.ParseSimpleString: offset=759
 DEBUG: Fixing call to user function RESP.ParseInteger at position 4634
 DEBUG: Fixed call to RESP.ParseInteger: offset=1222
 DEBUG: Fixing call to user function RESP.IntToString at position 8645
-DEBUG: Fixed call to RESP.IntToString: offset=1989
+DEBUG: Fixed call to RESP.IntToString: offset=1942
 Phase 2: Resolving internal jump offsets...
 DEBUG: Jump at 1076 to label at 3167: offset=2086
 DEBUG: Jump at 1170 to label at 1187: offset=11
@@ -11078,88 +11049,82 @@ DEBUG: Jump at 9006 to label at 9130: offset=118
 DEBUG: Jump at 9125 to label at 8973: offset=-157
 DEBUG: Jump at 9310 to label at 9434: offset=118
 DEBUG: Jump at 9429 to label at 9277: offset=-157
-DEBUG: Jump at 9672 to label at 10634: offset=957
-DEBUG: Jump at 9741 to label at 9786: offset=39
-DEBUG: Jump at 9753 to label at 9781: offset=22
-DEBUG: Jump at 9763 to label at 9780: offset=11
-DEBUG: Jump at 9775 to label at 9760: offset=-20
-DEBUG: Jump at 9781 to label at 9796: offset=10
-DEBUG: Jump at 9806 to label at 9851: offset=39
-DEBUG: Jump at 9818 to label at 9846: offset=22
-DEBUG: Jump at 9828 to label at 9845: offset=11
-DEBUG: Jump at 9840 to label at 9825: offset=-20
-DEBUG: Jump at 9846 to label at 9861: offset=10
-DEBUG: Jump at 9933 to label at 10030: offset=91
-DEBUG: Jump at 9951 to label at 9980: offset=23
-DEBUG: Jump at 9961 to label at 9980: offset=13
-DEBUG: Jump at 9975 to label at 9957: offset=-23
-DEBUG: Jump at 9988 to label at 10017: offset=23
-DEBUG: Jump at 10000 to label at 10017: offset=11
-DEBUG: Jump at 10012 to label at 9994: offset=-23
-DEBUG: Jump at 10025 to label at 10032: offset=2
-DEBUG: Jump at 10066 to label at 10083: offset=11
-DEBUG: Jump at 10078 to label at 10062: offset=-21
-DEBUG: Jump at 10296 to label at 10406: offset=104
-DEBUG: Jump at 10401 to label at 10263: offset=-143
-DEBUG: Jump at 10634 to label at 11824: offset=1185
-DEBUG: Jump at 10700 to label at 10900: offset=194
-DEBUG: Jump at 10964 to label at 11002: offset=32
-DEBUG: Jump at 11069 to label at 11146: offset=71
-DEBUG: Jump at 11141 to label at 11033: offset=-113
-DEBUG: Jump at 11171 to label at 11209: offset=32
-DEBUG: Jump at 11384 to label at 11422: offset=32
-DEBUG: Jump at 11472 to label at 11634: offset=156
-DEBUG: Jump at 11629 to label at 11436: offset=-198
-DEBUG: Jump at 11645 to label at 11687: offset=36
-DEBUG: Jump at 11712 to label at 11750: offset=32
-DEBUG: Jump at 11824 to label at 12466: offset=637
-DEBUG: Jump at 11898 to label at 11915: offset=11
-DEBUG: Jump at 11910 to label at 11894: offset=-21
-DEBUG: Jump at 12128 to label at 12238: offset=104
-DEBUG: Jump at 12233 to label at 12095: offset=-143
-DEBUG: Jump at 13156 to label at 14559: offset=1398
-DEBUG: Jump at 13219 to label at 13259: offset=34
-DEBUG: Jump at 13227 to label at 13244: offset=11
-DEBUG: Jump at 13239 to label at 13213: offset=-31
-DEBUG: Jump at 13254 to label at 13269: offset=10
-DEBUG: Jump at 13291 to label at 13420: offset=123
-DEBUG: Jump at 13453 to label at 13493: offset=34
-DEBUG: Jump at 13461 to label at 13478: offset=11
-DEBUG: Jump at 13473 to label at 13447: offset=-31
-DEBUG: Jump at 13488 to label at 13503: offset=10
-DEBUG: Jump at 13525 to label at 13672: offset=141
-DEBUG: Jump at 13705 to label at 13745: offset=34
-DEBUG: Jump at 13713 to label at 13730: offset=11
-DEBUG: Jump at 13725 to label at 13699: offset=-31
-DEBUG: Jump at 13740 to label at 13755: offset=10
-DEBUG: Jump at 13777 to label at 13924: offset=141
-DEBUG: Jump at 13957 to label at 13997: offset=34
-DEBUG: Jump at 13965 to label at 13982: offset=11
-DEBUG: Jump at 13977 to label at 13951: offset=-31
-DEBUG: Jump at 13992 to label at 14007: offset=10
-DEBUG: Jump at 14029 to label at 14177: offset=142
-DEBUG: Jump at 14210 to label at 14250: offset=34
-DEBUG: Jump at 14218 to label at 14235: offset=11
-DEBUG: Jump at 14230 to label at 14204: offset=-31
-DEBUG: Jump at 14245 to label at 14260: offset=10
-DEBUG: Jump at 14282 to label at 14431: offset=143
-DEBUG: Jump at 14570 to label at 14936: offset=360
-DEBUG: Jump at 14770 to label at 14784: offset=8
-DEBUG: Jump at 14779 to label at 14816: offset=32
-DEBUG: Jump at 14796 to label at 14810: offset=8
-DEBUG: Jump at 14805 to label at 14816: offset=6
-DEBUG: Jump at 14931 to label at 14559: offset=-377
-DEBUG: Successfully resolved 156 global jumps
+DEBUG: Jump at 9672 to label at 10587: offset=910
+DEBUG: Jump at 9759 to label at 9783: offset=18
+DEBUG: Jump at 9769 to label at 9783: offset=8
+DEBUG: Jump at 9778 to label at 9765: offset=-18
+DEBUG: Jump at 9805 to label at 9829: offset=18
+DEBUG: Jump at 9815 to label at 9829: offset=8
+DEBUG: Jump at 9824 to label at 9811: offset=-18
+DEBUG: Jump at 9909 to label at 9938: offset=23
+DEBUG: Jump at 9919 to label at 9938: offset=13
+DEBUG: Jump at 9933 to label at 9915: offset=-23
+DEBUG: Jump at 9944 to label at 9973: offset=23
+DEBUG: Jump at 9954 to label at 9973: offset=13
+DEBUG: Jump at 9968 to label at 9950: offset=-23
+DEBUG: Jump at 10019 to label at 10036: offset=11
+DEBUG: Jump at 10031 to label at 10015: offset=-21
+DEBUG: Jump at 10249 to label at 10359: offset=104
+DEBUG: Jump at 10354 to label at 10216: offset=-143
+DEBUG: Jump at 10587 to label at 11777: offset=1185
+DEBUG: Jump at 10653 to label at 10853: offset=194
+DEBUG: Jump at 10917 to label at 10955: offset=32
+DEBUG: Jump at 11022 to label at 11099: offset=71
+DEBUG: Jump at 11094 to label at 10986: offset=-113
+DEBUG: Jump at 11124 to label at 11162: offset=32
+DEBUG: Jump at 11337 to label at 11375: offset=32
+DEBUG: Jump at 11425 to label at 11587: offset=156
+DEBUG: Jump at 11582 to label at 11389: offset=-198
+DEBUG: Jump at 11598 to label at 11640: offset=36
+DEBUG: Jump at 11665 to label at 11703: offset=32
+DEBUG: Jump at 11777 to label at 12419: offset=637
+DEBUG: Jump at 11851 to label at 11868: offset=11
+DEBUG: Jump at 11863 to label at 11847: offset=-21
+DEBUG: Jump at 12081 to label at 12191: offset=104
+DEBUG: Jump at 12186 to label at 12048: offset=-143
+DEBUG: Jump at 13109 to label at 14512: offset=1398
+DEBUG: Jump at 13172 to label at 13212: offset=34
+DEBUG: Jump at 13180 to label at 13197: offset=11
+DEBUG: Jump at 13192 to label at 13166: offset=-31
+DEBUG: Jump at 13207 to label at 13222: offset=10
+DEBUG: Jump at 13244 to label at 13373: offset=123
+DEBUG: Jump at 13406 to label at 13446: offset=34
+DEBUG: Jump at 13414 to label at 13431: offset=11
+DEBUG: Jump at 13426 to label at 13400: offset=-31
+DEBUG: Jump at 13441 to label at 13456: offset=10
+DEBUG: Jump at 13478 to label at 13625: offset=141
+DEBUG: Jump at 13658 to label at 13698: offset=34
+DEBUG: Jump at 13666 to label at 13683: offset=11
+DEBUG: Jump at 13678 to label at 13652: offset=-31
+DEBUG: Jump at 13693 to label at 13708: offset=10
+DEBUG: Jump at 13730 to label at 13877: offset=141
+DEBUG: Jump at 13910 to label at 13950: offset=34
+DEBUG: Jump at 13918 to label at 13935: offset=11
+DEBUG: Jump at 13930 to label at 13904: offset=-31
+DEBUG: Jump at 13945 to label at 13960: offset=10
+DEBUG: Jump at 13982 to label at 14130: offset=142
+DEBUG: Jump at 14163 to label at 14203: offset=34
+DEBUG: Jump at 14171 to label at 14188: offset=11
+DEBUG: Jump at 14183 to label at 14157: offset=-31
+DEBUG: Jump at 14198 to label at 14213: offset=10
+DEBUG: Jump at 14235 to label at 14384: offset=143
+DEBUG: Jump at 14523 to label at 14889: offset=360
+DEBUG: Jump at 14723 to label at 14737: offset=8
+DEBUG: Jump at 14732 to label at 14769: offset=32
+DEBUG: Jump at 14749 to label at 14763: offset=8
+DEBUG: Jump at 14758 to label at 14769: offset=6
+DEBUG: Jump at 14884 to label at 14512: offset=-377
+DEBUG: Successfully resolved 150 global jumps
 Phase 3: Building executable...
 Dynamic addresses set - Code: 0x00401000, Data: 0x00405000
 Applied 39 relocations
 
 Dynamic ELF Layout:
-  Code: 0x401000 (15053 bytes)
+  Code: 0x401000 (15006 bytes)
   Data: 0x405000 (338 bytes)
 
 === COMPILATION COMPLETE (20818 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/calculator_simple_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/calculator_simple_exec
 ✅ Wrote 20818 bytes
 ✅ Made executable
 ✅ Compiled to calculator_simple_exec (20818 bytes)

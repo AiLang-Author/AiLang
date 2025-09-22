@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_complex_expressions.ailang -> test_complex_expressions_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -409,7 +411,7 @@ DEBUG: MOV RAX, 15
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to c completed
-DEBUG: Assignment to cond1, value: FunctionCall(line=16, column=9, function='LessThan', arguments=[Identifier(line=16, column=18, name='a'), Identifier(line=16, column=21, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to cond1, value: FunctionCall(line=16, column=9, function='LessThan', arguments=[Identifier(line=16, column=18, name='a', original_name=None), Identifier(line=16, column=21, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -437,7 +439,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to cond1 completed
-DEBUG: Assignment to cond2, value: FunctionCall(line=17, column=9, function='GreaterThan', arguments=[Identifier(line=17, column=21, name='c'), Identifier(line=17, column=24, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to cond2, value: FunctionCall(line=17, column=9, function='GreaterThan', arguments=[Identifier(line=17, column=21, name='c', original_name=None), Identifier(line=17, column=24, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -465,7 +467,7 @@ DEBUG: ArithmeticOps.compile_operation returned True
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to cond2 completed
-DEBUG: Assignment to both, value: FunctionCall(line=18, column=8, function='BitwiseAnd', arguments=[Identifier(line=18, column=19, name='cond1'), Identifier(line=18, column=26, name='cond2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to both, value: FunctionCall(line=18, column=8, function='BitwiseAnd', arguments=[Identifier(line=18, column=19, name='cond1', original_name=None), Identifier(line=18, column=26, name='cond2', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: BitwiseAnd
 DEBUG: Dispatching BitwiseAnd to modules...
 DEBUG: Trying module FunctionDispatch
@@ -700,7 +702,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L6 at position 1382
 DEBUG ScopeManager: Popping function 'Test.Add1'
 DEBUG: Function Test.Add1 compiled successfully
-DEBUG: Assignment to nested, value: FunctionCall(line=30, column=10, function='Test.Add1', arguments=[FunctionCall(line=30, column=20, function='Test.Add1', arguments=[FunctionCall(line=30, column=30, function='Test.Add1', arguments=[FunctionCall(line=30, column=40, function='Test.Add1', arguments=[Number(line=30, column=50, value='0')])])])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to nested, value: FunctionCall(line=30, column=19, function='Test.Add1', arguments=[FunctionCall(line=30, column=29, function='Test.Add1', arguments=[FunctionCall(line=30, column=39, function='Test.Add1', arguments=[FunctionCall(line=30, column=49, function='Test.Add1', arguments=[Number(line=30, column=50, value='0')])])])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.Add1
 DEBUG: Found registered function: Test.Add1
 DEBUG: Calling user function Test.Add1
@@ -943,7 +945,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (174 bytes)
 
 === COMPILATION COMPLETE (8366 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_complex_expressions_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_complex_expressions_exec
 ✅ Wrote 8366 bytes
 ✅ Made executable
 ✅ Compiled to test_complex_expressions_exec (8366 bytes)

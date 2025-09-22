@@ -978,3 +978,1050 @@ Failed Libraries:
 - SortedSet
 - StringUtils
 - TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;31m✗ FAILED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;31m✗ FAILED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+
+[0;34m[7] Testing:[0m Math
+  [0;31m✗ FAILED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+
+[0;34m[10] Testing:[0m RESP
+  [0;31m✗ FAILED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+
+[0;34m[15] Testing:[0m XArrays
+  [0;31m✗ FAILED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 0[0m
+[0;31mFailed: 15[0m
+Success Rate: 0%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Calculator_lib
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- FixedPointTrig
+- LinearAlgebra
+- Math
+- MessageQueue
+- Networking
+- RESP
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+- XArrays
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;31m✗ FAILED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;31m✗ FAILED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+
+[0;34m[7] Testing:[0m Math
+  [0;31m✗ FAILED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+
+[0;34m[10] Testing:[0m RESP
+  [0;31m✗ FAILED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+
+[0;34m[15] Testing:[0m XArrays
+  [0;31m✗ FAILED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 0[0m
+[0;31mFailed: 15[0m
+Success Rate: 0%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Calculator_lib
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- FixedPointTrig
+- LinearAlgebra
+- Math
+- MessageQueue
+- Networking
+- RESP
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+- XArrays
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[7] Testing:[0m Math
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[10] Testing:[0m RESP
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[15] Testing:[0m XArrays
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 0[0m
+[0;31mFailed: 15[0m
+Success Rate: 0%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Calculator_lib
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- FixedPointTrig
+- LinearAlgebra
+- Math
+- MessageQueue
+- Networking
+- RESP
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+- XArrays
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[7] Testing:[0m Math
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[10] Testing:[0m RESP
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+[0;34m[15] Testing:[0m XArrays
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: name 'MemberAccess' is not defined
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 0[0m
+[0;31mFailed: 15[0m
+Success Rate: 0%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Calculator_lib
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- FixedPointTrig
+- LinearAlgebra
+- Math
+- MessageQueue
+- Networking
+- RESP
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+- XArrays
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[7] Testing:[0m Math
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[10] Testing:[0m RESP
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+[0;34m[15] Testing:[0m XArrays
+  [0;31m✗ FAILED[0m
+  Error: AttributeError: type object 'TokenType' has no attribute 'LOOP'
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 0[0m
+[0;31mFailed: 15[0m
+Success Rate: 0%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Calculator_lib
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- FixedPointTrig
+- LinearAlgebra
+- Math
+- MessageQueue
+- Networking
+- RESP
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+- XArrays
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;31m✗ FAILED[0m
+  Error: ❌ ERROR: RunTask.__init__() got an unexpected keyword argument 'task_name'
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[15] Testing:[0m XArrays
+  [0;32m✓ PASSED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 4[0m
+[0;31mFailed: 11[0m
+Success Rate: 26%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Calculator_lib
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- LinearAlgebra
+- MessageQueue
+- Networking
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;32m✓ PASSED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[15] Testing:[0m XArrays
+  [0;32m✓ PASSED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 5[0m
+[0;31mFailed: 10[0m
+Success Rate: 33%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- LinearAlgebra
+- MessageQueue
+- Networking
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;32m✓ PASSED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[15] Testing:[0m XArrays
+  [0;32m✓ PASSED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 5[0m
+[0;31mFailed: 10[0m
+Success Rate: 33%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- LinearAlgebra
+- MessageQueue
+- Networking
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;32m✓ PASSED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[15] Testing:[0m XArrays
+  [0;32m✓ PASSED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 5[0m
+[0;31mFailed: 10[0m
+Success Rate: 33%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- LinearAlgebra
+- MessageQueue
+- Networking
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;32m✓ PASSED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 39, column 7: In program: Unexpected token 'ElseBlock' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[15] Testing:[0m XArrays
+  [0;32m✓ PASSED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 5[0m
+[0;31mFailed: 10[0m
+Success Rate: 33%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- LinearAlgebra
+- MessageQueue
+- Networking
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;32m✓ PASSED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error:     raise ValueError(f"Undefined variable: '{resolved_name}'")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 10: In program: Expected DOT, got STRINGLENGTH. 
+
+[0;34m[14] Testing:[0m TimeDate
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 8, column 29: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[15] Testing:[0m XArrays
+  [0;32m✓ PASSED[0m
+
+========================================
+SUMMARY
+========================================
+Total Libraries: 15
+[0;32mPassed: 5[0m
+[0;31mFailed: 10[0m
+Success Rate: 33%
+
+Detailed results saved to: library_test_results.txt
+
+Failed Libraries:
+----------------
+- Concurrency
+- CryptoSecurity
+- DataStructures
+- LinearAlgebra
+- MessageQueue
+- Networking
+- Redis
+- SortedSet
+- StringUtils
+- TimeDate
+[0;34m[1] Testing:[0m Calculator_lib
+  [0;32m✓ PASSED[0m
+
+[0;34m[2] Testing:[0m Concurrency
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 47: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[3] Testing:[0m CryptoSecurity
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 34: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[4] Testing:[0m DataStructures
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 17, column 34: In program > DynamicPool: Expected EQUALS, got DASH. 
+
+[0;34m[5] Testing:[0m FixedPointTrig
+  [0;32m✓ PASSED[0m
+
+[0;34m[6] Testing:[0m LinearAlgebra
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 46: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[7] Testing:[0m Math
+  [0;32m✓ PASSED[0m
+
+[0;34m[8] Testing:[0m MessageQueue
+  [0;31m✗ FAILED[0m
+  Error:     raise ValueError(f"Undefined variable: '{resolved_name}'")
+
+[0;34m[9] Testing:[0m Networking
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 7, column 40: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[10] Testing:[0m RESP
+  [0;32m✓ PASSED[0m
+
+[0;34m[11] Testing:[0m Redis
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 4, column 16: In program: Unexpected token '
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[12] Testing:[0m SortedSet
+  [0;31m✗ FAILED[0m
+  Error: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Parse: ailang_parser.parser_modules.parse_error.ParseError: Parse error at line 141, column 1: In program: Unexpected token '}' at top level
+  Token:     self.error(f"Unexpected token '{self.current_token.value}' at top level")
+
+[0;34m[13] Testing:[0m StringUtils

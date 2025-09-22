@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_loopactor_basic.ailang -> test_loopactor_basic_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -517,7 +519,7 @@ DEBUG: MOV RAX, 1
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to actor_executed completed
-DEBUG: Assignment to msg_count, value: FunctionCall(line=32, column=17, function='Add', arguments=[Identifier(line=32, column=21, name='msg_count'), Number(line=32, column=32, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to msg_count, value: FunctionCall(line=32, column=17, function='Add', arguments=[Identifier(line=32, column=21, name='msg_count', original_name=None), Number(line=32, column=32, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2183,7 +2185,7 @@ Dynamic ELF Layout:
   Data: 0x403000 (590 bytes)
 
 === COMPILATION COMPLETE (12878 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_loopactor_basic_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_loopactor_basic_exec
 ✅ Wrote 12878 bytes
 ✅ Made executable
 ✅ Compiled to test_loopactor_basic_exec (12878 bytes)

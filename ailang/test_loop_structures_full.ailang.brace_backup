@@ -1,0 +1,161 @@
+// test_loop_structures_full.ailang
+// Comprehensive test of all loop structures working together
+
+PrintMessage("Full Loop Structures Integration Test")
+PrintMessage("======================================")
+
+// Global state
+system_state = 0
+total_operations = 0
+
+// ===== LOOPSTART: System initialization =====
+LoopStart.SystemInit {
+    PrintMessage("[INIT] System starting...")
+    system_state = 1
+    total_operations = 0
+    PrintMessage("[INIT] System ready")
+}
+
+// ===== SUBROUTINES: Reusable logic =====
+SubRoutine.IncrementOps {
+    total_operations = Add(total_operations, 1)
+}
+
+SubRoutine.CheckSystem {
+    IfCondition EqualTo(system_state, 0) ThenBlock: {
+        PrintMessage("[ERROR] System not initialized!")
+    } ElseBlock: {
+        PrintMessage("[OK] System check passed")
+    }
+}
+
+// ===== LOOPACTOR: Concurrent processing =====
+LoopActor.DataProcessor {
+    PrintMessage("[ACTOR] DataProcessor started")
+    
+    // Process data items
+    items_processed = 0
+    WhileLoop LessThan(items_processed, 3) {
+        
+            PrintMessage("  [ACTOR] Processing item:")
+            PrintNumber(items_processed)
+            RunTask(IncrementOps)  
+            items_processed = Add(items_processed, 1)
+        }
+        }
+    
+    PrintMessage("[ACTOR] DataProcessor complete")
+}
+
+// ===== LOOPSHADOW: Background monitoring =====
+LoopShadow.Monitor {
+    PrintMessage("[SHADOW] Monitor running")
+    
+    // Check system periodically
+    checks = 0
+    WhileLoop LessThan(checks, 2) {
+        
+            RunTask(CheckSystem)
+            RunTask(IncrementOps)
+            checks = Add(checks, 1)
+        }
+        }
+    
+    PrintMessage("[SHADOW] Monitor stopped")
+}
+
+// ===== LOOPMAIN: Primary execution =====
+LoopMain.Application {
+    PrintMessage("[MAIN] Application starting")
+    
+    // Verify initialization
+    IfCondition EqualTo(system_state, 1) ThenBlock: {
+        PrintMessage("[MAIN] Init verified")
+    } ElseBlock: {
+        PrintMessage("[MAIN] ERROR: Not initialized!")
+    }
+    
+    // Main processing loop
+    main_counter = 0
+    WhileLoop LessThan(main_counter, 5) {
+        
+            // Call subroutine
+            RunTask(IncrementOps)
+        
+            // Nested decision
+            IfCondition EqualTo(main_counter, 2) ThenBlock: {
+                PrintMessage("[MAIN] Midpoint reached")
+                RunTask(CheckSystem)
+            }
+        
+            main_counter = Add(main_counter, 1)
+        }
+        }
+    
+    PrintMessage("[MAIN] Application complete")
+}
+
+// ===== Final verification =====
+PrintMessage("======================================")
+PrintMessage("Final system state:")
+PrintNumber(system_state)
+PrintMessage("Total operations performed:")
+PrintNumber(total_operations)
+
+// Test nested subroutine calls
+SubRoutine.Nested1 {
+    PrintMessage("[NESTED1] Called")
+    RunTask(Nested2)
+    PrintMessage("[NESTED1] Returned")
+}
+
+SubRoutine.Nested2 {
+    PrintMessage("  [NESTED2] Called")
+    RunTask(Nested3)
+    PrintMessage("  [NESTED2] Returned")
+}
+
+SubRoutine.Nested3 {
+    PrintMessage("    [NESTED3] Executed")
+}
+
+PrintMessage("Testing nested subroutines:")
+RunTask(Nested1)
+
+// Edge case: Empty loop structures
+ SubRoutine.Empty { 
+    // Empty body - should handle gracefully
+}
+
+SubRoutine.EmptySub {
+    // Empty subroutine
+}
+
+PrintMessage("Empty structures handled")
+
+// Test loop with early termination
+done = 0
+iterations = 0
+PrintMessage("Loop with conditional exit:")
+WhileLoop EqualTo(done, 0) {
+    
+        PrintNumber(iterations)
+        iterations = Add(iterations, 1)
+    
+        // Exit condition
+        IfCondition GreaterEqual(iterations, 3) ThenBlock: {
+            PrintMessage("Exit condition met")
+            done = 1
+        }
+    }
+    }
+
+PrintMessage("======================================")
+PrintMessage("All loop structure tests complete!")
+PrintMessage("Final stats:")
+PrintMessage("  System state:")
+PrintNumber(system_state)
+PrintMessage("  Total operations:")
+PrintNumber(total_operations)
+PrintMessage("  Test iterations:")
+PrintNumber(iterations)

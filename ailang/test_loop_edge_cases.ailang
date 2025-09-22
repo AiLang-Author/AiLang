@@ -22,32 +22,28 @@ PrintNumber(global_var)
 PrintMessage("Nested loops with shadowing:")
 i = 0
 WhileLoop LessThan(i, 2) {
-    Body: {
-        PrintMessage("Outer i:")
-        PrintNumber(i)
+    PrintMessage("Outer i:")
+    PrintNumber(i)
     
-        // Inner loop shadows i
-        i_saved = i  // Save outer i
-        i = 0
-        WhileLoop LessThan(i, 2) {
-            PrintMessage("  Inner i:")
-            PrintNumber(i)
-            i = Add(i, 1)
-        }
-        i = i_saved  // Restore outer i
+    // Inner loop shadows i
+    i_saved = i  // Save outer i
+    i = 0
+    WhileLoop LessThan(i, 2) {
+        PrintMessage("  Inner i:")
+        PrintNumber(i)
         i = Add(i, 1)
     }
-    }
+    i = i_saved  // Restore outer i
+    i = Add(i, 1)
+}
 
 // Edge 3: Loop with immediate exit
 PrintMessage("Loop with immediate exit:")
 counter = 0
 WhileLoop LessThan(counter, 100) {
-    Body: {
-        PrintMessage("Single iteration only")
-        counter = 100  // Force immediate exit
-    }
-    }
+    PrintMessage("Single iteration only")
+    counter = 100  // Force immediate exit
+}
 
 // Edge 4: Deeply nested conditions in loop
 PrintMessage("Deep nesting test:")
@@ -55,24 +51,20 @@ a = 1
 b = 2
 c = 3
 WhileLoop LessThan(a, 2) {
-    Body: {
-        IfCondition EqualTo(b, 2) ThenBlock {
-            IfCondition EqualTo(c, 3) ThenBlock {
-                PrintMessage("Triple nested condition met")
-            }
+    IfCondition EqualTo(b, 2) ThenBlock: {
+        IfCondition EqualTo(c, 3) ThenBlock: {
+            PrintMessage("Triple nested condition met")
         }
-        a = Add(a, 1)
     }
-    }
+    a = Add(a, 1)
+}
 
 // Edge 5: Zero-iteration loop
 PrintMessage("Zero-iteration loop:")
 start = 10
 WhileLoop LessThan(start, 5) {
-    Body: {
-        PrintMessage("This should never print")
-    }
-    }
+    PrintMessage("This should never print")
+}
 PrintMessage("Zero-iteration handled correctly")
 
 // Edge 6: Large iteration count (stress)
@@ -80,15 +72,14 @@ PrintMessage("Stress test - 100 iterations:")
 big_counter = 0
 sum = 0
 WhileLoop LessThan(big_counter, 100) {
-    Body: {
-        sum = Add(sum, 1)
-        big_counter = Add(big_counter, 1)
-    }
-    }
+    sum = Add(sum, 1)
+    big_counter = Add(big_counter, 1)
+}
 PrintMessage("Sum after 100 iterations:")
 PrintNumber(sum)
 
 // Edge 7: SubRoutine calling another SubRoutine
+// MOVED OUTSIDE OF ANY LOOP - SubRoutines must be at top level
 SubRoutine.Caller {
     PrintMessage("Caller: before call")
     RunTask(Callee)
@@ -111,37 +102,31 @@ complex_cond = BitwiseAnd(
     LessThan(y, 20)
 )
 WhileLoop EqualTo(complex_cond, 1) {
-    Body: {
-        PrintMessage("Complex condition true")
-        complex_cond = 0  // Exit after one iteration
-    }
-    }
+    PrintMessage("Complex condition true")
+    complex_cond = 0  // Exit after one iteration
+}
 
 // Edge 9: Loop modifying its own condition
 PrintMessage("Self-modifying loop:")
 limit = 3
 current = 0
 WhileLoop LessThan(current, limit) {
-    Body: {
-        PrintMessage("Current:")
-        PrintNumber(current)
-        current = Add(current, 1)
-        // Modify limit mid-loop
-        IfCondition EqualTo(current, 2) ThenBlock {
-            limit = 5  // Extend the loop
-            PrintMessage("Extended loop limit to 5")
-        }
+    PrintMessage("Current:")
+    PrintNumber(current)
+    current = Add(current, 1)
+    // Modify limit mid-loop
+    IfCondition EqualTo(current, 2) ThenBlock: {
+        limit = 5  // Extend the loop
+        PrintMessage("Extended loop limit to 5")
     }
-    }
+}
 
 // Edge 10: Empty body handling
 PrintMessage("Empty structures:")
 
 WhileLoop LessThan(0, 0) {
-    Body: {
-        // Never executes, empty body
-    }
-    }
+    // Never executes, empty body
+}
 
 SubRoutine.Empty {
     // Empty subroutine body

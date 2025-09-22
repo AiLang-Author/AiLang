@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_bitwise_ops.ailang -> test_bitwise_ops_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -197,7 +199,7 @@ DEBUG: MOV RAX, 10
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xf0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to b completed
-DEBUG: Assignment to and_result, value: FunctionCall(line=10, column=14, function='BitwiseAnd', arguments=[Identifier(line=10, column=25, name='a'), Identifier(line=10, column=28, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to and_result, value: FunctionCall(line=10, column=14, function='BitwiseAnd', arguments=[Identifier(line=10, column=25, name='a', original_name=None), Identifier(line=10, column=28, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: BitwiseAnd
 DEBUG: Dispatching BitwiseAnd to modules...
 DEBUG: Trying module FunctionDispatch
@@ -355,7 +357,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to or_result, value: FunctionCall(line=15, column=13, function='BitwiseOr', arguments=[Identifier(line=15, column=23, name='a'), Identifier(line=15, column=26, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to or_result, value: FunctionCall(line=15, column=13, function='BitwiseOr', arguments=[Identifier(line=15, column=23, name='a', original_name=None), Identifier(line=15, column=26, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: BitwiseOr
 DEBUG: Dispatching BitwiseOr to modules...
 DEBUG: Trying module FunctionDispatch
@@ -513,7 +515,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to xor_result, value: FunctionCall(line=20, column=14, function='BitwiseXor', arguments=[Identifier(line=20, column=25, name='a'), Identifier(line=20, column=28, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to xor_result, value: FunctionCall(line=20, column=14, function='BitwiseXor', arguments=[Identifier(line=20, column=25, name='a', original_name=None), Identifier(line=20, column=28, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: BitwiseXor
 DEBUG: Dispatching BitwiseXor to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1058,7 +1060,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (196 bytes)
 
 === COMPILATION COMPLETE (8388 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_bitwise_ops_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_bitwise_ops_exec
 ✅ Wrote 8388 bytes
 ✅ Made executable
 ✅ Compiled to test_bitwise_ops_exec (8388 bytes)

@@ -1,0 +1,20 @@
+// test_minimal.ailang
+// The absolute minimum function test
+
+PrintMessage("Minimal Test")
+
+// Define function
+Function.Test.Get42 {
+    Body: {
+        ReturnValue(42)
+    }
+}
+
+// Call function
+result = Test.Get42()
+
+// Print result
+PrintMessage("Result:")
+PrintNumber(result)
+
+PrintMessage("Done")

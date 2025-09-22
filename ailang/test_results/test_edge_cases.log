@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_edge_cases.ailang -> test_edge_cases_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -370,7 +372,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L14 at position 799
 DEBUG ScopeManager: Popping function 'Edge.NoReturn'
 DEBUG: Function Edge.NoReturn compiled successfully
-DEBUG: Assignment to r1, value: FunctionCall(line=17, column=6, function='Edge.NoReturn', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r1, value: FunctionCall(line=17, column=19, function='Edge.NoReturn', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.NoReturn
 DEBUG: Found registered function: Edge.NoReturn
 DEBUG: Calling user function Edge.NoReturn
@@ -560,7 +562,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L17 at position 1176
 DEBUG ScopeManager: Popping function 'Edge.Empty'
 DEBUG: Function Edge.Empty compiled successfully
-DEBUG: Assignment to r2, value: FunctionCall(line=30, column=6, function='Edge.Empty', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r2, value: FunctionCall(line=30, column=16, function='Edge.Empty', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Empty
 DEBUG: Found registered function: Edge.Empty
 DEBUG: Calling user function Edge.Empty
@@ -750,7 +752,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L20 at position 1553
 DEBUG ScopeManager: Popping function 'Edge.Zero'
 DEBUG: Function Edge.Zero compiled successfully
-DEBUG: Assignment to r3, value: FunctionCall(line=42, column=6, function='Edge.Zero', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r3, value: FunctionCall(line=42, column=15, function='Edge.Zero', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Zero
 DEBUG: Found registered function: Edge.Zero
 DEBUG: Calling user function Edge.Zero
@@ -950,7 +952,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L23 at position 1948
 DEBUG ScopeManager: Popping function 'Edge.Large'
 DEBUG: Function Edge.Large compiled successfully
-DEBUG: Assignment to r4, value: FunctionCall(line=55, column=6, function='Edge.Large', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r4, value: FunctionCall(line=55, column=16, function='Edge.Large', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Large
 DEBUG: Found registered function: Edge.Large
 DEBUG: Calling user function Edge.Large
@@ -1170,7 +1172,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L26 at position 2361
 DEBUG ScopeManager: Popping function 'Edge.Negative'
 DEBUG: Function Edge.Negative compiled successfully
-DEBUG: Assignment to r5, value: FunctionCall(line=68, column=6, function='Edge.Negative', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r5, value: FunctionCall(line=68, column=19, function='Edge.Negative', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Negative
 DEBUG: Found registered function: Edge.Negative
 DEBUG: Calling user function Edge.Negative
@@ -1360,7 +1362,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L29 at position 2738
 DEBUG ScopeManager: Popping function 'Edge.Counter'
 DEBUG: Function Edge.Counter compiled successfully
-DEBUG: Assignment to c1, value: FunctionCall(line=82, column=6, function='Edge.Counter', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to c1, value: FunctionCall(line=82, column=18, function='Edge.Counter', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Counter
 DEBUG: Found registered function: Edge.Counter
 DEBUG: Calling user function Edge.Counter
@@ -1371,7 +1373,7 @@ DEBUG: User function Edge.Counter called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to c1 completed
-DEBUG: Assignment to c2, value: FunctionCall(line=83, column=6, function='Edge.Counter', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to c2, value: FunctionCall(line=83, column=18, function='Edge.Counter', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Counter
 DEBUG: Found registered function: Edge.Counter
 DEBUG: Calling user function Edge.Counter
@@ -1382,7 +1384,7 @@ DEBUG: User function Edge.Counter called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xc8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to c2 completed
-DEBUG: Assignment to c3, value: FunctionCall(line=84, column=6, function='Edge.Counter', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to c3, value: FunctionCall(line=84, column=18, function='Edge.Counter', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Counter
 DEBUG: Found registered function: Edge.Counter
 DEBUG: Calling user function Edge.Counter
@@ -1774,7 +1776,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L36 at position 3581
 DEBUG ScopeManager: Popping function 'Edge.Ten'
 DEBUG: Function Edge.Ten compiled successfully
-DEBUG: Assignment to expr, value: FunctionCall(line=98, column=8, function='Add', arguments=[FunctionCall(line=98, column=12, function='Edge.Ten', arguments=[]), FunctionCall(line=98, column=24, function='Edge.Ten', arguments=[])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to expr, value: FunctionCall(line=98, column=8, function='Add', arguments=[FunctionCall(line=98, column=20, function='Edge.Ten', arguments=[]), FunctionCall(line=98, column=32, function='Edge.Ten', arguments=[])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1965,7 +1967,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param x stored at [RBP-8]
-DEBUG: Assignment to d, value: FunctionCall(line=107, column=13, function='Multiply', arguments=[Identifier(line=107, column=22, name='x'), Number(line=107, column=25, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to d, value: FunctionCall(line=107, column=13, function='Multiply', arguments=[Identifier(line=107, column=22, name='x', original_name=None), Number(line=107, column=25, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2025,7 +2027,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L39 at position 4012
 DEBUG ScopeManager: Popping function 'Edge.Double'
 DEBUG: Function Edge.Double compiled successfully
-DEBUG: Assignment to chain, value: FunctionCall(line=112, column=9, function='Edge.Double', arguments=[FunctionCall(line=112, column=21, function='Edge.Ten', arguments=[])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to chain, value: FunctionCall(line=112, column=20, function='Edge.Double', arguments=[FunctionCall(line=112, column=29, function='Edge.Ten', arguments=[])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Double
 DEBUG: Found registered function: Edge.Double
 DEBUG: Calling user function Edge.Double
@@ -2330,7 +2332,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L42 at position 4535
 DEBUG ScopeManager: Popping function 'Edge.Early'
 DEBUG: Function Edge.Early compiled successfully
-DEBUG: Assignment to test1, value: FunctionCall(line=134, column=9, function='Edge.Early', arguments=[Number(line=134, column=20, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to test1, value: FunctionCall(line=134, column=19, function='Edge.Early', arguments=[Number(line=134, column=20, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Early
 DEBUG: Found registered function: Edge.Early
 DEBUG: Calling user function Edge.Early
@@ -2347,7 +2349,7 @@ DEBUG: User function Edge.Early called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to test1 completed
-DEBUG: Assignment to test2, value: FunctionCall(line=135, column=9, function='Edge.Early', arguments=[Number(line=135, column=20, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to test2, value: FunctionCall(line=135, column=19, function='Edge.Early', arguments=[Number(line=135, column=20, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Early
 DEBUG: Found registered function: Edge.Early
 DEBUG: Calling user function Edge.Early
@@ -2363,7 +2365,7 @@ DEBUG: User function Edge.Early called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xa0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to test2 completed
-DEBUG: Assignment to test3, value: FunctionCall(line=136, column=9, function='Edge.Early', arguments=[Number(line=136, column=20, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to test3, value: FunctionCall(line=136, column=19, function='Edge.Early', arguments=[Number(line=136, column=20, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Early
 DEBUG: Found registered function: Edge.Early
 DEBUG: Calling user function Edge.Early
@@ -2908,7 +2910,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param n stored at [RBP-8]
-DEBUG: Assignment to temp, value: FunctionCall(line=158, column=16, function='Edge.AddOne', arguments=[Identifier(line=158, column=28, name='n')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to temp, value: FunctionCall(line=158, column=27, function='Edge.AddOne', arguments=[Identifier(line=158, column=28, name='n', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.AddOne
 DEBUG: Found registered function: Edge.AddOne
 DEBUG: Calling user function Edge.AddOne
@@ -2967,7 +2969,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L54 at position 5788
 DEBUG ScopeManager: Popping function 'Edge.AddTwo'
 DEBUG: Function Edge.AddTwo compiled successfully
-DEBUG: Assignment to nested, value: FunctionCall(line=163, column=10, function='Edge.AddTwo', arguments=[Number(line=163, column=22, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to nested, value: FunctionCall(line=163, column=21, function='Edge.AddTwo', arguments=[Number(line=163, column=22, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.AddTwo
 DEBUG: Found registered function: Edge.AddTwo
 DEBUG: Calling user function Edge.AddTwo
@@ -3149,7 +3151,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to sum, value: FunctionCall(line=173, column=15, function='Add', arguments=[Identifier(line=173, column=19, name='a'), Identifier(line=173, column=22, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum, value: FunctionCall(line=173, column=15, function='Add', arguments=[Identifier(line=173, column=19, name='a', original_name=None), Identifier(line=173, column=22, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3176,7 +3178,7 @@ DEBUG: Allocated sum at stack offset 32
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to sum completed
-DEBUG: Assignment to diff, value: FunctionCall(line=174, column=16, function='Subtract', arguments=[Identifier(line=174, column=25, name='a'), Identifier(line=174, column=28, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to diff, value: FunctionCall(line=174, column=16, function='Subtract', arguments=[Identifier(line=174, column=25, name='a', original_name=None), Identifier(line=174, column=28, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Subtract
 DEBUG: Dispatching Subtract to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3204,7 +3206,7 @@ DEBUG: Allocated diff at stack offset 48
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd0', '0xff', '0xff', '0xff']
 DEBUG: Assignment to diff completed
-DEBUG: Assignment to prod, value: FunctionCall(line=175, column=16, function='Multiply', arguments=[Identifier(line=175, column=25, name='sum'), Identifier(line=175, column=30, name='diff')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to prod, value: FunctionCall(line=175, column=16, function='Multiply', arguments=[Identifier(line=175, column=25, name='sum', original_name=None), Identifier(line=175, column=30, name='diff', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -3333,7 +3335,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L57 at position 6364
 DEBUG ScopeManager: Popping function 'Edge.Complex'
 DEBUG: Function Edge.Complex compiled successfully
-DEBUG: Assignment to complex_result, value: FunctionCall(line=185, column=18, function='Edge.Complex', arguments=[Number(line=185, column=31, value='5'), Number(line=185, column=34, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to complex_result, value: FunctionCall(line=185, column=30, function='Edge.Complex', arguments=[Number(line=185, column=31, value='5'), Number(line=185, column=34, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.Complex
 DEBUG: Found registered function: Edge.Complex
 DEBUG: Calling user function Edge.Complex
@@ -3591,7 +3593,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L62 at position 6840
 DEBUG ScopeManager: Popping function 'Edge.IsPositive'
 DEBUG: Function Edge.IsPositive compiled successfully
-DEBUG: Assignment to bool1, value: FunctionCall(line=201, column=9, function='Edge.IsPositive', arguments=[Number(line=201, column=25, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to bool1, value: FunctionCall(line=201, column=24, function='Edge.IsPositive', arguments=[Number(line=201, column=25, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.IsPositive
 DEBUG: Found registered function: Edge.IsPositive
 DEBUG: Calling user function Edge.IsPositive
@@ -3607,7 +3609,7 @@ DEBUG: User function Edge.IsPositive called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x80', '0xff', '0xff', '0xff']
 DEBUG: Assignment to bool1 completed
-DEBUG: Assignment to bool2, value: FunctionCall(line=202, column=9, function='Edge.IsPositive', arguments=[Number(line=202, column=25, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to bool2, value: FunctionCall(line=202, column=24, function='Edge.IsPositive', arguments=[Number(line=202, column=25, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.IsPositive
 DEBUG: Found registered function: Edge.IsPositive
 DEBUG: Calling user function Edge.IsPositive
@@ -3624,7 +3626,7 @@ DEBUG: User function Edge.IsPositive called
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0x78', '0xff', '0xff', '0xff']
 DEBUG: Assignment to bool2 completed
-DEBUG: Assignment to bool3, value: FunctionCall(line=203, column=9, function='Edge.IsPositive', arguments=[Number(line=203, column=25, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to bool3, value: FunctionCall(line=203, column=24, function='Edge.IsPositive', arguments=[Number(line=203, column=25, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Edge.IsPositive
 DEBUG: Found registered function: Edge.IsPositive
 DEBUG: Calling user function Edge.IsPositive
@@ -4182,7 +4184,7 @@ Dynamic ELF Layout:
   Data: 0x403000 (492 bytes)
 
 === COMPILATION COMPLETE (12780 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_edge_cases_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_edge_cases_exec
 ✅ Wrote 12780 bytes
 ✅ Made executable
 ✅ Compiled to test_edge_cases_exec (12780 bytes)

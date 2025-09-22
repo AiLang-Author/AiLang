@@ -156,7 +156,7 @@ PrintMessage("[7] Division Stress Test")
 // Loop with various division operations
 i = 0
 WhileLoop LessThan(i, 10) {
-    Body: {
+    
         // Test different patterns
         val = Subtract(Multiply(i, 7), 35)  // Creates negative for i < 5
     
@@ -167,7 +167,6 @@ WhileLoop LessThan(i, 10) {
     
         // Just ensure it doesn't crash
         i = Add(i, 1)
-    }
     }
 
 PrintMessage("  Stress test: PASSED")

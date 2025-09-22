@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_param_incremental.ailang -> test_param_incremental_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -203,7 +205,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L5 at position 421
 DEBUG ScopeManager: Popping function 'P.Zero'
 DEBUG: Function P.Zero compiled successfully
-DEBUG: Assignment to r0, value: FunctionCall(line=13, column=6, function='P.Zero', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r0, value: FunctionCall(line=13, column=12, function='P.Zero', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: P.Zero
 DEBUG: Found registered function: P.Zero
 DEBUG: Calling user function P.Zero
@@ -404,7 +406,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L8 at position 806
 DEBUG ScopeManager: Popping function 'P.One'
 DEBUG: Function P.One compiled successfully
-DEBUG: Assignment to r1, value: FunctionCall(line=25, column=6, function='P.One', arguments=[Number(line=25, column=12, value='42')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r1, value: FunctionCall(line=25, column=11, function='P.One', arguments=[Number(line=25, column=12, value='42')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: P.One
 DEBUG: Found registered function: P.One
 DEBUG: Calling user function P.One
@@ -586,7 +588,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to sum, value: FunctionCall(line=34, column=15, function='Add', arguments=[Identifier(line=34, column=19, name='a'), Identifier(line=34, column=22, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum, value: FunctionCall(line=34, column=15, function='Add', arguments=[Identifier(line=34, column=19, name='a', original_name=None), Identifier(line=34, column=22, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -646,7 +648,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L11 at position 1239
 DEBUG ScopeManager: Popping function 'P.Two'
 DEBUG: Function P.Two compiled successfully
-DEBUG: Assignment to r2, value: FunctionCall(line=39, column=6, function='P.Two', arguments=[Number(line=39, column=12, value='30'), Number(line=39, column=16, value='12')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r2, value: FunctionCall(line=39, column=11, function='P.Two', arguments=[Number(line=39, column=12, value='30'), Number(line=39, column=16, value='12')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: P.Two
 DEBUG: Found registered function: P.Two
 DEBUG: Calling user function P.Two
@@ -841,7 +843,7 @@ DEBUG: Emitted bytes: ['0x48', '0x89', '0xd0']
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xe8']
 DEBUG: Param c stored at [RBP-24]
-DEBUG: Assignment to s1, value: FunctionCall(line=49, column=14, function='Add', arguments=[Identifier(line=49, column=18, name='a'), Identifier(line=49, column=21, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to s1, value: FunctionCall(line=49, column=14, function='Add', arguments=[Identifier(line=49, column=18, name='a', original_name=None), Identifier(line=49, column=21, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -868,7 +870,7 @@ DEBUG: Allocated s1 at stack offset 40
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xd8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to s1 completed
-DEBUG: Assignment to s2, value: FunctionCall(line=50, column=14, function='Add', arguments=[Identifier(line=50, column=18, name='s1'), Identifier(line=50, column=22, name='c')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to s2, value: FunctionCall(line=50, column=14, function='Add', arguments=[Identifier(line=50, column=18, name='s1', original_name=None), Identifier(line=50, column=22, name='c', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -928,7 +930,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L14 at position 1720
 DEBUG ScopeManager: Popping function 'P.Three'
 DEBUG: Function P.Three compiled successfully
-DEBUG: Assignment to r3, value: FunctionCall(line=55, column=6, function='P.Three', arguments=[Number(line=55, column=14, value='10'), Number(line=55, column=18, value='20'), Number(line=55, column=22, value='12')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r3, value: FunctionCall(line=55, column=13, function='P.Three', arguments=[Number(line=55, column=14, value='10'), Number(line=55, column=18, value='20'), Number(line=55, column=22, value='12')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: P.Three
 DEBUG: Found registered function: P.Three
 DEBUG: Calling user function P.Three
@@ -1159,7 +1161,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (95 bytes)
 
 === COMPILATION COMPLETE (8287 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_param_incremental_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_param_incremental_exec
 ✅ Wrote 8287 bytes
 ✅ Made executable
 ✅ Compiled to test_param_incremental_exec (8287 bytes)

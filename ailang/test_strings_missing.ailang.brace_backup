@@ -1,0 +1,83 @@
+// test_strings_missing.ailang
+// Test for string features that SHOULD exist but might not be implemented yet
+// Uncomment sections as features are added
+
+PrintMessage("Testing Missing String Features")
+PrintMessage("===============================")
+
+ //=== StringSubstring - Extract part of string ===
+ PrintMessage("[1] StringSubstring")
+ str = "Hello World"
+ sub1 = StringSubstring(str, 0, 5)    // "Hello"
+ sub2 = StringSubstring(str, 6, 5)    // "World"
+ sub3 = StringSubstring(str, 6, 100)  // "World" (clamps to end)
+ DebugAssert(StringEquals(sub1, "Hello"), "Substring from start")
+ DebugAssert(StringEquals(sub2, "World"), "Substring from middle")
+ DebugAssert(StringEquals(sub3, "World"), "Substring with overflow")
+ //=== StringFind - Find substring position ===
+ PrintMessage("[2] StringFind")
+ haystack = "The quick brown fox"
+ pos1 = StringFind(haystack, "quick", 0)  // Should return 4
+ pos2 = StringFind(haystack, "fox", 0)    // Should return 16
+ pos3 = StringFind(haystack, "cat", 0)    // Should return -1 (not found)
+ DebugAssert(EqualTo(pos1, 4), "Find 'quick'")
+ DebugAssert(EqualTo(pos2, 16), "Find 'fox'")
+ DebugAssert(EqualTo(pos3, -1), "Find non-existent")
+
+ //=== StringSplit - Split string by delimiter ===
+ PrintMessage("[3] StringSplit")
+ csv = "apple,banana,cherry"
+ parts = StringSplit(csv, ",")  // Returns array or similar
+ // Would need array support to fully test
+
+// === StringToUpper/Lower - Case conversion ===
+ PrintMessage("[4] Case Conversion")
+ lower = "hello world"
+ upper = "HELLO WORLD"
+ mixed = "HeLLo WoRLd"
+ 
+ upper_result = StringToUpper(lower)
+ lower_result = StringToLower(upper)
+ 
+ DebugAssert(StringEquals(upper_result, "HELLO WORLD"), "ToUpper")
+ DebugAssert(StringEquals(lower_result, "hello world"), "ToLower")
+
+// === StringTrim - Remove whitespace ===
+ PrintMessage("[5] StringTrim")
+ padded = "  hello  "
+ trimmed = StringTrim(padded)
+ DebugAssert(StringEquals(trimmed, "hello"), "Trim whitespace")
+
+// === StringReplace - Replace substring ===
+ PrintMessage("[6] StringReplace")
+ original = "Hello World"
+ replaced = StringReplace(original, "World", "AILANG")
+ DebugAssert(StringEquals(replaced, "Hello AILANG"), "Replace substring")
+
+// === StringStartsWith/EndsWith ===
+ PrintMessage("[7] String Prefix/Suffix")
+ str = "HelloWorld"
+ starts = StringStartsWith(str, "Hello")  // Should be 1
+ ends = StringEndsWith(str, "World")      // Should be 1
+ not_starts = StringStartsWith(str, "World")  // Should be 0
+ DebugAssert(EqualTo(starts, 1), "StartsWith true")
+ DebugAssert(EqualTo(ends, 1), "EndsWith true")
+ DebugAssert(EqualTo(not_starts, 0), "StartsWith false")
+
+// === StringContains ===
+ PrintMessage("[8] StringContains")
+ text = "The quick brown fox"
+ contains1 = StringContains(text, "quick")  // Should be 1
+ contains2 = StringContains(text, "slow")   // Should be 0
+ DebugAssert(EqualTo(contains1, 1), "Contains 'quick'")
+ DebugAssert(EqualTo(contains2, 0), "Doesn't contain 'slow'")
+
+// === StringFromChar - Single character to string ===
+ PrintMessage("[9] StringFromChar")
+ char_a = StringFromChar(65)  // ASCII 'A'
+ char_z = StringFromChar(122) // ASCII 'z'
+ DebugAssert(StringEquals(char_a, "A"), "StringFromChar(65)")
+ DebugAssert(StringEquals(char_z, "z"), "StringFromChar(122)")
+
+PrintMessage("===============================")
+PrintMessage("Note: Uncomment tests as features are implemented")

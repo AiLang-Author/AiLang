@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_returns.ailang -> test_returns_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -373,7 +375,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L11 at position 828
 DEBUG ScopeManager: Popping function 'Ret.Immediate'
 DEBUG: Function Ret.Immediate compiled successfully
-DEBUG: Assignment to r1, value: FunctionCall(line=15, column=6, function='Ret.Immediate', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r1, value: FunctionCall(line=15, column=19, function='Ret.Immediate', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Immediate
 DEBUG: Found registered function: Ret.Immediate
 DEBUG: Calling user function Ret.Immediate
@@ -541,7 +543,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param x stored at [RBP-8]
-DEBUG: Assignment to a, value: FunctionCall(line=24, column=13, function='Multiply', arguments=[Identifier(line=24, column=22, name='x'), Number(line=24, column=25, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to a, value: FunctionCall(line=24, column=13, function='Multiply', arguments=[Identifier(line=24, column=22, name='x', original_name=None), Number(line=24, column=25, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -568,7 +570,7 @@ DEBUG: Allocated a at stack offset 24
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to a completed
-DEBUG: Assignment to b, value: FunctionCall(line=25, column=13, function='Add', arguments=[Identifier(line=25, column=17, name='a'), Number(line=25, column=20, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to b, value: FunctionCall(line=25, column=13, function='Add', arguments=[Identifier(line=25, column=17, name='a', original_name=None), Number(line=25, column=20, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -628,7 +630,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L14 at position 1278
 DEBUG ScopeManager: Popping function 'Ret.Calculate'
 DEBUG: Function Ret.Calculate compiled successfully
-DEBUG: Assignment to r2, value: FunctionCall(line=30, column=6, function='Ret.Calculate', arguments=[Number(line=30, column=20, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r2, value: FunctionCall(line=30, column=19, function='Ret.Calculate', arguments=[Number(line=30, column=20, value='5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Calculate
 DEBUG: Found registered function: Ret.Calculate
 DEBUG: Calling user function Ret.Calculate
@@ -801,7 +803,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param x stored at [RBP-8]
-DEBUG: Assignment to is_zero, value: FunctionCall(line=39, column=19, function='EqualTo', arguments=[Identifier(line=39, column=27, name='x'), Number(line=39, column=30, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_zero, value: FunctionCall(line=39, column=19, function='EqualTo', arguments=[Identifier(line=39, column=27, name='x', original_name=None), Number(line=39, column=30, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: EqualTo
 DEBUG: Dispatching EqualTo to modules...
 DEBUG: Trying module FunctionDispatch
@@ -856,7 +858,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L18 at position 1712
 DEBUG: Marked label L19 at position 1712
 DEBUG: If condition compilation completed (label system)
-DEBUG: Assignment to is_neg, value: FunctionCall(line=44, column=18, function='LessThan', arguments=[Identifier(line=44, column=27, name='x'), Number(line=44, column=30, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_neg, value: FunctionCall(line=44, column=18, function='LessThan', arguments=[Identifier(line=44, column=27, name='x', original_name=None), Number(line=44, column=30, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: LessThan
 DEBUG: Dispatching LessThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -944,7 +946,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L17 at position 1831
 DEBUG ScopeManager: Popping function 'Ret.Early'
 DEBUG: Function Ret.Early compiled successfully
-DEBUG: Assignment to r3a, value: FunctionCall(line=53, column=7, function='Ret.Early', arguments=[Number(line=53, column=17, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r3a, value: FunctionCall(line=53, column=16, function='Ret.Early', arguments=[Number(line=53, column=17, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Early
 DEBUG: Found registered function: Ret.Early
 DEBUG: Calling user function Ret.Early
@@ -1092,7 +1094,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to r3b, value: FunctionCall(line=57, column=7, function='Ret.Early', arguments=[Number(line=57, column=17, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r3b, value: FunctionCall(line=57, column=16, function='Ret.Early', arguments=[Number(line=57, column=17, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Early
 DEBUG: Found registered function: Ret.Early
 DEBUG: Calling user function Ret.Early
@@ -1241,7 +1243,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to r3c, value: FunctionCall(line=61, column=7, function='Ret.Early', arguments=[Number(line=61, column=17, value='42')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r3c, value: FunctionCall(line=61, column=16, function='Ret.Early', arguments=[Number(line=61, column=17, value='42')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Early
 DEBUG: Found registered function: Ret.Early
 DEBUG: Calling user function Ret.Early
@@ -1423,7 +1425,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to a_big, value: FunctionCall(line=71, column=17, function='GreaterThan', arguments=[Identifier(line=71, column=29, name='a'), Number(line=71, column=32, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to a_big, value: FunctionCall(line=71, column=17, function='GreaterThan', arguments=[Identifier(line=71, column=29, name='a', original_name=None), Number(line=71, column=32, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1460,7 +1462,7 @@ DEBUG: Emitted bytes: ['0xe0', '0xff', '0xff', '0xff']
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xf8', '0x0']
 DEBUG: Emitted bytes: ['0xf', '0x84', '0x0', '0x0', '0x0', '0x0']
 DEBUG: Emitted 32-bit JE to L29 at position 2902
-DEBUG: Assignment to b_big, value: FunctionCall(line=73, column=21, function='GreaterThan', arguments=[Identifier(line=73, column=33, name='b'), Number(line=73, column=36, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to b_big, value: FunctionCall(line=73, column=21, function='GreaterThan', arguments=[Identifier(line=73, column=33, name='b', original_name=None), Number(line=73, column=36, value='50')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1566,7 +1568,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L28 at position 3052
 DEBUG ScopeManager: Popping function 'Ret.Nested'
 DEBUG: Function Ret.Nested compiled successfully
-DEBUG: Assignment to r4a, value: FunctionCall(line=83, column=7, function='Ret.Nested', arguments=[Number(line=83, column=18, value='60'), Number(line=83, column=22, value='60')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r4a, value: FunctionCall(line=83, column=17, function='Ret.Nested', arguments=[Number(line=83, column=18, value='60'), Number(line=83, column=22, value='60')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Nested
 DEBUG: Found registered function: Ret.Nested
 DEBUG: Calling user function Ret.Nested
@@ -1719,7 +1721,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to r4b, value: FunctionCall(line=87, column=7, function='Ret.Nested', arguments=[Number(line=87, column=18, value='60'), Number(line=87, column=22, value='30')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r4b, value: FunctionCall(line=87, column=17, function='Ret.Nested', arguments=[Number(line=87, column=18, value='60'), Number(line=87, column=22, value='30')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Nested
 DEBUG: Found registered function: Ret.Nested
 DEBUG: Calling user function Ret.Nested
@@ -1872,7 +1874,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to r4c, value: FunctionCall(line=91, column=7, function='Ret.Nested', arguments=[Number(line=91, column=18, value='30'), Number(line=91, column=22, value='30')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r4c, value: FunctionCall(line=91, column=17, function='Ret.Nested', arguments=[Number(line=91, column=18, value='30'), Number(line=91, column=22, value='30')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Nested
 DEBUG: Found registered function: Ret.Nested
 DEBUG: Calling user function Ret.Nested
@@ -2041,7 +2043,7 @@ DEBUG: Emitted bytes: ['0x41', '0x56']
 DEBUG: Function 'Ret.ArrayPtr' requires space for 0 params and 1 locals (16 bytes).
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x10']
 DEBUG: Allocated 16 bytes for function locals
-DEBUG: Assignment to arr, value: FunctionCall(line=99, column=15, function='ArrayCreate', arguments=[Number(line=99, column=27, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=99, column=26, function='ArrayCreate', arguments=[Number(line=99, column=27, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2215,7 +2217,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L39 at position 4330
 DEBUG ScopeManager: Popping function 'Ret.ArrayPtr'
 DEBUG: Function Ret.ArrayPtr compiled successfully
-DEBUG: Assignment to arr_ptr, value: FunctionCall(line=106, column=11, function='Ret.ArrayPtr', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr_ptr, value: FunctionCall(line=106, column=23, function='Ret.ArrayPtr', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.ArrayPtr
 DEBUG: Found registered function: Ret.ArrayPtr
 DEBUG: Calling user function Ret.ArrayPtr
@@ -2358,7 +2360,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to val, value: FunctionCall(line=110, column=7, function='ArrayGet', arguments=[Identifier(line=110, column=16, name='arr_ptr'), Number(line=110, column=25, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=110, column=15, function='ArrayGet', arguments=[Identifier(line=110, column=16, name='arr_ptr', original_name=None), Number(line=110, column=25, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2594,7 +2596,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L44 at position 5090
 DEBUG ScopeManager: Popping function 'Ret.NoReturn'
 DEBUG: Function Ret.NoReturn compiled successfully
-DEBUG: Assignment to r6, value: FunctionCall(line=125, column=6, function='Ret.NoReturn', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r6, value: FunctionCall(line=125, column=18, function='Ret.NoReturn', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.NoReturn
 DEBUG: Found registered function: Ret.NoReturn
 DEBUG: Calling user function Ret.NoReturn
@@ -2784,7 +2786,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L47 at position 5467
 DEBUG ScopeManager: Popping function 'Ret.Empty'
 DEBUG: Function Ret.Empty compiled successfully
-DEBUG: Assignment to r7, value: FunctionCall(line=138, column=6, function='Ret.Empty', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r7, value: FunctionCall(line=138, column=15, function='Ret.Empty', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Empty
 DEBUG: Found registered function: Ret.Empty
 DEBUG: Calling user function Ret.Empty
@@ -2974,7 +2976,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L50 at position 5844
 DEBUG ScopeManager: Popping function 'Ret.Zero'
 DEBUG: Function Ret.Zero compiled successfully
-DEBUG: Assignment to r8, value: FunctionCall(line=150, column=6, function='Ret.Zero', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r8, value: FunctionCall(line=150, column=14, function='Ret.Zero', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Zero
 DEBUG: Found registered function: Ret.Zero
 DEBUG: Calling user function Ret.Zero
@@ -3174,7 +3176,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L53 at position 6239
 DEBUG ScopeManager: Popping function 'Ret.Large'
 DEBUG: Function Ret.Large compiled successfully
-DEBUG: Assignment to r9, value: FunctionCall(line=163, column=6, function='Ret.Large', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r9, value: FunctionCall(line=163, column=15, function='Ret.Large', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Large
 DEBUG: Found registered function: Ret.Large
 DEBUG: Calling user function Ret.Large
@@ -3394,7 +3396,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L56 at position 6652
 DEBUG ScopeManager: Popping function 'Ret.Negative'
 DEBUG: Function Ret.Negative compiled successfully
-DEBUG: Assignment to r10, value: FunctionCall(line=176, column=7, function='Ret.Negative', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to r10, value: FunctionCall(line=176, column=19, function='Ret.Negative', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Ret.Negative
 DEBUG: Found registered function: Ret.Negative
 DEBUG: Calling user function Ret.Negative
@@ -3642,7 +3644,7 @@ Dynamic ELF Layout:
   Data: 0x403000 (456 bytes)
 
 === COMPILATION COMPLETE (12744 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_returns_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_returns_exec
 ✅ Wrote 12744 bytes
 ✅ Made executable
 ✅ Compiled to test_returns_exec (12744 bytes)
@@ -3666,7 +3668,7 @@ Nested return (60,30->50):
 Nested return (30,30->0):
 0
 Array pointer returned (non-zero):
-131372319264768
+126622148091904
 First element (77):
 77
 No explicit return (should be 0):

@@ -1,0 +1,8 @@
+// No library imports - just basic functionality
+
+SubRoutine.Main {
+    PrintMessage("Server starting without libraries...")
+    Exit(0)
+}
+
+RunTask(Main)

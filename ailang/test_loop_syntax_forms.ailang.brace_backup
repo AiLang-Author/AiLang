@@ -1,0 +1,107 @@
+// test_loop_syntax_forms.ailang
+// Test different Loop.X syntax forms vs WhileLoop
+
+PrintMessage("Loop Syntax Forms Test")
+PrintMessage("=======================")
+
+// Initialize test state
+test_counter = 0
+
+// Form 1: Basic Loop with LoopEnd (if supported)
+PrintMessage("Testing Loop with LoopEnd:")
+LoopActor.BasicLoop {
+    PrintMessage("  In Loop.BasicLoop")
+    test_counter = Add(test_counter, 1)
+}
+// LoopEnd.BasicLoop  // Uncomment if LoopEnd syntax is required
+
+PrintMessage("Counter after Loop:")
+PrintNumber(test_counter)
+
+// Form 2: Loop vs WhileLoop comparison
+PrintMessage("Loop vs WhileLoop comparison:")
+
+// WhileLoop version (known to work)
+PrintMessage("WhileLoop version:")
+i = 0
+WhileLoop LessThan(i, 3) {
+    
+        PrintMessage("  WhileLoop:")
+        PrintNumber(i)
+        i = Add(i, 1)
+    }
+    }
+
+// Loop version (testing syntax)
+//PrintMessage("Loop construct version:")
+//Loop.CountLoop {
+//    j = 0
+    // Manual iteration control
+//    PrintMessage("  Loop iteration")
+//    j = Add(j, 1)
+    // Would need explicit exit condition
+//}
+
+// Form 3: Different Loop types
+//PrintMessage("Testing Loop type variants:")
+
+// Standard Loop
+//Loop.Standard {
+//    PrintMessage("  Loop.Standard executed")
+//}
+
+// Loop with dotted name
+//Loop.Module.Component {
+//    PrintMessage("  Loop.Module.Component executed")
+//}
+
+// Form 4: SubRoutine variations
+//PrintMessage("SubRoutine syntax forms:")
+
+// Simple name
+//SubRoutine.Simple {
+//    PrintMessage("  SubRoutine.Simple")
+//}
+
+// Dotted name
+//SubRoutine.Module.Task {
+//    PrintMessage("  SubRoutine.Module.Task")
+//}
+
+// Test calls
+//RunTask("Simple")
+//RunTask("Module.Task")
+
+// Form 5: Combining structures
+//PrintMessage("Combined structures:")
+
+//SubRoutine.WithLoop {
+//    PrintMessage("  SubRoutine containing WhileLoop:")
+ //   k = 0
+ //   WhileLoop LessThan(k, 2) {
+     
+     //       PrintMessage("    Iteration:")
+     //       PrintNumber(k)
+     //       k = Add(k, 1)
+     //   }
+     }
+//}
+
+//RunTask("WithLoop")
+
+// Form 6: Forward reference test
+//PrintMessage("Forward reference test:")
+
+// Call before definition (if supported)
+// RunTask("ForwardRef")  // Uncomment to test forward refs
+
+//SubRoutine.ForwardRef {
+//    PrintMessage("  ForwardRef subroutine")
+//}
+
+//RunTask("ForwardRef")  // Normal call after definition
+
+//PrintMessage("=======================")
+//PrintMessage("Syntax forms test complete!")
+//PrintMessage("Final test_counter:")
+//PrintNumber(test_counter)

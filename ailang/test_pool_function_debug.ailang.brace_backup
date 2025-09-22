@@ -1,0 +1,133 @@
+// test_pool_function_debug.ailang
+// Debug pool access in functions
+
+PrintMessage("=== POOL FUNCTION DEBUG ===")
+PrintMessage("")
+
+// Create a pool
+FixedPool.TestPool {
+    "value1": Initialize=100
+    "value2": Initialize=200
+}
+
+// Test 1: Direct pool access (should work)
+PrintMessage("[1] Direct pool access:")
+direct = TestPool.value1
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(direct)
+PrintMessage("  Expected: 100")
+PrintMessage("")
+
+// Test 2: Pool in simple function (no loop)
+Function.Test.SimplePool {
+    Body: {
+        val = TestPool.value1
+        ReturnValue(val)
+    }
+}
+
+PrintMessage("[2] Pool in simple function:")
+simple = Test.SimplePool()
+PrintMessage("  Result = ")
+PrintNumber(simple)
+PrintMessage("  Expected: 100")
+PrintMessage("")
+
+// Test 3: Pool used in arithmetic in function
+Function.Test.PoolMath {
+    Body: {
+        val = Add(TestPool.value1, TestPool.value2)
+        ReturnValue(val)
+    }
+}
+
+PrintMessage("[3] Pool arithmetic in function:")
+math_result = Test.PoolMath()
+PrintMessage("  Result = ")
+PrintNumber(math_result)
+PrintMessage("  Expected: 300")
+PrintMessage("")
+
+// Test 4: Pool in function with single loop iteration
+Function.Test.PoolSingleLoop {
+    Body: {
+        sum = 0
+        i = 0
+        WhileLoop LessThan(i, 1) {
+            sum = Add(sum, TestPool.value1)
+            i = Add(i, 1)
+        }
+        ReturnValue(sum)
+    }
+}
+
+PrintMessage("[4] Pool in function with 1 loop iteration:")
+single_loop = Test.PoolSingleLoop()
+PrintMessage("  Result = ")
+PrintNumber(single_loop)
+PrintMessage("  Expected: 100")
+PrintMessage("")
+
+// Test 5: Pool in function with multiple loop iterations
+Function.Test.PoolMultiLoop {
+    Body: {
+        sum = 0
+        i = 0
+        WhileLoop LessThan(i, 3) {
+            sum = Add(sum, TestPool.value1)
+            i = Add(i, 1)
+        }
+        ReturnValue(sum)
+    }
+}
+
+PrintMessage("[5] Pool in function with 3 loop iterations:")
+multi_loop = Test.PoolMultiLoop()
+PrintMessage("  Result = ")
+PrintNumber(multi_loop)
+PrintMessage("  Expected: 300")
+PrintMessage("")
+
+// Test 6: Local variable in function with loop (control test)
+Function.Test.LocalLoop {
+    Body: {
+        local_val = 100
+        sum = 0
+        i = 0
+        WhileLoop LessThan(i, 3) {
+            sum = Add(sum, local_val)
+            i = Add(i, 1)
+        }
+        ReturnValue(sum)
+    }
+}
+
+PrintMessage("[6] Local variable in function with loop:")
+local_loop = Test.LocalLoop()
+PrintMessage("  Result = ")
+PrintNumber(local_loop)
+PrintMessage("  Expected: 300")
+PrintMessage("")
+
+// Test 7: Pool access before loop in function
+Function.Test.PoolBeforeLoop {
+    Body: {
+        pool_val = TestPool.value1
+        sum = 0
+        i = 0
+        WhileLoop LessThan(i, 3) {
+            sum = Add(sum, pool_val)
+            i = Add(i, 1)
+        }
+        ReturnValue(sum)
+    }
+}
+
+PrintMessage("[7] Pool copied to local before loop:")
+before_loop = Test.PoolBeforeLoop()
+PrintMessage("  Result = ")
+PrintNumber(before_loop)
+PrintMessage("  Expected: 300")
+PrintMessage("")
+
+PrintMessage("=== END DEBUG ===")

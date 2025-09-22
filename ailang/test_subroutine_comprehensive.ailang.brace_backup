@@ -1,0 +1,112 @@
+// test_subroutine_comprehensive.ailang
+// Test all aspects of SubRoutine functionality
+
+PrintMessage("=== SUBROUTINE TEST SUITE ===")
+PrintMessage("")
+
+// Test 1: Simple SubRoutine with no return
+SubRoutine Test1 {
+    PrintMessage("Test1: Simple subroutine executed")
+}
+
+PrintMessage("Before Test1")
+RunTask(Test1)
+PrintMessage("After Test1")
+PrintMessage("")
+
+// Test 2: SubRoutine with calculations
+SubRoutine Test2 {
+    PrintMessage("Test2: Doing calculations")
+    a = Add(10, 20)
+    PrintMessage("10 + 20 = ")
+    PrintNumber(a)
+}
+
+PrintMessage("Before Test2")
+RunTask(Test2)
+PrintMessage("After Test2")
+PrintMessage("")
+
+// Test 3: SubRoutine with early return (WITHOUT ReturnValue)
+SubRoutine Test3 {
+    PrintMessage("Test3: Testing early exit")
+    
+    x = 1
+    IfCondition EqualTo(x, 1) ThenBlock: {
+        PrintMessage("X is 1, should exit here")
+        // Don't use ReturnValue - just let it fall through
+    } ElseBlock: {
+        PrintMessage("This should NOT print")
+    }
+    
+    PrintMessage("Test3 end")
+}
+
+PrintMessage("Before Test3")
+RunTask(Test3)
+PrintMessage("After Test3")
+PrintMessage("")
+
+// Test 4: SubRoutine that modifies global state
+global_var = 100
+PrintMessage("Global var before Test4: ")
+PrintNumber(global_var)
+
+SubRoutine Test4 {
+    PrintMessage("Test4: Modifying global")
+    global_var = 200
+}
+
+RunTask(Test4)
+PrintMessage("Global var after Test4: ")
+PrintNumber(global_var)
+PrintMessage("")
+
+// Test 5: Nested SubRoutine calls
+SubRoutine Test5A {
+    PrintMessage("Test5A: Inner subroutine")
+}
+
+SubRoutine Test5B {
+    PrintMessage("Test5B: Outer calling inner")
+    RunTask(Test5A)
+    PrintMessage("Test5B: After inner call")
+}
+
+PrintMessage("Before Test5")
+RunTask(Test5B)
+PrintMessage("After Test5")
+PrintMessage("")
+
+// Test 6: SubRoutine with loop
+SubRoutine Test6 {
+    PrintMessage("Test6: Loop test")
+    i = 0
+    WhileLoop LessThan(i, 3) {
+        
+            PrintMessage("  Loop iteration: ")
+            PrintNumber(i)
+            i = Add(i, 1)
+        }
+        }
+    PrintMessage("Test6: Loop done")
+}
+
+PrintMessage("Before Test6")
+RunTask(Test6)
+PrintMessage("After Test6")
+PrintMessage("")
+
+// Test 7: Multiple calls to same SubRoutine
+SubRoutine Test7 {
+    PrintMessage("Test7: Can be called multiple times")
+}
+
+PrintMessage("Calling Test7 three times:")
+RunTask(Test7)
+RunTask(Test7)
+RunTask(Test7)
+PrintMessage("")
+
+PrintMessage("=== ALL TESTS COMPLETE ===")
+PrintMessage("If you see this, basic SubRoutines work!")

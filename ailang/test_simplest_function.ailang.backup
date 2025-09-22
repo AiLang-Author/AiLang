@@ -1,0 +1,18 @@
+// test_simplest_function.ailang
+// Simplest possible user function test
+
+PrintMessage("Testing Simplest Function")
+
+// Function with no parameters, no Input line
+Function.Test.GetFortyTwo {
+    Body: {
+        ReturnValue(42)
+    }
+}
+
+// Call it
+result = Test.GetFortyTwo()
+PrintMessage("Result:")
+PrintNumber(result)
+
+PrintMessage("Done!")

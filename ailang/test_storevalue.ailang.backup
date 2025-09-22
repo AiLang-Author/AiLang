@@ -1,0 +1,175 @@
+
+// StoreValue/Dereference Test Harness
+// Tests all aspects of memory operations
+
+PrintMessage("==========================================")
+PrintMessage("StoreValue/Dereference Test Suite")
+PrintMessage("==========================================")
+
+// Test counters
+total_tests = 0
+passed_tests = 0
+failed_tests = 0
+
+// Helper to check results
+SubRoutine.CheckResult {
+    // Uses: test_name, expected, actual
+    total_tests = Add(total_tests, 1)
+    
+    PrintMessage("Test: ")
+    PrintMessage(test_name)
+    
+    IfCondition EqualTo(expected, actual) ThenBlock {
+        PrintMessage(" - PASS")
+        passed_tests = Add(passed_tests, 1)
+    } ElseBlock {
+        PrintMessage(" - FAIL")
+        PrintMessage("  Expected: ")
+        PrintNumber(expected)
+        PrintMessage("  Got: ")
+        PrintNumber(actual)
+        failed_tests = Add(failed_tests, 1)
+    }
+}
+
+
+// ==========================================
+// Test 1: basic_store_load
+// Store and retrieve a simple value
+// ==========================================
+PrintMessage("\nTest 1: basic_store_load")
+
+
+buffer = Allocate(8)
+StoreValue(buffer, 42)
+value = Dereference(buffer)
+PrintNumber(value)
+Deallocate(buffer, 8)
+
+
+
+// ==========================================
+// Test 2: byte_store
+// Store byte values for string operations
+// ==========================================
+PrintMessage("\nTest 2: byte_store")
+
+
+buffer = Allocate(16)
+StoreValue(buffer, 72)       // 'H'
+StoreValue(Add(buffer, 1), 101)  // 'e'
+StoreValue(Add(buffer, 2), 108)  // 'l'
+StoreValue(Add(buffer, 3), 108)  // 'l'
+StoreValue(Add(buffer, 4), 111)  // 'o'
+StoreValue(Add(buffer, 5), 0)    // null terminator
+
+// Try to read back
+first = Dereference(buffer)
+second = Dereference(Add(buffer, 1))
+PrintNumber(first)
+PrintNumber(second)
+Deallocate(buffer, 16)
+
+
+
+// ==========================================
+// Test 3: offset_addressing
+// Test pointer arithmetic with offsets
+// ==========================================
+PrintMessage("\nTest 3: offset_addressing")
+
+
+buffer = Allocate(64)
+// Store at different offsets
+StoreValue(buffer, 100)
+StoreValue(Add(buffer, 8), 200)
+StoreValue(Add(buffer, 16), 300)
+StoreValue(Add(buffer, 24), 400)
+
+// Read back
+v1 = Dereference(buffer)
+v2 = Dereference(Add(buffer, 8))
+v3 = Dereference(Add(buffer, 16))
+v4 = Dereference(Add(buffer, 24))
+
+PrintNumber(v1)
+PrintNumber(v2)
+PrintNumber(v3)
+PrintNumber(v4)
+Deallocate(buffer, 64)
+
+
+
+// ==========================================
+// Test 4: mixed_sizes
+// Store both byte and word values
+// ==========================================
+PrintMessage("\nTest 4: mixed_sizes")
+
+
+buffer = Allocate(32)
+// Byte values
+StoreValue(buffer, 65)  // 'A'
+StoreValue(Add(buffer, 1), 66)  // 'B'
+
+// Large value at offset 8
+StoreValue(Add(buffer, 8), 1234567)
+
+// Read back
+byte1 = Dereference(buffer)
+byte2 = Dereference(Add(buffer, 1))
+large = Dereference(Add(buffer, 8))
+
+PrintNumber(byte1)
+PrintNumber(byte2)
+PrintNumber(large)
+Deallocate(buffer, 32)
+
+
+
+// ==========================================
+// Test 5: array_pattern
+// Simulate array storage
+// ==========================================
+PrintMessage("\nTest 5: array_pattern")
+
+
+array = Allocate(80)  // 10 elements * 8 bytes
+i = 0
+WhileLoop LessThan(i, 10) {
+    offset = Multiply(i, 8)
+    value = Multiply(i, 100)
+    StoreValue(Add(array, offset), value)
+    i = Add(i, 1)
+}
+
+// Read back
+i = 0
+WhileLoop LessThan(i, 10) {
+    offset = Multiply(i, 8)
+    value = Dereference(Add(array, offset))
+    PrintNumber(value)
+    i = Add(i, 1)
+}
+Deallocate(array, 80)
+
+
+
+// ==========================================
+// SUMMARY
+// ==========================================
+PrintMessage("\n==========================================")
+PrintMessage("TEST SUMMARY")
+PrintMessage("==========================================")
+PrintMessage("Total tests: ")
+PrintNumber(total_tests)
+PrintMessage("Passed: ")
+PrintNumber(passed_tests)
+PrintMessage("Failed: ")
+PrintNumber(failed_tests)
+
+IfCondition EqualTo(failed_tests, 0) ThenBlock {
+    PrintMessage("\n✅ ALL TESTS PASSED!")
+} ElseBlock {
+    PrintMessage("\n❌ SOME TESTS FAILED - CHECK IMPLEMENTATION")
+}

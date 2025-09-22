@@ -7,7 +7,7 @@ from ailang_ast import (
     EveryInterval, WithSecurity, BreakLoop, ContinueLoop, HaltProgram, Lambda, 
     Combinator, MacroBlock, MacroDefinition, SecurityContext, SecurityLevel, 
     ConstrainedType, Constant, Apply, RunMacro, MapLiteral, SubPool, 
-    AcronymDefinitions, RecordTypeDefinition, Fork, Branch,
+    AcronymDefinitions, RecordTypeDefinition, MemberAccess, Fork, Branch,
     # Low-level nodes
     InterruptHandler, DeviceDriver, Dereference, AddressOf, SizeOf, InterruptControl, SystemCall,
     SystemCall, InlineAssembly, BootloaderCode ,  KernelEntry 
@@ -25,6 +25,10 @@ class ASTVisitor:
     def generic_visit(self, node: ASTNode):
         """Called if no explicit visitor method exists for a node"""
         raise NotImplementedError(f"No visitor method for {type(node).__name__}")
+    
+    def visit_MemberAccess(self, node: MemberAccess):
+        """Default visitor for MemberAccess"""
+        raise NotImplementedError("Subclass must implement visit_MemberAccess")
 
 class ASTPrinter(ASTVisitor):
     """Pretty print AST for debugging"""
@@ -32,6 +36,16 @@ class ASTPrinter(ASTVisitor):
     def __init__(self, indent_size: int = 2):
         self.indent_size = indent_size
         self.indent_level = 0
+    
+    def visit_MemberAccess(self, node: MemberAccess) -> str:
+        """Pretty print member access"""
+        obj_str = self.visit(node.obj)
+        if isinstance(node.member, Identifier):
+            member_str = node.member.name
+        else:
+            member_str = self.visit(node.member)
+        return f"{obj_str}.{member_str}"
+    
     
     def indent(self) -> str:
         return ' ' * (self.indent_level * self.indent_size)
@@ -290,7 +304,8 @@ class ASTPrinter(ASTVisitor):
         return result
     
     def visit_Assignment(self, node: Assignment) -> str:
-        return f"{node.target} = {self.visit(node.value)}"
+        """Print assignment"""
+        return f"{node.target} = {self.visit(node.value)}"  # target is still string
     
     def visit_BreakLoop(self, node: BreakLoop) -> str:
         return "BreakLoop"
@@ -305,8 +320,16 @@ class ASTPrinter(ASTVisitor):
         return f"({self.visit(node.expression)})"
     
     def visit_FunctionCall(self, node: FunctionCall) -> str:
+        """Print function call - handles both old and new style"""
+        if isinstance(node.function, str):
+            # Old style - function is a string
+            func_str = node.function
+        else:
+            # New style - function is an AST node
+            func_str = self.visit(node.function)
+        
         args = ', '.join(self.visit(arg) for arg in node.arguments)
-        return f"{node.function}({args})"
+        return f"{func_str}({args})"
     
     def visit_Apply(self, node: Apply) -> str:
         args = ', '.join(self.visit(arg) for arg in node.arguments)

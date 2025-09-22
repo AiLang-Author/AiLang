@@ -1,0 +1,134 @@
+// test_batch_isolated.ailang
+// Isolate the batch file operations that are crashing
+
+PrintMessage("Testing Batch File Operations in Isolation")
+PrintMessage("==========================================")
+PrintMessage("")
+
+// First, let's test a single iteration manually
+PrintMessage("Manual single iteration test:")
+
+// Iteration 0
+batch_name_0 = StringConcat("batch_", NumberToString(0))
+PrintMessage("After first concat: ")
+PrintMessage(batch_name_0)
+
+batch_name_0 = StringConcat(batch_name_0, ".txt")
+PrintMessage("After second concat: ")
+PrintMessage(batch_name_0)
+
+batch_content_0 = StringConcat("File number: ", NumberToString(0))
+PrintMessage("Content created: ")
+PrintMessage(batch_content_0)
+
+WriteTextFile(batch_name_0, batch_content_0)
+PrintMessage("File written")
+
+exists_0 = FileExists(batch_name_0)
+PrintMessage("File exists check: ")
+PrintNumber(exists_0)
+PrintMessage("")
+
+// Now test with a very simple loop
+PrintMessage("")
+PrintMessage("Simple loop test (3 iterations):")
+PrintMessage("")
+
+i = 0
+WhileLoop LessThan(i, 3) {
+    PrintMessage("Iteration: ")
+    PrintNumber(i)
+    
+    // Create filename step by step
+    PrintMessage("  Creating filename...")
+    prefix = "loop_"
+    num_str = NumberToString(i)
+    PrintMessage("  Number string: ")
+    PrintMessage(num_str)
+    
+    filename = StringConcat(prefix, num_str)
+    PrintMessage("  After concat: ")
+    PrintMessage(filename)
+    
+    filename = StringConcat(filename, ".txt")
+    PrintMessage("  Final filename: ")
+    PrintMessage(filename)
+    
+    // Create simple content
+    content = "Test content"
+    PrintMessage("  Writing file...")
+    WriteTextFile(filename, content)
+    
+    PrintMessage("  Checking existence...")
+    exists = FileExists(filename)
+    PrintMessage("  Exists: ")
+    PrintNumber(exists)
+    PrintMessage("")
+    
+    i = Add(i, 1)
+}
+
+PrintMessage("Loop completed successfully!")
+PrintMessage("")
+
+// Now let's try the original pattern but with more debugging
+PrintMessage("Testing original pattern with debugging:")
+PrintMessage("")
+
+batch_count = 0
+j = 0
+WhileLoop LessThan(j, 3) {
+    PrintMessage("Building filename for iteration ")
+    PrintNumber(j)
+    PrintMessage("")
+    
+    // Build filename for each iteration
+    PrintMessage("  Step 1: NumberToString...")
+    j_str = NumberToString(j)
+    PrintMessage("  Number string: ")
+    PrintMessage(j_str)
+    
+    PrintMessage("  Step 2: First concat...")
+    batch_name = StringConcat("batch_", j_str)
+    PrintMessage("  After first concat: ")
+    PrintMessage(batch_name)
+    
+    PrintMessage("  Step 3: Second concat...")
+    batch_name = StringConcat(batch_name, ".txt")
+    PrintMessage("  Final name: ")
+    PrintMessage(batch_name)
+    
+    // Build content
+    PrintMessage("  Step 4: Building content...")
+    content_prefix = "File number: "
+    content_num = NumberToString(j)
+    batch_content = StringConcat(content_prefix, content_num)
+    PrintMessage("  Content: ")
+    PrintMessage(batch_content)
+    
+    // Write file
+    PrintMessage("  Step 5: Writing file...")
+    WriteTextFile(batch_name, batch_content)
+    PrintMessage("  File written")
+    
+    // Verify it exists
+    PrintMessage("  Step 6: Verifying...")
+    exists = FileExists(batch_name)
+    PrintMessage("  Exists: ")
+    PrintNumber(exists)
+    
+    IfCondition EqualTo(exists, 1) ThenBlock: {
+        batch_count = Add(batch_count, 1)
+        PrintMessage("  Batch count incremented")
+    }
+    
+    PrintMessage("  Iteration complete")
+    PrintMessage("")
+    
+    j = Add(j, 1)
+}
+
+PrintMessage("Final batch count: ")
+PrintNumber(batch_count)
+PrintMessage("")
+PrintMessage("Test complete!")

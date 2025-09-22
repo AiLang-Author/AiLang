@@ -54,11 +54,9 @@ SubRoutine.TestDebugLevel4 {
     Debug("breakpoint", level=4) {
         i = 0
         WhileLoop LessThan(i, 5) {
-            Body: {
+            
                 counter = Add(counter, 1)
                 i = Add(i, 1)
-            }
-            }
     }
 }
 
@@ -71,10 +69,9 @@ SubRoutine.TestPerformance {
     sum = 0
     i = 0
     WhileLoop LessThan(i, 100) {
-        Body: {
+        
             sum = Add(sum, i)
             i = Add(i, 1)
-        }
         }
     
     DebugPerf.End("test")

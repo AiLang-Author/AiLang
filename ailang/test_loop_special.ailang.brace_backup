@@ -1,0 +1,53 @@
+// test_loop_special.ailang
+// Test LoopStart and LoopShadow constructs
+
+PrintMessage("Loop Special Constructs Test")
+PrintMessage("============================")
+
+// Global initialization flag
+init_done = 0
+shadow_counter = 0
+
+// LoopStart runs before main execution
+LoopStart.Init {
+    PrintMessage("LoopStart.Initialize running...")
+    
+    // Initialize system state
+    init_done = 1
+    PrintMessage("System initialized")
+    
+    // Set up initial values
+    shadow_counter = 100
+    PrintMessage("Initial shadow counter:")
+    PrintNumber(shadow_counter)
+}
+
+// LoopShadow runs in background
+LoopShadow.BackgroundTask {
+    PrintMessage("LoopShadow.BackgroundTask started")
+    
+    // Simulate background work
+    bg_work = 0
+    WhileLoop LessThan(bg_work, 3) {
+        
+            shadow_counter = Add(shadow_counter, 10)
+            PrintMessage("  Shadow work unit:")
+            PrintNumber(bg_work)
+            PrintMessage("  Shadow counter now:")
+            PrintNumber(shadow_counter)
+            bg_work = Add(bg_work, 1)
+        }
+        }
+    
+    PrintMessage("LoopShadow.BackgroundTask complete")
+}
+
+// Main execution
+PrintMessage("Main execution starting...")
+PrintMessage("Init done flag:")
+PrintNumber(init_done)
+
+PrintMessage("Final shadow counter:")
+PrintNumber(shadow_counter)
+
+PrintMessage("Loop special constructs test complete!")

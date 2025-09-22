@@ -1,0 +1,64 @@
+// test_messagequeue.ailang
+// Test program for MessageQueue library
+
+LibraryImport.Library.MessageQueue
+
+// test_messagequeue_simple.ailang
+// Simple test for MessageQueue library
+
+PrintMessage("Simple MessageQueue Test")
+PrintMessage("========================")
+PrintMessage("")
+
+// Create a queue
+q = MessageQueue.Create()
+PrintMessage("Created queue")
+
+// Check if empty
+is_empty = MessageQueue.IsEmpty(q)
+PrintMessage("Is empty: ")
+PrintNumber(is_empty)
+
+// Add some items
+MessageQueue.Enqueue(q, 100)
+PrintMessage("Enqueued 100")
+
+MessageQueue.Enqueue(q, 200)
+PrintMessage("Enqueued 200")
+
+MessageQueue.Enqueue(q, 300)
+PrintMessage("Enqueued 300")
+
+// Check size
+size = MessageQueue.Size(q)
+PrintMessage("Queue size: ")
+PrintNumber(size)
+
+// Remove items
+PrintMessage("Dequeuing items:")
+v1 = MessageQueue.Dequeue(q)
+PrintMessage("  Got: ")
+PrintNumber(v1)
+
+v2 = MessageQueue.Dequeue(q)
+PrintMessage("  Got: ")
+PrintNumber(v2)
+
+v3 = MessageQueue.Dequeue(q)
+PrintMessage("  Got: ")
+PrintNumber(v3)
+
+// Check if empty again
+is_empty = MessageQueue.IsEmpty(q)
+PrintMessage("Is empty after dequeue: ")
+PrintNumber(is_empty)
+
+// Try to dequeue from empty
+result = MessageQueue.Dequeue(q)
+PrintMessage("Dequeue from empty (should be -1): ")
+PrintNumber(result)
+
+// Clean up
+MessageQueue.Destroy(q)
+PrintMessage("")
+PrintMessage("Test Complete!")

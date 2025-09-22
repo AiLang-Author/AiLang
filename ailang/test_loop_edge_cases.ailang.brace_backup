@@ -1,0 +1,158 @@
+// test_loop_edge_cases.ailang
+// Edge cases and potential issues with loop structures
+
+PrintMessage("Loop Edge Cases Test")
+PrintMessage("====================")
+
+// Edge 1: Variable scope across structures
+global_var = 100
+
+SubRoutine.ModifyGlobal {
+    global_var = Add(global_var, 50)
+    local_var = 999  // Should this be visible outside?
+}
+
+PrintMessage("Global before subroutine:")
+PrintNumber(global_var)
+RunTask(ModifyGlobal)
+PrintMessage("Global after subroutine:")
+PrintNumber(global_var)
+
+// Edge 2: Nested WhileLoops with same variable name
+PrintMessage("Nested loops with shadowing:")
+i = 0
+WhileLoop LessThan(i, 2) {
+    
+        PrintMessage("Outer i:")
+        PrintNumber(i)
+    
+        // Inner loop shadows i
+        i_saved = i  // Save outer i
+        i = 0
+        WhileLoop LessThan(i, 2) {
+            PrintMessage("  Inner i:")
+            PrintNumber(i)
+            i = Add(i, 1)
+        }
+        i = i_saved  // Restore outer i
+        i = Add(i, 1)
+    }
+    }
+
+// Edge 3: Loop with immediate exit
+PrintMessage("Loop with immediate exit:")
+counter = 0
+WhileLoop LessThan(counter, 100) {
+    
+        PrintMessage("Single iteration only")
+        counter = 100  // Force immediate exit
+    }
+    }
+
+// Edge 4: Deeply nested conditions in loop
+PrintMessage("Deep nesting test:")
+a = 1
+b = 2
+c = 3
+WhileLoop LessThan(a, 2) {
+    
+        IfCondition EqualTo(b, 2) ThenBlock: {
+            IfCondition EqualTo(c, 3) ThenBlock: {
+                PrintMessage("Triple nested condition met")
+            }
+        }
+        a = Add(a, 1)
+    }
+    }
+
+// Edge 5: Zero-iteration loop
+PrintMessage("Zero-iteration loop:")
+start = 10
+WhileLoop LessThan(start, 5) {
+    
+        PrintMessage("This should never print")
+    }
+    }
+PrintMessage("Zero-iteration handled correctly")
+
+// Edge 6: Large iteration count (stress)
+PrintMessage("Stress test - 100 iterations:")
+big_counter = 0
+sum = 0
+WhileLoop LessThan(big_counter, 100) {
+    
+        sum = Add(sum, 1)
+        big_counter = Add(big_counter, 1)
+    }
+    }
+PrintMessage("Sum after 100 iterations:")
+PrintNumber(sum)
+
+// Edge 7: SubRoutine calling another SubRoutine
+SubRoutine.Caller {
+    PrintMessage("Caller: before call")
+    RunTask(Callee)
+    PrintMessage("Caller: after call")
+}
+
+SubRoutine.Callee {
+    PrintMessage("  Callee: executed")
+}
+
+PrintMessage("Nested subroutine test:")
+RunTask(Caller)
+
+// Edge 8: Multiple condition evaluations
+PrintMessage("Complex condition test:")
+x = 5
+y = 10
+complex_cond = BitwiseAnd(
+    GreaterThan(x, 0),
+    LessThan(y, 20)
+)
+WhileLoop EqualTo(complex_cond, 1) {
+    
+        PrintMessage("Complex condition true")
+        complex_cond = 0  // Exit after one iteration
+    }
+    }
+
+// Edge 9: Loop modifying its own condition
+PrintMessage("Self-modifying loop:")
+limit = 3
+current = 0
+WhileLoop LessThan(current, limit) {
+    
+        PrintMessage("Current:")
+        PrintNumber(current)
+        current = Add(current, 1)
+        // Modify limit mid-loop
+        IfCondition EqualTo(current, 2) ThenBlock: {
+            limit = 5  // Extend the loop
+            PrintMessage("Extended loop limit to 5")
+        }
+    }
+    }
+
+// Edge 10: Empty body handling
+PrintMessage("Empty structures:")
+
+WhileLoop LessThan(0, 0) {
+    
+        // Never executes, empty body
+    }
+    }
+
+SubRoutine.Empty {
+    // Empty subroutine body
+}
+RunTask(Empty)
+
+PrintMessage("Empty structures handled")
+
+PrintMessage("====================")
+PrintMessage("All edge cases completed!")
+PrintMessage("Final global_var:")
+PrintNumber(global_var)
+PrintMessage("Final sum:")
+PrintNumber(sum)

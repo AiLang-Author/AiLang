@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_functions_basic.ailang -> test_functions_basic_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -278,7 +280,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L7 at position 607
 DEBUG ScopeManager: Popping function 'Test.GetFortyTwo'
 DEBUG: Function Test.GetFortyTwo compiled successfully
-DEBUG: Assignment to result1, value: FunctionCall(line=15, column=11, function='Test.GetFortyTwo', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result1, value: FunctionCall(line=15, column=27, function='Test.GetFortyTwo', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Test.GetFortyTwo
 DEBUG: Found registered function: Test.GetFortyTwo
 DEBUG: Calling user function Test.GetFortyTwo
@@ -446,7 +448,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param x stored at [RBP-8]
-DEBUG: Assignment to result, value: FunctionCall(line=24, column=18, function='Multiply', arguments=[Identifier(line=24, column=27, name='x'), Number(line=24, column=30, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result, value: FunctionCall(line=24, column=18, function='Multiply', arguments=[Identifier(line=24, column=27, name='x', original_name=None), Number(line=24, column=30, value='2')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Multiply
 DEBUG: Dispatching Multiply to modules...
 DEBUG: Trying module FunctionDispatch
@@ -506,7 +508,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L10 at position 1025
 DEBUG ScopeManager: Popping function 'Math.Double'
 DEBUG: Function Math.Double compiled successfully
-DEBUG: Assignment to result2, value: FunctionCall(line=29, column=11, function='Math.Double', arguments=[Number(line=29, column=23, value='21')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result2, value: FunctionCall(line=29, column=22, function='Math.Double', arguments=[Number(line=29, column=23, value='21')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Double
 DEBUG: Found registered function: Math.Double
 DEBUG: Calling user function Math.Double
@@ -688,7 +690,7 @@ DEBUG: Emitted MOV RAX, RSI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf0']
 DEBUG: Param b stored at [RBP-16]
-DEBUG: Assignment to sum, value: FunctionCall(line=39, column=15, function='Add', arguments=[Identifier(line=39, column=19, name='a'), Identifier(line=39, column=22, name='b')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to sum, value: FunctionCall(line=39, column=15, function='Add', arguments=[Identifier(line=39, column=19, name='a', original_name=None), Identifier(line=39, column=22, name='b', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -748,7 +750,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L13 at position 1458
 DEBUG ScopeManager: Popping function 'Math.Add'
 DEBUG: Function Math.Add compiled successfully
-DEBUG: Assignment to result3, value: FunctionCall(line=44, column=11, function='Math.Add', arguments=[Number(line=44, column=20, value='15'), Number(line=44, column=24, value='27')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result3, value: FunctionCall(line=44, column=19, function='Math.Add', arguments=[Number(line=44, column=20, value='15'), Number(line=44, column=24, value='27')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Add
 DEBUG: Found registered function: Math.Add
 DEBUG: Calling user function Math.Add
@@ -926,7 +928,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param x stored at [RBP-8]
-DEBUG: Assignment to doubled, value: FunctionCall(line=53, column=19, function='Math.Double', arguments=[Identifier(line=53, column=31, name='x')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to doubled, value: FunctionCall(line=53, column=30, function='Math.Double', arguments=[Identifier(line=53, column=31, name='x', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Double
 DEBUG: Found registered function: Math.Double
 DEBUG: Calling user function Math.Double
@@ -943,7 +945,7 @@ DEBUG: Allocated doubled at stack offset 24
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x85']
 DEBUG: Emitted bytes: ['0xe8', '0xff', '0xff', '0xff']
 DEBUG: Assignment to doubled completed
-DEBUG: Assignment to quadrupled, value: FunctionCall(line=54, column=22, function='Math.Double', arguments=[Identifier(line=54, column=34, name='doubled')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to quadrupled, value: FunctionCall(line=54, column=33, function='Math.Double', arguments=[Identifier(line=54, column=34, name='doubled', original_name=None)]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Double
 DEBUG: Found registered function: Math.Double
 DEBUG: Calling user function Math.Double
@@ -993,7 +995,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L16 at position 1909
 DEBUG ScopeManager: Popping function 'Math.Quadruple'
 DEBUG: Function Math.Quadruple compiled successfully
-DEBUG: Assignment to result4, value: FunctionCall(line=59, column=11, function='Math.Quadruple', arguments=[Number(line=59, column=26, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result4, value: FunctionCall(line=59, column=25, function='Math.Quadruple', arguments=[Number(line=59, column=26, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Quadruple
 DEBUG: Found registered function: Math.Quadruple
 DEBUG: Calling user function Math.Quadruple
@@ -1166,7 +1168,7 @@ DEBUG: MOV RAX, RDI
 DEBUG: Emitted bytes: ['0x48', '0x89', '0x45']
 DEBUG: Emitted bytes: ['0xf8']
 DEBUG: Param num stored at [RBP-8]
-DEBUG: Assignment to is_pos, value: FunctionCall(line=68, column=18, function='GreaterThan', arguments=[Identifier(line=68, column=30, name='num'), Number(line=68, column=35, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to is_pos, value: FunctionCall(line=68, column=18, function='GreaterThan', arguments=[Identifier(line=68, column=30, name='num', original_name=None), Number(line=68, column=35, value='0')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: GreaterThan
 DEBUG: Dispatching GreaterThan to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1254,7 +1256,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L19 at position 2387
 DEBUG ScopeManager: Popping function 'Logic.IsPositive'
 DEBUG: Function Logic.IsPositive compiled successfully
-DEBUG: Assignment to result5a, value: FunctionCall(line=76, column=12, function='Logic.IsPositive', arguments=[Number(line=76, column=29, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result5a, value: FunctionCall(line=76, column=28, function='Logic.IsPositive', arguments=[Number(line=76, column=29, value='10')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Logic.IsPositive
 DEBUG: Found registered function: Logic.IsPositive
 DEBUG: Calling user function Logic.IsPositive
@@ -1402,7 +1404,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to result5b, value: FunctionCall(line=80, column=12, function='Logic.IsPositive', arguments=[Number(line=80, column=29, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result5b, value: FunctionCall(line=80, column=28, function='Logic.IsPositive', arguments=[Number(line=80, column=29, value='-5')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Logic.IsPositive
 DEBUG: Found registered function: Logic.IsPositive
 DEBUG: Calling user function Logic.IsPositive
@@ -1567,7 +1569,7 @@ DEBUG: Emitted bytes: ['0x41', '0x56']
 DEBUG: Function 'Utils.MakeSimpleArray' requires space for 0 params and 1 locals (16 bytes).
 DEBUG: Emitted bytes: ['0x48', '0x83', '0xec', '0x10']
 DEBUG: Allocated 16 bytes for function locals
-DEBUG: Assignment to arr, value: FunctionCall(line=88, column=15, function='ArrayCreate', arguments=[Number(line=88, column=27, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=88, column=26, function='ArrayCreate', arguments=[Number(line=88, column=27, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayCreate
 DEBUG: Dispatching ArrayCreate to modules...
 DEBUG: Trying module FunctionDispatch
@@ -1783,7 +1785,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L26 at position 3348
 DEBUG ScopeManager: Popping function 'Utils.MakeSimpleArray'
 DEBUG: Function Utils.MakeSimpleArray compiled successfully
-DEBUG: Assignment to arr, value: FunctionCall(line=96, column=7, function='Utils.MakeSimpleArray', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to arr, value: FunctionCall(line=96, column=28, function='Utils.MakeSimpleArray', arguments=[]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Utils.MakeSimpleArray
 DEBUG: Found registered function: Utils.MakeSimpleArray
 DEBUG: Calling user function Utils.MakeSimpleArray
@@ -1825,7 +1827,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 Added newline after string
-DEBUG: Assignment to val, value: FunctionCall(line=98, column=7, function='ArrayGet', arguments=[Identifier(line=98, column=16, name='arr'), Number(line=98, column=21, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to val, value: FunctionCall(line=98, column=15, function='ArrayGet', arguments=[Identifier(line=98, column=16, name='arr', original_name=None), Number(line=98, column=21, value='1')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: ArrayGet
 DEBUG: Dispatching ArrayGet to modules...
 DEBUG: Trying module FunctionDispatch
@@ -2078,7 +2080,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (262 bytes)
 
 === COMPILATION COMPLETE (8454 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_functions_basic_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_functions_basic_exec
 ✅ Wrote 8454 bytes
 ✅ Made executable
 ✅ Compiled to test_functions_basic_exec (8454 bytes)

@@ -3,11 +3,17 @@
 
 # Import all AST node classes from their respective modules
 from .ast_base import ASTNode
-
 from .ast_expressions import (
     TypeExpression, MathExpression, FunctionCall, Apply, RunMacro,
     Identifier, Number, String, Boolean, ArrayLiteral, MapLiteral,
-    Array  # Alias
+    MemberAccess,  # ADD THIS
+    Array
+)
+from .ast_statements import (
+    Loop, SubRoutine, RunTask, PrintMessage, ReturnValue,  # ReturnValue must be here
+    Assignment, If, While, ForEvery, Try,
+    SendMessage, ReceiveMessage, EveryInterval, WithSecurity,
+    BreakLoop, ContinueLoop, HaltProgram
 )
 
 from .ast_program import (

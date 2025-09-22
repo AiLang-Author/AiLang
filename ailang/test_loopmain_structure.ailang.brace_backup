@@ -1,0 +1,41 @@
+// test_loopmain_structure.ailang
+// Test LoopMain entry point structure
+
+PrintMessage("LoopMain Structure Test")
+PrintMessage("========================")
+
+// Global state for testing
+global_counter = 0
+
+// LoopMain is the main entry point
+LoopMain.TestMain {
+    PrintMessage("LoopMain.TestMain executing")
+    
+    // Test basic execution
+    local_var = 42
+    PrintMessage("Local var in LoopMain:")
+    PrintNumber(local_var)
+    
+    // Modify global state
+    global_counter = Add(global_counter, 1)
+    PrintMessage("Global counter after LoopMain:")
+    PrintNumber(global_counter)
+    
+    // Test loop inside LoopMain
+    i = 0
+    WhileLoop LessThan(i, 3) {
+        
+            PrintMessage("  LoopMain iteration:")
+            PrintNumber(i)
+            i = Add(i, 1)
+        }
+        }
+    
+    PrintMessage("LoopMain.TestMain complete")
+}
+
+// Verify global was modified
+PrintMessage("Final global counter:")
+PrintNumber(global_counter)
+
+PrintMessage("LoopMain structure test complete!")

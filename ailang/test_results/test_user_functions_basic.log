@@ -3,6 +3,8 @@
 🚀 Starting compilation for: test_user_functions_basic.ailang -> test_user_functions_basic_exec
 ==================================================
 🔨 Compiling AILANG source...
+DEBUG: Initialized Try/Catch compiler module
+DEBUG: Initialized message passing module
 DEBUG: Using USER MODE SAFE VM operations
 
 === COMPILATION STARTING ===
@@ -250,7 +252,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L3 at position 484
 DEBUG ScopeManager: Popping function 'Math.AddNumbers'
 DEBUG: Function Math.AddNumbers compiled successfully
-DEBUG: Assignment to result1, value: FunctionCall(line=17, column=11, function='Math.AddNumbers', arguments=[Number(line=17, column=27, value='5'), Number(line=17, column=30, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result1, value: FunctionCall(line=17, column=26, function='Math.AddNumbers', arguments=[Number(line=17, column=27, value='5'), Number(line=17, column=30, value='3')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.AddNumbers
 DEBUG: Found registered function: Math.AddNumbers
 DEBUG: Calling user function Math.AddNumbers
@@ -480,7 +482,7 @@ DEBUG: ReturnValue compiled
 DEBUG: Marked label L6 at position 912
 DEBUG ScopeManager: Popping function 'Math.Double'
 DEBUG: Function Math.Double compiled successfully
-DEBUG: Assignment to result2, value: FunctionCall(line=31, column=11, function='Math.Double', arguments=[Number(line=31, column=23, value='7')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to result2, value: FunctionCall(line=31, column=22, function='Math.Double', arguments=[Number(line=31, column=23, value='7')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Double
 DEBUG: Found registered function: Math.Double
 DEBUG: Calling user function Math.Double
@@ -628,7 +630,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to y, value: FunctionCall(line=37, column=5, function='Add', arguments=[FunctionCall(line=37, column=9, function='Math.Double', arguments=[Number(line=37, column=21, value='3')]), Number(line=37, column=25, value='4')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to y, value: FunctionCall(line=37, column=5, function='Add', arguments=[FunctionCall(line=37, column=20, function='Math.Double', arguments=[Number(line=37, column=21, value='3')]), Number(line=37, column=25, value='4')]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Add
 DEBUG: Dispatching Add to modules...
 DEBUG: Trying module FunctionDispatch
@@ -795,7 +797,7 @@ DEBUG: Emitted bytes: ['0x1', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0']
 DEBUG: MOV RDX, 1
 DEBUG: Emitted bytes: ['0xf', '0x5']
 DEBUG: PrintNumber completed
-DEBUG: Assignment to z, value: FunctionCall(line=43, column=5, function='Math.Double', arguments=[FunctionCall(line=43, column=17, function='Math.Double', arguments=[Number(line=43, column=29, value='2')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
+DEBUG: Assignment to z, value: FunctionCall(line=43, column=16, function='Math.Double', arguments=[FunctionCall(line=43, column=28, function='Math.Double', arguments=[Number(line=43, column=29, value='2')])]), type: <class 'ailang_parser.ast_modules.ast_expressions.FunctionCall'>
 DEBUG: Compiling function call: Math.Double
 DEBUG: Found registered function: Math.Double
 DEBUG: Calling user function Math.Double
@@ -1023,7 +1025,7 @@ Dynamic ELF Layout:
   Data: 0x402000 (174 bytes)
 
 === COMPILATION COMPLETE (8366 bytes) ===
-📁 Writing to: /mnt/c/Users/Sean/Documents/AiLang/ailang/test_user_functions_basic_exec
+📁 Writing to: /mnt/c/Users/Sean/Documents/Ailang/ailang/test_user_functions_basic_exec
 ✅ Wrote 8366 bytes
 ✅ Made executable
 ✅ Compiled to test_user_functions_basic_exec (8366 bytes)
