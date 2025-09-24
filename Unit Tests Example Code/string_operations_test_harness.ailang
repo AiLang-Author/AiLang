@@ -65,16 +65,18 @@ SubRoutine.TestStringResult {
     PrintMessage("'")
     
     is_equal = StringEquals(test_expected, test_actual)
-    IfCondition EqualTo(is_equal, 1) ThenBlock {
+    IfCondition EqualTo(is_equal, 1) ThenBlock: {
         PrintMessage("    PASS")
         passed_tests = Add(passed_tests, 1)
         section_passed = Add(section_passed, 1)
-    } ElseBlock {
+    } ElseBlock: {
         PrintMessage("    FAIL")
         failed_tests = Add(failed_tests, 1)
     }
     PrintMessage("")
 }
+
+
 
 // Helper for numeric test results
 SubRoutine.TestNumberResult {
@@ -88,11 +90,11 @@ SubRoutine.TestNumberResult {
     PrintMessage("    Actual: ")
     PrintNumber(test_actual_num)
     
-    IfCondition EqualTo(test_expected_num, test_actual_num) ThenBlock {
+    IfCondition EqualTo(test_expected_num, test_actual_num) ThenBlock: {
         PrintMessage("    PASS")
         passed_tests = Add(passed_tests, 1)
         section_passed = Add(section_passed, 1)
-    } ElseBlock {
+    } ElseBlock: {
         PrintMessage("    FAIL")
         failed_tests = Add(failed_tests, 1)
     }
@@ -379,7 +381,7 @@ SubRoutine.CountSpaces {
     
     WhileLoop LessThan(i, length) {
         char_code = StringCharAt(text, i)
-        IfCondition EqualTo(char_code, 32) ThenBlock {
+        IfCondition EqualTo(char_code, 32) ThenBlock: {
             count = Add(count, 1)
         }
         i = Add(i, 1)
@@ -400,13 +402,13 @@ SubRoutine.IsAllDigits {
     length = StringLength(text)
     result = 1
     
-    IfCondition EqualTo(length, 0) ThenBlock {
+    IfCondition EqualTo(length, 0) ThenBlock: {
         result = 0
     }
     
     WhileLoop And(LessThan(i, length), EqualTo(result, 1)) {
         char_code = StringCharAt(text, i)
-        IfCondition Or(LessThan(char_code, 48), GreaterThan(char_code, 57)) ThenBlock {
+        IfCondition Or(LessThan(char_code, 48), GreaterThan(char_code, 57)) ThenBlock: {
             result = 0
         }
         i = Add(i, 1)
@@ -443,7 +445,7 @@ PrintMessage("Failed: ")
 PrintNumber(failed_tests)
 
 success_rate = 0
-IfCondition GreaterThan(total_tests, 0) ThenBlock {
+IfCondition GreaterThan(total_tests, 0) ThenBlock: {
     success_rate = Divide(Multiply(passed_tests, 100), total_tests)
 }
 
@@ -461,9 +463,9 @@ PrintMessage("- Buffer integration (StoreValue/Dereference broken)")
 PrintMessage("- Advanced functions (if not implemented)")
 PrintMessage("")
 
-IfCondition EqualTo(failed_tests, 0) ThenBlock {
+IfCondition EqualTo(failed_tests, 0) ThenBlock: {
     PrintMessage("=== ALL TESTS PASSED! ===")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("=== FAILURES DETECTED (see above) ===")
 }
 

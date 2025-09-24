@@ -24,19 +24,195 @@ class FileIOOps:
             'WriteTextFile': self.compile_write_text_file,
             'ReadTextFile': self.compile_read_text_file,
             'FileExists': self.compile_file_exists,
+            'ReadBinaryFile': self.compile_read_binary_file,
+            'WriteBinaryFile': self.compile_write_binary_file,
         }
-
+        
         # Look up the function in our map
         handler = op_map.get(node.function)
-
+        
         if handler:
             # If we found a handler, call it and signal success to the main compiler
             handler(node)
             return True
-        
+    
         # If the function is not in our map, it's not our job.
         # Signal this by returning False.
         return False
+    
+    def compile_read_binary_file(self, node):
+        """
+        ReadBinaryFile(filename, buffer, max_bytes) -> bytes_read
+        Reads binary data from file into buffer
+        Returns number of bytes read, or -1 on error
+        """
+        if len(node.arguments) != 3:
+            raise ValueError("ReadBinaryFile requires 3 arguments: filename, buffer, max_bytes")
+        
+        print("DEBUG: Compiling ReadBinaryFile")
+        
+        # Compile filename argument
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()  # Save filename
+        
+        # Compile buffer argument
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_push_rax()  # Save buffer
+        
+        # Compile max_bytes argument
+        self.compiler.compile_expression(node.arguments[2])
+        self.asm.emit_push_rax()  # Save max_bytes
+        
+        # Create labels
+        error_label = self.asm.create_label()
+        done_label = self.asm.create_label()
+        
+        # Pop arguments
+        self.asm.emit_pop_rdx()  # max_bytes in RDX (count)
+        self.asm.emit_pop_rsi()  # buffer address in RSI
+        self.asm.emit_pop_rdi()  # filename in RDI
+        
+        # Save registers
+        self.asm.emit_push_rbx()
+        
+        # Open file: open(filename, O_RDONLY)
+        # RDI already has filename
+        self.asm.emit_push_rsi()  # Save buffer
+        self.asm.emit_push_rdx()  # Save count
+        
+        self.asm.emit_mov_rsi_imm64(0)  # O_RDONLY
+        self.asm.emit_mov_rdx_imm64(0)  # mode (unused)
+        self.asm.emit_mov_rax_imm64(2)  # sys_open
+        self.asm.emit_syscall()
+        
+        # Check for error
+        self.asm.emit_cmp_rax_imm8(0)
+        self.asm.emit_jump_to_label(error_label, "JL")
+        
+        # Save file descriptor
+        self.asm.emit_mov_rbx_rax()  # fd in RBX
+        
+        # Restore buffer and count for read
+        self.asm.emit_pop_rdx()  # count
+        self.asm.emit_pop_rsi()  # buffer
+        
+        # Read from file: read(fd, buffer, count)
+        self.asm.emit_mov_rdi_rbx()  # fd
+        self.asm.emit_mov_rax_imm64(0)  # sys_read
+        self.asm.emit_syscall()
+        
+        # Save bytes read
+        self.asm.emit_push_rax()
+        
+        # Close file: close(fd)
+        self.asm.emit_mov_rdi_rbx()  # fd
+        self.asm.emit_mov_rax_imm64(3)  # sys_close
+        self.asm.emit_syscall()
+        
+        # Restore bytes read
+        self.asm.emit_pop_rax()
+        self.asm.emit_jump_to_label(done_label, "JMP")
+        
+        # Error path
+        self.asm.mark_label(error_label)
+        self.asm.emit_pop_rdx()  # Clean stack
+        self.asm.emit_pop_rsi()  # Clean stack
+        self.asm.emit_mov_rax_imm64(-1)  # Return -1
+        
+        # Done
+        self.asm.mark_label(done_label)
+        self.asm.emit_pop_rbx()
+        
+        print("DEBUG: ReadBinaryFile compilation complete")
+        return True
+
+    def compile_write_binary_file(self, node):
+        """
+        WriteBinaryFile(filename, buffer, bytes_count) -> bytes_written
+        Writes binary data from buffer to file
+        Returns number of bytes written, or -1 on error
+        """
+        if len(node.arguments) != 3:
+            raise ValueError("WriteBinaryFile requires 3 arguments: filename, buffer, bytes_count")
+        
+        print("DEBUG: Compiling WriteBinaryFile")
+        
+        # Compile filename argument
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()  # Save filename
+        
+        # Compile buffer argument
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_push_rax()  # Save buffer
+        
+        # Compile byte count argument
+        self.compiler.compile_expression(node.arguments[2])
+        self.asm.emit_push_rax()  # Save count
+        
+        # Create labels
+        error_label = self.asm.create_label()
+        done_label = self.asm.create_label()
+        
+        # Pop arguments
+        self.asm.emit_pop_rdx()  # byte count in RDX
+        self.asm.emit_pop_rsi()  # buffer in RSI
+        self.asm.emit_pop_rdi()  # filename in RDI
+        
+        # Save registers
+        self.asm.emit_push_rbx()
+        
+        # Open file: open(filename, O_WRONLY|O_CREAT|O_TRUNC, 0644)
+        # RDI already has filename
+        self.asm.emit_push_rsi()  # Save buffer
+        self.asm.emit_push_rdx()  # Save count
+        
+        self.asm.emit_mov_rsi_imm64(0x241)  # O_WRONLY|O_CREAT|O_TRUNC
+        self.asm.emit_mov_rdx_imm64(0o644)  # permissions
+        self.asm.emit_mov_rax_imm64(2)  # sys_open
+        self.asm.emit_syscall()
+        
+        # Check for error
+        self.asm.emit_cmp_rax_imm8(0)
+        self.asm.emit_jump_to_label(error_label, "JL")
+        
+        # Save file descriptor
+        self.asm.emit_mov_rbx_rax()  # fd in RBX
+        
+        # Restore buffer and count for write
+        self.asm.emit_pop_rdx()  # count
+        self.asm.emit_pop_rsi()  # buffer
+        
+        # Write to file: write(fd, buffer, count)
+        self.asm.emit_mov_rdi_rbx()  # fd
+        self.asm.emit_mov_rax_imm64(1)  # sys_write
+        self.asm.emit_syscall()
+        
+        # Save bytes written
+        self.asm.emit_push_rax()
+        
+        # Close file: close(fd)
+        self.asm.emit_mov_rdi_rbx()  # fd
+        self.asm.emit_mov_rax_imm64(3)  # sys_close
+        self.asm.emit_syscall()
+        
+        # Restore bytes written
+        self.asm.emit_pop_rax()
+        self.asm.emit_jump_to_label(done_label, "JMP")
+        
+        # Error path
+        self.asm.mark_label(error_label)
+        self.asm.emit_pop_rdx()  # Clean stack
+        self.asm.emit_pop_rsi()  # Clean stack
+        self.asm.emit_mov_rax_imm64(-1)  # Return -1
+        
+        # Done
+        self.asm.mark_label(done_label)
+        self.asm.emit_pop_rbx()
+        
+        print("DEBUG: WriteBinaryFile compilation complete")
+        return True
+            
+    
     
     def compile_write_text_file(self, node):
         """SAFE v2 — WriteTextFile(path, data)

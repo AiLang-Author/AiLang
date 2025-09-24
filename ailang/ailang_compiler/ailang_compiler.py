@@ -7,6 +7,8 @@ Coordinates compilation process using modular components with proper integration
 import struct
 import sys
 import os
+import traceback
+import copy as copy_module
 # --- FIX: Import the parser from the ailang_parser package ---
 from ailang_parser.compiler import AILANGCompiler
 # --- End FIX ---
@@ -31,8 +33,7 @@ from ailang_compiler.modules.atomic_ops import AtomicOps
 from ailang_compiler.modules.user_functions import UserFunctions
 from ailang_compiler.modules.string_ops import StringOps
 from ailang_compiler.modules.expression_compiler import ExpressionCompiler
-from ailang_compiler.modules.library_inliner import LibraryInliner
-from ailang_compiler.modules.user_functions import UserFunctions
+# REMOVED DUPLICATE: from ailang_compiler.modules.user_functions import UserFunctions
 from ailang_compiler.modules.memory_pool import MemoryPool
 from ailang_compiler.modules.function_dispatch import FunctionDispatch
 from ailang_compiler.modules.try_catch import SimplifiedTryCatchCompiler, register_try_catch_in_compiler
@@ -89,7 +90,6 @@ class AILANGToX64Compiler:
         
         # VM mode handling
         if self.vm_mode == "kernel":
-            from ailang_compiler.modules.virtual_memory import VirtualMemoryOps
             self.virtual_memory = VirtualMemoryOps(self)
         else:
             from ailang_compiler.modules.usermode_vm_ops import VirtualMemoryOpsUserMode
@@ -392,8 +392,7 @@ class AILANGToX64Compiler:
                 if hasattr(self.user_functions, 'is_function_registered') and self.user_functions.is_function_registered(prefixed_name):
                     print(f"DEBUG: Library context '{self.current_library_prefix}' found. Resolving '{node.function}' to '{prefixed_name}'")
                     # Create a temporary node with the corrected name and compile it.
-                    import copy
-                    node_copy = copy.copy(node)
+                    node_copy = copy_module.copy(node)
                     node_copy.function = prefixed_name
                     if self.user_functions.compile_function_call(node_copy):
                         return
@@ -415,8 +414,7 @@ class AILANGToX64Compiler:
                     prefixed_name = f"{lib_prefix}.{node.function}"
                     if self.user_functions.is_function_registered(prefixed_name):
                         print(f"DEBUG: Resolved '{node.function}' to '{prefixed_name}' via imported library '{lib_name}'")
-                        import copy
-                        node_copy = copy.copy(node)
+                        node_copy = copy_module.copy(node)
                         node_copy.function = prefixed_name
                         if self.user_functions.compile_function_call(node_copy):
                             return
@@ -440,8 +438,7 @@ class AILANGToX64Compiler:
                         
                         # Try with "Function." prefix removed if present
                         if lib_name == "Function" and self.user_functions.is_function_registered(func_name):
-                            import copy
-                            node_copy = copy.copy(node)
+                            node_copy = copy_module.copy(node)
                             node_copy.function = func_name
                             if self.user_functions.compile_function_call(node_copy):
                                 return
@@ -455,8 +452,7 @@ class AILANGToX64Compiler:
                 if node.function.startswith("Function."):
                     clean_name = node.function[9:]
                     if clean_name in self.user_functions.user_functions:
-                        import copy
-                        node_copy = copy.copy(node)
+                        node_copy = copy_module.copy(node)
                         node_copy.function = clean_name
                         if self.user_functions.compile_function_call(node_copy):
                             return
@@ -471,8 +467,7 @@ class AILANGToX64Compiler:
             
             # Check user functions with base name (existing code)
             if base_name in self.user_functions.user_functions:
-                import copy
-                node_copy = copy.copy(node)
+                node_copy = copy_module.copy(node)
                 node_copy.function = base_name
                 if self.user_functions.compile_function_call(node_copy):
                     return
@@ -508,8 +503,7 @@ class AILANGToX64Compiler:
 
             # If dotted name failed, try with base name
             if '.' in node.function:
-                import copy
-                node_copy = copy.copy(node)
+                node_copy = copy_module.copy(node)
                 node_copy.function = base_name
                 print(f"DEBUG: Trying base name {base_name}")
                 for module in dispatch_modules:
@@ -561,7 +555,6 @@ class AILANGToX64Compiler:
             
         except Exception as e:
             print(f"ERROR: compile_function_call failed: {e}")
-            import traceback
             traceback.print_exc()
             raise
     
@@ -782,7 +775,6 @@ class AILANGToX64Compiler:
         
     def fixup_forward_references(self):
         """Fix forward references to subroutines"""
-        import struct
         
         print(f"DEBUG: Fixing {len(self.task_fixups)} forward references")
         print(f"DEBUG: Available subroutines: {self.subroutines}")

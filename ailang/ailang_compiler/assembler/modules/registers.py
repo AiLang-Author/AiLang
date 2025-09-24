@@ -345,3 +345,64 @@ class RegisterOperations:
     def emit_dec_rdi(self):
         """DEC RDI - Decrement RDI"""
         self.emit_bytes(0x48, 0xFF, 0xCF)
+        
+    # Add these methods to the X64Assembler class in assembler.py
+
+    def emit_pop_rbx(self):
+        """POP RBX"""
+        self.emit_bytes([0x5B])
+        
+    def emit_pop_rcx(self):
+        """POP RCX"""
+        self.emit_bytes([0x59])
+        
+    def emit_pop_rdx(self):
+        """POP RDX"""
+        self.emit_bytes([0x5A])
+        
+    def emit_pop_rsi(self):
+        """POP RSI"""
+        self.emit_bytes([0x5E])
+        
+    def emit_pop_rdi(self):
+        """POP RDI"""
+        self.emit_bytes([0x5F])
+        
+    def emit_push_rbx(self):
+        """PUSH RBX"""
+        self.emit_bytes([0x53])
+        
+    def emit_push_rcx(self):
+        """PUSH RCX"""
+        self.emit_bytes([0x51])
+        
+    def emit_push_rdx(self):
+        """PUSH RDX"""
+        self.emit_bytes([0x52])
+        
+    def emit_push_rsi(self):
+        """PUSH RSI"""
+        self.emit_bytes([0x56])
+        
+    def emit_push_rdi(self):
+        """PUSH RDI"""
+        self.emit_bytes([0x57])
+
+    def emit_test_r64_r64(self, reg1, reg2):
+        """TEST reg1, reg2"""
+        reg_map = {'rax': 0, 'rcx': 1, 'rdx': 2, 'rbx': 3, 'rsi': 6, 'rdi': 7}
+        r1 = reg_map[reg1]
+        r2 = reg_map[reg2]
+        self.emit_bytes([0x48, 0x85, 0xC0 | (r2 << 3) | r1])
+
+    def emit_js(self, label):
+        """Jump if sign (JS) - for negative values"""
+        offset_placeholder = len(self.code) + 2
+        self.emit_bytes([0x78, 0x00])  # JS rel8 placeholder
+        self.add_jump_fixup(label, offset_placeholder - 1, 1)  # 1-byte offset
+
+    def emit_jmp(self, label):
+        """Unconditional jump"""
+        offset_placeholder = len(self.code) + 2
+        self.emit_bytes([0xEB, 0x00])  # JMP rel8 placeholder
+        self.add_jump_fixup(label, offset_placeholder - 1, 1)

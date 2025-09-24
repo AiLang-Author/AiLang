@@ -1,0 +1,16 @@
+// Test FileExists
+WriteTextFile("test.txt", "hello")
+exists1 = FileExists("test.txt")
+PrintMessage("test.txt exists: ")
+PrintNumber(exists1)
+PrintMessage("\n")
+
+exists2 = FileExists("tiny_llm.weights")
+PrintMessage("tiny_llm.weights exists: ")
+PrintNumber(exists2)
+PrintMessage("\n")
+
+exists3 = FileExists("nonexistent.file")
+PrintMessage("nonexistent.file exists: ")
+PrintNumber(exists3)
+PrintMessage("\n")

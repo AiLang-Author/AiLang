@@ -1,0 +1,365 @@
+// test_advanced_scheduler.ailang
+// Demonstrates priority scheduling, work stealing, supervision, and MapReduce
+
+LibraryImport.Scheduler
+LibraryImport.SchedulerAdvanced
+
+// ============================================================
+// TEST ACTORS
+// ============================================================
+
+// High-priority critical actor
+Function.CriticalActor {
+    Input: sched: Address
+    Input: actor_id: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("\n[CRITICAL] Actor ")
+        PrintNumber(actor_id)
+        PrintMessage(" running (HIGH PRIORITY)\n")
+        
+        // Do critical work
+        PrintMessage("[CRITICAL] Performing critical system task...\n")
+        
+        // Check for termination
+        msg = Scheduler.ReceiveMessage(sched, actor_id)
+        IfCondition NotEqual(msg, -1) ThenBlock: {
+            msg_type = Scheduler.GetMessageType(msg)
+            IfCondition EqualTo(msg_type, MessageType.TERMINATE) ThenBlock: {
+                PrintMessage("[CRITICAL] Shutting down\n")
+                ReturnValue(0)
+            }
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Worker that can steal work
+Function.WorkerActor {
+    Input: sched: Address
+    Input: actor_id: Integer
+    Input: work_queues: Address
+    Output: Integer
+    Body: {
+        PrintMessage("\n[WORKER] Actor ")
+        PrintNumber(actor_id)
+        PrintMessage(" checking for work\n")
+        
+        // Check own work queue first
+        base = Multiply(actor_id, 16)
+        found_work = 0
+        
+        i = 0
+        WhileLoop LessThan(i, 16) {
+            offset = Add(base, i)
+            work_item = ArrayGet(work_queues, offset)
+            
+            IfCondition NotEqual(work_item, -1) ThenBlock: {
+                PrintMessage("[WORKER] Actor ")
+                PrintNumber(actor_id)
+                PrintMessage(" processing own work item: ")
+                PrintNumber(work_item)
+                PrintMessage("\n")
+                
+                // Clear the work item
+                ArraySet(work_queues, offset, -1)
+                found_work = 1
+                i = 16  // Exit loop
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // If no work, try to steal
+        IfCondition EqualTo(found_work, 0) ThenBlock: {
+            stolen = WorkStealing.TrySteal(work_queues, sched, actor_id)
+            IfCondition NotEqual(stolen, -1) ThenBlock: {
+                PrintMessage("[WORKER] Actor ")
+                PrintNumber(actor_id)
+                PrintMessage(" processing stolen work: ")
+                PrintNumber(stolen)
+                PrintMessage("\n")
+            }
+            ElseBlock: {
+                PrintMessage("[WORKER] Actor ")
+                PrintNumber(actor_id)
+                PrintMessage(" idle (no work to steal)\n")
+            }
+        }
+        
+        // Check for termination
+        msg = Scheduler.ReceiveMessage(sched, actor_id)
+        IfCondition NotEqual(msg, -1) ThenBlock: {
+            msg_type = Scheduler.GetMessageType(msg)
+            IfCondition EqualTo(msg_type, MessageType.TERMINATE) ThenBlock: {
+                ReturnValue(0)
+            }
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Faulty actor that crashes
+Function.FaultyActor {
+    Input: sched: Address
+    Input: actor_id: Integer
+    Input: crash_counter: Address
+    Output: Integer
+    Body: {
+        // Get crash count for this actor
+        count = ArrayGet(crash_counter, actor_id)
+        
+        PrintMessage("\n[FAULTY] Actor ")
+        PrintNumber(actor_id)
+        PrintMessage(" running (attempt ")
+        PrintNumber(count)
+        PrintMessage(")\n")
+        
+        // Crash on first two attempts
+        IfCondition LessThan(count, 2) ThenBlock: {
+            PrintMessage("[FAULTY] Actor ")
+            PrintNumber(actor_id)
+            PrintMessage(" CRASHED!\n")
+            
+            // Increment crash counter
+            ArraySet(crash_counter, actor_id, Add(count, 1))
+            
+            // Signal failure (will be restarted by supervisor)
+            ReturnValue(-1)
+        }
+        
+        PrintMessage("[FAULTY] Actor ")
+        PrintNumber(actor_id)
+        PrintMessage(" running successfully after restart\n")
+        
+        // Check for termination
+        msg = Scheduler.ReceiveMessage(sched, actor_id)
+        IfCondition NotEqual(msg, -1) ThenBlock: {
+            msg_type = Scheduler.GetMessageType(msg)
+            IfCondition EqualTo(msg_type, MessageType.TERMINATE) ThenBlock: {
+                ReturnValue(0)
+            }
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// ============================================================
+// MAIN TEST PROGRAM
+// ============================================================
+
+LoopMain.TestAdvancedScheduler {
+    PrintMessage("\n")
+    PrintMessage("================================================\n")
+    PrintMessage("    ADVANCED SCHEDULER FEATURES TEST\n")
+    PrintMessage("================================================\n\n")
+    
+    // Create scheduler
+    sched = Scheduler.CreateMemory()
+    Scheduler.Init(sched)
+    
+    // ========== TEST 1: PRIORITY SCHEDULING ==========
+    PrintMessage("\n--- TEST 1: PRIORITY SCHEDULING ---\n\n")
+    
+    // Register actors with different priorities
+    SchedulerPriority.RegisterActor(sched, 0, Priority.LOW)      // Low priority
+    SchedulerPriority.RegisterActor(sched, 1, Priority.NORMAL)   // Normal priority
+    SchedulerPriority.RegisterActor(sched, 2, Priority.CRITICAL) // Critical priority
+    
+    PrintMessage("\nRunning priority scheduler (critical should run first):\n")
+    
+    cycles = 0
+    WhileLoop LessThan(cycles, 6) {
+        actor_id = SchedulerPriority.Step(sched)
+        
+        IfCondition NotEqual(actor_id, -1) ThenBlock: {
+            PrintMessage("  Cycle ")
+            PrintNumber(cycles)
+            PrintMessage(": Actor ")
+            PrintNumber(actor_id)
+            
+            // Show priority
+            state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, actor_id)
+            state = ArrayGet(sched, state_offset)
+            priority = Divide(state, 64)
+            PrintMessage(" (priority=")
+            PrintNumber(priority)
+            PrintMessage(")\n")
+            
+            // Run the critical actor
+            IfCondition EqualTo(actor_id, 2) ThenBlock: {
+                keep_running = CriticalActor(sched, actor_id)
+                IfCondition EqualTo(keep_running, 1) ThenBlock: {
+                    Scheduler.RequeueActor(sched, actor_id)
+                }
+            }
+            ElseBlock: {
+                // Just requeue others
+                Scheduler.RequeueActor(sched, actor_id)
+            }
+        }
+        
+        cycles = Add(cycles, 1)
+    }
+    
+    // ========== TEST 2: WORK STEALING ==========
+    PrintMessage("\n--- TEST 2: WORK STEALING ---\n\n")
+    
+    // Initialize work queues
+    work_queues = WorkStealing.InitQueues(sched)
+    
+    // Add work to actor 0's queue (overload it)
+    WorkStealing.AddWork(work_queues, 0, 100)
+    WorkStealing.AddWork(work_queues, 0, 101)
+    WorkStealing.AddWork(work_queues, 0, 102)
+    WorkStealing.AddWork(work_queues, 0, 103)
+    WorkStealing.AddWork(work_queues, 0, 104)
+    
+    PrintMessage("\nActor 0 has 5 work items, actors 1 and 2 will steal:\n")
+    
+    // Run workers
+    cycles = 0
+    WhileLoop LessThan(cycles, 9) {
+        actor_id = Modulo(cycles, 3)  // Round-robin for demo
+        
+        PrintMessage("\nCycle ")
+        PrintNumber(cycles)
+        PrintMessage(":\n")
+        
+        keep_running = WorkerActor(sched, actor_id, work_queues)
+        
+        cycles = Add(cycles, 1)
+    }
+    
+    ArrayDestroy(work_queues)
+    
+    // ========== TEST 3: SUPERVISION ==========
+    PrintMessage("\n--- TEST 3: SUPERVISION TREES ---\n\n")
+    
+    // Create supervisor with ONE_FOR_ONE strategy
+    supervisor = Supervisor.Create(sched, 99, SupervisorStrategy.ONE_FOR_ONE)
+    
+    // Create crash counter
+    crash_counter = ArrayCreate(10)
+    i = 0
+    WhileLoop LessThan(i, 10) {
+        ArraySet(crash_counter, i, 0)
+        i = Add(i, 1)
+    }
+    
+    // Register faulty actors as children
+    Scheduler.RegisterActor(sched, 3)  // Faulty actor 1
+    Scheduler.RegisterActor(sched, 4)  // Faulty actor 2
+    
+    Supervisor.AddChild(supervisor, 3)
+    Supervisor.AddChild(supervisor, 4)
+    
+    PrintMessage("\nRunning faulty actors with supervision:\n")
+    
+    cycles = 0
+    WhileLoop LessThan(cycles, 6) {
+        actor_id = Add(3, Modulo(cycles, 2))  // Alternate between 3 and 4
+        
+        PrintMessage("\nCycle ")
+        PrintNumber(cycles)
+        PrintMessage(":\n")
+        
+        result = FaultyActor(sched, actor_id, crash_counter)
+        
+        IfCondition EqualTo(result, -1) ThenBlock: {
+            PrintMessage("[SUPERVISOR] Detected failure!\n")
+            Supervisor.HandleFailure(supervisor, sched, actor_id)
+        }
+        
+        cycles = Add(cycles, 1)
+    }
+    
+    ArrayDestroy(supervisor)
+    ArrayDestroy(crash_counter)
+    
+    // ========== TEST 4: MAPREDUCE ==========
+    PrintMessage("\n--- TEST 4: MAPREDUCE PATTERN ---\n\n")
+    
+    // Generate test data
+    data_size = 20
+    test_data = Demo.GenerateData(data_size)
+    
+    PrintMessage("Input data: ")
+    Demo.PrintArray(test_data, data_size)
+    
+    // Clear actors
+    Scheduler.Init(sched)
+    
+    // Register mapper actors (0-3) and reducer (4)
+    num_mappers = 4
+    i = 0
+    WhileLoop LessThan(i, Add(num_mappers, 1)) {
+        Scheduler.RegisterActor(sched, i)
+        i = Add(i, 1)
+    }
+    
+    // Start map phase
+    results = MapReduce.Map(sched, test_data, data_size, num_mappers)
+    
+    // Run mappers
+    PrintMessage("\nMappers processing:\n")
+    i = 0
+    WhileLoop LessThan(i, num_mappers) {
+        result = MapReduce.MapperLogic(sched, i, test_data)
+        i = Add(i, 1)
+    }
+    
+    // Run reducer
+    PrintMessage("\nReducer collecting results:\n")
+    reducer_id = 4
+    final_result = MapReduce.Reduce(sched, results, num_mappers, reducer_id)
+    
+    PrintMessage("\n[MAPREDUCE] Final result: ")
+    PrintNumber(final_result)
+    PrintMessage(" (sum of 1..20 = 210)\n")
+    
+    ArrayDestroy(test_data)
+    ArrayDestroy(results)
+    
+    // ========== TEST 5: PIPELINE ==========
+    PrintMessage("\n--- TEST 5: PIPELINE PATTERN ---\n\n")
+    
+    // Clear and setup pipeline actors
+    Scheduler.Init(sched)
+    Scheduler.RegisterActor(sched, 0)  // Stage 1
+    Scheduler.RegisterActor(sched, 1)  // Stage 2
+    Scheduler.RegisterActor(sched, 2)  // Stage 3
+    
+    PrintMessage("Pipeline: input -> stage1(*1) -> stage2(*2) -> stage3(*3)\n")
+    PrintMessage("Sending value 5 through pipeline:\n\n")
+    
+    // Send initial data to first stage
+    Scheduler.SendMessage(sched, 0, MessageType.DATA, 5)
+    
+    // Run pipeline
+    cycles = 0
+    WhileLoop LessThan(cycles, 3) {
+        actor_id = cycles
+        next_stage = Add(actor_id, 1)
+        
+        IfCondition EqualTo(actor_id, 2) ThenBlock: {
+            next_stage = -1  // Last stage
+        }
+        
+        Pipeline.Stage(sched, actor_id, next_stage)
+        
+        cycles = Add(cycles, 1)
+    }
+    
+    PrintMessage("\nExpected: 5 * 1 * 2 * 3 = 30\n")
+    
+    // Cleanup
+    Scheduler.Cleanup(sched)
+    
+    PrintMessage("\n================================================\n")
+    PrintMessage("         ALL TESTS COMPLETE!\n")
+    PrintMessage("================================================\n\n")
+}

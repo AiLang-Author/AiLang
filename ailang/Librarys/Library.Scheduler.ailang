@@ -1,0 +1,394 @@
+// Library.Scheduler.ailang
+// Simplified Actor Scheduler for AILANG
+// Uses a single shared memory pool for all scheduler state
+
+// ============================================================
+// SCHEDULER MEMORY LAYOUT
+// ============================================================
+// We use a single large array to store all scheduler state
+// This works around AILANG's lack of global variables
+// 
+// Memory Layout (offsets into scheduler_memory):
+// 0-63:     Run queue (actor IDs)
+// 64:       Run queue head
+// 65:       Run queue tail
+// 66:       Number of actors
+// 67:       Current actor
+// 68:       Scheduler running flag
+// 69:       Total messages processed
+// 70-133:   Actor states (64 actors max)
+// 134-197:  Message queue heads (64 actors)
+// 198-261:  Message queue tails (64 actors)
+// 262-325:  Message counts (64 actors)
+// 326-16709: Message queues (64 actors * 256 messages)
+// ============================================================
+
+// Configuration constants
+FixedPool.SchedulerConfig {
+    "MAX_ACTORS": Initialize=64
+    "MAX_MESSAGES": Initialize=256
+    "MEMORY_SIZE": Initialize=20000
+    "RUN_QUEUE_OFFSET": Initialize=0
+    "RUN_QUEUE_HEAD": Initialize=64
+    "RUN_QUEUE_TAIL": Initialize=65
+    "NUM_ACTORS": Initialize=66
+    "CURRENT_ACTOR": Initialize=67
+    "SCHEDULER_RUNNING": Initialize=68
+    "TOTAL_MESSAGES": Initialize=69
+    "ACTOR_STATES_OFFSET": Initialize=70
+    "MSG_HEADS_OFFSET": Initialize=134
+    "MSG_TAILS_OFFSET": Initialize=198
+    "MSG_COUNTS_OFFSET": Initialize=262
+    "MESSAGE_QUEUES_OFFSET": Initialize=326
+}
+
+// Actor states
+FixedPool.ActorState {
+    "IDLE": Initialize=0
+    "READY": Initialize=1
+    "RUNNING": Initialize=2
+    "BLOCKED": Initialize=3
+    "TERMINATED": Initialize=4
+}
+
+// Message types
+FixedPool.MessageType {
+    "DATA": Initialize=0
+    "CONTROL": Initialize=1
+    "TERMINATE": Initialize=2
+    "PING": Initialize=3
+    "RESULT": Initialize=4
+}
+
+// Global scheduler memory (this is our workaround)
+// In a real program, this would be allocated in main
+// and passed to all scheduler functions
+Function.Scheduler.CreateMemory {
+    Output: Address
+    Body: {
+        memory = ArrayCreate(SchedulerConfig.MEMORY_SIZE)
+        
+        // Initialize all values to 0
+        i = 0
+        WhileLoop LessThan(i, SchedulerConfig.MEMORY_SIZE) {
+            ArraySet(memory, i, 0)
+            i = Add(i, 1)
+        }
+        
+        // Set initial values
+        ArraySet(memory, SchedulerConfig.RUN_QUEUE_HEAD, 0)
+        ArraySet(memory, SchedulerConfig.RUN_QUEUE_TAIL, 0)
+        ArraySet(memory, SchedulerConfig.NUM_ACTORS, 0)
+        ArraySet(memory, SchedulerConfig.SCHEDULER_RUNNING, 0)
+        
+        ReturnValue(memory)
+    }
+}
+
+// Initialize scheduler
+Function.Scheduler.Init {
+    Input: sched_mem: Address
+    Output: Integer
+    Body: {
+        PrintMessage("\n[SCHEDULER] Initializing...\n")
+        
+        // Reset key values
+        ArraySet(sched_mem, SchedulerConfig.RUN_QUEUE_HEAD, 0)
+        ArraySet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL, 0)
+        ArraySet(sched_mem, SchedulerConfig.NUM_ACTORS, 0)
+        ArraySet(sched_mem, SchedulerConfig.CURRENT_ACTOR, 0)
+        ArraySet(sched_mem, SchedulerConfig.SCHEDULER_RUNNING, 0)
+        ArraySet(sched_mem, SchedulerConfig.TOTAL_MESSAGES, 0)
+        
+        // Initialize all actor states to IDLE
+        i = 0
+        WhileLoop LessThan(i, SchedulerConfig.MAX_ACTORS) {
+            state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, i)
+            ArraySet(sched_mem, state_offset, ActorState.IDLE)
+            
+            // Clear message queue counters
+            head_offset = Add(SchedulerConfig.MSG_HEADS_OFFSET, i)
+            tail_offset = Add(SchedulerConfig.MSG_TAILS_OFFSET, i)
+            count_offset = Add(SchedulerConfig.MSG_COUNTS_OFFSET, i)
+            ArraySet(sched_mem, head_offset, 0)
+            ArraySet(sched_mem, tail_offset, 0)
+            ArraySet(sched_mem, count_offset, 0)
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("[SCHEDULER] Initialized\n")
+        ReturnValue(1)
+    }
+}
+
+// Register a new actor (simplified - just takes an ID)
+Function.Scheduler.RegisterActor {
+    Input: sched_mem: Address
+    Input: actor_id: Integer
+    Output: Integer
+    Body: {
+        num_actors = ArrayGet(sched_mem, SchedulerConfig.NUM_ACTORS)
+        
+        // Validate actor_id
+        IfCondition GreaterEqual(actor_id, SchedulerConfig.MAX_ACTORS) ThenBlock: {
+            PrintMessage("[SCHEDULER] ERROR: Actor ID too large: ")
+            PrintNumber(actor_id)
+            PrintMessage("\n")
+            ReturnValue(-1)
+        }
+        
+        // Set actor state to READY
+        state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, actor_id)
+        ArraySet(sched_mem, state_offset, ActorState.READY)
+        
+        // Add to run queue
+        tail = ArrayGet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL)
+        queue_offset = Add(SchedulerConfig.RUN_QUEUE_OFFSET, tail)
+        ArraySet(sched_mem, queue_offset, actor_id)
+        
+        new_tail = Modulo(Add(tail, 1), SchedulerConfig.MAX_ACTORS)
+        ArraySet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL, new_tail)
+        
+        // Increment actor count
+        ArraySet(sched_mem, SchedulerConfig.NUM_ACTORS, Add(num_actors, 1))
+        
+        PrintMessage("[SCHEDULER] Registered actor ID ")
+        PrintNumber(actor_id)
+        PrintMessage("\n")
+        
+        ReturnValue(actor_id)
+    }
+}
+
+// Send a message to an actor
+Function.Scheduler.SendMessage {
+    Input: sched_mem: Address
+    Input: target_actor: Integer
+    Input: message_type: Integer
+    Input: message_data: Integer
+    Output: Integer
+    Body: {
+        // Get message count for target
+        count_offset = Add(SchedulerConfig.MSG_COUNTS_OFFSET, target_actor)
+        msg_count = ArrayGet(sched_mem, count_offset)
+        
+        // Check if queue is full
+        IfCondition GreaterEqual(msg_count, SchedulerConfig.MAX_MESSAGES) ThenBlock: {
+            PrintMessage("[SCHEDULER] Queue full for actor ")
+            PrintNumber(target_actor)
+            PrintMessage("\n")
+            ReturnValue(0)
+        }
+        
+        // Get tail position
+        tail_offset = Add(SchedulerConfig.MSG_TAILS_OFFSET, target_actor)
+        tail_pos = ArrayGet(sched_mem, tail_offset)
+        
+        // Calculate message slot in the flattened queue array
+        queue_base = Add(SchedulerConfig.MESSAGE_QUEUES_OFFSET,
+                         Multiply(target_actor, SchedulerConfig.MAX_MESSAGES))
+        msg_slot = Add(queue_base, tail_pos)
+        
+        // Pack and store message
+        packed_msg = Add(Multiply(message_type, 1000000), message_data)
+        ArraySet(sched_mem, msg_slot, packed_msg)
+        
+        // Update tail and count
+        new_tail = Modulo(Add(tail_pos, 1), SchedulerConfig.MAX_MESSAGES)
+        ArraySet(sched_mem, tail_offset, new_tail)
+        ArraySet(sched_mem, count_offset, Add(msg_count, 1))
+        
+        // Update total messages
+        total_msgs = ArrayGet(sched_mem, SchedulerConfig.TOTAL_MESSAGES)
+        ArraySet(sched_mem, SchedulerConfig.TOTAL_MESSAGES, Add(total_msgs, 1))
+        
+        // Wake up actor if blocked
+        state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, target_actor)
+        state = ArrayGet(sched_mem, state_offset)
+        IfCondition EqualTo(state, ActorState.BLOCKED) ThenBlock: {
+            ArraySet(sched_mem, state_offset, ActorState.READY)
+            
+            // Add back to run queue
+            tail = ArrayGet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL)
+            queue_offset = Add(SchedulerConfig.RUN_QUEUE_OFFSET, tail)
+            ArraySet(sched_mem, queue_offset, target_actor)
+            
+            new_tail = Modulo(Add(tail, 1), SchedulerConfig.MAX_ACTORS)
+            ArraySet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL, new_tail)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Receive a message
+Function.Scheduler.ReceiveMessage {
+    Input: sched_mem: Address
+    Input: actor_id: Integer
+    Output: Integer
+    Body: {
+        // Get message count
+        count_offset = Add(SchedulerConfig.MSG_COUNTS_OFFSET, actor_id)
+        msg_count = ArrayGet(sched_mem, count_offset)
+        
+        // No messages?
+        IfCondition EqualTo(msg_count, 0) ThenBlock: {
+            ReturnValue(-1)
+        }
+        
+        // Get head position
+        head_offset = Add(SchedulerConfig.MSG_HEADS_OFFSET, actor_id)
+        head_pos = ArrayGet(sched_mem, head_offset)
+        
+        // Calculate message slot
+        queue_base = Add(SchedulerConfig.MESSAGE_QUEUES_OFFSET,
+                         Multiply(actor_id, SchedulerConfig.MAX_MESSAGES))
+        msg_slot = Add(queue_base, head_pos)
+        
+        // Get message
+        packed_msg = ArrayGet(sched_mem, msg_slot)
+        
+        // Update head and count
+        new_head = Modulo(Add(head_pos, 1), SchedulerConfig.MAX_MESSAGES)
+        ArraySet(sched_mem, head_offset, new_head)
+        ArraySet(sched_mem, count_offset, Subtract(msg_count, 1))
+        
+        ReturnValue(packed_msg)
+    }
+}
+
+// Get message type from packed message
+Function.Scheduler.GetMessageType {
+    Input: packed_msg: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Divide(packed_msg, 1000000))
+    }
+}
+
+// Get message data from packed message
+Function.Scheduler.GetMessageData {
+    Input: packed_msg: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Modulo(packed_msg, 1000000))
+    }
+}
+
+// Get current actor
+Function.Scheduler.GetCurrentActor {
+    Input: sched_mem: Address
+    Output: Integer
+    Body: {
+        ReturnValue(ArrayGet(sched_mem, SchedulerConfig.CURRENT_ACTOR))
+    }
+}
+
+// Set actor state
+Function.Scheduler.SetActorState {
+    Input: sched_mem: Address
+    Input: actor_id: Integer
+    Input: new_state: Integer
+    Body: {
+        state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, actor_id)
+        ArraySet(sched_mem, state_offset, new_state)
+    }
+}
+
+// Simple round-robin scheduler step
+Function.Scheduler.Step {
+    Input: sched_mem: Address
+    Output: Integer
+    Body: {
+        head = ArrayGet(sched_mem, SchedulerConfig.RUN_QUEUE_HEAD)
+        tail = ArrayGet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL)
+        
+        // Check if queue is empty
+        IfCondition EqualTo(head, tail) ThenBlock: {
+            ReturnValue(-1)
+        }
+        
+        // Get next actor
+        queue_offset = Add(SchedulerConfig.RUN_QUEUE_OFFSET, head)
+        actor_id = ArrayGet(sched_mem, queue_offset)
+        
+        // Update head
+        new_head = Modulo(Add(head, 1), SchedulerConfig.MAX_ACTORS)
+        ArraySet(sched_mem, SchedulerConfig.RUN_QUEUE_HEAD, new_head)
+        
+        // Set current actor
+        ArraySet(sched_mem, SchedulerConfig.CURRENT_ACTOR, actor_id)
+        
+        // Set state to running
+        state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, actor_id)
+        ArraySet(sched_mem, state_offset, ActorState.RUNNING)
+        
+        ReturnValue(actor_id)
+    }
+}
+
+// Re-queue an actor
+Function.Scheduler.RequeueActor {
+    Input: sched_mem: Address
+    Input: actor_id: Integer
+    Body: {
+        tail = ArrayGet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL)
+        queue_offset = Add(SchedulerConfig.RUN_QUEUE_OFFSET, tail)
+        ArraySet(sched_mem, queue_offset, actor_id)
+        
+        new_tail = Modulo(Add(tail, 1), SchedulerConfig.MAX_ACTORS)
+        ArraySet(sched_mem, SchedulerConfig.RUN_QUEUE_TAIL, new_tail)
+        
+        // Set state to ready
+        state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, actor_id)
+        ArraySet(sched_mem, state_offset, ActorState.READY)
+    }
+}
+
+// Print scheduler statistics
+Function.Scheduler.PrintStats {
+    Input: sched_mem: Address
+    Body: {
+        PrintMessage("\n=== SCHEDULER STATS ===\n")
+        
+        num_actors = ArrayGet(sched_mem, SchedulerConfig.NUM_ACTORS)
+        total_msgs = ArrayGet(sched_mem, SchedulerConfig.TOTAL_MESSAGES)
+        
+        PrintMessage("Actors: ")
+        PrintNumber(num_actors)
+        PrintMessage("\nMessages: ")
+        PrintNumber(total_msgs)
+        PrintMessage("\n\nActor States:\n")
+        
+        i = 0
+        WhileLoop LessThan(i, num_actors) {
+            state_offset = Add(SchedulerConfig.ACTOR_STATES_OFFSET, i)
+            count_offset = Add(SchedulerConfig.MSG_COUNTS_OFFSET, i)
+            
+            state = ArrayGet(sched_mem, state_offset)
+            msg_count = ArrayGet(sched_mem, count_offset)
+            
+            PrintMessage("  Actor ")
+            PrintNumber(i)
+            PrintMessage(": state=")
+            PrintNumber(state)
+            PrintMessage(", msgs=")
+            PrintNumber(msg_count)
+            PrintMessage("\n")
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("=======================\n")
+    }
+}
+
+// Cleanup
+Function.Scheduler.Cleanup {
+    Input: sched_mem: Address
+    Body: {
+        ArrayDestroy(sched_mem)
+        PrintMessage("[SCHEDULER] Cleanup complete\n")
+    }
+}

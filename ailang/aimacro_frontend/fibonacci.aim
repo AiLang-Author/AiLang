@@ -1,0 +1,31 @@
+# fibonacci.aim
+# A more complex AIMacro program to test the compiler
+
+def fibonacci(n):
+    if n <= 1:
+        return n;
+    end;
+    
+    a = fibonacci(n - 1);
+    b = fibonacci(n - 2);
+    return a + b;
+end;
+
+def main():
+    print("Fibonacci Sequence Calculator");
+    print("==============================");
+    
+    # Test a few values
+    i = 0;
+    while i <= 10:
+        print("fibonacci(");
+        print(i);
+        print(") = ");
+        result = fibonacci(i);
+        print(result);
+        i = i + 1;
+    end;
+    
+    print("==============================");
+    print("Done!");
+end;

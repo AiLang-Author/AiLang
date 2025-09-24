@@ -1,0 +1,412 @@
+// test_aimacro_library.ailang
+// Comprehensive test harness for Library.AIMacro functions
+// Tests all Python built-in function mappings
+
+LibraryImport.AIMacro
+
+PrintMessage("====================================================")
+PrintMessage("🧪 AIMacro Library Test Harness")
+PrintMessage("Testing Python built-in function implementations")
+PrintMessage("====================================================")
+PrintMessage("")
+
+// Test tracking variables
+total_tests = 0
+passed_tests = 0
+failed_tests = 0
+test_name = ""
+expected = 0
+actual = 0
+
+// Test result helper
+SubRoutine.TestResult {
+    total_tests = Add(total_tests, 1)
+    
+    PrintMessage("  TEST: ")
+    PrintMessage(test_name)
+    PrintMessage("    Expected: ")
+    PrintNumber(expected)
+    PrintMessage("    Actual: ")
+    PrintNumber(actual)
+    
+    IfCondition EqualTo(expected, actual) ThenBlock: {
+        PrintMessage("    ✅ PASS")
+        passed_tests = Add(passed_tests, 1)
+    } ElseBlock: {
+        PrintMessage("    ❌ FAIL")
+        failed_tests = Add(failed_tests, 1)
+    }
+    PrintMessage("")
+}
+
+// Summary helper
+SubRoutine.PrintSummary {
+    PrintMessage("====================================================")
+    PrintMessage("📊 TEST SUMMARY")
+    PrintMessage("====================================================")
+    PrintMessage("Total Tests: ")
+    PrintNumber(total_tests)
+    PrintMessage("Passed: ")
+    PrintNumber(passed_tests)
+    PrintMessage("Failed: ")
+    PrintNumber(failed_tests)
+    
+    IfCondition EqualTo(failed_tests, 0) ThenBlock: {
+        PrintMessage("")
+        PrintMessage("🎉 ALL TESTS PASSED! AIMacro library is working correctly.")
+    } ElseBlock: {
+        PrintMessage("")
+        PrintMessage("⚠️  Some tests failed. Check implementation.")
+    }
+    PrintMessage("====================================================")
+}
+
+// =============================================================================
+// SECTION 1: CORE BUILT-IN FUNCTIONS
+// =============================================================================
+
+PrintMessage("📝 SECTION 1: Core Built-in Functions")
+PrintMessage("──────────────────────────────────────")
+
+// Test AIMacro.Print (visual test - should print "Hello AIMacro!")
+PrintMessage("  Testing AIMacro.Print:")
+AIMacro.Print("Hello AIMacro!")
+
+// Test AIMacro.Str (number to string conversion)
+test_name = "AIMacro.Str(42)"
+str_result = AIMacro.Str(42)
+// We'll test by checking if the result is not null/zero
+expected = 1
+actual = NotEqual(str_result, 0)
+RunTask(TestResult)
+
+// Test AIMacro.Int (string to number conversion) 
+test_name = "AIMacro.Int('123')"
+expected = 123
+actual = AIMacro.Int("123")
+RunTask(TestResult)
+
+// Test AIMacro.Bool with non-zero number
+test_name = "AIMacro.Bool(42)"
+expected = 1
+actual = AIMacro.Bool(42)
+RunTask(TestResult)
+
+// Test AIMacro.Bool with zero
+test_name = "AIMacro.Bool(0)"
+expected = 0
+actual = AIMacro.Bool(0)
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 2: MATHEMATICAL FUNCTIONS
+// =============================================================================
+
+PrintMessage("🔢 SECTION 2: Mathematical Functions")
+PrintMessage("─────────────────────────────────────")
+
+// Test AIMacro.Abs with positive number
+test_name = "AIMacro.Abs(10)"
+expected = 10
+actual = AIMacro.Abs(10)
+RunTask(TestResult)
+
+// Test AIMacro.Abs with negative number
+test_name = "AIMacro.Abs(-15)"
+expected = 15
+actual = AIMacro.Abs(-15)
+RunTask(TestResult)
+
+// Test AIMacro.Max
+test_name = "AIMacro.Max(5, 8)"
+expected = 8
+actual = AIMacro.Max(5, 8)
+RunTask(TestResult)
+
+// Test AIMacro.Min
+test_name = "AIMacro.Min(5, 8)"
+expected = 5
+actual = AIMacro.Min(5, 8)
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 3: DATA STRUCTURE CONSTRUCTORS
+// =============================================================================
+
+PrintMessage("📊 SECTION 3: Data Structure Constructors")
+PrintMessage("──────────────────────────────────────────")
+
+// Test AIMacro.List creation
+PrintMessage("  Testing AIMacro.List:")
+test_list = AIMacro.List()
+test_name = "AIMacro.List() returns non-null"
+expected = 1
+actual = NotEqual(test_list, 0)
+RunTask(TestResult)
+
+// Test AIMacro.Dict creation  
+PrintMessage("  Testing AIMacro.Dict:")
+test_dict = AIMacro.Dict()
+test_name = "AIMacro.Dict() returns non-null"
+expected = 1
+actual = NotEqual(test_dict, 0)
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 4: LIST OPERATIONS
+// =============================================================================
+
+PrintMessage("📋 SECTION 4: List Operations")
+PrintMessage("──────────────────────────────")
+
+// Create a list and test operations
+my_list = AIMacro.List()
+
+// Test list append
+PrintMessage("  Testing list.append() equivalent:")
+AIMacro.ListAppend(my_list, 10)
+AIMacro.ListAppend(my_list, 20)
+AIMacro.ListAppend(my_list, 30)
+
+// Test list length
+test_name = "List length after 3 appends"
+expected = 3
+actual = AIMacro.Len(my_list)
+RunTask(TestResult)
+
+// Test list pop
+PrintMessage("  Testing list.pop() equivalent:")
+popped = AIMacro.ListPop(my_list)
+test_name = "List pop returns last item"
+expected = 30
+actual = popped
+RunTask(TestResult)
+
+// Test length after pop
+test_name = "List length after pop"
+expected = 2
+actual = AIMacro.Len(my_list)
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 5: ITERATION FUNCTIONS
+// =============================================================================
+
+PrintMessage("🔄 SECTION 5: Iteration Functions")
+PrintMessage("──────────────────────────────────")
+
+// Test AIMacro.Range with start, stop, step
+PrintMessage("  Testing AIMacro.Range:")
+range_obj = AIMacro.Range(0, 5, 1)
+test_name = "Range(0, 5, 1) length"
+expected = 5
+actual = AIMacro.Len(range_obj)
+RunTask(TestResult)
+
+// Test AIMacro.Sum with our list
+PrintMessage("  Testing AIMacro.Sum:")
+// Our list should have [10, 20] after the pop
+test_name = "Sum of list [10, 20]"
+expected = 30
+actual = AIMacro.Sum(my_list)
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 6: STRING OPERATIONS
+// =============================================================================
+
+PrintMessage("📝 SECTION 6: String Operations")
+PrintMessage("────────────────────────────────")
+
+// Test string case conversion
+PrintMessage("  Testing string case conversion:")
+test_string = "hello"
+upper_result = AIMacro.StrUpper(test_string)
+
+// Test if uppercase operation worked (visual check)
+PrintMessage("    Original: ")
+PrintMessage(test_string)
+PrintMessage("    Uppercase: ")
+PrintMessage(upper_result)
+
+// Test string splitting
+PrintMessage("  Testing string split:")
+
+// The failing test
+split_result = AIMacro.StrSplit("a,b,c", ",")
+test_name = "Split 'a,b,c' by comma gives 3 parts"
+expected = 3
+actual = AIMacro.Len(split_result)
+RunTask(TestResult)
+
+// Edge Case: No delimiter
+split_result = AIMacro.StrSplit("abc", ",")
+test_name = "Split 'abc' with no delimiter gives 1 part"
+expected = 1
+actual = AIMacro.Len(split_result)
+RunTask(TestResult)
+
+// Edge Case: Trailing delimiter
+split_result = AIMacro.StrSplit("a,b,", ",")
+test_name = "Split 'a,b,' with trailing delimiter gives 3 parts"
+expected = 3
+actual = AIMacro.Len(split_result)
+RunTask(TestResult)
+
+// Edge Case: Leading delimiter
+split_result = AIMacro.StrSplit(",a,b", ",")
+test_name = "Split ',a,b' with leading delimiter gives 3 parts"
+expected = 3
+actual = AIMacro.Len(split_result)
+RunTask(TestResult)
+
+// Edge Case: Empty string (Python's "".split(',') -> [''], so len is 1)
+split_result = AIMacro.StrSplit("", ",")
+test_name = "Split empty string gives 1 part"
+expected = 1
+actual = AIMacro.Len(split_result)
+RunTask(TestResult)
+
+// Edge Case: Consecutive delimiters
+split_result = AIMacro.StrSplit("a,,b", ",")
+test_name = "Split 'a,,b' with consecutive delimiters gives 3 parts"
+expected = 3
+actual = AIMacro.Len(split_result)
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 7: MATH MODULE FUNCTIONS
+// =============================================================================
+
+PrintMessage("📐 SECTION 7: Math Module Functions")
+PrintMessage("────────────────────────────────────")
+
+
+// Test square root
+PrintMessage("  Testing Math.Sqrt:")
+test_name = "Math.Sqrt(16)"
+expected = 4
+actual = AIMacro.Math.Sqrt(16)
+RunTask(TestResult)
+
+// Test Pi constant
+PrintMessage("  Testing Math.Pi:")
+pi_value = AIMacro.Math.Pi()
+test_name = "Math.Pi() returns fixed-point PI"
+expected = 31416  // Fixed-point representation
+actual = pi_value
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 8: INTEGRATION TESTS
+// =============================================================================
+
+PrintMessage("🔗 SECTION 8: Integration Tests")
+PrintMessage("─────────────────────────────────")
+
+// Test combining multiple operations
+PrintMessage("  Testing complex operations:")
+
+// Create a list, populate it, and do math
+numbers = AIMacro.List()
+AIMacro.ListAppend(numbers, 1)
+AIMacro.ListAppend(numbers, 2)
+AIMacro.ListAppend(numbers, 3)
+AIMacro.ListAppend(numbers, 4)
+AIMacro.ListAppend(numbers, 5)
+
+// Test combined operations
+list_len = AIMacro.Len(numbers)
+list_sum = AIMacro.Sum(numbers)
+list_max = AIMacro.Max(list_sum, list_len)
+
+test_name = "List length [1,2,3,4,5]"
+expected = 5
+actual = list_len
+RunTask(TestResult)
+
+test_name = "List sum [1,2,3,4,5]"
+expected = 15
+actual = list_sum
+RunTask(TestResult)
+
+test_name = "Max(sum=15, len=5)"
+expected = 15
+actual = list_max
+RunTask(TestResult)
+
+// Test string and number conversion chain
+number_str = AIMacro.Str(42)
+back_to_number = AIMacro.Int(number_str)
+test_name = "String conversion round-trip"
+expected = 42
+actual = back_to_number
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// SECTION 9: EDGE CASES
+// =============================================================================
+
+PrintMessage("⚠️  SECTION 9: Edge Cases")
+PrintMessage("──────────────────────────")
+
+// Test with zero values
+zero_abs = AIMacro.Abs(0)
+test_name = "AIMacro.Abs(0)"
+expected = 0
+actual = zero_abs
+RunTask(TestResult)
+
+// Test max/min with equal values
+equal_max = AIMacro.Max(7, 7)
+test_name = "AIMacro.Max(7, 7)"
+expected = 7
+actual = equal_max
+RunTask(TestResult)
+
+// Test empty list behavior
+empty_list = AIMacro.List()
+empty_len = AIMacro.Len(empty_list)
+test_name = "Empty list length"
+expected = 0
+actual = empty_len
+RunTask(TestResult)
+
+PrintMessage("")
+
+// =============================================================================
+// FINAL SUMMARY
+// =============================================================================
+
+RunTask(PrintSummary)
+
+// =============================================================================
+// PERFORMANCE NOTES
+// =============================================================================
+
+PrintMessage("")
+PrintMessage("📊 PERFORMANCE NOTES")
+PrintMessage("───────────────────────")
+PrintMessage("• All functions are compiled to native code")
+PrintMessage("• No Python interpreter overhead")
+PrintMessage("• Direct memory management via XArrays")
+PrintMessage("• Fixed-point math for precision")
+PrintMessage("• String operations use AILang primitives")
+PrintMessage("")
+PrintMessage("🚀 Ready for AIMacro frontend integration!")

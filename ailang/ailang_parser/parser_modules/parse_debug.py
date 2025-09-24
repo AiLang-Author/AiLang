@@ -108,7 +108,7 @@ class ParserDebugMixin:
             self.consume(TokenType.RBRACE)
         
         # Create a FunctionCall node that debug_ops can handle
-        from ailang_parser.ailang_ast import FunctionCall
+        from .ailang_ast import FunctionCall
         return FunctionCall(
             function=f"DebugPerf_{operation}",
             arguments=[label_node] if label_node else [],

@@ -1,0 +1,45 @@
+// test_binary_io.ailang
+PrintMessage("Testing binary file I/O\n")
+
+// Test writing first
+buffer = ArrayCreate(10)
+ArraySet(buffer, 0, 42)
+ArraySet(buffer, 1, 100) 
+ArraySet(buffer, 2, 255)
+
+// Create filename as string literal
+filename = "testfile.bin"
+
+PrintMessage("Writing to: ")
+PrintMessage(filename)
+PrintMessage("\n")
+
+bytes_written = WriteBinaryFile(filename, buffer, 12)  // 3 ints * 4 bytes
+PrintMessage("Bytes written: ")
+PrintNumber(bytes_written)
+PrintMessage("\n")
+
+// Now try reading
+read_buffer = ArrayCreate(10)
+bytes_read = ReadBinaryFile(filename, read_buffer, 12)
+PrintMessage("Bytes read: ")
+PrintNumber(bytes_read)
+PrintMessage("\n")
+
+// Check values
+IfCondition GreaterThan(bytes_read, 0) ThenBlock: {
+    val0 = ArrayGet(read_buffer, 0)
+    val1 = ArrayGet(read_buffer, 1)
+    val2 = ArrayGet(read_buffer, 2)
+    
+    PrintMessage("Values: ")
+    PrintNumber(val0)
+    PrintMessage(", ")
+    PrintNumber(val1)
+    PrintMessage(", ")
+    PrintNumber(val2)
+    PrintMessage("\n")
+}
+
+ArrayDestroy(buffer)
+ArrayDestroy(read_buffer)

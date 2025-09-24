@@ -1,0 +1,11 @@
+LibraryImport.AIMacro
+
+SubRoutine.Main {
+        message = "Hello from AIMacro!"
+        x = Add(10, 32)
+        PrintMessage(message)
+        PrintMessage("The answer is:")
+        PrintNumber(x)
+}
+
+RunTask(Main)

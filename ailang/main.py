@@ -5,6 +5,7 @@ import os
 import argparse
 from ailang_parser.compiler import AILANGCompiler
 from ailang_compiler.ailang_compiler import AILANGToX64Compiler
+from import_resolver import enhanced_load_source
 
 def compile_ailang_to_executable(source_code, output_file, debug_level=0, perf_enabled=False, vm_mode="user"):
     """Compiles a single AILANG source string to an executable file."""
@@ -80,6 +81,9 @@ def main():
     parser.add_argument('-P:all', '--profile-all', action='store_const', const='all', dest='perf_mode',
                         help='Enable all performance counters')
     
+    parser.add_argument('--no-import-resolve', action='store_true',
+                        help='Disable automatic import resolution (for debugging)')
+    
     # Add VM mode option
     parser.add_argument('--vm-mode', choices=['user', 'kernel'], default='user',
                         help='VM operation mode (default: user)')
@@ -126,8 +130,14 @@ def main():
                 print(f"   Mode: {args.perf_mode}")
         print("="*50)
         
-        with open(source_file, 'r') as f:
-            source_code = f.read()
+        # Check if the flag is set and choose loading method accordingly
+        if args.no_import_resolve:
+            # Bypass import resolution if flag is set
+            with open(source_file, 'r') as f:
+                source_code = f.read()
+        else:
+            # Use import resolver which handles conflicts automatically
+            source_code = enhanced_load_source(source_file)
 
         success = compile_ailang_to_executable(
             source_code, 

@@ -2286,16 +2286,13 @@ class StringOps:
         return True
 
     def compile_string_split(self, node):
-        """
-        StringSplit - Simplified version inspired by reference implementation
-        But handles multi-character delimiters
-        """
+        """StringSplit - Correct implementation"""
         if len(node.arguments) != 2:
             raise ValueError("StringSplit requires 2 arguments: haystack, delimiter")
         
-        print("DEBUG: Compiling StringSplit - Simplified version")
+        print("DEBUG: Compiling StringSplit - Final fix")
         
-        # Save registers
+        # Save callee-saved registers
         self.asm.emit_push_rbx()
         self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
         self.asm.emit_bytes(0x41, 0x55)  # PUSH R13
@@ -2303,165 +2300,147 @@ class StringOps:
         self.asm.emit_bytes(0x41, 0x57)  # PUSH R15
         
         # Get arguments
-        self.compiler.compile_expression(node.arguments[1])
-        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX (delimiter)
-        self.compiler.compile_expression(node.arguments[0])
-        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX (haystack)
+        self.compiler.compile_expression(node.arguments[0])  # haystack
+        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX
         
-        # Get delimiter length
+        self.compiler.compile_expression(node.arguments[1])  # delimiter
+        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX
+        
+        # Get delimiter length ONCE and save in RBX
         self.asm.emit_bytes(0x4C, 0x89, 0xEF)  # MOV RDI, R13
         self._emit_strlen()
-        self.asm.emit_bytes(0x48, 0x89, 0xC3)  # MOV RBX, RAX (del_len in RBX)
+        self.asm.emit_mov_rbx_rax()  # RBX = delimiter length
         
-        # ===== PHASE 1: Count parts =====
-        self.asm.emit_bytes(0x4D, 0x31, 0xF6)  # XOR R14, R14 (part_count = 0)
-        self.asm.emit_bytes(0x4C, 0x89, 0xE7)  # MOV RDI, R12 (search_pos = haystack)
-        
-        count_loop = self.asm.create_label()
-        count_done = self.asm.create_label()
-        
-        self.asm.mark_label(count_loop)
-        self.asm.emit_bytes(0x4C, 0x89, 0xEE)  # MOV RSI, R13 (delimiter)
-        self._emit_strstr()
-        self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
-        self.asm.emit_jump_to_label(count_done, "JZ")
-        
-        self.asm.emit_bytes(0x49, 0xFF, 0xC6)  # INC R14 (found one)
-        self.asm.emit_bytes(0x48, 0x89, 0xC7)  # MOV RDI, RAX
-        self.asm.emit_bytes(0x48, 0x01, 0xDF)  # ADD RDI, RBX (skip delimiter)
-        self.asm.emit_jump_to_label(count_loop, "JMP")
-        
-        self.asm.mark_label(count_done)
-        self.asm.emit_bytes(0x49, 0xFF, 0xC6)  # INC R14 (add final part)
-        
-        # ===== PHASE 2: Allocate array =====
-        # Size = 16 (header) + part_count * 8 (pointers)
-        self.asm.emit_bytes(0x4C, 0x89, 0xF0)  # MOV RAX, R14
-        self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x03)  # SHL RAX, 3
-        self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x10)  # ADD RAX, 16
-        self.asm.emit_bytes(0x48, 0x89, 0xC6)  # MOV RSI, RAX
-        
-        self.asm.emit_mov_rax_imm64(9)  # mmap
+        # Create result array
+        self.asm.emit_mov_rax_imm64(9)
         self.asm.emit_mov_rdi_imm64(0)
+        self.asm.emit_mov_rsi_imm64(144)
         self.asm.emit_mov_rdx_imm64(3)
         self.asm.emit_mov_r10_imm64(0x22)
         self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)  # MOV R8, -1
         self.asm.emit_mov_r9_imm64(0)
         self.asm.emit_syscall()
         
-        self.asm.emit_bytes(0x49, 0x89, 0xC7)  # MOV R15, RAX (array_ptr)
+        self.asm.emit_bytes(0x49, 0x89, 0xC6)  # MOV R14, RAX (array)
         
-        # Initialize header
-        self.asm.emit_bytes(0x4D, 0x89, 0x37)  # MOV [R15], R14 (capacity)
-        self.asm.emit_bytes(0x4D, 0x89, 0x77, 0x08)  # MOV [R15+8], R14 (size)
+        # Initialize array
+        self.asm.emit_mov_rax_imm64(16)
+        self.asm.emit_bytes(0x49, 0x89, 0x06)  # MOV [R14], RAX
+        self.asm.emit_mov_rax_imm64(0)
+        self.asm.emit_bytes(0x49, 0x89, 0x46, 0x08)  # MOV [R14+8], RAX
         
-        # ===== PHASE 3: Split and populate =====
-        self.asm.emit_bytes(0x4C, 0x89, 0xE6)  # MOV RSI, R12 (current_pos = haystack)
-        self.asm.emit_bytes(0x48, 0x31, 0xC9)  # XOR RCX, RCX (array_idx = 0)
+        # R15 = current position
+        self.asm.emit_bytes(0x4D, 0x89, 0xE7)  # MOV R15, R12
         
-        split_loop = self.asm.create_label()
-        split_done = self.asm.create_label()
+        # Main loop
+        loop_start = self.asm.create_label()
+        add_final = self.asm.create_label()
+        done = self.asm.create_label()
         
-        self.asm.mark_label(split_loop)
+        self.asm.mark_label(loop_start)
         
-        # Find next delimiter
-        self.asm.emit_push_rcx()  # Save array_idx
-        self.asm.emit_push_rsi()  # Save current_pos
-        self.asm.emit_bytes(0x48, 0x89, 0xF7)  # MOV RDI, RSI (search from current)
-        self.asm.emit_push_rbx()  # Save del_len
-        self.asm.emit_bytes(0x4C, 0x89, 0xEE)  # MOV RSI, R13 (delimiter)
+        # Find delimiter
+        self.asm.emit_push_rbx()  # FIX: Save RBX (delimiter length) before it's clobbered
+        self.asm.emit_bytes(0x4C, 0x89, 0xFF)  # MOV RDI, R15
+        self.asm.emit_bytes(0x4C, 0x89, 0xEE)  # MOV RSI, R13
         self._emit_strstr()
-        self.asm.emit_pop_rbx()  # Restore del_len
-        self.asm.emit_pop_rsi()  # Restore current_pos
-        self.asm.emit_pop_rcx()  # Restore array_idx
+        self.asm.emit_pop_rbx()   # FIX: Restore RBX
         
         # Check if found
         self.asm.emit_bytes(0x48, 0x85, 0xC0)  # TEST RAX, RAX
-        process_final = self.asm.create_label()
-        self.asm.emit_jump_to_label(process_final, "JZ")
+        self.asm.emit_jump_to_label(add_final, "JZ")
         
-        # Calculate segment length (delimiter_pos - current_pos)
-        self.asm.emit_push_rax()  # Save delimiter_pos
-        self.asm.emit_bytes(0x48, 0x89, 0xC2)  # MOV RDX, RAX
-        self.asm.emit_bytes(0x48, 0x29, 0xF2)  # SUB RDX, RSI (segment_len)
+        # Save delimiter position
+        self.asm.emit_push_rax()
         
-        # Allocate segment buffer
-        self.asm.emit_push_rcx()  # Save array_idx
-        self.asm.emit_push_rsi()  # Save current_pos
-        self.asm.emit_push_rdx()  # Save segment_len
+        # Calculate length (delimiter_pos - current_pos)
+        self.asm.emit_mov_rcx_rax()
+        self.asm.emit_bytes(0x4C, 0x29, 0xF9)  # SUB RCX, R15
         
-        self.asm.emit_bytes(0x48, 0x89, 0xD6)  # MOV RSI, RDX
-        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI (for null)
-        self.asm.emit_mov_rax_imm64(9)
+        # Allocate buffer
+        self.asm.emit_push_rcx() # Save original length
         self.asm.emit_mov_rdi_imm64(0)
+        self.asm.emit_mov_rsi_rcx() # RSI = length
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI (for null terminator)
         self.asm.emit_mov_rdx_imm64(3)
         self.asm.emit_mov_r10_imm64(0x22)
         self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)
         self.asm.emit_mov_r9_imm64(0)
+        self.asm.emit_mov_rax_imm64(9)
         self.asm.emit_syscall()
         
         # Copy segment
-        self.asm.emit_bytes(0x48, 0x89, 0xC7)  # MOV RDI, RAX (dest)
-        self.asm.emit_bytes(0x49, 0x89, 0xC0)  # MOV R8, RAX (save buffer ptr)
-        self.asm.emit_pop_rcx()  # Get segment_len
-        self.asm.emit_pop_rsi()  # Get current_pos
+        self.asm.emit_mov_rdi_rax() # RDI = destination
+        self.asm.emit_push_rdi()    # Save destination buffer address
+        
+        self.asm.emit_bytes(0x4C, 0x89, 0xFE)  # MOV RSI, R15
+        self.asm.emit_bytes(0x48, 0x8B, 0x4C, 0x24, 0x08) # MOV RCX, [RSP+8] (get saved length)
+        
         self.asm.emit_bytes(0xF3, 0xA4)  # REP MOVSB
-        self.asm.emit_bytes(0xC6, 0x07, 0x00)  # MOV BYTE [RDI], 0
+        self.asm.emit_bytes(0xC6, 0x07, 0x00)  # null terminate
         
-        # Store pointer in array
-        self.asm.emit_pop_rcx()  # Get array_idx
-        self.asm.emit_bytes(0x48, 0x89, 0xC8)  # MOV RAX, RCX
-        self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x03)  # SHL RAX, 3
-        self.asm.emit_bytes(0x49, 0x8D, 0x44, 0x07, 0x10)  # LEA RAX, [R15+RAX+16]
-        self.asm.emit_bytes(0x4C, 0x89, 0x00)  # MOV [RAX], R8
+        # Add to array
+        self.asm.emit_pop_rax()  # Get buffer address
+        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x08) # ADD RSP, 8 (clean up saved length)
+        self.asm.emit_bytes(0x49, 0x8B, 0x4E, 0x08)  # MOV RCX, [R14+8]
+        self.asm.emit_bytes(0x48, 0xC1, 0xE1, 0x03)  # SHL RCX, 3
+        self.asm.emit_bytes(0x49, 0x8D, 0x4C, 0x0E, 0x10)  # LEA RCX, [R14+RCX+16]
+        self.asm.emit_bytes(0x48, 0x89, 0x01)  # MOV [RCX], RAX
+        self.asm.emit_bytes(0x49, 0xFF, 0x46, 0x08)  # INC [R14+8]
         
-        # Update for next iteration
-        self.asm.emit_bytes(0x48, 0xFF, 0xC1)  # INC RCX (array_idx++)
-        self.asm.emit_pop_rsi()  # Get delimiter_pos
-        self.asm.emit_bytes(0x48, 0x01, 0xDE)  # ADD RSI, RBX (skip delimiter)
-        self.asm.emit_jump_to_label(split_loop, "JMP")
+        # Move past delimiter: delimiter_pos + delimiter_length
+        self.asm.emit_pop_rax()  # Get delimiter position
+        self.asm.emit_bytes(0x48, 0x01, 0xD8)  # ADD RAX, RBX (add delimiter length)
+        self.asm.emit_bytes(0x49, 0x89, 0xC7)  # MOV R15, RAX (update current position)
         
-        # Process final segment
-        self.asm.mark_label(process_final)
+        self.asm.emit_jump_to_label(loop_start, "JMP")
         
-        # Get length of remaining string
-        self.asm.emit_push_rcx()  # Save array_idx
-        self.asm.emit_push_rsi()  # Save current_pos
-        self.asm.emit_bytes(0x48, 0x89, 0xF7)  # MOV RDI, RSI
+        # Add final segment
+        self.asm.mark_label(add_final)
+        
+        # Get remaining length
+        self.asm.emit_bytes(0x4C, 0x89, 0xFF)  # MOV RDI, R15
         self._emit_strlen()
-        self.asm.emit_bytes(0x48, 0x89, 0xC2)  # MOV RDX, RAX (final_len)
+        self.asm.emit_mov_rcx_rax()
         
+        # Always add the final segment, even if it's empty.
+        # The previous "JZ" check was buggy.
+
         # Allocate final buffer
-        self.asm.emit_push_rdx()  # Save final_len
-        self.asm.emit_bytes(0x48, 0x89, 0xD6)  # MOV RSI, RDX
-        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
-        self.asm.emit_mov_rax_imm64(9)
+        self.asm.emit_push_rcx()  # Save length
         self.asm.emit_mov_rdi_imm64(0)
+        self.asm.emit_mov_rsi_rcx()
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
         self.asm.emit_mov_rdx_imm64(3)
         self.asm.emit_mov_r10_imm64(0x22)
         self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)
         self.asm.emit_mov_r9_imm64(0)
+        self.asm.emit_mov_rax_imm64(9)
         self.asm.emit_syscall()
         
         # Copy final segment
-        self.asm.emit_bytes(0x48, 0x89, 0xC7)  # MOV RDI, RAX
-        self.asm.emit_bytes(0x49, 0x89, 0xC0)  # MOV R8, RAX (save buffer)
-        self.asm.emit_pop_rcx()  # Get final_len
-        self.asm.emit_pop_rsi()  # Get current_pos
+        self.asm.emit_mov_rdi_rax() # RDI = destination
+        self.asm.emit_push_rdi()    # Save destination buffer address
+        
+        self.asm.emit_bytes(0x4C, 0x89, 0xFE)  # MOV RSI, R15
+        self.asm.emit_bytes(0x48, 0x8B, 0x4C, 0x24, 0x08) # MOV RCX, [RSP+8] (get saved length)
         self.asm.emit_bytes(0xF3, 0xA4)  # REP MOVSB
-        self.asm.emit_bytes(0xC6, 0x07, 0x00)  # MOV BYTE [RDI], 0
+        self.asm.emit_bytes(0xC6, 0x07, 0x00)  # null terminate
         
-        # Store final pointer
-        self.asm.emit_pop_rcx()  # Get array_idx
-        self.asm.emit_bytes(0x48, 0x89, 0xC8)  # MOV RAX, RCX
-        self.asm.emit_bytes(0x48, 0xC1, 0xE0, 0x03)  # SHL RAX, 3
-        self.asm.emit_bytes(0x49, 0x8D, 0x44, 0x07, 0x10)  # LEA RAX, [R15+RAX+16]
-        self.asm.emit_bytes(0x4C, 0x89, 0x00)  # MOV [RAX], R8
+        # Add to array
+        self.asm.emit_pop_rax()  # Get buffer address
+        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x08) # ADD RSP, 8 (clean up saved length)
+        self.asm.emit_bytes(0x49, 0x8B, 0x4E, 0x08)  # MOV RCX, [R14+8]
+        self.asm.emit_bytes(0x48, 0xC1, 0xE1, 0x03)  # SHL RCX, 3
+        self.asm.emit_bytes(0x49, 0x8D, 0x4C, 0x0E, 0x10)  # LEA RCX, [R14+RCX+16]
+        self.asm.emit_bytes(0x48, 0x89, 0x01)  # MOV [RCX], RAX
+        self.asm.emit_bytes(0x49, 0xFF, 0x46, 0x08)  # INC [R14+8]
         
-        self.asm.mark_label(split_done)
+        self.asm.emit_jump_to_label(done, "JMP")
+        self.asm.mark_label(done)
         
-        # Return array pointer
-        self.asm.emit_bytes(0x4C, 0x89, 0xF8)  # MOV RAX, R15
+        # Return array
+        self.asm.emit_bytes(0x4C, 0x89, 0xF0)  # MOV RAX, R14
         
         # Restore registers
         self.asm.emit_bytes(0x41, 0x5F)  # POP R15

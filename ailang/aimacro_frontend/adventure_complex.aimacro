@@ -1,0 +1,131 @@
+# adventure_complex.aim - A more complex adventure with multiple paths
+
+def explore_cave(torch_level, health):
+    print("Deep in the cave...");
+    
+    if torch_level > 0:
+        print("Your torch reveals three passages:");
+        print("1. A narrow crack with strange sounds");
+        print("2. A wide tunnel sloping downward");
+        print("3. Stone steps leading up");
+        
+        # Simulate different outcomes
+        path = 2;  # Simulated choice
+        
+        if path == 1:
+            print("You squeeze through the crack...");
+            print("You find a treasure chest!");
+            return 50;  # Return gold found
+        elif path == 2:
+            print("You descend into darkness...");
+            print("A bat swarm attacks! You lose 20 health!");
+            return -20;  # Return health loss
+        else:
+            print("You climb the ancient steps...");
+            print("You find a healing fountain!");
+            return 100;  # Return health bonus
+        end;
+    else:
+        print("Without light, you stumble in darkness!");
+        print("You fall into a pit! Lost 30 health!");
+        return -30;
+    end;
+    
+    return 0;
+end;
+
+def check_inventory(torches, keys, gold):
+    print("=== Inventory ===");
+    print("Torches: ");
+    print(torches);
+    print("Keys: ");
+    print(keys);
+    print("Gold: ");
+    print(gold);
+    print("================");
+end;
+
+def main():
+    print("CAVE ADVENTURE DELUXE v2.0");
+    print("===========================");
+    
+    health = 100;
+    torches = 0;
+    keys = 0;
+    gold = 0;
+    turns = 0;
+    
+    # Game loop simulation (5 turns)
+    while turns < 5:
+        print("");
+        print("Turn ");
+        print(turns + 1);
+        print("-------");
+        
+        print("Health: ");
+        print(health);
+        
+        # Different events based on turn
+        if turns == 0:
+            print("You find a torch at the entrance!");
+            torches = torches + 1;
+        elif turns == 1:
+            print("Entering the cave...");
+            result = explore_cave(torches, health);
+            if result > 0:
+                gold = gold + result;
+            else:
+                health = health + result;
+            end;
+        elif turns == 2:
+            print("You meet a mysterious merchant.");
+            print("He offers a key for 30 gold.");
+            if gold >= 30:
+                print("You buy the key!");
+                keys = keys + 1;
+                gold = gold - 30;
+            else:
+                print("Not enough gold!");
+            end;
+        elif turns == 3:
+            if keys > 0:
+                print("You find a locked door and use your key!");
+                print("Inside: 100 gold and a magic torch!");
+                gold = gold + 100;
+                torches = torches + 1;
+            else:
+                print("You find a locked door but have no key.");
+            end;
+        else:
+            print("Time to leave the cave!");
+        end;
+        
+        # Check if dead
+        if health <= 0:
+            print("YOU DIED! Game Over!");
+            turns = 10;  # Force exit
+        end;
+        
+        turns = turns + 1;
+    end;
+    
+    print("");
+    print("=== GAME OVER ===");
+    print("Final Stats:");
+    check_inventory(torches, keys, gold);
+    print("Final Health: ");
+    print(health);
+    
+    # Calculate score
+    score = health + gold + (keys * 50) + (torches * 25);
+    print("Total Score: ");
+    print(score);
+    
+    if score > 200:
+        print("Rank: MASTER EXPLORER!");
+    elif score > 100:
+        print("Rank: Adventurer");
+    else:
+        print("Rank: Cave Newbie");
+    end;
+end;

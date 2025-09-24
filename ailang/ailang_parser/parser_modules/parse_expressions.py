@@ -33,7 +33,7 @@ class ParserExpressionsMixin:
                 TokenType.STRINGSPLIT,
                 TokenType.STRINGTRIM, TokenType.STRINGREPLACE, TokenType.STRINGTOSTRING,
                 TokenType.STRINGEXTRACT, TokenType.STRINGCHARAT, TokenType.STRINGEXTRACTUNTIL,
-                TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS):
+                TokenType.WRITETEXTFILE, TokenType.READTEXTFILE, TokenType.FILEEXISTS, TokenType.READBINARYFILE, TokenType.WRITEBINARYFILE):
             return self.parse_math_function()
    
         # === NEW: Low-Level Function Parsing ===

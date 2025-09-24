@@ -1,0 +1,997 @@
+// tiny_llm_enhanced.ailang
+// Enhanced transformer implementation with better debugging and larger model
+// Target: ~500K parameters, 2 layers, 256 hidden dim
+
+// Model configuration - BIGGER!
+// Doubled hidden_dim from 128 to 256
+// Doubled num_heads from 4 to 8  
+// Doubled max_seq_len from 64 to 128
+// Increased layers from 1 to 2
+FixedPool.ModelConfig {
+    "vocab_size": Initialize=256
+    "hidden_dim": Initialize=512 
+    "num_heads": Initialize=16
+    "head_dim": Initialize=32 
+    "max_seq_len": Initialize=128
+    "num_layers": Initialize=2
+}
+
+// State for the pseudo-random number generator
+FixedPool.RandomState {
+    "seed": Initialize=12345
+}
+
+// Simple pseudo-random number generator (LCG)
+// Returns a value between 0 and 1000
+Function.TinyLLM.Random {
+    Output: Integer
+    Body: {
+        // LCG parameters (from "Numerical Recipes")
+        a = 1664525
+        c = 1013904223
+        m = 4294967296 // 2^32
+
+        // Update seed: seed = (a * seed + c) % m
+        current_seed = RandomState.seed
+        new_seed = Modulo(Add(Multiply(current_seed, a), c), m)
+        RandomState.seed = new_seed
+
+        // Scale to 0-1000
+        ReturnValue(Modulo(new_seed, 1001))
+    }
+}
+
+// Activation function - simplified GELU
+Function.TinyLLM.GELU {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        // GELU (Gaussian Error Linear Unit) approximation: x * sigmoid(1.702 * x)
+        // Using a "Hard Sigmoid" approximation for the sigmoid part.
+        // All values are fixed-point, scaled by 1000.
+        
+        // Calculate y = 1.702 * x. The result y is also scaled by 1000.
+        y = Divide(Multiply(x, 1702), 1000)
+        
+        // Approximate sigmoid(y) using Hard Sigmoid: max(0, min(1, 0.2*y + 0.5))
+        // In fixed point, this is: clamp(y/5 + 500, 0, 1000)
+        sigmoid_y = Add(Divide(y, 5), 500)
+        
+        IfCondition LessThan(sigmoid_y, 0) ThenBlock: {
+            sigmoid_y = 0
+        }
+        IfCondition GreaterThan(sigmoid_y, 1000) ThenBlock: {
+            sigmoid_y = 1000
+        }
+        
+        // Final result: x * sigmoid_y
+        // We divide by 1000 to correct for the scaling of sigmoid_y
+        result = Divide(Multiply(x, sigmoid_y), 1000)
+        ReturnValue(result)
+    }
+}
+
+// Softmax with debug output
+Function.TinyLLM.Softmax {
+    Input: scores: Address
+    Input: length: Integer
+    Output: Address
+    Body: {
+        PrintMessage("  Softmax: processing ")
+        PrintNumber(length)
+        PrintMessage(" scores\n")
+        
+        result = ArrayCreate(length)
+        
+        // Find max for numerical stability
+        max_val = ArrayGet(scores, 0)
+        i = 1
+        WhileLoop LessThan(i, length) {
+            val = ArrayGet(scores, i)
+            IfCondition GreaterThan(val, max_val) ThenBlock: {
+                max_val = val
+            }
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("    Max score: ")
+        PrintNumber(max_val)
+        PrintMessage("\n")
+        
+        // Compute exp and sum
+        sum = 0
+        i = 0
+        WhileLoop LessThan(i, length) {
+            val = Subtract(ArrayGet(scores, i), max_val)
+
+            // Since val = score - max_score, val is always <= 0.
+            // We need a good approximation for exp(x) for x <= 0.
+            // We use exp(x) = 1 / exp(-x). Let pos_val = -x.
+            // Then approx exp(pos_val) with 1 + pos_val + pos_val^2/2
+            pos_val = Negate(val)
+            pos_val_sq = Divide(Multiply(pos_val, pos_val), 1000) // (pos_val/1000)^2 * 1000
+            denom = Add(1000, Add(pos_val, Divide(pos_val_sq, 2)))
+            
+            exp_val = 0
+            IfCondition NotEqual(denom, 0) ThenBlock: {
+                exp_val = Divide(1000000, denom) // 1000 * (1000 / approx_exp)
+            }
+
+            ArraySet(result, i, exp_val)
+            sum = Add(sum, exp_val)
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("    Sum of exp: ")
+        PrintNumber(sum)
+        PrintMessage("\n")
+        
+        // Normalize
+        i = 0
+        WhileLoop LessThan(i, length) {
+            val = ArrayGet(result, i)
+            normalized = Divide(Multiply(val, 1000), sum)
+            ArraySet(result, i, normalized)
+            i = Add(i, 1)
+        }
+        
+        // Show top 3 probabilities
+        PrintMessage("    Top probs: ")
+        i = 0
+        WhileLoop LessThan(i, 3) {
+            PrintNumber(ArrayGet(result, i))
+            PrintMessage(" ")
+            i = Add(i, 1)
+        }
+        PrintMessage("\n")
+        
+        ReturnValue(result)
+    }
+}
+
+// Enhanced matrix multiplication with progress
+Function.TinyLLM.MatMul {
+    Input: A: Address
+    Input: B: Address
+    Input: m: Integer
+    Input: k: Integer
+    Input: n: Integer
+    Output: Address
+    Body: {
+        PrintMessage("  MatMul: [")
+        PrintNumber(m)
+        PrintMessage("x")
+        PrintNumber(k)
+        PrintMessage("] @ [")
+        PrintNumber(k)
+        PrintMessage("x")
+        PrintNumber(n)
+        PrintMessage("]\n")
+        
+        result = ArrayCreate(Multiply(m, n))
+        // Zero-initialize the result matrix, this is a CRITICAL fix.
+        // Without this, MatMul accumulates on top of uninitialized memory (garbage).
+        i = 0
+        total_size = Multiply(m, n)
+        WhileLoop LessThan(i, total_size) {
+            ArraySet(result, i, 0)
+            i = Add(i, 1)
+        }
+        tile_size = 16  // Larger tile for better cache use
+        
+        total_tiles = Divide(Multiply(m, n), Multiply(tile_size, tile_size))
+        tiles_done = 0
+        
+        i_tile = 0
+        WhileLoop LessThan(i_tile, m) {
+            j_tile = 0
+            WhileLoop LessThan(j_tile, n) {
+                k_tile = 0
+                WhileLoop LessThan(k_tile, k) {
+                    // Process tile
+                    i = i_tile
+                    i_end = Add(i_tile, tile_size)
+                    IfCondition GreaterThan(i_end, m) ThenBlock: { i_end = m }
+                    
+                    WhileLoop LessThan(i, i_end) {
+                        j = j_tile
+                        j_end = Add(j_tile, tile_size)
+                        IfCondition GreaterThan(j_end, n) ThenBlock: { j_end = n }
+                        
+                        WhileLoop LessThan(j, j_end) {
+                            // Accumulate the dot product for this tile without premature division
+                            tile_dot_product = 0
+                            k_idx = k_tile
+                            k_end = Add(k_tile, tile_size)
+                            IfCondition GreaterThan(k_end, k) ThenBlock: { k_end = k }
+                            
+                            WhileLoop LessThan(k_idx, k_end) {
+                                a_val = ArrayGet(A, Add(Multiply(i, k), k_idx))
+                                b_val = ArrayGet(B, Add(Multiply(k_idx, n), j))
+                                tile_dot_product = Add(tile_dot_product, Multiply(a_val, b_val))
+                                k_idx = Add(k_idx, 1)
+                            }
+                            
+                            // Now, scale the tile's result and add it to the main result matrix
+                            current_sum = ArrayGet(result, Add(Multiply(i, n), j))
+                            new_sum = Add(current_sum, Divide(tile_dot_product, 1000))
+                            ArraySet(result, Add(Multiply(i, n), j), new_sum)
+                            j = Add(j, 1)
+                        }
+                        i = Add(i, 1)
+                    }
+                    
+                    tiles_done = Add(tiles_done, 1)
+                    // Progress every 10 tiles
+                    IfCondition EqualTo(Modulo(tiles_done, 10), 0) ThenBlock: {
+                        PrintMessage("    Progress: ")
+                        PrintNumber(tiles_done)
+                        PrintMessage(" tiles\n")
+                    }
+                    
+                    k_tile = Add(k_tile, tile_size)
+                }
+                j_tile = Add(j_tile, tile_size)
+            }
+            i_tile = Add(i_tile, tile_size)
+        }
+        
+        PrintMessage("    MatMul complete\n")
+        ReturnValue(result)
+    }
+}
+
+// Enhanced attention mechanism with visualization
+Function.TinyLLM.Attention {
+    Input: Q: Address
+    Input: K: Address
+    Input: V: Address
+    Input: seq_len: Integer
+    Input: dim: Integer
+    Output: Address
+    Body: {
+        PrintMessage("\n  === Attention Layer ===\n")
+        PrintMessage("  Sequence length: ")
+        PrintNumber(seq_len)
+        PrintMessage(", Dimension: ")
+        PrintNumber(dim)
+        PrintMessage("\n")
+        
+        // Compute Q @ K^T
+        scores = ArrayCreate(Multiply(seq_len, seq_len))
+        
+        PrintMessage("  Computing attention scores...\n")
+        i = 0
+        WhileLoop LessThan(i, seq_len) {
+            j = 0
+            WhileLoop LessThan(j, seq_len) {
+                sum = 0
+                k = 0
+                WhileLoop LessThan(k, dim) {
+                    q_val = ArrayGet(Q, Add(Multiply(i, dim), k))
+                    k_val = ArrayGet(K, Add(Multiply(j, dim), k))
+                    // Accumulate high-precision product first to prevent precision loss
+                    sum = Add(sum, Multiply(q_val, k_val))
+                    k = Add(k, 1)
+                }
+                // Now, scale the final dot product sum and also scale by sqrt(dim).
+                // This fixes a bug where '16' was hardcoded.
+                scaled = Divide(Divide(sum, 1000), IntegerSquareRoot(dim))
+
+                // Apply causal mask: prevent attention to future tokens
+                IfCondition GreaterThan(j, i) ThenBlock: {
+                    scaled = -99999 // Large negative number to zero out after softmax
+                }
+
+                ArraySet(scores, Add(Multiply(i, seq_len), j), scaled)
+                j = Add(j, 1)
+            }
+            
+            // Show progress for long sequences
+            IfCondition EqualTo(Modulo(i, 10), 0) ThenBlock: {
+                PrintMessage("    Row ")
+                PrintNumber(i)
+                PrintMessage(" computed\n")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  Applying softmax to attention scores...\n")
+        attention_weights = ArrayCreate(Multiply(seq_len, seq_len))
+        i = 0
+        WhileLoop LessThan(i, seq_len) {
+            row = ArrayCreate(seq_len)
+            j = 0
+            WhileLoop LessThan(j, seq_len) {
+                ArraySet(row, j, ArrayGet(scores, Add(Multiply(i, seq_len), j)))
+                j = Add(j, 1)
+            }
+            
+            softmax_row = TinyLLM.Softmax(row, seq_len)
+            
+            j = 0
+            WhileLoop LessThan(j, seq_len) {
+                ArraySet(attention_weights, Add(Multiply(i, seq_len), j), 
+                        ArrayGet(softmax_row, j))
+                j = Add(j, 1)
+            }
+            
+            ArrayDestroy(row)
+            ArrayDestroy(softmax_row)
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  Computing attention output...\n")
+        output = TinyLLM.MatMul(attention_weights, V, seq_len, seq_len, dim)
+        
+        ArrayDestroy(scores)
+        ArrayDestroy(attention_weights)
+        
+        PrintMessage("  === Attention Complete ===\n\n")
+        ReturnValue(output)
+    }
+}
+
+// Token embedding with vocabulary info
+Function.TinyLLM.Embed {
+    Input: token_ids: Address
+    Input: seq_len: Integer
+    Input: embedding_table: Address
+    Output: Address
+    Body: {
+        hidden_dim = ModelConfig.hidden_dim
+        
+        PrintMessage("  Embedding ")
+        PrintNumber(seq_len)
+        PrintMessage(" tokens into dim ")
+        PrintNumber(hidden_dim)
+        PrintMessage("\n")
+        
+        embeddings = ArrayCreate(Multiply(seq_len, hidden_dim))
+        
+        i = 0
+        WhileLoop LessThan(i, seq_len) {
+            token_id = ArrayGet(token_ids, i)
+            
+            PrintMessage("    Token[")
+            PrintNumber(i)
+            PrintMessage("] = ")
+            PrintNumber(token_id)
+            
+            // Show character if printable ASCII
+            IfCondition And(GreaterThan(token_id, 31), LessThan(token_id, 127)) ThenBlock: {
+                PrintMessage(" (char ")
+                PrintNumber(token_id)
+                PrintMessage(")")
+            }
+            PrintMessage("\n")
+            
+            // Copy embedding vector for this token
+            j = 0
+            WhileLoop LessThan(j, hidden_dim) {
+                weight = ArrayGet(embedding_table, 
+                                 Add(Multiply(token_id, hidden_dim), j))
+                ArraySet(embeddings, Add(Multiply(i, hidden_dim), j), weight)
+                j = Add(j, 1)
+            }
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(embeddings)
+    }
+}
+
+// Integer Square Root (Babylonian method) for LayerNorm
+Function.IntegerSquareRoot {
+    Input: n: Integer
+    Output: Integer
+    Body: {
+        IfCondition LessThan(n, 0) ThenBlock: { ReturnValue(0) }
+        IfCondition EqualTo(n, 0) ThenBlock: { ReturnValue(0) }
+        
+        x = n
+        y = 1
+        // 20 iterations is more than enough for 64-bit integers
+        i = 0
+        WhileLoop LessThan(i, 20) {
+            x = Divide(Add(x, y), 2)
+            // Prevent division by zero if x becomes 0
+            IfCondition EqualTo(x, 0) ThenBlock: { ReturnValue(y) }
+            y = Divide(n, x)
+            i = Add(i, 1)
+        }
+        ReturnValue(x)
+    }
+}
+
+// Layer Normalization, applied in-place to a matrix
+Function.TinyLLM.LayerNorm {
+    Input: input_matrix: Address
+    Input: seq_len: Integer
+    Input: dim: Integer
+    Body: {
+        // Epsilon for numerical stability, scaled for fixed-point math
+        epsilon = 10 // Corresponds to 1e-5
+
+        i = 0
+        WhileLoop LessThan(i, seq_len) {
+            row_offset = Multiply(i, dim)
+            
+            // 1. Calculate mean for the row
+            sum = 0
+            j = 0
+            WhileLoop LessThan(j, dim) {
+                sum = Add(sum, ArrayGet(input_matrix, Add(row_offset, j)))
+                j = Add(j, 1)
+            }
+            mean = Divide(sum, dim)
+
+            // 2. Calculate variance for the row
+            var_sum = 0
+            j = 0
+            WhileLoop LessThan(j, dim) {
+                diff = Subtract(ArrayGet(input_matrix, Add(row_offset, j)), mean)
+                sq_diff = Divide(Multiply(diff, diff), 1000)
+                var_sum = Add(var_sum, sq_diff)
+                j = Add(j, 1)
+            }
+            variance = Divide(var_sum, dim)
+
+            // 3. Calculate inverse square root
+            inv_sqrt_val = IntegerSquareRoot(Add(variance, epsilon))
+            
+            inv_sqrt = 0 // Default to 0 to avoid division by zero
+            IfCondition NotEqual(inv_sqrt_val, 0) ThenBlock: {
+                // Correct fixed-point math for: (1 / sqrt(variance_true)) * 1000
+                // This was the source of the numerical instability. The previous value was 1000x too large.
+                // The correct calculation is (1000 * sqrt(1000)) / sqrt(variance_fp) = 31622 / inv_sqrt_val
+                inv_sqrt = Divide(31622, inv_sqrt_val)
+            }
+
+            // 4. Normalize the row in-place
+            j = 0
+            WhileLoop LessThan(j, dim) {
+                diff = Subtract(ArrayGet(input_matrix, Add(row_offset, j)), mean)
+                normalized = Divide(Multiply(diff, inv_sqrt), 1000)
+                ArraySet(input_matrix, Add(row_offset, j), normalized)
+                j = Add(j, 1)
+            }
+            i = Add(i, 1)
+        }
+    }
+}
+
+// Multi-layer transformer
+Function.TinyLLM.TransformerBlock {
+    Input: input: Address
+    Input: seq_len: Integer
+    Input: weights: Address
+    Input: layer_num: Integer
+    Output: Address
+    Body: {
+        PrintMessage("\n=== Transformer Layer ")
+        PrintNumber(layer_num)
+        PrintMessage(" ===\n")
+        
+        hidden_dim = ModelConfig.hidden_dim
+        
+        // Weight offsets for this layer
+        layer_offset = Multiply(layer_num, Multiply(3, Multiply(hidden_dim, hidden_dim)))
+        W_q = Add(weights, layer_offset)
+        W_k = Add(weights, Add(layer_offset, Multiply(hidden_dim, hidden_dim)))
+        W_v = Add(weights, Add(layer_offset, Multiply(2, Multiply(hidden_dim, hidden_dim))))
+        
+        // Compute Q, K, V
+        PrintMessage("Computing Q, K, V projections...\n")
+        Q = TinyLLM.MatMul(input, W_q, seq_len, hidden_dim, hidden_dim)
+        K = TinyLLM.MatMul(input, W_k, seq_len, hidden_dim, hidden_dim)
+        V = TinyLLM.MatMul(input, W_v, seq_len, hidden_dim, hidden_dim)
+        
+        // Multi-head attention
+        attention_output = TinyLLM.Attention(Q, K, V, seq_len, hidden_dim)
+        
+        // First residual connection
+        PrintMessage("Adding residual connection...\n")
+        residual1 = ArrayCreate(Multiply(seq_len, hidden_dim))
+        i = 0
+        total_elements = Multiply(seq_len, hidden_dim)
+        WhileLoop LessThan(i, total_elements) {
+            val = Add(ArrayGet(input, i), ArrayGet(attention_output, i))
+            ArraySet(residual1, i, val)
+            i = Add(i, 1)
+        }
+        ArrayDestroy(attention_output)
+
+        // First LayerNorm
+        PrintMessage("Applying LayerNorm 1...\n")
+        TinyLLM.LayerNorm(residual1, seq_len, hidden_dim)
+        
+        // Feedforward part (GELU)
+        PrintMessage("Applying activation function...\n")
+        ff_output = ArrayCreate(total_elements)
+        i = 0
+        WhileLoop LessThan(i, total_elements) {
+            val = ArrayGet(residual1, i)
+            activated = TinyLLM.GELU(val)
+            ArraySet(ff_output, i, activated)
+            i = Add(i, 1)
+        }
+
+        // Second residual connection
+        PrintMessage("Adding second residual connection...\n")
+        residual2 = ArrayCreate(total_elements)
+        i = 0
+        WhileLoop LessThan(i, total_elements) {
+            val = Add(ArrayGet(residual1, i), ArrayGet(ff_output, i))
+            ArraySet(residual2, i, val)
+            i = Add(i, 1)
+        }
+        ArrayDestroy(residual1)
+        ArrayDestroy(ff_output)
+        
+        // Cleanup
+        ArrayDestroy(Q)
+        ArrayDestroy(K)
+        ArrayDestroy(V)
+        
+        // Second LayerNorm
+        PrintMessage("Applying LayerNorm 2...\n")
+        TinyLLM.LayerNorm(residual2, seq_len, hidden_dim)
+
+        PrintMessage("=== Layer ")
+        PrintNumber(layer_num)
+        PrintMessage(" Complete ===\n\n")
+        
+        ReturnValue(residual2)
+    }
+}
+
+// Generate next token
+Function.TinyLLM.GenerateToken {
+    Input: input_tokens: Address
+    Input: num_tokens: Integer
+    Input: model_weights: Address
+    Input: temperature: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("\n🤖 Generating next token...\n")
+        PrintMessage("Input sequence length: ")
+        PrintNumber(num_tokens)
+        PrintMessage("\nTemperature: ")
+        PrintNumber(temperature)
+        PrintMessage(" (1000 = 1.0)\n\n")
+        
+        // Get embeddings
+        embedding_weights = model_weights
+        embedded = TinyLLM.Embed(input_tokens, num_tokens, embedding_weights)
+        
+        // Pass through transformer layers
+        layer_weights = Add(model_weights, 
+                          Multiply(ModelConfig.vocab_size, ModelConfig.hidden_dim))
+        
+        // Correctly manage memory through the pipeline of layers
+        input_for_layer = embedded
+        layer = 0
+        WhileLoop LessThan(layer, ModelConfig.num_layers) {
+            output_from_layer = TinyLLM.TransformerBlock(input_for_layer, num_tokens, layer_weights, layer)
+            
+            // The input for the current layer is now processed, so we can destroy it.
+            ArrayDestroy(input_for_layer)
+            
+            // The output of this layer becomes the input for the next.
+            input_for_layer = output_from_layer
+            layer = Add(layer, 1)
+        }
+        // The final result is in the loop variable
+        current_output = input_for_layer
+        
+        // Take last token's output
+        last_token_offset = Multiply(Subtract(num_tokens, 1), ModelConfig.hidden_dim)
+        
+        PrintMessage("\n📊 Computing vocabulary scores...\n")
+        
+        // Get pointer to the start of the output projection weights
+        embedding_params = Multiply(ModelConfig.vocab_size, ModelConfig.hidden_dim)
+        attention_params = Multiply(ModelConfig.num_layers, 
+                                   Multiply(3, Multiply(ModelConfig.hidden_dim, ModelConfig.hidden_dim)))
+        output_proj_offset = Add(embedding_params, attention_params)
+        output_proj_weights = Add(model_weights, output_proj_offset)
+
+
+        // Project to vocabulary with temperature
+        all_scores = ArrayCreate(ModelConfig.vocab_size)
+        
+        token_id = 0
+        WhileLoop LessThan(token_id, ModelConfig.vocab_size) {
+            score = 0
+            i = 0
+            // Perform dot product: last_token_output . output_proj_column(token_id)
+            WhileLoop LessThan(i, ModelConfig.hidden_dim) {
+                // Get value from the last token's output state
+                last_token_val = ArrayGet(current_output, Add(last_token_offset, i))
+                
+                // Get corresponding weight from the output projection matrix.
+                // The matrix is (hidden_dim, vocab_size), flattened row-major.
+                // Weight for hidden_dim 'i' and vocab_token 'token_id' is at:
+                // output_proj[i][token_id] -> index = i * vocab_size + token_id
+                weight_index = Add(Multiply(i, ModelConfig.vocab_size), token_id)
+                weight = ArrayGet(output_proj_weights, weight_index)
+                
+                // Accumulate dot product (with fixed-point scaling)
+                score = Add(score, Divide(Multiply(last_token_val, weight), 1000))
+                i = Add(i, 1)
+            }
+            
+            // Apply temperature
+            score = Divide(Multiply(score, 1000), temperature)
+            
+            ArraySet(all_scores, token_id, score)
+            
+            token_id = Add(token_id, 1)
+        }
+        
+        // Convert scores to probabilities using Softmax
+        probabilities = TinyLLM.Softmax(all_scores, ModelConfig.vocab_size)
+        ArrayDestroy(all_scores)
+
+        // Sample from the probability distribution using the random number
+        rand_val = TinyLLM.Random()
+        cumulative_prob = 0
+        chosen_token = ModelConfig.vocab_size - 1 // Default to last token in case of rounding errors
+
+        token_id = 0
+        found = 0
+        WhileLoop And(LessThan(token_id, ModelConfig.vocab_size), EqualTo(found, 0)) {
+            prob = ArrayGet(probabilities, token_id)
+            cumulative_prob = Add(cumulative_prob, prob)
+            
+            IfCondition GreaterThan(cumulative_prob, rand_val) ThenBlock: {
+                chosen_token = token_id
+                found = 1 // Set flag to exit loop
+            }
+            
+            token_id = Add(token_id, 1)
+        }
+
+        ArrayDestroy(probabilities)
+        ArrayDestroy(current_output)
+        
+        ReturnValue(chosen_token)
+    }
+}
+
+// Try to load weights from file
+Function.TinyLLM.LoadWeights {
+    Input: filename: Address
+    Output: Address
+    Body: {
+        PrintMessage("\n📂 Attempting to load weights from: ")
+        PrintMessage(filename)
+        PrintMessage("\n")
+        
+        // Check if file exists
+        exists = FileExists(filename)
+        
+        IfCondition EqualTo(exists, 1) ThenBlock: {
+            PrintMessage("✅ Found weights file. Reading data...\n")
+
+            // Allocate a temporary large buffer to read the whole file, including the header.
+            // Max size: 2.5M integers = 20MB, should be enough for future growth.
+            max_possible_params = 2500000
+            temp_buffer = ArrayCreate(max_possible_params)
+            bytes_read = ReadBinaryFile(filename, temp_buffer, Multiply(max_possible_params, 8))
+
+            IfCondition LessThan(bytes_read, 8) ThenBlock: {
+                PrintMessage("❌ Error: Weights file is too small to be valid.\n")
+                ArrayDestroy(temp_buffer)
+                ReturnValue(0)
+            }
+
+            // The first 8 bytes (1st integer) is the vocab_size.
+            vocab_size = ArrayGet(temp_buffer, 0)
+            ModelConfig.vocab_size = vocab_size
+            PrintMessage("  - Vocab size from file: ")
+            PrintNumber(vocab_size)
+            PrintMessage("\n")
+            
+            // Calculate expected size based on model configuration
+            embedding_params = Multiply(ModelConfig.vocab_size, ModelConfig.hidden_dim)
+            attention_params = Multiply(ModelConfig.num_layers, 
+                                       Multiply(3, Multiply(ModelConfig.hidden_dim, ModelConfig.hidden_dim)))
+            output_proj_params = Multiply(ModelConfig.hidden_dim, ModelConfig.vocab_size)
+            total_params = Add(Add(embedding_params, attention_params), output_proj_params)
+            expected_bytes = Add(Multiply(total_params, 8), 8) // Weights + 8-byte header
+
+            PrintMessage("  - Expected parameters: ")
+            PrintNumber(total_params)
+            PrintMessage("\n  - Expected bytes: ")
+            PrintNumber(expected_bytes)
+            PrintMessage("\n")
+
+            PrintMessage("  - Bytes read from file: ")
+            PrintNumber(bytes_read)
+            PrintMessage("\n")
+
+            // Verify that the number of bytes read matches the expected size
+            IfCondition EqualTo(bytes_read, expected_bytes) ThenBlock: {
+                PrintMessage("✅ Successfully loaded all model weights!\n")
+                // Create a correctly-sized buffer for the actual weights
+                weights_buffer = ArrayCreate(total_params)
+                // Copy the weights from the temp buffer, skipping the vocab_size header
+                i = 0
+                WhileLoop LessThan(i, total_params) {
+                    val = ArrayGet(temp_buffer, Add(i, 1))
+                    ArraySet(weights_buffer, i, val)
+                    i = Add(i, 1)
+                }
+                ArrayDestroy(temp_buffer)
+                ReturnValue(weights_buffer)
+            }
+            ElseBlock: {
+                PrintMessage("❌ Error: File size mismatch. Expected ")
+                PrintNumber(expected_bytes)
+                PrintMessage(" bytes, but read ")
+                PrintNumber(bytes_read)
+                PrintMessage(".\n💡 Make sure the model configuration matches the weights file.\n")
+                ArrayDestroy(temp_buffer) // Clean up allocated memory on failure
+                ReturnValue(0)
+            }
+        }
+        ElseBlock: {
+            PrintMessage("❌ Weights file not found: '")
+            PrintMessage(filename)
+            PrintMessage("'\n💡 Tip: Run 'python3 tinyllm.py' to train and export weights.\n")
+            ReturnValue(0)
+        }
+    }
+}
+
+// Character-level tokenizer with debug
+Function.TinyLLM.TokenizeText {
+    Input: text: Address
+    Input: max_len: Integer
+    Output: Address
+    Body: {
+        PrintMessage("\n📝 Tokenizing text: \"")
+        PrintMessage(text)
+        PrintMessage("\"\n")
+        
+        tokens = ArrayCreate(max_len)
+        text_len = StringLength(text)
+        
+        PrintMessage("Text length: ")
+        PrintNumber(text_len)
+        PrintMessage(" characters\n")
+        PrintMessage("Tokens: ")
+        
+        i = 0
+        WhileLoop And(LessThan(i, text_len), LessThan(i, max_len)) {
+            char = GetByte(text, i)
+            ArraySet(tokens, i, char)
+            
+            PrintNumber(char)
+            PrintMessage("(ASCII ")
+            PrintNumber(char)
+            PrintMessage(") ")
+            
+            i = Add(i, 1)
+        }
+        
+        // Pad with zeros if needed
+        WhileLoop LessThan(i, max_len) {
+            ArraySet(tokens, i, 0)
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("\n\n")
+        ReturnValue(tokens)
+    }
+}
+
+// Detokenize back to text
+Function.TinyLLM.DetokenizeToText {
+    Input: tokens: Address
+    Input: length: Integer
+    Output: Address
+    Body: {
+        PrintMessage("\n📖 Detokenizing ")
+        PrintNumber(length)
+        PrintMessage(" tokens to text...\n")
+        
+        text = Allocate(Add(length, 1))
+        
+        i = 0
+        WhileLoop LessThan(i, length) {
+            token = ArrayGet(tokens, i)
+            SetByte(text, i, token) // Copy token to string byte
+            i = Add(i, 1)
+        }
+        SetByte(text, length, 0)  // Null terminate
+        
+        PrintMessage("Result: \"")
+        PrintMessage(text)
+        PrintMessage("\"\n\n")
+        
+        ReturnValue(text)
+    }
+}
+
+// Generate multiple tokens with streaming output
+Function.TinyLLM.Generate {
+    Input: prompt: Address
+    Input: max_new_tokens: Integer
+    Input: model_weights: Address
+    Output: Address
+    Body: {
+        prompt_len = StringLength(prompt)
+        total_len = Add(prompt_len, max_new_tokens)
+        
+        tokens = TinyLLM.TokenizeText(prompt, total_len)
+        
+        // Print the initial prompt that the user typed
+        PrintMessage(prompt)
+        
+        PrintMessage("============================================================\n")
+        PrintMessage("\n🔮 GENERATION STARTING\n")
+        PrintMessage("============================================================\n")
+        PrintMessage("\n\nGenerated text: \"")
+        
+        // Generate new tokens
+        current_len = prompt_len
+        generated = 0
+        temperature = 800  // 0.8 temperature
+        loop_continue = 1
+        
+        WhileLoop And(LessThan(generated, max_new_tokens), loop_continue) {
+            PrintMessage("\n--- Token ")
+            PrintNumber(Add(generated, 1))
+            PrintMessage(" of ")
+            PrintNumber(max_new_tokens)
+            PrintMessage(" ---\n")
+            
+            // Generate next token
+            next_token = TinyLLM.GenerateToken(tokens, current_len, model_weights, temperature)
+            
+            // Stop if we generate null or newline
+            IfCondition Or(EqualTo(next_token, 0), EqualTo(next_token, 10)) ThenBlock: {
+                loop_continue = 0
+            }
+            
+            IfCondition loop_continue ThenBlock: {
+                // Add the new token to our sequence for the next iteration
+                ArraySet(tokens, current_len, next_token)
+                current_len = Add(current_len, 1)
+                generated = Add(generated, 1)
+                
+                // Stream the generated character
+                PrintMessage("\n💬 Generated character: ASCII ")
+                PrintNumber(next_token)
+                PrintMessage("\n")
+                
+                PrintMessage("\nText so far: \"")
+                partial = TinyLLM.DetokenizeToText(tokens, current_len)
+                PrintMessage(partial)
+                PrintMessage("\"\n")
+                Deallocate(partial, 0)
+            }
+        }
+        
+        // Convert final result
+        result_text = TinyLLM.DetokenizeToText(tokens, current_len)
+        
+        PrintMessage("\n")
+        PrintMessage("============================================================\n")
+        PrintMessage("\n✅ GENERATION COMPLETE\n")
+        PrintMessage("============================================================\n")
+        PrintMessage("\n\nFinal text: \"")
+        PrintMessage(result_text)
+        PrintMessage("\"\n\n")
+        
+        ArrayDestroy(tokens)
+        ReturnValue(result_text)
+    }
+}
+
+// New function to filter out non-printable control characters
+Function.SanitizeString {
+    Input: input_str: Address
+    Output: Address
+    Body: {
+        len = StringLength(input_str)
+        // Allocate new string, worst case is same length
+        sanitized_str = Allocate(Add(len, 1))
+        
+        read_idx = 0
+        write_idx = 0
+        WhileLoop LessThan(read_idx, len) {
+            char = GetByte(input_str, read_idx)
+            
+            // Keep printable ASCII (32-126) and newline (10) / tab (9)
+            is_printable = And(GreaterThan(char, 31), LessThan(char, 127))
+            is_newline = EqualTo(char, 10)
+            is_tab = EqualTo(char, 9)
+            
+            IfCondition Or(is_printable, Or(is_newline, is_tab)) ThenBlock: {
+                SetByte(sanitized_str, write_idx, char)
+                write_idx = Add(write_idx, 1)
+            }
+            read_idx = Add(read_idx, 1)
+        }
+        
+        // Null terminate the new string
+        SetByte(sanitized_str, write_idx, 0)
+        ReturnValue(sanitized_str)
+    }
+}
+
+// Interactive chat loop
+Function.InteractiveChat {
+    Body: {
+        PrintMessage("\n")
+        PrintMessage("============================================================\n")
+        PrintMessage("        🤖 TINY LLM INTERACTIVE CHAT v2.0 🤖             \n")
+        PrintMessage("============================================================\n")
+        PrintMessage("Type 'exit' or 'quit' to end the session.\n\n")
+        
+        // Load model weights
+        PrintMessage("🔧 Loading model weights...\n")
+        model_weights = TinyLLM.LoadWeights("tiny_llm.weights")
+        
+        // Check if weights loaded successfully
+        IfCondition EqualTo(model_weights, 0) ThenBlock: {
+            PrintMessage("❌ Model loading failed. Cannot start interactive session.\n")
+            PrintMessage("\nExiting...\n")
+            ReturnValue(0)
+        }
+        
+        PrintMessage("✅ Model loaded successfully. Ready for input.\n")
+        
+        // Main interactive loop
+        loop = 1
+        WhileLoop loop {
+            PrintMessage("\n> ")
+            
+            // Assumes ReadInput() function exists, reads a line from stdin,
+            // and returns a newly allocated string.
+            raw_input = ReadInput()
+            // Sanitize the input to remove control characters like arrow key escape codes
+            user_input = SanitizeString(raw_input)
+            Deallocate(raw_input, 0)
+            
+            // Check for exit commands
+            // Assumes StringCompare(str1, str2) returns 0 for equality.
+            is_exit = StringCompare(user_input, "exit")
+            is_quit = StringCompare(user_input, "quit")
+            
+            IfCondition Or(EqualTo(is_exit, 0), EqualTo(is_quit, 0)) ThenBlock: {
+                PrintMessage("Exiting chat. Goodbye!\n")
+                loop = 0 // Set loop condition to false
+            }
+            ElseBlock: {
+                // Generate text based on user input
+                // Generate up to 60 new tokens
+                PrintMessage("🤖: ")
+                generated_text = TinyLLM.Generate(user_input, 60, model_weights)
+                PrintMessage("\n") // Newline after bot response
+                
+                // Cleanup the returned text string from Generate
+                Deallocate(generated_text, 0)
+            }
+            
+            // Cleanup the string from ReadInput
+            Deallocate(user_input, 0)
+        }
+        
+        // Final cleanup
+        ArrayDestroy(model_weights)
+        
+        PrintMessage("\n")
+        PrintMessage("============================================================\n")
+        PrintMessage("              ✅ SESSION ENDED ✅                  \n")
+        PrintMessage("============================================================\n")
+    }
+}
+
+// Run the test
+InteractiveChat()

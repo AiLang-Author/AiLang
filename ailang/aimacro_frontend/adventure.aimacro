@@ -1,0 +1,38 @@
+# adventure.aim
+def main():
+    print("Welcome to the Cave Adventure!");
+    print("==============================");
+    
+    health = 100;
+    has_torch = 0;
+    has_key = 0;
+    
+    print("You stand at the entrance of a dark cave.");
+    print("What do you do?");
+    print("1. Enter the cave");
+    print("2. Search around the entrance");
+    
+    # Since we don't have input yet, let's simulate choices
+    choice = 2;  # Simulate choosing to search
+    
+    if choice == 2:
+        print("You found a torch!");
+        has_torch = 1;
+    end;
+    
+    print("You enter the cave...");
+    
+    if has_torch == 1:
+        print("Your torch lights the way. You see a golden key!");
+        has_key = 1;
+    else:
+        print("It's too dark! You stumble and lose 10 health.");
+        health = health - 10;
+    end;
+    
+    print("Final stats:");
+    print("Health: ");
+    print(health);
+    print("Items found: ");
+    print(has_torch + has_key);
+end;

@@ -1,0 +1,29 @@
+Enhanced Tiny LLM Weights (NumPy version)
+============================================================
+Model Configuration:
+  Vocab Size: 256
+  Hidden Dim: 256
+  Num Layers: 2
+  Total Params: 524,288
+
+Weight Statistics:
+  Embedding: mean=0.0157, std=1.4112
+  Layer 0 W_q: mean=-0.1175, std=6.6971
+  Layer 0 W_k: mean=-0.1182, std=6.6985
+  Layer 0 W_v: mean=-0.1183, std=6.6985
+  Layer 1 W_q: mean=-0.0032, std=0.6380
+  Layer 1 W_k: mean=-0.0035, std=0.6378
+  Layer 1 W_v: mean=-0.0034, std=0.6365
+  Output Proj: mean=0.2423, std=0.5098
+
+Sample weights (first 10 embedding values):
+  [0]: -0.000583 -> 0 (fixed-point)
+  [1]: 0.004426 -> 4 (fixed-point)
+  [2]: -0.000919 -> 0 (fixed-point)
+  [3]: 0.000151 -> 0 (fixed-point)
+  [4]: 0.000354 -> 0 (fixed-point)
+  [5]: -0.001989 -> -1 (fixed-point)
+  [6]: 0.002638 -> 2 (fixed-point)
+  [7]: 0.002419 -> 2 (fixed-point)
+  [8]: 0.002386 -> 2 (fixed-point)
+  [9]: 0.000216 -> 0 (fixed-point)

@@ -1,0 +1,83 @@
+// test_resp_bulk.ailang
+// Test the actual RESP.BulkString function that XREAD uses
+
+LibraryImport.RESP
+
+PrintMessage("=== Testing RESP.BulkString ===\n")
+
+// Test 1: Single BulkString
+test_str = "hello"
+bulk_resp = RESP.BulkString(test_str)
+PrintMessage("BulkString('hello') = ")
+PrintMessage(bulk_resp)
+PrintMessage("\n")
+
+// Test 2: Multiple BulkStrings concatenated (like XREAD does)
+PrintMessage("\nTest 2: Concatenating multiple BulkStrings\n")
+
+response = StringConcat("*", "3", "\r\n")
+PrintMessage("Initial: ")
+PrintMessage(response)
+PrintMessage("\n")
+
+// Simulate XREAD loop
+test_values = ArrayCreate(3)
+ArraySet(test_values, 0, "2000-0")
+ArraySet(test_values, 1, "field2")
+ArraySet(test_values, 2, "value2")
+
+i = 0
+WhileLoop LessThan(i, 3) {
+    PrintMessage("\nIteration ")
+    PrintNumber(i)
+    PrintMessage(":\n")
+    
+    element = ArrayGet(test_values, i)
+    PrintMessage("  Processing: ")
+    PrintMessage(element)
+    PrintMessage("\n")
+    
+    // This is what XREAD does
+    part_response = RESP.BulkString(element)
+    PrintMessage("  BulkString result: ")
+    PrintMessage(part_response)
+    PrintMessage(" at address: ")
+    PrintNumber(part_response)
+    PrintMessage("\n")
+    
+    // The concatenation pattern from XREAD
+    temp_response = StringConcat(response, part_response)
+    PrintMessage("  After concat, temp at: ")
+    PrintNumber(temp_response)
+    PrintMessage("\n")
+    
+    // The deallocation pattern
+    PrintMessage("  Deallocating response at: ")
+    PrintNumber(response)
+    PrintMessage("\n")
+    Deallocate(response, 0)
+    
+    PrintMessage("  Deallocating part at: ")
+    PrintNumber(part_response)
+    PrintMessage("\n")
+    Deallocate(part_response, 0)
+    
+    response = temp_response
+    
+    // Verify response is still valid
+    PrintMessage("  Response now: ")
+    PrintMessage(response)
+    PrintMessage("\n")
+    
+    i = Add(i, 1)
+}
+
+PrintMessage("\nFinal RESP response:\n")
+PrintMessage(response)
+PrintMessage("\n")
+
+// Cleanup
+Deallocate(response, 0)
+ArrayDestroy(test_values)
+
+PrintMessage("\n=== Test Complete ===\n")

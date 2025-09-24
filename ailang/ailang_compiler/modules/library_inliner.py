@@ -72,7 +72,6 @@ class LibraryInliner:
                 raise ValueError("KeyValue.Set requires store, key, value")
             
             # Use HashSet primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashSet', [store, key, value])
             self.compiler.compile_function_call(node)
             
@@ -86,7 +85,6 @@ class LibraryInliner:
                 raise ValueError("KeyValue.Get requires store, key")
             
             # Use HashGet primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashGet', [store, key])
             self.compiler.compile_function_call(node)
             
@@ -100,7 +98,6 @@ class LibraryInliner:
                 raise ValueError("KeyValue.Delete requires store, key")
             
             # Use HashDelete primitive (when implemented)
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashDelete', [store, key])
             self.compiler.compile_function_call(node)
             
@@ -114,7 +111,6 @@ class LibraryInliner:
                 raise ValueError("KeyValue.Exists requires store, key")
             
             # Use HashExists primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashExists', [store, key])
             self.compiler.compile_function_call(node)
             
@@ -133,7 +129,6 @@ class LibraryInliner:
                     size = int(size_arg.value)
             
             # Create hash table for storage
-            from ailang_parser.ailang_ast import FunctionCall, Number
             node = FunctionCall('HashCreate', [Number(str(size))])
             self.compiler.compile_function_call(node)
             
@@ -148,7 +143,6 @@ class LibraryInliner:
                 raise ValueError("Redis.Set requires store, key, value")
             
             # Use HashSet primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashSet', [store, key, value])
             self.compiler.compile_function_call(node)
             
@@ -165,7 +159,6 @@ class LibraryInliner:
                 raise ValueError("Redis.Get requires store, key")
             
             # Use HashGet primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashGet', [store, key])
             self.compiler.compile_function_call(node)
             # Result is already in RAX
@@ -180,7 +173,6 @@ class LibraryInliner:
                 raise ValueError("Redis.Exists requires store, key")
             
             # Get value and check if non-zero
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('HashGet', [store, key])
             self.compiler.compile_function_call(node)
             
@@ -199,7 +191,6 @@ class LibraryInliner:
                 raise ValueError("Redis.Delete requires store, key")
             
             # Set value to 0 to indicate deletion
-            from ailang_parser.ailang_ast import FunctionCall, Number
             node = FunctionCall('HashSet', [store, key, Number('0')])
             self.compiler.compile_function_call(node)
             
@@ -311,7 +302,6 @@ class LibraryInliner:
                 raise ValueError("Convert.ToString requires value")
             
             # Use NumberToString primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('NumberToString', [value])
             self.compiler.compile_function_call(node)
             
@@ -324,7 +314,6 @@ class LibraryInliner:
                 raise ValueError("Convert.ToNumber requires string")
             
             # Use StringToNumber primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('StringToNumber', [string])
             self.compiler.compile_function_call(node)
             
@@ -342,7 +331,6 @@ class LibraryInliner:
                 raise ValueError("Memory.Allocate requires size")
             
             # Use Allocate primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('Allocate', [size])
             self.compiler.compile_function_call(node)
             
@@ -357,7 +345,6 @@ class LibraryInliner:
                 raise ValueError("Memory.Copy requires dest, src, size")
             
             # Use MemoryCopy primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('MemoryCopy', [dest, src, size])
             self.compiler.compile_function_call(node)
             
@@ -372,7 +359,6 @@ class LibraryInliner:
                 raise ValueError("Memory.Set requires address, value, size")
             
             # Use MemorySet primitive
-            from ailang_parser.ailang_ast import FunctionCall
             node = FunctionCall('MemorySet', [addr, value, size])
             self.compiler.compile_function_call(node)
             
