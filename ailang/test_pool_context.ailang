@@ -1,0 +1,39 @@
+// Test pool variables in different calling contexts
+
+LibraryImport.XArrays
+
+FixedPool.TestPool {
+    "test_value": Initialize=0
+}
+
+Function.DirectCall {
+    Body: {
+        value = TestPool.test_value
+        PrintMessage("DirectCall sees: ")
+        PrintNumber(value)
+        PrintMessage("\n")
+    }
+}
+
+SubRoutine.Main {
+    // Set in Main
+    TestPool.test_value = 0x12345678
+    PrintMessage("Main set to: 0x12345678\n")
+    
+    // Read in Main
+    main_read = TestPool.test_value
+    PrintMessage("Main reads: ")
+    PrintNumber(main_read)
+    PrintMessage("\n")
+    
+    // Call function
+    DirectCall()
+    
+    // Read again in Main after function call
+    main_read2 = TestPool.test_value
+    PrintMessage("Main reads after function: ")
+    PrintNumber(main_read2)
+    PrintMessage("\n")
+}
+
+RunTask(Main)

@@ -1,0 +1,10 @@
+Import XArrays from "./Library.XArrays.ailang"
+
+Program TestImportFinal {
+    Body: {
+        // Simple test to verify imports work
+        arr = XArrays.XArray.XCreate(10)
+        PrintMessage("Import system works!")
+        ReturnValue(0)
+    }
+}

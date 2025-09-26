@@ -1,12 +1,20 @@
 // redis_server_extended.ailang
 // Extended Redis server with more commands
 
-LibraryImport.Library.RESP
-LibraryImport.Library.XArrays
+// === TRANSACTION SUPPORT USING SCHEDULER ===
+// Add at the top of redis_server.ailang after imports:
 
-// Global data store for the server
-// Declared at the top level for clarity and global scope.
-store = XSHash.XCreate(1024)
+LibraryImport.RESP
+LibraryImport.HashMap
+LibraryImport.SortedSet
+LibraryImport.XArrays
+LibraryImport.MessageQueue
+LibraryImport.Scheduler
+LibraryImport.RNG
+
+FixedPool.RedisData {
+    "store_ptr": Initialize=0
+}
 
 // State for stream ID generation
 FixedPool.StreamState {
@@ -19,6 +27,74 @@ FixedPool.DataTypes {
     "TYPE_LIST": Initialize=1
     "TYPE_STREAM": Initialize=2
     "TYPE_SET": Initialize=3
+    "TYPE_HASH": Initialize=4
+    "TYPE_ZSET": Initialize=5  
+}
+
+// Transaction message types
+FixedPool.TransactionConstants {
+   
+    "TX_CMD_SET": Initialize=1000
+    "TX_CMD_GET": Initialize=1001  
+    "TX_CMD_INCR": Initialize=1002
+    "TX_CMD_DECR": Initialize=1003
+    "TX_CMD_APPEND": Initialize=1004
+    "TX_CMD_STRLEN": Initialize=1005
+    "TX_CMD_MSET": Initialize=1006
+    "TX_CMD_MGET": Initialize=1007
+    
+    
+    "TX_CMD_HSET": Initialize=2000
+    "TX_CMD_HGET": Initialize=2001
+    "TX_CMD_HDEL": Initialize=2002
+    "TX_CMD_HLEN": Initialize=2003
+    "TX_CMD_HEXISTS": Initialize=2004
+    "TX_CMD_HKEYS": Initialize=2005
+    "TX_CMD_HVALS": Initialize=2006
+    "TX_CMD_HGETALL": Initialize=2007
+    
+   
+    "TX_CMD_LPUSH": Initialize=3000
+    "TX_CMD_LPOP": Initialize=3001
+    "TX_CMD_RPUSH": Initialize=3002
+    "TX_CMD_RPOP": Initialize=3003
+    "TX_CMD_LLEN": Initialize=3004
+    "TX_CMD_LRANGE": Initialize=3005
+    
+    
+    "TX_CMD_SADD": Initialize=4000
+    "TX_CMD_SREM": Initialize=4001
+    "TX_CMD_SCARD": Initialize=4002
+    "TX_CMD_SISMEMBER": Initialize=4003
+    "TX_CMD_SMEMBERS": Initialize=4004
+    
+   
+    "TX_CMD_DEL": Initialize=5000
+    "TX_CMD_EXISTS": Initialize=5001
+    "TX_CMD_EXPIRE": Initialize=5002
+    "TX_CMD_TTL": Initialize=5003
+    "TX_CMD_RENAME": Initialize=5004
+    "TX_CMD_TYPE": Initialize=5005
+    
+   
+    "TX_CMD_FLUSHDB": Initialize=6000
+    "TX_CMD_DBSIZE": Initialize=6001
+}
+
+// Add to FixedPool for transaction state
+FixedPool.TransactionState {
+    "in_transaction": Initialize=0
+    "command_queue": Initialize=0
+    "tx_queue": Initialize=0
+    "tx_args_queue": Initialize=0
+    "sched_mem": Initialize=0
+    "MAIN_ACTOR": Initialize=0
+    "queued_count": Initialize=0
+}
+
+FixedPool.ServerState {
+    "randomkey_counter": Initialize=0
+    "fake_system_time": Initialize=1000000000
 }
 
 // Mailbox for passing new client sockets to actors
@@ -124,6 +200,12 @@ Function.Helpers.ParseStreamID {
     Input: id_str: Address
     Output: Address // Pointer to an XArray with 2 integers [ms, seq]
     Body: {
+        Debug("resp.parse", level=3) {
+            PrintMessage("[DEBUG] ParseStreamID: parsing '")
+            PrintString(id_str)
+            PrintMessage("'")
+        }
+        
         // Find the position of the '-' separator
         dash_pos = StringIndexOf(id_str, "-")
         
@@ -202,13 +284,11 @@ Function.Helpers.GetSystemTime {
     Output: Integer // Returns current time in milliseconds
     Body: {
         // Per your hint, we can use a syscall to get real time.
-        // This is much more accurate than the simulated clock.
-        // Assuming syscall #201 is 'time' which returns seconds since epoch,
-        // similar to Linux. A more advanced implementation might use a
-        // higher resolution clock syscall if available.
-        time_in_seconds = SystemCall(SyscallNumbers.TIME, 0) // Arg 0 for time(NULL)
-        time_in_ms = Multiply(time_in_seconds, 1000)
-        ReturnValue(time_in_ms)
+        // --- FIX: Avoid unimplemented SystemCall ---
+        // The syscall for time (201) is not implemented. We use a simple
+        // incrementing counter as a fake, but stable, timestamp.
+        ServerState.fake_system_time = Add(ServerState.fake_system_time, 1)
+        ReturnValue(ServerState.fake_system_time)
     }
 }
 
@@ -228,7 +308,7 @@ Function.Helpers.CheckAndEvictExpiredKey {
                 // --- Key is expired, evict it now ---
                 // This logic is a safe subset of the DEL command.
                 // We can call XDelete, which returns the wrapper for us to free.
-                deleted_wrapper = XSHash.XDelete(store, key)
+                deleted_wrapper = XSHash.XDelete(RedisData.store_ptr, key)
                 IfCondition NotEqual(deleted_wrapper, XArrays.XNULL) ThenBlock: {
                     type = Dereference(deleted_wrapper)
                     value_ptr = Dereference(Add(deleted_wrapper, 16)) // New offset for value
@@ -260,11 +340,12 @@ Function.Helpers.Internal.FindCRLF {
     Input: offset: Integer
     Output: Integer
     Body: {
-        PrintMessage("[DEBUG FindCRLF] Starting search from offset ")
-        PrintNumber(offset)
-        PrintMessage(" in buffer of length ")
-        PrintNumber(length)
-        PrintMessage("\n")
+        Debug("resp.parse", level=3) {
+            PrintMessage("[DEBUG FindCRLF] Searching from offset ")
+            PrintNumber(offset)
+            PrintMessage(" in buffer of length ")
+            PrintNumber(length)
+        }
         
         i = offset
         // Stop one before the end to allow checking i and i+1
@@ -275,16 +356,11 @@ Function.Helpers.Internal.FindCRLF {
             IfCondition EqualTo(char1, 13) ThenBlock: { // '\r'
                 char2 = GetByte(buffer, Add(i, 1))
                 IfCondition EqualTo(char2, 10) ThenBlock: { // '\n'
-                    PrintMessage("[DEBUG FindCRLF] Found CRLF at position ")
-                    PrintNumber(i)
-                    PrintMessage("\n")
                     ReturnValue(i) // Found it
                 }
             }
             i = Add(i, 1)
         }
-        
-        PrintMessage("[DEBUG FindCRLF] No CRLF found, returning -1\n")
         ReturnValue(-1) // Not found
     }
 }
@@ -406,15 +482,12 @@ Function.Helpers.Internal.ParseValue {
         
         // --- Case: Array (*) ---
         IfCondition EqualTo(type_char, 42) ThenBlock: { // '*'
-            PrintMessage("[DEBUG] Parsing array...\n")
+            Debug("resp.parse", level=2) { PrintMessage("[DEBUG] Parsing array...") }
             
-            arr_crlf = Helpers.Internal.FindCRLF(buffer, length, offset)  // Unique name
-            PrintMessage("[DEBUG] arr_crlf after FindCRLF: ")
-            PrintNumber(arr_crlf)
-            PrintMessage("\n")
+            arr_crlf = Helpers.Internal.FindCRLF(buffer, length, offset)
             
             IfCondition EqualTo(arr_crlf, -1) ThenBlock: { // Incomplete line
-                PrintMessage("[DEBUG] Array: no CRLF for count\n")
+                Debug("resp.parse", level=3) { PrintMessage("[DEBUG] Array: no CRLF for count") }
                 res_arr = XArray.XCreate(2)
                 XArray.XPush(res_arr, 0)
                 XArray.XPush(res_arr, 0)
@@ -422,25 +495,13 @@ Function.Helpers.Internal.ParseValue {
             }
             
             array_len = Helpers.Internal.ParseIntFromSlice(buffer, Add(offset, 1), arr_crlf)
-            PrintMessage("[DEBUG] arr_crlf after ParseIntFromSlice: ")
-            PrintNumber(arr_crlf)
-            PrintMessage("\n")
-            
-            PrintMessage("[DEBUG] Array length: ")
-            PrintNumber(array_len)
-            PrintMessage("\n")
+            Debug("resp.parse", level=2) {
+                PrintMessage("[DEBUG] Array length: ")
+                PrintNumber(array_len)
+            }
             
             parsed_elements = XArray.XCreate(array_len)
-            PrintMessage("[DEBUG] arr_crlf after XArray.XCreate: ")
-            PrintNumber(arr_crlf)
-            PrintMessage("\n")
-            
             current_offset = Add(arr_crlf, 2)
-            PrintMessage("[DEBUG] current_offset = Add(")
-            PrintNumber(arr_crlf)
-            PrintMessage(", 2) = ")
-            PrintNumber(current_offset)
-            PrintMessage("\n")
             
             i = 0
             WhileLoop LessThan(i, array_len) {
@@ -533,11 +594,896 @@ Function.Helpers.ParsePipelinedArray {
         ReturnValue(final_res)
     }
 }
+
+Function.Helpers.StringCopy {
+    Input: source: Address
+    Output: Address
+    Body: {
+        IfCondition EqualTo(source, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        len = StringLength(source)
+        copy = Allocate(Add(len, 1))
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            byte = GetByte(source, i)
+            SetByte(copy, i, byte)
+            i = Add(i, 1)
+        }
+        SetByte(copy, len, 0)  // Null terminator
+        
+        ReturnValue(copy)
+    }
+}
+
+// Function to match a glob pattern against a text string
+// Returns: 1 if match, 0 if no match
+Function.Helpers.GlobMatch {
+    Input: pattern: Address
+    Input: text: Address
+    Output: Integer  // 1 if matches, 0 if not
+    Body: {
+        pattern_len = StringLength(pattern)
+        text_len = StringLength(text)
+        
+        p_idx = 0
+        t_idx = 0
+        star_idx = -1
+        match_idx = 0
+        
+        WhileLoop LessThan(t_idx, text_len) {
+            // Check if we're within pattern bounds
+            IfCondition LessThan(p_idx, pattern_len) ThenBlock: {
+                p_char = GetByte(pattern, p_idx)
+                t_char = GetByte(text, t_idx)
+                
+                // Case 1: ? matches any single character
+                IfCondition EqualTo(p_char, 63) ThenBlock: {  // '?'
+                    p_idx = Add(p_idx, 1)
+                    t_idx = Add(t_idx, 1)
+                } ElseBlock: {
+                    // Case 2: * matches any sequence
+                    IfCondition EqualTo(p_char, 42) ThenBlock: {  // '*'
+                        star_idx = p_idx
+                        match_idx = t_idx
+                        p_idx = Add(p_idx, 1)
+                    } ElseBlock: {
+                        // Case 3: Literal character match
+                        IfCondition EqualTo(p_char, t_char) ThenBlock: {
+                            p_idx = Add(p_idx, 1)
+                            t_idx = Add(t_idx, 1)
+                        } ElseBlock: {
+                            // Case 4: Mismatch - try backtracking if we have a star
+                            IfCondition NotEqual(star_idx, -1) ThenBlock: {
+                                p_idx = Add(star_idx, 1)
+                                match_idx = Add(match_idx, 1)
+                                t_idx = match_idx
+                            } ElseBlock: {
+                                // Case 5: Mismatch with no star - pattern doesn't match
+                                ReturnValue(0)
+                            }
+                        }
+                    }
+                }
+            } ElseBlock: {
+                // No more pattern but we have a star to backtrack to
+                IfCondition NotEqual(star_idx, -1) ThenBlock: {
+                    p_idx = Add(star_idx, 1)
+                    match_idx = Add(match_idx, 1)
+                    t_idx = match_idx
+                } ElseBlock: {
+                    // No more pattern and no star - mismatch
+                    ReturnValue(0)
+                }
+            }
+        }
+        
+        // Skip any trailing stars in pattern
+        WhileLoop LessThan(p_idx, pattern_len) {
+            p_char = GetByte(pattern, p_idx)
+            IfCondition NotEqual(p_char, 42) ThenBlock: {  // Not '*'
+                ReturnValue(0)  // Pattern has non-star characters we didn't match
+            }
+            p_idx = Add(p_idx, 1)
+        }
+        
+        // If we've consumed all pattern and text, it's a match
+        ReturnValue(1)
+    }
+}
+
+// Helper to serialize command into integer code
+Function.Transaction.GetCommandCode {
+    Input: command: Address
+    Output: Integer
+    Body: {
+        // String commands
+        is_set = StringCompare(command, "SET")
+        IfCondition EqualTo(is_set, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_SET) 
+        }
+        
+        is_get = StringCompare(command, "GET")
+        IfCondition EqualTo(is_get, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_GET) 
+        }
+        
+        is_incr = StringCompare(command, "INCR")
+        IfCondition EqualTo(is_incr, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_INCR) 
+        }
+        
+        is_decr = StringCompare(command, "DECR")
+        IfCondition EqualTo(is_decr, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_DECR) 
+        }
+        
+        // List commands
+        is_lpush = StringCompare(command, "LPUSH")
+        IfCondition EqualTo(is_lpush, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_LPUSH) 
+        }
+        
+        is_lpop = StringCompare(command, "LPOP")
+        IfCondition EqualTo(is_lpop, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_LPOP) 
+        }
+        
+        is_rpush = StringCompare(command, "RPUSH")
+        IfCondition EqualTo(is_rpush, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_RPUSH) 
+        }
+        
+        is_rpop = StringCompare(command, "RPOP")
+        IfCondition EqualTo(is_rpop, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_RPOP) 
+        }
+        
+        // Set commands
+        is_sadd = StringCompare(command, "SADD")
+        IfCondition EqualTo(is_sadd, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_SADD) 
+        }
+        
+        is_srem = StringCompare(command, "SREM")
+        IfCondition EqualTo(is_srem, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_SREM) 
+        }
+        
+        // Hash commands
+        is_hset = StringCompare(command, "HSET")
+        IfCondition EqualTo(is_hset, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HSET) 
+        }
+        
+        is_hget = StringCompare(command, "HGET")
+        IfCondition EqualTo(is_hget, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HGET) 
+        }
+        
+        is_hdel = StringCompare(command, "HDEL")
+        IfCondition EqualTo(is_hdel, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HDEL) 
+        }
+        
+        // Key commands
+        is_del = StringCompare(command, "DEL")
+        IfCondition EqualTo(is_del, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_DEL) 
+        }
+        
+        is_exists = StringCompare(command, "EXISTS")
+        IfCondition EqualTo(is_exists, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_EXISTS) 
+        }
+        
+        is_expire = StringCompare(command, "EXPIRE")
+        IfCondition EqualTo(is_expire, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_EXPIRE) 
+        }
+        
+        is_ttl = StringCompare(command, "TTL")
+        IfCondition EqualTo(is_ttl, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_TTL) 
+        }
+        
+        is_rename = StringCompare(command, "RENAME")
+        IfCondition EqualTo(is_rename, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_RENAME) 
+        }
+        
+        is_type = StringCompare(command, "TYPE")
+        IfCondition EqualTo(is_type, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_TYPE) 
+        }
+        
+        // More string commands
+        is_append = StringCompare(command, "APPEND")
+        IfCondition EqualTo(is_append, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_APPEND) 
+        }
+        
+        is_strlen = StringCompare(command, "STRLEN")
+        IfCondition EqualTo(is_strlen, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_STRLEN) 
+        }
+        
+        is_mset = StringCompare(command, "MSET")
+        IfCondition EqualTo(is_mset, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_MSET) 
+        }
+        
+        is_mget = StringCompare(command, "MGET")
+        IfCondition EqualTo(is_mget, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_MGET) 
+        }
+        
+        // List commands
+        is_llen = StringCompare(command, "LLEN")
+        IfCondition EqualTo(is_llen, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_LLEN) 
+        }
+        
+        is_lrange = StringCompare(command, "LRANGE")
+        IfCondition EqualTo(is_lrange, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_LRANGE) 
+        }
+        
+        // Set commands
+        is_scard = StringCompare(command, "SCARD")
+        IfCondition EqualTo(is_scard, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_SCARD) 
+        }
+        
+        is_sismember = StringCompare(command, "SISMEMBER")
+        IfCondition EqualTo(is_sismember, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_SISMEMBER) 
+        }
+        
+        is_smembers = StringCompare(command, "SMEMBERS")
+        IfCondition EqualTo(is_smembers, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_SMEMBERS) 
+        }
+        
+        // Hash commands
+        is_hlen = StringCompare(command, "HLEN")
+        IfCondition EqualTo(is_hlen, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HLEN) 
+        }
+        
+        is_hexists = StringCompare(command, "HEXISTS")
+        IfCondition EqualTo(is_hexists, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HEXISTS) 
+        }
+        
+        is_hkeys = StringCompare(command, "HKEYS")
+        IfCondition EqualTo(is_hkeys, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HKEYS) 
+        }
+        
+        is_hvals = StringCompare(command, "HVALS")
+        IfCondition EqualTo(is_hvals, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HVALS) 
+        }
+        
+        is_hgetall = StringCompare(command, "HGETALL")
+        IfCondition EqualTo(is_hgetall, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_HGETALL) 
+        }
+        
+        // Server commands (probably shouldn't be in transactions, but just in case)
+        is_flushdb = StringCompare(command, "FLUSHDB")
+        IfCondition EqualTo(is_flushdb, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_FLUSHDB) 
+        }
+        
+        is_dbsize = StringCompare(command, "DBSIZE")
+        IfCondition EqualTo(is_dbsize, 0) ThenBlock: { 
+            ReturnValue(TransactionConstants.TX_CMD_DBSIZE) 
+        }
+        
+        ReturnValue(0)  // Unknown command
+    }
+}
+
+// Helper to queue a command with its arguments
+Function.Transaction.QueueCommand {
+    Input: cmd_code: Integer
+    Input: command_array: Array
+    Input: array_len: Integer
+    Output: Integer
+    Body: {
+        // Queue the command code
+        MessageQueue.Enqueue(TransactionState.tx_queue, cmd_code)
+        
+        // Create a copy of arguments array
+        args_copy = ArrayCreate(array_len)
+        i = 0
+        WhileLoop LessThan(i, array_len) {
+            arg = ArrayGet(command_array, i)
+            arg_copy = Helpers.StringCopy(arg)
+            ArraySet(args_copy, i, arg_copy)
+            i = Add(i, 1)
+        }
+        
+        // Pack array pointer and length into one integer
+        // High 32 bits: array pointer, Low 32 bits: array length
+        packed_args = Add(Multiply(args_copy, 65536), array_len)
+        MessageQueue.Enqueue(TransactionState.tx_args_queue, packed_args)
+        
+        ReturnValue(1)
+    }
+}
+
+// Helper to execute a queued command
+Function.Transaction.ExecuteCommand {
+    Input: cmd_code: Integer
+    Input: packed_args: Integer
+    Input: store: Address
+    Output: Address
+    Body: {
+        // Unpack arguments
+        args_array = Divide(packed_args, 65536)
+        args_len = Modulo(packed_args, 65536)
+        
+        // Execute based on command type
+        result = 0
+        
+        // === STRING COMMANDS ===
+        
+        // SET command
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_SET) ThenBlock: {
+            // SET key value - args: ["SET", key, value]
+            IfCondition GreaterEqual(args_len, 3) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                value = ArrayGet(args_array, 2)
+                
+                // Delete old value if exists
+                old_wrapper = XSHash.XDelete(store, key)
+                IfCondition NotEqual(old_wrapper, XArrays.XNULL) ThenBlock: {
+                    old_type = Dereference(old_wrapper)
+                    old_value = Dereference(Add(old_wrapper, 16))
+                    
+                    // Clean up based on type
+                    IfCondition EqualTo(old_type, DataTypes.TYPE_STRING) ThenBlock: {
+                        Deallocate(old_value, 0)
+                    }
+                    IfCondition EqualTo(old_type, DataTypes.TYPE_LIST) ThenBlock: {
+                        XList.XDestroyDeep(old_value)
+                    }
+                    IfCondition EqualTo(old_type, DataTypes.TYPE_SET) ThenBlock: {
+                        XSHash.XDestroy(old_value)
+                    }
+                    IfCondition EqualTo(old_type, DataTypes.TYPE_HASH) ThenBlock: {
+                        HashMap.DestroySimple(old_value)
+                    }
+                    
+                    Deallocate(old_wrapper, 0)
+                }
+                
+                // Store new value
+                value_copy = Helpers.StringCopy(value)
+                wrapper = Allocate(24)
+                StoreValue(wrapper, DataTypes.TYPE_STRING)
+                StoreValue(Add(wrapper, 8), 0)  // No expiry
+                StoreValue(Add(wrapper, 16), value_copy)
+                XSHash.XInsert(store, key, wrapper)
+                
+                result = RESP.SimpleString("OK")
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // GET command  
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_GET) ThenBlock: {
+            // GET key - args: ["GET", key]
+            IfCondition GreaterEqual(args_len, 2) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                wrapper = XSHash.XLookup(store, key)
+                
+                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                    result = RESP.BulkString(0)  // nil
+                } ElseBlock: {
+                    type = Dereference(wrapper)
+                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                        result = RESP.Error("WRONGTYPE")
+                    } ElseBlock: {
+                        val_str = Dereference(Add(wrapper, 16))
+                        result = RESP.BulkString(val_str)
+                    }
+                }
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // INCR command
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_INCR) ThenBlock: {
+            // INCR key - args: ["INCR", key]
+            IfCondition GreaterEqual(args_len, 2) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                wrapper = XSHash.XLookup(store, key)
+                
+                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                    // Create new key with value 1
+                    new_val_str = Helpers.IntToString(1)
+                    wrapper = Allocate(24)
+                    StoreValue(wrapper, DataTypes.TYPE_STRING)
+                    StoreValue(Add(wrapper, 8), 0)
+                    StoreValue(Add(wrapper, 16), new_val_str)
+                    XSHash.XInsert(store, key, wrapper)
+                    result = RESP.Integer(1)
+                } ElseBlock: {
+                    type = Dereference(wrapper)
+                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                        result = RESP.Error("WRONGTYPE")
+                    } ElseBlock: {
+                        val_str = Dereference(Add(wrapper, 16))
+                        val = Helpers.StringToInt(val_str)
+                        new_val = Add(val, 1)
+                        new_val_str = Helpers.IntToString(new_val)
+                        Deallocate(val_str, 0)
+                        StoreValue(Add(wrapper, 16), new_val_str)
+                        result = RESP.Integer(new_val)
+                    }
+                }
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // DECR command
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_DECR) ThenBlock: {
+            // DECR key - args: ["DECR", key]
+            IfCondition GreaterEqual(args_len, 2) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                wrapper = XSHash.XLookup(store, key)
+                
+                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                    // Create new key with value -1
+                    new_val_str = Helpers.IntToString(-1)
+                    wrapper = Allocate(24)
+                    StoreValue(wrapper, DataTypes.TYPE_STRING)
+                    StoreValue(Add(wrapper, 8), 0)
+                    StoreValue(Add(wrapper, 16), new_val_str)
+                    XSHash.XInsert(store, key, wrapper)
+                    result = RESP.Integer(-1)
+                } ElseBlock: {
+                    type = Dereference(wrapper)
+                    IfCondition NotEqual(type, DataTypes.TYPE_STRING) ThenBlock: {
+                        result = RESP.Error("WRONGTYPE")
+                    } ElseBlock: {
+                        val_str = Dereference(Add(wrapper, 16))
+                        val = Helpers.StringToInt(val_str)
+                        new_val = Subtract(val, 1)
+                        new_val_str = Helpers.IntToString(new_val)
+                        Deallocate(val_str, 0)
+                        StoreValue(Add(wrapper, 16), new_val_str)
+                        result = RESP.Integer(new_val)
+                    }
+                }
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // === LIST COMMANDS ===
+        
+        // LPUSH command
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_LPUSH) ThenBlock: {
+            // LPUSH key value [value ...] - args: ["LPUSH", key, value1, ...]
+            IfCondition GreaterEqual(args_len, 3) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                wrapper = XSHash.XLookup(store, key)
+                
+                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                    // Create new list
+                    list_ptr = XList.XCreate()
+                    wrapper = Allocate(24)
+                    StoreValue(wrapper, DataTypes.TYPE_LIST)
+                    StoreValue(Add(wrapper, 8), 0)
+                    StoreValue(Add(wrapper, 16), list_ptr)
+                    XSHash.XInsert(store, key, wrapper)
+                } ElseBlock: {
+                    type = Dereference(wrapper)
+                    IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
+                        result = RESP.Error("WRONGTYPE")
+                    }
+                    list_ptr = Dereference(Add(wrapper, 16))
+                }
+                
+                IfCondition NotEqual(result, 0) ThenBlock: {} ElseBlock: {
+                    // Push all values
+                    i = 2
+                    WhileLoop LessThan(i, args_len) {
+                        value = ArrayGet(args_array, i)
+                        value_copy = Helpers.StringCopy(value)
+                        XList.XPrepend(list_ptr, value_copy)
+                        i = Add(i, 1)
+                    }
+                    
+                    list_size = XList.XSize(list_ptr)
+                    result = RESP.Integer(list_size)
+                }
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // === SET COMMANDS ===
+        
+        // SADD command
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_SADD) ThenBlock: {
+            // SADD key member [member ...] - args: ["SADD", key, member1, ...]
+            IfCondition GreaterEqual(args_len, 3) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                wrapper = XSHash.XLookup(store, key)
+                
+                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                    // Create new set
+                    set_ptr = XSHash.XCreate(16)
+                    wrapper = Allocate(24)
+                    StoreValue(wrapper, DataTypes.TYPE_SET)
+                    StoreValue(Add(wrapper, 8), 0)
+                    StoreValue(Add(wrapper, 16), set_ptr)
+                    XSHash.XInsert(store, key, wrapper)
+                } ElseBlock: {
+                    type = Dereference(wrapper)
+                    IfCondition NotEqual(type, DataTypes.TYPE_SET) ThenBlock: {
+                        result = RESP.Error("WRONGTYPE")
+                    }
+                    set_ptr = Dereference(Add(wrapper, 16))
+                }
+                
+                IfCondition EqualTo(result, 0) ThenBlock: {
+                    // Add all members
+                    added = 0
+                    i = 2
+                    WhileLoop LessThan(i, args_len) {
+                        member = ArrayGet(args_array, i)
+                        existing = XSHash.XExists(set_ptr, member)
+                        IfCondition EqualTo(existing, 0) ThenBlock: {
+                            // XSHash.XInsert copies the key, so we don't need to copy it first
+                            XSHash.XInsert(set_ptr, member, 1)  // Value is just 1 for sets
+                            added = Add(added, 1)
+                        }
+                        i = Add(i, 1)
+                    }
+                    result = RESP.Integer(added)
+                }
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // === HASH COMMANDS ===
+        
+        // HSET command
+        IfCondition EqualTo(cmd_code, TransactionConstants.TX_CMD_HSET) ThenBlock: {
+            // HSET key field value [field value ...] - args: ["HSET", key, field1, value1, ...]
+            IfCondition GreaterEqual(args_len, 4) ThenBlock: {
+                key = ArrayGet(args_array, 1)
+                wrapper = XSHash.XLookup(store, key)
+                
+                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                    // Create new hash
+                    hash_ptr = HashMap.CreateSimple()
+                    wrapper = Allocate(24)
+                    StoreValue(wrapper, DataTypes.TYPE_HASH)
+                    StoreValue(Add(wrapper, 8), 0)
+                    StoreValue(Add(wrapper, 16), hash_ptr)
+                    XSHash.XInsert(store, key, wrapper)
+                } ElseBlock: {
+                    type = Dereference(wrapper)
+                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                        result = RESP.Error("WRONGTYPE")
+                    }
+                    hash_ptr = Dereference(Add(wrapper, 16))
+                }
+                
+                IfCondition EqualTo(result, 0) ThenBlock: {
+                    // Set all field-value pairs
+                    added = 0
+                    i = 2
+                    WhileLoop LessThan(i, Subtract(args_len, 1)) {
+                        field = ArrayGet(args_array, i)
+                        value = ArrayGet(args_array, Add(i, 1))
+                        
+                        // HSetSimple returns 1 if new field, 0 if updated
+                        is_new_field = HashMap.HSetSimple(hash_ptr, field, value)
+                        added = Add(added, is_new_field)
+                        
+                        i = Add(i, 2)
+                    }
+                    result = RESP.Integer(added)
+                }
+            } ElseBlock: {
+                result = RESP.Error("ERR wrong number of arguments")
+            }
+        }
+        
+        // === DEFAULT CASE ===
+        
+        // Unknown command or unimplemented
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            result = RESP.Error("ERR unknown command in transaction")
+        }
+        
+        // Clean up args array
+        i = 0
+        WhileLoop LessThan(i, args_len) {
+            arg = ArrayGet(args_array, i)
+            Deallocate(arg, 0)
+            i = Add(i, 1)
+        }
+        ArrayDestroy(args_array)
+        
+        ReturnValue(result)
+    }
+}
+
+// Fixed RESP.Array function that handles pre-formatted RESP responses correctly
+Function.RESP.Array {
+    Input: elements: Array
+    Output: Address
+    Body: {
+        elements_param = elements
+        Debug("resp.build", level=2) {
+            PrintMessage("[DEBUG] RESP.Array: Building array with ")
+            PrintNumber(ArrayLength(elements_param))
+            PrintMessage(" elements.\n")
+        }
+        
+        // Handle null or empty array
+        IfCondition Or(EqualTo(elements, 0), EqualTo(ArrayLength(elements), 0)) ThenBlock: {
+            // Return empty array response
+            empty_resp = Allocate(6)
+            SetByte(empty_resp, 0, 42)  // '*'
+            SetByte(empty_resp, 1, 48)  // '0'
+            SetByte(empty_resp, 2, 13)  // '\r'
+            SetByte(empty_resp, 3, 10)  // '\n'
+            SetByte(empty_resp, 4, 0)   // null terminator
+            ReturnValue(empty_resp)
+        }
+        
+        count = ArrayLength(elements)
+        count_str = RESP.IntToString(count)
+        count_len = StringLength(count_str)
+        
+        // First pass: Calculate total size needed
+        total_size = 1  // '*'
+        total_size = Add(total_size, count_len)  // count digits
+        total_size = Add(total_size, 2)  // '\r\n' after count
+        
+        i = 0
+        WhileLoop LessThan(i, count) {
+            elem = ArrayGet(elements, i)
+            
+            IfCondition NotEqual(elem, 0) ThenBlock: {
+                // Check if this is already a RESP-formatted response
+                first_byte = GetByte(elem, 0)
+                
+                // Check for RESP type markers
+                is_resp_formatted = 0
+                
+                // Integer response starts with ':'
+                IfCondition EqualTo(first_byte, 58) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                // Simple string starts with '+'
+                IfCondition EqualTo(first_byte, 43) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                // Error starts with '-'
+                IfCondition EqualTo(first_byte, 45) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                // Bulk string starts with '$'
+                IfCondition EqualTo(first_byte, 36) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                // Array starts with '*'
+                IfCondition EqualTo(first_byte, 42) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                
+                IfCondition EqualTo(is_resp_formatted, 1) ThenBlock: {
+                    // Already RESP formatted - just add its length
+                    elem_len = StringLength(elem)
+                    total_size = Add(total_size, elem_len)
+                    
+                    // Check if it already has \r\n at end
+                    has_crlf = 0
+                    IfCondition GreaterEqual(elem_len, 2) ThenBlock: {
+                        last_pos = Subtract(elem_len, 1)
+                        second_last_pos = Subtract(elem_len, 2)
+                        last_byte = GetByte(elem, last_pos)
+                        second_last_byte = GetByte(elem, second_last_pos)
+                        IfCondition And(EqualTo(second_last_byte, 13), EqualTo(last_byte, 10)) ThenBlock: {
+                            has_crlf = 1
+                        }
+                    }
+                    
+                    // If no CRLF at end, add space for it
+                    IfCondition EqualTo(has_crlf, 0) ThenBlock: {
+                        total_size = Add(total_size, 2)
+                    }
+                } ElseBlock: {
+                    // Not RESP formatted - treat as bulk string
+                    elem_len = StringLength(elem)
+                    elem_len_str = RESP.IntToString(elem_len)
+                    elem_len_digits = StringLength(elem_len_str)
+                    Deallocate(elem_len_str, 0)
+                    
+                    total_size = Add(total_size, 1)  // '$'
+                    total_size = Add(total_size, elem_len_digits)  // length digits
+                    total_size = Add(total_size, 2)  // '\r\n' after length
+                    total_size = Add(total_size, elem_len)  // content
+                    total_size = Add(total_size, 2)  // '\r\n' after content
+                }
+            } ElseBlock: {
+                // NULL element - represent as $-1\r\n
+                total_size = Add(total_size, 5)  // "$-1\r\n"
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        total_size = Add(total_size, 1)  // null terminator
+        
+        // Allocate response buffer
+        response = Allocate(total_size)
+        
+        // Write array header
+        pos = 0
+        SetByte(response, pos, 42)  // '*'
+        pos = Add(pos, 1)
+        
+        // Write count
+        i = 0
+        WhileLoop LessThan(i, count_len) {
+            SetByte(response, pos, GetByte(count_str, i))
+            pos = Add(pos, 1)
+            i = Add(i, 1)
+        }
+        
+        // Write \r\n after count
+        SetByte(response, pos, 13)  // '\r'
+        pos = Add(pos, 1)
+        SetByte(response, pos, 10)  // '\n'
+        pos = Add(pos, 1)
+        
+        // Second pass: Write each element
+        i = 0
+        WhileLoop LessThan(i, count) {
+            elem = ArrayGet(elements, i)
+            
+            IfCondition NotEqual(elem, 0) ThenBlock: {
+                // Check if already RESP formatted
+                first_byte = GetByte(elem, 0)
+                
+                is_resp_formatted = 0
+                IfCondition EqualTo(first_byte, 58) ThenBlock: { is_resp_formatted = 1 }  // ':'
+                IfCondition EqualTo(first_byte, 43) ThenBlock: { is_resp_formatted = 1 }  // '+'
+                IfCondition EqualTo(first_byte, 45) ThenBlock: { is_resp_formatted = 1 }  // '-'
+                IfCondition EqualTo(first_byte, 36) ThenBlock: { is_resp_formatted = 1 }  // '$'
+                IfCondition EqualTo(first_byte, 42) ThenBlock: { is_resp_formatted = 1 }  // '*'
+                
+                IfCondition EqualTo(is_resp_formatted, 1) ThenBlock: {
+                    // Copy the already-formatted RESP response directly
+                    elem_len = StringLength(elem)
+                    
+                    // Check if it has CRLF at end
+                    has_crlf = 0
+                    IfCondition GreaterEqual(elem_len, 2) ThenBlock: {
+                        last_pos = Subtract(elem_len, 1)
+                        second_last_pos = Subtract(elem_len, 2)
+                        last_byte = GetByte(elem, last_pos)
+                        second_last_byte = GetByte(elem, second_last_pos)
+                        IfCondition And(EqualTo(second_last_byte, 13), EqualTo(last_byte, 10)) ThenBlock: {
+                            has_crlf = 1
+                        }
+                    }
+                    
+                    // Copy the response
+                    j = 0
+                    WhileLoop LessThan(j, elem_len) {
+                        SetByte(response, pos, GetByte(elem, j))
+                        pos = Add(pos, 1)
+                        j = Add(j, 1)
+                    }
+                    
+                    // Add CRLF if not present
+                    IfCondition EqualTo(has_crlf, 0) ThenBlock: {
+                        SetByte(response, pos, 13)  // '\r'
+                        pos = Add(pos, 1)
+                        SetByte(response, pos, 10)  // '\n'
+                        pos = Add(pos, 1)
+                    }
+                } ElseBlock: {
+                    // Format as bulk string
+                    elem_len = StringLength(elem)
+                    elem_len_str = RESP.IntToString(elem_len)
+                    elem_len_digits = StringLength(elem_len_str)
+                    
+                    // Write $<length>\r\n
+                    SetByte(response, pos, 36)  // '$'
+                    pos = Add(pos, 1)
+                    
+                    j = 0
+                    WhileLoop LessThan(j, elem_len_digits) {
+                        SetByte(response, pos, GetByte(elem_len_str, j))
+                        pos = Add(pos, 1)
+                        j = Add(j, 1)
+                    }
+                    
+                    SetByte(response, pos, 13)  // '\r'
+                    pos = Add(pos, 1)
+                    SetByte(response, pos, 10)  // '\n'
+                    pos = Add(pos, 1)
+                    
+                    // Write string content
+                    j = 0
+                    WhileLoop LessThan(j, elem_len) {
+                        SetByte(response, pos, GetByte(elem, j))
+                        pos = Add(pos, 1)
+                        j = Add(j, 1)
+                    }
+                    
+                    // Write trailing \r\n
+                    SetByte(response, pos, 13)  // '\r'
+                    pos = Add(pos, 1)
+                    SetByte(response, pos, 10)  // '\n'
+                    pos = Add(pos, 1)
+                    
+                    Deallocate(elem_len_str, 0)
+                }
+            } ElseBlock: {
+                // NULL element - write $-1\r\n
+                SetByte(response, pos, 36)  // '$'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 45)  // '-'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 49)  // '1'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 13)  // '\r'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 10)  // '\n'
+                pos = Add(pos, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Null terminate
+        SetByte(response, pos, 0)
+        
+        Deallocate(count_str, 0)
+        Debug("resp.build", level=3) {
+            PrintMessage("[DEBUG] RESP.Array: Final response string:\n")
+            PrintMessage(response)
+            PrintMessage("\n")
+        }
+
+        ReturnValue(response)
+    }
+}
+
 // --- END: Pipelining-aware RESP Parser ---
 
 Function.Server.HandleClient {
     Input: client_socket: Integer
+    Input: store_ptr: Integer
     Body: {
+        // --- CRITICAL FIX: Get a local, reliable pointer to the global store ---
+        // This ensures we are using the runtime-initialized value from Main.
+        // Use the passed store pointer
+
+        store = store_ptr
+
         Debug("client.connect", level=1) { PrintMessage("[DEBUG] New client connected.") }
 
         buffer = Allocate(4096)
@@ -579,13 +1525,29 @@ Function.Server.HandleClient {
                     
                     IfCondition GreaterThan(array_len, 0) ThenBlock: {
                         cmd_str = ArrayGet(command_array, 0)
-                        command = StringToUpper(cmd_str)
+                        command_upper = StringToUpper(cmd_str)
+                        
+                        // CRITICAL FIX: Trim the command to remove trailing newline
+                        command = StringTrim(command_upper)
+                        Deallocate(command_upper, 0)  // Clean up intermediate string
 
                         Debug("command.parse", level=1) {
-                            PrintMessage("[DEBUG] Parsed command:")
+                            PrintMessage("[DEBUG] Parsed command: '")
                             PrintMessage(command)
+                            PrintMessage("' (length: ")
+                            PrintNumber(StringLength(command))
+                            PrintMessage(")")
                         }
                         
+                        Debug("transaction.state", level=1) {
+                            PrintMessage("[DEBUG] in_transaction: ")
+                            PrintNumber(TransactionState.in_transaction)
+                            PrintMessage(" for command: '")
+                            PrintString(command)
+                            PrintMessage("'\n")
+                        }
+                        
+                        // === MODIFY MAIN COMMAND LOOP ===
                         // --- FIX: Make command dispatch more robust ---
                         // Use a flag to distinguish between "unhandled command" and "handled command with no response".
                         command_handled = 0
@@ -593,17 +1555,48 @@ Function.Server.HandleClient {
                         // --- FIX: Add tracking variables for response data structures ---
                         response_source_array = 0
                         response_source_xarray_deep = 0
+                        // Track single allocations that need cleanup
+                        response_source_single_alloc = 0
                         
+                        // Check if this is a transaction control command
+                        is_multi = StringCompare(command, "MULTI")
+                        is_exec = StringCompare(command, "EXEC") 
+                        is_discard = StringCompare(command, "DISCARD")
+
+                        // If we're in a transaction and this isn't a control command, queue it
+                        transaction_control = Or(EqualTo(is_multi, 0), Or(EqualTo(is_exec, 0), EqualTo(is_discard, 0)))
+
+                        IfCondition And(EqualTo(TransactionState.in_transaction, 1), 
+                                        Not(transaction_control)) ThenBlock: {
+                            // Queue this command instead of executing
+                            // Get command type code
+                            cmd_code = Transaction.GetCommandCode(command)
+                            
+                            // Queue command and its arguments (which are copied inside this function)
+                            Transaction.QueueCommand(cmd_code, command_array, array_len)
+                            
+                            // Return QUEUED response
+                            response = RESP.SimpleString("QUEUED")
+                            command_handled = 1
+                        }
+
+                        // Only proceed with normal command handling if not queued
+                        IfCondition EqualTo(command_handled, 0) ThenBlock: {
+
                         // PING
                         is_ping = StringCompare(command, "PING")
+
                         IfCondition EqualTo(is_ping, 0) ThenBlock: {
+                            Debug("command.ping", level=1) { PrintMessage("[DEBUG] Handling PING") }
                             response = RESP.SimpleString("PONG")
                             command_handled = 1
                         }
 
                         // ECHO
                         is_echo = StringCompare(command, "ECHO")
+
                         IfCondition EqualTo(is_echo, 0) ThenBlock: {
+                            Debug("command.echo", level=1) { PrintMessage("[DEBUG] Handling ECHO") }
                             IfCondition NotEqual(array_len, 2) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'echo' command")
                             } ElseBlock: {
@@ -615,6 +1608,7 @@ Function.Server.HandleClient {
 
                         // SET
                         is_set = StringCompare(command, "SET")
+
                         IfCondition EqualTo(is_set, 0) ThenBlock: {
                             IfCondition LessThan(array_len, 3) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'set' command")
@@ -626,6 +1620,17 @@ Function.Server.HandleClient {
                                     PrintMessage(key)
                                     PrintMessage("[DEBUG] SET Value:")
                                     PrintMessage(value)
+                                }
+
+                                Debug("data.store", level=2) {
+                                    PrintMessage("[DEBUG] SET: Accessing store at address: ")
+                                    PrintNumber(store)
+                                }
+
+                                // If store is 0, try forcing a reinit:
+                                IfCondition EqualTo(store, 0) ThenBlock: {
+                                    PrintMessage("[ERROR] Store is NULL! Attempting reinit...\n")
+                                    RedisData.store_ptr = XSHash.XCreate(1024)
                                 }
 
                                 // --- FIX: Properly handle overwriting existing keys to prevent memory leaks ---
@@ -644,6 +1649,12 @@ Function.Server.HandleClient {
                                     IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        HashMap.DestroySimple(value_ptr)
+                                    }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                        ZSet.Destroy(value_ptr)
+                                    }
 
                                     Deallocate(old_value_wrapper, 0) // Finally, free the wrapper itself
                                 }
@@ -689,6 +1700,12 @@ Function.Server.HandleClient {
                                     IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        HashMap.DestroySimple(value_ptr)
+                                    }
+                                    IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                        ZSet.Destroy(value_ptr)
+                                    }
 
                                     Deallocate(old_value_wrapper, 0)
                                 }
@@ -731,6 +1748,12 @@ Function.Server.HandleClient {
                                         IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
                                         IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                         IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                            HashMap.DestroySimple(value_ptr)
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                            ZSet.Destroy(value_ptr)
+                                        }
 
                                         Deallocate(old_value_wrapper, 0)
                                     }
@@ -794,46 +1817,35 @@ Function.Server.HandleClient {
                             IfCondition LessThan(array_len, 2) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'mget' command")
                             } ElseBlock: {
-                                // --- FIX: Manually build the array response to prevent a crash from RESP.Array(nil) ---
                                 num_keys = Subtract(array_len, 1)
-                                num_keys_str = Helpers.IntToString(num_keys)
-                                response = StringConcat("*", num_keys_str, "\r\n")
-                                Deallocate(num_keys_str, 0)
-
+                                
+                                // Collect all values first
+                                values = ArrayCreate(num_keys)
                                 i = 1
                                 WhileLoop LessThan(i, array_len) {
                                     key = ArrayGet(command_array, i)
                                     wrapper = XSHash.XLookup(store, key)
-
-                                    part_response = 0
+                                    
+                                    value = 0
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
+                                    
                                     IfCondition is_found ThenBlock: {
-                                        // Check expiration
                                         is_expired = Helpers.CheckAndEvictExpiredKey(key, wrapper)
-                                        IfCondition is_expired ThenBlock: {
-                                            part_response = RESP.BulkString(0) // nil for expired
-                                        } ElseBlock: {
+                                        IfCondition Not(is_expired) ThenBlock: {
                                             type = Dereference(wrapper)
                                             IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: {
-                                                value_ptr = Dereference(Add(wrapper, 16))
-                                                part_response = RESP.BulkString(value_ptr)
-                                            } ElseBlock: {
-                                                part_response = RESP.BulkString(0) // nil for wrong type
+                                                value = Dereference(Add(wrapper, 16))
                                             }
                                         }
-                                    } ElseBlock: {
-                                        part_response = RESP.BulkString(0) // nil for not found
                                     }
-
-                                    // Append the part to the main response
-                                    temp_response = StringConcat(response, part_response)
-                                    Deallocate(response, 0)
-                                    Deallocate(part_response, 0)
-                                    response = temp_response
-
+                                    
+                                    ArraySet(values, Subtract(i, 1), value)
                                     i = Add(i, 1)
                                 }
-                                // Since we built the response string manually, no source array needs cleanup.
+                                
+                                // Use RESP.Array to build the response efficiently
+                                response = RESP.Array(values)
+                                response_source_array = values
                             }
                             command_handled = 1
                         }
@@ -861,8 +1873,14 @@ Function.Server.HandleClient {
                                 IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: {
                                     XList.XDestroyDeep(value_ptr) // Free the list and its contents
                                 }
+                                IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                    HashMap.DestroySimple(value_ptr)  // Changed from HashMap.Destroy
+                                }
                                 IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                 IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
+                                IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                    ZSet.Destroy(value_ptr)
+                                }
 
                                 Deallocate(value_wrapper_ptr, 0) // Finally, free the wrapper itself
                                 response = RESP.Integer(1) // Return 1 for deleted key
@@ -920,6 +1938,1258 @@ Function.Server.HandleClient {
                             command_handled = 1
                         }
 
+                        // ZADD - Add members to sorted set
+                        is_zadd = StringCompare(command, "ZADD")
+                        IfCondition EqualTo(is_zadd, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 4) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'zadd' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                
+                                // Check even number of score-member pairs
+                                num_pairs = Divide(Subtract(array_len, 2), 2)
+                                remainder = Modulo(Subtract(array_len, 2), 2)
+                                
+                                IfCondition NotEqual(remainder, 0) ThenBlock: {
+                                    response = RESP.Error("ERR syntax error")
+                                } ElseBlock: {
+                                    wrapper = XSHash.XLookup(store, key)
+                                    is_found = NotEqual(wrapper, XArrays.XNULL)
+                                    zset_ptr = 0
+                                    
+                                    IfCondition is_found ThenBlock: {
+                                        type = Dereference(wrapper)
+                                        IfCondition NotEqual(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                            response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                        } ElseBlock: {
+                                            zset_ptr = Dereference(Add(wrapper, 16))
+                                        }
+                                    } ElseBlock: {
+                                        zset_ptr = ZSet.Create()
+                                        wrapper = Allocate(24)
+                                        StoreValue(wrapper, DataTypes.TYPE_ZSET)
+                                        StoreValue(Add(wrapper, 8), 0)
+                                        StoreValue(Add(wrapper, 16), zset_ptr)
+                                        XSHash.XInsert(store, key, wrapper)
+                                    }
+                                    
+                                    IfCondition NotEqual(zset_ptr, 0) ThenBlock: {
+                                        added_count = 0
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            score_str = ArrayGet(command_array, i)
+                                            member = ArrayGet(command_array, Add(i, 1))
+                                            score = Helpers.StringToInt(score_str)
+                                            
+                                            result = ZSet.Add(zset_ptr, member, score)
+                                            added_count = Add(added_count, result)
+                                            i = Add(i, 2)
+                                        }
+                                        response = RESP.Integer(added_count)
+                                    }
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // ZRANGE - Get range by rank
+                        is_zrange = StringCompare(command, "ZRANGE")
+                        IfCondition EqualTo(is_zrange, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 4) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'zrange' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                start_str = ArrayGet(command_array, 2)
+                                stop_str = ArrayGet(command_array, 3)
+                                start = Helpers.StringToInt(start_str)
+                                stop = Helpers.StringToInt(stop_str)
+                                
+                                // Check for WITHSCORES option
+                                with_scores = 0
+                                IfCondition GreaterEqual(array_len, 5) ThenBlock: {
+                                    option = ArrayGet(command_array, 4)
+                                    option_upper = StringToUpper(option)
+                                    is_withscores = StringCompare(option_upper, "WITHSCORES")
+                                    Deallocate(option_upper, 0)
+                                    IfCondition EqualTo(is_withscores, 0) ThenBlock: {
+                                        with_scores = 1
+                                    }
+                                }
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        zset_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        // Handle negative indices
+                                        card = ZSet.Card(zset_ptr)
+                                        IfCondition LessThan(start, 0) ThenBlock: {
+                                            start = Add(card, start)
+                                        }
+                                        IfCondition LessThan(stop, 0) ThenBlock: {
+                                            stop = Add(card, stop)
+                                        }
+                                        
+                                        // Get range
+                                        range_result = ZSet.Range(zset_ptr, start, stop, with_scores)
+                                        size = XArray.XSize(range_result)
+                                        
+                                        // Convert to native array
+                                        result_array = ArrayCreate(size)
+                                        i = 0
+                                        WhileLoop LessThan(i, size) {
+                                            item = XArray.XGet(range_result, i)
+                                            ArraySet(result_array, i, item)
+                                            i = Add(i, 1)
+                                        }
+                                        
+                                        response = RESP.Array(result_array)
+                                        response_source_array = result_array
+                                        response_source_xarray_deep = range_result
+                                    }
+                                } ElseBlock: {
+                                    empty_arr = ArrayCreate(0)
+                                    response = RESP.Array(empty_arr)
+                                    response_source_array = empty_arr
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // ZSCORE - Get score of member
+                        is_zscore = StringCompare(command, "ZSCORE")
+                        IfCondition EqualTo(is_zscore, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'zscore' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                member = ArrayGet(command_array, 2)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        zset_ptr = Dereference(Add(wrapper, 16))
+                                        score = ZSet.Score(zset_ptr, member)
+                                        
+                                        IfCondition EqualTo(score, -1) ThenBlock: {
+                                            response = RESP.BulkString(0)  // nil for not found
+                                        } ElseBlock: {
+                                            score_str = Helpers.IntToString(score)
+                                            response = RESP.BulkString(score_str)
+                                            response_source_single_alloc = score_str
+                                        }
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.BulkString(0)  // nil for non-existent key
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // ZCARD - Get sorted set cardinality
+                        is_zcard = StringCompare(command, "ZCARD")
+                        IfCondition EqualTo(is_zcard, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'zcard' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        zset_ptr = Dereference(Add(wrapper, 16))
+                                        card = ZSet.Card(zset_ptr)
+                                        response = RESP.Integer(card)
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.Integer(0)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HSET - Set hash field to value
+                        is_hset = StringCompare(command, "HSET")
+                        IfCondition EqualTo(is_hset, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 4) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hset' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                
+                                // Check if we have an even number of field-value pairs
+                                num_pairs = Divide(Subtract(array_len, 2), 2)
+                                remainder = Modulo(Subtract(array_len, 2), 2)
+                                
+                                IfCondition NotEqual(remainder, 0) ThenBlock: {
+                                    response = RESP.Error("ERR wrong number of arguments for 'hset' command")
+                                } ElseBlock: {
+                                    wrapper = XSHash.XLookup(store, key)
+                                    is_found = NotEqual(wrapper, XArrays.XNULL)
+                                    hash_ptr = 0
+                                    
+                                    IfCondition is_found ThenBlock: {
+                                        type = Dereference(wrapper)
+                                        IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                            response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                        } ElseBlock: {
+                                            hash_ptr = Dereference(Add(wrapper, 16))
+                                        }
+                                    } ElseBlock: {
+                                        hash_ptr = HashMap.CreateSimple()
+                                        wrapper = Allocate(24)
+                                        StoreValue(wrapper, DataTypes.TYPE_HASH)
+                                        StoreValue(Add(wrapper, 8), 0)
+                                        StoreValue(Add(wrapper, 16), hash_ptr)
+                                        XSHash.XInsert(store, key, wrapper)
+                                    }
+                                    
+                                    IfCondition NotEqual(hash_ptr, 0) ThenBlock: {
+                                        fields_added = 0
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            field = ArrayGet(command_array, i)
+                                            value = ArrayGet(command_array, Add(i, 1))
+                                            result = HashMap.HSetSimple(hash_ptr, field, value)
+                                            fields_added = Add(fields_added, result)
+                                            i = Add(i, 2)
+                                        }
+                                        response = RESP.Integer(fields_added)
+                                    }
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HGET - Get hash field value
+                        is_hget = StringCompare(command, "HGET")
+                        IfCondition EqualTo(is_hget, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hget' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                field = ArrayGet(command_array, 2)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        // Use the simple interface - it already returns a copy!
+                                        value = HashMap.HGetSimple(hash_ptr, field)
+                                        
+                                        IfCondition NotEqual(value, 0) ThenBlock: {
+                                            response = RESP.BulkString(value)
+                                            response_source_single_alloc = value  // Track for cleanup
+                                        } ElseBlock: {
+                                            response = RESP.BulkString(0)
+                                        }
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.BulkString(0)  // nil for non-existent key
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HLEN - Get hash length
+                        is_hlen = StringCompare(command, "HLEN")
+                        IfCondition EqualTo(is_hlen, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hlen' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        length = HashMap.HLenSimple(hash_ptr)
+                                        response = RESP.Integer(length)
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.Integer(0)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HEXISTS - Check if hash field exists
+                        is_hexists = StringCompare(command, "HEXISTS")
+                        IfCondition EqualTo(is_hexists, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hexists' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                field = ArrayGet(command_array, 2)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        exists = HashMap.HExistsSimple(hash_ptr, field)
+                                        response = RESP.Integer(exists)
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.Integer(0)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HDEL - Delete hash fields
+                        is_hdel = StringCompare(command, "HDEL")
+                        IfCondition EqualTo(is_hdel, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hdel' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                deleted_count = 0
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            field = ArrayGet(command_array, i)
+                                            result = HashMap.HDelSimple(hash_ptr, field)
+                                            deleted_count = Add(deleted_count, result)
+                                            i = Add(i, 1)
+                                        }
+                                        response = RESP.Integer(deleted_count)
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.Integer(0)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HGETALL - Get all field-value pairs
+                        is_hgetall = StringCompare(command, "HGETALL")
+                        IfCondition EqualTo(is_hgetall, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hgetall' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        // Get all field-value pairs
+                                        all_pairs = HashMap.HGetAllSimple(hash_ptr)
+                                        size = XArray.XSize(all_pairs)
+                                        
+                                        // Convert to native array for RESP.Array
+                                        result_array = ArrayCreate(size)
+                                        i = 0
+                                        WhileLoop LessThan(i, size) {
+                                            item = XArray.XGet(all_pairs, i)
+                                            ArraySet(result_array, i, item)
+                                            i = Add(i, 1)
+                                        }
+                                        
+                                        response = RESP.Array(result_array)
+                                        response_source_array = result_array
+                                        response_source_xarray_deep = all_pairs
+                                    }
+                                } ElseBlock: {
+                                    // Empty array for non-existent key
+                                    empty_arr = ArrayCreate(0)
+                                    response = RESP.Array(empty_arr)
+                                    response_source_array = empty_arr
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HVALS - Get all values from a hash
+                        is_hvals = StringCompare(command, "HVALS")
+                        IfCondition EqualTo(is_hvals, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hvals' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        // HValsSimple returns an XArray of value copies
+                                        all_values = HashMap.HValsSimple(hash_ptr)
+                                        size = XArray.XSize(all_values)
+                                        
+                                        result_array = ArrayCreate(size)
+                                        i = 0
+                                        WhileLoop LessThan(i, size) {
+                                            item = XArray.XGet(all_values, i)
+                                            ArraySet(result_array, i, item)
+                                            i = Add(i, 1)
+                                        }
+                                        
+                                        response = RESP.Array(result_array)
+                                        response_source_array = result_array
+                                        response_source_xarray_deep = all_values
+                                    }
+                                } ElseBlock: {
+                                    empty_arr = ArrayCreate(0)
+                                    response = RESP.Array(empty_arr)
+                                    response_source_array = empty_arr
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HKEYS - Get all field names from a hash  
+                        is_hkeys = StringCompare(command, "HKEYS")
+                        IfCondition EqualTo(is_hkeys, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hkeys' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        // HKeysSimple returns an XArray of field name copies
+                                        all_keys = HashMap.HKeysSimple(hash_ptr)
+                                        size = XArray.XSize(all_keys)
+                                        
+                                        result_array = ArrayCreate(size)
+                                        i = 0
+                                        WhileLoop LessThan(i, size) {
+                                            item = XArray.XGet(all_keys, i)
+                                            ArraySet(result_array, i, item)
+                                            i = Add(i, 1)
+                                        }
+                                        
+                                        response = RESP.Array(result_array)
+                                        response_source_array = result_array
+                                        response_source_xarray_deep = all_keys
+                                    }
+                                } ElseBlock: {
+                                    empty_arr = ArrayCreate(0)
+                                    response = RESP.Array(empty_arr)
+                                    response_source_array = empty_arr
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HINCRBY - Increment hash field by integer
+                        is_hincrby = StringCompare(command, "HINCRBY")
+                        IfCondition EqualTo(is_hincrby, 0) ThenBlock: {
+                            Debug("hincrby.start", level=1) {
+                                PrintMessage("[DEBUG] HINCRBY: array_len = ")
+                                PrintNumber(array_len)
+                                PrintMessage("\n")
+                            }
+                            
+                            IfCondition NotEqual(array_len, 4) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hincrby' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                field = ArrayGet(command_array, 2)
+                                increment_str = ArrayGet(command_array, 3)
+                                
+                                Debug("hincrby.params", level=1) {
+                                    PrintMessage("[DEBUG] HINCRBY: key='")
+                                    PrintMessage(key)
+                                    PrintMessage("' field='")
+                                    PrintMessage(field)
+                                    PrintMessage("' increment_str='")
+                                    PrintMessage(increment_str)
+                                    PrintMessage("'\n")
+                                }
+                                
+                                increment = Helpers.StringToInt(increment_str)
+                                
+                                Debug("hincrby.increment", level=1) {
+                                    PrintMessage("[DEBUG] HINCRBY: parsed increment = ")
+                                    PrintNumber(increment)
+                                    PrintMessage("\n")
+                                }
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                Debug("hincrby.lookup", level=1) {
+                                    PrintMessage("[DEBUG] HINCRBY: wrapper found = ")
+                                    PrintNumber(is_found)
+                                    PrintMessage("\n")
+                                }
+                                
+                                hash_ptr = 0
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    Debug("hincrby.type", level=1) {
+                                        PrintMessage("[DEBUG] HINCRBY: type = ")
+                                        PrintNumber(type)
+                                        PrintMessage(" (should be 4 for hash)\n")
+                                    }
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        Debug("hincrby.hashptr", level=1) {
+                                            PrintMessage("[DEBUG] HINCRBY: hash_ptr = ")
+                                            PrintNumber(hash_ptr)
+                                            PrintMessage("\n")
+                                        }
+                                    }
+                                } ElseBlock: {
+                                    Debug("hincrby.create", level=1) {
+                                        PrintMessage("[DEBUG] HINCRBY: Creating new hash\n")
+                                    }
+                                    hash_ptr = HashMap.CreateSimple()
+                                    wrapper = Allocate(24)
+                                    StoreValue(wrapper, DataTypes.TYPE_HASH)
+                                    StoreValue(Add(wrapper, 8), 0)
+                                    StoreValue(Add(wrapper, 16), hash_ptr)
+                                    XSHash.XInsert(store, key, wrapper)
+                                }
+                                
+                                IfCondition NotEqual(hash_ptr, 0) ThenBlock: {
+                                    Debug("hincrby.call", level=1) {
+                                        PrintMessage("[DEBUG] HINCRBY: Calling HashMap.HIncrBySimple\n")
+                                    }
+                                    
+                                    new_val = HashMap.HIncrBySimple(hash_ptr, field, increment)
+                                    
+                                    Debug("hincrby.result", level=1) {
+                                        PrintMessage("[DEBUG] HINCRBY: new_val = ")
+                                        PrintNumber(new_val)
+                                        PrintMessage("\n")
+                                    }
+                                    
+                                    response = RESP.Integer(new_val)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HMSET - Set multiple hash fields (deprecated but still supported)
+                        is_hmset = StringCompare(command, "HMSET")
+                        IfCondition EqualTo(is_hmset, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 4) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hmset' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                
+                                // Check even number of field-value pairs
+                                num_pairs = Divide(Subtract(array_len, 2), 2)
+                                remainder = Modulo(Subtract(array_len, 2), 2)
+                                
+                                IfCondition NotEqual(remainder, 0) ThenBlock: {
+                                    response = RESP.Error("ERR wrong number of arguments for 'hmset' command")
+                                } ElseBlock: {
+                                    wrapper = XSHash.XLookup(store, key)
+                                    is_found = NotEqual(wrapper, XArrays.XNULL)
+                                    hash_ptr = 0
+                                    
+                                    IfCondition is_found ThenBlock: {
+                                        type = Dereference(wrapper)
+                                        IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                            response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                        } ElseBlock: {
+                                            hash_ptr = Dereference(Add(wrapper, 16))
+                                        }
+                                    } ElseBlock: {
+                                        hash_ptr = HashMap.CreateSimple()
+                                        wrapper = Allocate(24)
+                                        StoreValue(wrapper, DataTypes.TYPE_HASH)
+                                        StoreValue(Add(wrapper, 8), 0)
+                                        StoreValue(Add(wrapper, 16), hash_ptr)
+                                        XSHash.XInsert(store, key, wrapper)
+                                    }
+                                    
+                                    IfCondition NotEqual(hash_ptr, 0) ThenBlock: {
+                                        // Set all field-value pairs
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            field = ArrayGet(command_array, i)
+                                            value = ArrayGet(command_array, Add(i, 1))
+                                            HashMap.HSetSimple(hash_ptr, field, value)
+                                            i = Add(i, 2)
+                                        }
+                                        response = RESP.SimpleString("OK")
+                                    }
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // HMGET - Get multiple hash field values
+                        is_hmget = StringCompare(command, "HMGET")
+                        IfCondition EqualTo(is_hmget, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'hmget' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                num_fields = Subtract(array_len, 2)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                // Use an XArray to hold the copies for proper deep cleanup
+                                value_copies = XArray.XCreate(num_fields)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                        // Wrong type, all results are nil. XArray is already full of 0s.
+                                    } ElseBlock: {
+                                        hash_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        // Get each requested field
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            field = ArrayGet(command_array, i)
+                                            value = HashMap.HGetSimple(hash_ptr, field) // This is a copy or 0
+                                            XArray.XPush(value_copies, value)
+                                            i = Add(i, 1)
+                                        }
+                                    }
+                                }
+                                
+                                // Convert the XArray of copies to a native array for the RESP library
+                                result_array = ArrayCreate(num_fields)
+                                i = 0
+                                WhileLoop LessThan(i, num_fields) {
+                                    item = XArray.XGet(value_copies, i)
+                                    ArraySet(result_array, i, item)
+                                    i = Add(i, 1)
+                                }
+                                
+                                response = RESP.Array(result_array)
+                                response_source_array = result_array
+                                response_source_xarray_deep = value_copies // Track for deep cleanup
+                            }
+                            command_handled = 1
+                        }
+
+                        // LPOP - Remove and return head element
+                        is_lpop = StringCompare(command, "LPOP")
+                        IfCondition EqualTo(is_lpop, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'lpop' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        list_ptr = Dereference(Add(wrapper, 16))
+                                        size = XList.XSize(list_ptr)
+                                        
+                                        IfCondition EqualTo(size, 0) ThenBlock: {
+                                            response = RESP.BulkString(0)  // nil for empty list
+                                        } ElseBlock: {
+                                            // Pop from head
+                                            value = XList.XPopFront(list_ptr)
+                                            response = RESP.BulkString(value)
+                                            response_source_single_alloc = value
+                                            
+                                            // Check if list is now empty
+                                            new_size = XList.XSize(list_ptr)
+                                            IfCondition EqualTo(new_size, 0) ThenBlock: {
+                                                // Remove empty list from store
+                                                XSHash.XDelete(store, key)
+                                                XList.XDestroy(list_ptr)
+                                                Deallocate(wrapper, 0)
+                                            }
+                                        }
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.BulkString(0)  // nil for non-existent key
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // RPOP - Remove and return tail element
+                        is_rpop = StringCompare(command, "RPOP")
+                        IfCondition EqualTo(is_rpop, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'rpop' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        list_ptr = Dereference(Add(wrapper, 16))
+                                        size = XList.XSize(list_ptr)
+                                        
+                                        IfCondition EqualTo(size, 0) ThenBlock: {
+                                            response = RESP.BulkString(0)  // nil for empty list
+                                        } ElseBlock: {
+                                            // Pop from tail
+                                            value = XList.XPopBack(list_ptr)
+                                            response = RESP.BulkString(value)
+                                            response_source_single_alloc = value
+                                            
+                                            // Check if list is now empty
+                                            new_size = XList.XSize(list_ptr)
+                                            IfCondition EqualTo(new_size, 0) ThenBlock: {
+                                                // Remove empty list from store
+                                                XSHash.XDelete(store, key)
+                                                XList.XDestroy(list_ptr)
+                                                Deallocate(wrapper, 0)
+                                            }
+                                        }
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.BulkString(0)  // nil for non-existent key
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // MULTI - Start transaction
+                        is_multi = StringCompare(command, "MULTI")
+                        IfCondition EqualTo(is_multi, 0) ThenBlock: {
+                           IfCondition NotEqual(array_len, 1) ThenBlock: {
+                               response = RESP.Error("ERR wrong number of arguments for 'multi' command")
+                           } ElseBlock: {
+                               IfCondition EqualTo(TransactionState.in_transaction, 1) ThenBlock: {
+                                   response = RESP.Error("ERR MULTI calls can not be nested")
+                               } ElseBlock: {
+                                   TransactionState.in_transaction = 1
+                                   // Defensive check: Ensure queues are initialized.
+                                   // This can prevent a crash if the global state isn't seen correctly.
+                                   IfCondition EqualTo(TransactionState.tx_queue, 0) ThenBlock: {
+                                       TransactionState.tx_queue = MessageQueue.Create()
+                                       TransactionState.tx_args_queue = MessageQueue.Create()
+                                   }
+                                   // Clear queues
+                                   MessageQueue.Clear(TransactionState.tx_queue)
+                                   MessageQueue.Clear(TransactionState.tx_args_queue)
+                                   response = RESP.SimpleString("OK")
+                               }
+                           }
+                           command_handled = 1
+                        }
+
+                        // EXEC - Execute transaction
+                        is_exec = StringCompare(command, "EXEC")
+                        IfCondition EqualTo(is_exec, 0) ThenBlock: {
+                           IfCondition NotEqual(array_len, 1) ThenBlock: {
+                               response = RESP.Error("ERR wrong number of arguments for 'exec' command")
+                           } ElseBlock: {
+                               IfCondition EqualTo(TransactionState.in_transaction, 0) ThenBlock: {
+                                   response = RESP.Error("ERR EXEC without MULTI")
+                               } ElseBlock: {
+                                   queue_size = MessageQueue.Size(TransactionState.tx_queue)
+                                   
+                                   IfCondition GreaterThan(queue_size, 0) ThenBlock: {
+                                       // Execute queued commands
+                                       // Create an array to hold the results of each command
+                                       results_array = ArrayCreate(queue_size)
+                                       
+                                       i = 0
+                                       WhileLoop EqualTo(MessageQueue.IsEmpty(TransactionState.tx_queue), 0) {
+                                           cmd_code = MessageQueue.Dequeue(TransactionState.tx_queue)
+                                           packed_args = MessageQueue.Dequeue(TransactionState.tx_args_queue)
+                                           
+                                           // Execute the command and get the RESP response string
+                                           cmd_result = Transaction.ExecuteCommand(cmd_code, packed_args, store)
+                                           
+                                           // Add result to our results array
+                                           ArraySet(results_array, i, cmd_result)
+                                           i = Add(i, 1)
+                                           
+                                           // CRITICAL FIX: The result from ExecuteCommand is a new allocation.
+                                           // It's copied into the final array response by RESP.Array,
+                                           // so we must deallocate the intermediate string here to prevent leaks
+                                           // and incorrect re-use.
+                                           Deallocate(cmd_result, 0)
+                                       }
+                                       
+                                       // Build the final array response from the collected results
+                                       response = RESP.Array(results_array)
+                                       // The RESP.Array function does not consume the input array, so we must clean it up.
+                                       // The *contents* were already cleaned up in the loop.
+                                       ArrayDestroy(results_array)
+                                   } ElseBlock: {
+                                       // Empty transaction, return an empty array
+                                       response = RESP.Array(0)
+                                   }
+                                   
+                                   // Clear state
+                                   TransactionState.in_transaction = 0
+                               }
+                           }
+                           command_handled = 1
+                        }
+
+                        // DISCARD - Cancel transaction
+                        is_discard = StringCompare(command, "DISCARD")
+                        IfCondition EqualTo(is_discard, 0) ThenBlock: {
+                           Debug("command.discard", level=1) {
+                               PrintMessage("[DEBUG] Processing DISCARD command\n")
+                           }
+                           
+                           IfCondition NotEqual(array_len, 1) ThenBlock: {
+                               response = RESP.Error("ERR wrong number of arguments for 'discard' command")
+                           } ElseBlock: {
+                               IfCondition EqualTo(TransactionState.in_transaction, 0) ThenBlock: {
+                                   response = RESP.Error("ERR DISCARD without MULTI")
+                               } ElseBlock: {
+                                   Debug("command.discard", level=1) {
+                                       PrintMessage("[DEBUG] Discarding transaction, clearing queues\n")
+                                   }
+                                   
+                                   // Check if queues exist before trying to clear them
+                                   IfCondition NotEqual(TransactionState.tx_queue, 0) ThenBlock: {
+                                       // Get the count of queued commands
+                                       cmd_count = MessageQueue.Size(TransactionState.tx_queue)
+                                       
+                                       Debug("command.discard", level=1) {
+                                           PrintMessage("[DEBUG] Clearing ")
+                                           PrintNumber(cmd_count)
+                                           PrintMessage(" queued commands\n")
+                                       }
+                                       
+                                       // Dequeue and free each command's arguments
+                                       // Using a bounded loop to prevent infinite loops
+                                       i = 0
+                                       WhileLoop LessThan(i, cmd_count) {
+                                           // Dequeue command code
+                                           cmd_code = MessageQueue.Dequeue(TransactionState.tx_queue)
+                                           
+                                           // Dequeue packed arguments
+                                           packed_args = MessageQueue.Dequeue(TransactionState.tx_args_queue)
+                                           
+                                           // Only unpack and free if it's a valid packed value
+                                           IfCondition GreaterThan(packed_args, 0) ThenBlock: {
+                                               // Unpack the array pointer and length
+                                               args_array = Divide(packed_args, 65536)
+                                               args_len = Modulo(packed_args, 65536)
+                                               
+                                               // Free each copied argument string
+                                               j = 0
+                                               WhileLoop LessThan(j, args_len) {
+                                                   arg = ArrayGet(args_array, j)
+                                                   IfCondition NotEqual(arg, 0) ThenBlock: {
+                                                       Deallocate(arg, 0)
+                                                   }
+                                                   j = Add(j, 1)
+                                               }
+                                               
+                                               // Free the arguments array itself
+                                               ArrayDestroy(args_array)
+                                           }
+                                           
+                                           i = Add(i, 1)
+                                       }
+                                       
+                                       // Clear any remaining items in the queues
+                                       // This should be empty now, but be safe
+                                       MessageQueue.Clear(TransactionState.tx_queue)
+                                       MessageQueue.Clear(TransactionState.tx_args_queue)
+                                   }
+                                   
+                                   // Clear transaction state
+                                   TransactionState.in_transaction = 0
+                                   
+                                   Debug("command.discard", level=1) {
+                                       PrintMessage("[DEBUG] Transaction discarded, state cleared\n")
+                                   }
+                                   
+                                   // Return OK response
+                                   response = RESP.SimpleString("OK")
+                               }
+                           }
+                           command_handled = 1
+                        }
+
+                        // SREM - Remove members from set
+                        is_srem = StringCompare(command, "SREM")
+                        IfCondition EqualTo(is_srem, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'srem' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                removed_count = 0
+                                
+                                IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: {
+                                        set_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            member = ArrayGet(command_array, i)
+                                            // XSHash.XDelete returns the old value if found, which is 1 for sets.
+                                            old_val = XSHash.XDelete(set_ptr, member)
+                                            IfCondition NotEqual(old_val, XArrays.XNULL) ThenBlock: {
+                                                // The value is 1, not a pointer, so no deallocation is needed.
+                                                removed_count = Add(removed_count, 1)
+                                            }
+                                            i = Add(i, 1)
+                                        }
+                                    }
+                                }
+                                response = RESP.Integer(removed_count)
+                            }
+                            command_handled = 1
+                        }
+
+                        // LINDEX - Get element by index
+                        is_lindex = StringCompare(command, "LINDEX")
+                        IfCondition EqualTo(is_lindex, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'lindex' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                index_str = ArrayGet(command_array, 2)
+                                index = Helpers.StringToInt(index_str)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                
+                                IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                        list_ptr = Dereference(Add(wrapper, 16))
+                                        size = XList.XSize(list_ptr)
+                                        
+                                        // Handle negative indices
+                                        IfCondition LessThan(index, 0) ThenBlock: {
+                                            index = Add(size, index)
+                                        }
+                                        
+                                        IfCondition Or(LessThan(index, 0), GreaterEqual(index, size)) ThenBlock: {
+                                            response = RESP.BulkString(0)  // nil for out of range
+                                        } ElseBlock: {
+                                            // Walk the list to index
+                                            current = Dereference(list_ptr)  // head
+                                            i = 0
+                                            WhileLoop LessThan(i, index) {
+                                                current = Dereference(Add(current, 8))  // next
+                                                i = Add(i, 1)
+                                            }
+                                            value = Dereference(current)
+                                            response = RESP.BulkString(value)
+                                        }
+                                    } ElseBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    }
+                                } ElseBlock: {
+                                    response = RESP.BulkString(0)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // RENAME - Rename a key
+                        is_rename = StringCompare(command, "RENAME")
+                        IfCondition EqualTo(is_rename, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'rename' command")
+                            } ElseBlock: {
+                                oldkey = ArrayGet(command_array, 1)
+                                newkey = ArrayGet(command_array, 2)
+                                
+                                // Get old wrapper
+                                wrapper = XSHash.XDelete(store, oldkey)
+                                
+                                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                                    response = RESP.Error("ERR no such key")
+                                } ElseBlock: {
+                                    // Delete newkey if it exists
+                                    old_wrapper = XSHash.XDelete(store, newkey)
+                                    IfCondition NotEqual(old_wrapper, XArrays.XNULL) ThenBlock: {
+                                        // Clean up old value
+                                        type = Dereference(old_wrapper)
+                                        value_ptr = Dereference(Add(old_wrapper, 16))
+                                        
+                                        IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                            Deallocate(value_ptr, 0)
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                            XList.XDestroyDeep(value_ptr)
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: {
+                                            XSHash.XDestroy(value_ptr)
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                            HashMap.DestroySimple(value_ptr)
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                            ZSet.Destroy(value_ptr)
+                                        }
+                                        
+                                        Deallocate(old_wrapper, 0)
+                                    }
+                                    
+                                    // Insert with new key
+                                    XSHash.XInsert(store, newkey, wrapper)
+                                    response = RESP.SimpleString("OK")
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // KEYS - Find keys matching pattern (* for all)
+                        is_keys = StringCompare(command, "KEYS")
+                        IfCondition EqualTo(is_keys, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'keys' command")
+                            } ElseBlock: {
+                                pattern = ArrayGet(command_array, 1)
+                                
+                                // Get all keys from store
+                                all_keys = XSHash.XKeys(store)
+                                num_keys = XArray.XSize(all_keys)
+                                
+                                matching = XArray.XCreate(num_keys)
+                                
+                                // Simple pattern matching - just support "*" for all
+                                is_wildcard = StringCompare(pattern, "*")
+                                
+                                i = 0
+                                WhileLoop LessThan(i, num_keys) {
+                                    key = XArray.XGet(all_keys, i)
+                                    
+                                    IfCondition EqualTo(is_wildcard, 0) ThenBlock: {
+                                        // Match all
+                                        key_copy = Helpers.StringCopy(key)
+                                        XArray.XPush(matching, key_copy)
+                                    } ElseBlock: {
+                                        // TODO: Real pattern matching would go here
+                                        // For now, exact match only
+                                        cmp = StringCompare(pattern, key)
+                                        IfCondition EqualTo(cmp, 0) ThenBlock: {
+                                            key_copy = Helpers.StringCopy(key)
+                                            XArray.XPush(matching, key_copy)
+                                        }
+                                    }
+                                    
+                                    Deallocate(key, 0)
+                                    i = Add(i, 1)
+                                }
+                                
+                                // Convert to native array
+                                match_count = XArray.XSize(matching)
+                                result_array = ArrayCreate(match_count)
+                                i = 0
+                                WhileLoop LessThan(i, match_count) {
+                                    item = XArray.XGet(matching, i)
+                                    ArraySet(result_array, i, item)
+                                    i = Add(i, 1)
+                                }
+                                
+                                XArray.XDestroy(all_keys)
+                                
+                                response = RESP.Array(result_array)
+                                response_source_array = result_array
+                                response_source_xarray_deep = matching
+                            }
+                            command_handled = 1
+                        }
+
+                        // PTTL - Get TTL in milliseconds
+                        is_pttl = StringCompare(command, "PTTL")
+                        IfCondition EqualTo(is_pttl, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 2) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'pttl' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                wrapper = XSHash.XLookup(store, key)
+                                
+                                IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+                                    response = RESP.Integer(-2)  // Key doesn't exist
+                                } ElseBlock: {
+                                    expiration_ms = Dereference(Add(wrapper, 8))
+                                    
+                                    IfCondition EqualTo(expiration_ms, 0) ThenBlock: {
+                                        response = RESP.Integer(-1)  // No expiration
+                                    } ElseBlock: {
+                                        now = Helpers.GetSystemTime()
+                                        
+                                        IfCondition LessThan(expiration_ms, now) ThenBlock: {
+                                            // Expired - evict and return -2
+                                            Helpers.CheckAndEvictExpiredKey(key, wrapper)
+                                            response = RESP.Integer(-2)
+                                        } ElseBlock: {
+                                            remaining_ms = Subtract(expiration_ms, now)
+                                            response = RESP.Integer(remaining_ms)
+                                        }
+                                    }
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        // Alternative PERSIST implementation
+// Try this version in your redis_server.ailang
+
+// PERSIST - Remove expiration (Alternative approach)
+is_persist = StringCompare(command, "PERSIST")
+IfCondition EqualTo(is_persist, 0) ThenBlock: {
+    IfCondition NotEqual(array_len, 2) ThenBlock: {
+        response = RESP.Error("ERR wrong number of arguments for 'persist' command")
+    } ElseBlock: {
+        key = ArrayGet(command_array, 1)
+        
+        // Look up the wrapper
+        wrapper = XSHash.XLookup(store, key)
+        
+        IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
+            response = RESP.Integer(0)  // Key doesn't exist
+        } ElseBlock: {
+            // Get current expiration
+            expiration_ms = Dereference(Add(wrapper, 8))
+            
+            IfCondition EqualTo(expiration_ms, 0) ThenBlock: {
+                response = RESP.Integer(0)  // No expiration to remove
+            } ElseBlock: {
+                now = Helpers.GetSystemTime()
+                IfCondition LessThan(expiration_ms, now) ThenBlock: {
+                    response = RESP.Integer(0) // Key is expired
+                } ElseBlock: {
+                    // Alternative approach: Delete and re-insert the key
+                    // This ensures we're definitely updating the stored value
+                    
+                    // Get the type and value
+                    type = Dereference(wrapper)
+                    value_ptr = Dereference(Add(wrapper, 16))
+                    
+                    // Create a new wrapper with no expiration
+                    new_wrapper = Allocate(24)
+                    StoreValue(new_wrapper, type)
+                    StoreValue(Add(new_wrapper, 8), 0)  // No expiration
+                    
+                    // Copy the value pointer (not the value itself)
+                    StoreValue(Add(new_wrapper, 16), value_ptr)
+                    
+                    // Delete old wrapper from hash
+                    old = XSHash.XDelete(store, key)
+                    
+                    // Insert new wrapper
+                    XSHash.XInsert(store, key, new_wrapper)
+                    
+                    // Free old wrapper (but not the value)
+                    IfCondition NotEqual(old, XArrays.XNULL) ThenBlock: {
+                        Deallocate(old, 0)
+                    }
+                    
+                    response = RESP.Integer(1)  // Success
+                }
+            }
+        }
+    }
+    command_handled = 1
+}
+
+
+                        // RANDOMKEY - Return a random key from the database
+                        is_randomkey = StringCompare(command, "RANDOMKEY")
+                        IfCondition EqualTo(is_randomkey, 0) ThenBlock: {
+                            IfCondition NotEqual(array_len, 1) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'randomkey' command")
+                            } ElseBlock: {
+                                all_keys = XSHash.XKeys(store)
+                                num_keys = XArray.XSize(all_keys)
+                                
+                                IfCondition EqualTo(num_keys, 0) ThenBlock: {
+                                    response = RESP.BulkString(0)  // nil for empty DB
+                                    XArray.XDestroy(all_keys)
+                                } ElseBlock: {
+                                    // Use the combined RNG for better quality randomness.
+                                    index = RNG.Combined_Range(0, num_keys)
+                                    // Get the selected key and make a copy
+                                    selected_key_ptr = XArray.XGet(all_keys, index)
+                                    selected_key = Helpers.StringCopy(selected_key_ptr)
+                                    
+                                    // Clean up all keys from XKeys (they're all copies)
+                                    i = 0
+                                    WhileLoop LessThan(i, num_keys) {
+                                        key = XArray.XGet(all_keys, i)
+                                        Deallocate(key, 0)
+                                        i = Add(i, 1)
+                                    }
+                                    XArray.XDestroy(all_keys)
+                                    
+                                    response = RESP.BulkString(selected_key)
+                                    response_source_single_alloc = selected_key
+                                }
+                            }
+                            command_handled = 1
+                        }
+                        // Debug: Check if we're about to test SMEMBERS
+                        Debug("command.pre_smembers", level=1) {
+                            PrintMessage("[DEBUG] About to check SMEMBERS. Command: '")
+                            PrintMessage(command)
+                            PrintMessage("', command_handled: ")
+                            PrintNumber(command_handled)
+                        }
+
+
+
                         // SMEMBERS - Get all members of a set
                         is_smembers = StringCompare(command, "SMEMBERS")
                         IfCondition EqualTo(is_smembers, 0) ThenBlock: {
@@ -930,11 +3200,7 @@ Function.Server.HandleClient {
                                 wrapper = XSHash.XLookup(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
 
-                                IfCondition Not(is_found) ThenBlock: {
-                                    empty_arr = ArrayCreate(0)
-                                    response = RESP.Array(empty_arr)
-                                    response_source_array = empty_arr
-                                } ElseBlock: {
+                                IfCondition is_found ThenBlock: {
                                     type = Dereference(wrapper)
                                     IfCondition NotEqual(type, DataTypes.TYPE_SET) ThenBlock: {
                                         response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
@@ -953,16 +3219,19 @@ Function.Server.HandleClient {
                                         }
 
                                         response = RESP.Array(members_array)
-
-                                        // --- FIX: Track created arrays for proper cleanup ---
                                         response_source_array = members_array
                                         response_source_xarray_deep = keys_xarray
                                     }
+                                } ElseBlock: {
+                                        empty_arr = ArrayCreate(0)
+                                        response = RESP.Array(empty_arr)
+                                        response_source_array = empty_arr
                                 }
                             }
                             command_handled = 1
                         }
 
+                        
                         // SCARD - Get set cardinality (number of members)
                         is_scard = StringCompare(command, "SCARD")
                         IfCondition EqualTo(is_scard, 0) ThenBlock: {
@@ -1194,20 +3463,35 @@ Function.Server.HandleClient {
 
                         // XREAD - Read entries from a stream (simplified)
                         is_xread = StringCompare(command, "XREAD")
+
                         IfCondition EqualTo(is_xread, 0) ThenBlock: {
+                            Debug("command.xread", level=1) { PrintMessage("[DEBUG] Handling XREAD") }
                             IfCondition LessThan(array_len, 4) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'xread' command")
                             } ElseBlock: {
-                                streams_keyword = StringToUpper(ArrayGet(command_array, 1))
+                                arg1 = ArrayGet(command_array, 1)
+                                IfCondition EqualTo(arg1, 0) ThenBlock: {
+                                    PrintMessage("[ERROR] XREAD: arg1 is NULL\n")
+                                    response = RESP.Error("ERR invalid arguments")
+                                    command_handled = 1
+                                }
+                                // Safety check before StringToUpper
+                                IfCondition EqualTo(arg1, 0) ThenBlock: {
+                                    response = RESP.Error("ERR XREAD requires STREAMS keyword")
+                                    command_handled = 1
+                                }
+                                streams_keyword = StringToUpper(arg1)
                                 is_streams = StringCompare(streams_keyword, "STREAMS")
-                                Deallocate(streams_keyword, 0) // Clean up temporary string
+                                // Try without deallocating
+                                // // Deallocate(streams_keyword, 0) // Disabled - may cause issues
 
                                 IfCondition NotEqual(is_streams, 0) ThenBlock: {
                                     response = RESP.Error("ERR Syntax error, missing STREAMS keyword")
                                 } ElseBlock: {
+                                    Debug("command.xread", level=2) { PrintMessage("[DEBUG] XREAD: STREAMS confirmed") }
                                     key = ArrayGet(command_array, 2)
                                     start_id_str = ArrayGet(command_array, 3)
-
+                                    Debug("command.xread", level=2) { PrintMessage("[DEBUG] XREAD: Looking up stream in store") }
                                     wrapper = XSHash.XLookup(store, key)
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
 
@@ -1230,7 +3514,16 @@ Function.Server.HandleClient {
                                                 entry_ptr = XArray.XGet(stream_ptr, i)
                                                 entry_id_ptr = XArray.XGet(entry_ptr, 0)
 
-                                                comparison = Helpers.CompareStreamIDs(entry_id_ptr, start_id_str)
+                                                Debug("command.xread", level=3) {
+                                                    PrintMessage("[DEBUG] XREAD: Comparing entry ID with start ID")
+                                                }
+                                                // Check if these are valid before comparing
+                                                IfCondition Or(EqualTo(entry_id_ptr, 0), EqualTo(start_id_str, 0)) ThenBlock: {
+                                                    PrintMessage("[ERROR] NULL pointer in ID comparison\n")
+                                                    comparison = -2
+                                                } ElseBlock: {
+                                                    comparison = Helpers.CompareStreamIDs(entry_id_ptr, start_id_str)
+                                                }
                                                 IfCondition EqualTo(comparison, 1) ThenBlock: {
                                                     XArray.XPush(matching_entries, entry_ptr)
                                                 }
@@ -1549,31 +3842,21 @@ Function.Server.HandleClient {
                         IfCondition And(EqualTo(is_ttl, 0), EqualTo(array_len, 2)) ThenBlock: {
                             key = ArrayGet(command_array, 1)
                             wrapper = XSHash.XLookup(store, key)
-                            is_found = NotEqual(wrapper, XArrays.XNULL)
-
-                            IfCondition Not(is_found) ThenBlock: {
+                            
+                            IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                                 response = RESP.Integer(-2) // Key does not exist
                             } ElseBlock: {
-                                // --- FIX: Refactor TTL to avoid double GetSystemTime call and potential hang ---
                                 expiration_ms = Dereference(Add(wrapper, 8))
+                                
+                                // CRITICAL FIX: Check if expiration is 0 (meaning no expiration)
                                 IfCondition EqualTo(expiration_ms, 0) ThenBlock: {
                                     response = RESP.Integer(-1) // Key exists but has no associated expire
                                 } ElseBlock: {
                                     now = Helpers.GetSystemTime()
-                                    is_expired = LessThan(expiration_ms, now)
-
-                                    IfCondition is_expired ThenBlock: {
+                                    
+                                    IfCondition LessThan(expiration_ms, now) ThenBlock: {
                                         // Key is expired, evict it now and return -2
-                                        deleted_wrapper = XSHash.XDelete(store, key)
-                                        IfCondition NotEqual(deleted_wrapper, XArrays.XNULL) ThenBlock: {
-                                            type = Dereference(deleted_wrapper)
-                                            value_ptr = Dereference(Add(deleted_wrapper, 16))
-                                            IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: { Deallocate(value_ptr, 0) }
-                                            IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
-                                            IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
-                                            IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
-                                            Deallocate(deleted_wrapper, 0)
-                                        }
+                                        Helpers.CheckAndEvictExpiredKey(key, wrapper)
                                         response = RESP.Integer(-2)
                                     } ElseBlock: {
                                         remaining_ms = Subtract(expiration_ms, now)
@@ -1715,6 +3998,9 @@ Function.Server.HandleClient {
                             command_handled = 1
                         }
 
+                        // Fixed FLUSHDB implementation that avoids segfault
+                        // The issue: XSHash.XKeys might be returning invalid data or the cleanup is corrupting memory
+
                         // FLUSHDB command (clear current database)
                         is_flushdb = StringCompare(command, "FLUSHDB")
                         IfCondition EqualTo(is_flushdb, 0) ThenBlock: {
@@ -1722,50 +4008,124 @@ Function.Server.HandleClient {
                                 PrintMessage("[DEBUG] FLUSHDB: Starting safe deep clean of data store...")
                             }
 
-                            // --- FIX: Add a guard to prevent calling XKeys on an empty store, which causes a segfault. ---
-                            // The item count is stored at offset 8 of the XSHash structure.
-                            key_count = Dereference(Add(store, 8))
-                            IfCondition GreaterThan(key_count, 0) ThenBlock: {
-                                // 1. Get a copy of all keys. XKeys allocates a new XArray and copies of all key strings.
-                                all_keys = XSHash.XKeys(store)
-                                num_keys = XArray.XSize(all_keys)
-
-                                // 2. Iterate through the copied keys and delete them one by one using the DEL logic.
-                                i = 0
-                                WhileLoop LessThan(i, num_keys) {
-                                    key_to_del = XArray.XGet(all_keys, i)
-
-                                    // This reuses the same logic as the DEL command for safety.
-                                    value_wrapper_ptr = XSHash.XDelete(store, key_to_del)
-                                    is_found = NotEqual(value_wrapper_ptr, XArrays.XNULL)
-
-                                    IfCondition is_found ThenBlock: {
-                                        type = Dereference(value_wrapper_ptr)
-                                        value_ptr = Dereference(Add(value_wrapper_ptr, 16))
-
-                                        IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: { Deallocate(value_ptr, 0) }
-                                        IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: { XList.XDestroyDeep(value_ptr) }
-                                        IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
-                                        IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
-
-                                        Deallocate(value_wrapper_ptr, 0)
+                            // --- CRITICAL FIX: Validate store pointer first ---
+                            IfCondition EqualTo(store, 0) ThenBlock: {
+                                PrintMessage("[ERROR] FLUSHDB: Store is NULL!")
+                                response = RESP.Error("ERR internal error - store not initialized")
+                                command_handled = 1
+                            } ElseBlock: {
+                                // Get the current state of the hash table
+                                key_count = Dereference(Add(store, 8))
+                                
+                                Debug("command.flushdb", level=2) {
+                                    PrintMessage("[DEBUG] FLUSHDB: Key count = ")
+                                    PrintNumber(key_count)
+                                }
+                                
+                                IfCondition GreaterThan(key_count, 0) ThenBlock: {
+                                    // --- ALTERNATIVE APPROACH: Clear buckets directly without XKeys ---
+                                    // This avoids the complexity of XKeys and potential memory issues
+                                    
+                                    buckets = Dereference(Add(store, 16))
+                                    bucket_count = Dereference(store)
+                                    
+                                    Debug("command.flushdb", level=2) {
+                                        PrintMessage("[DEBUG] FLUSHDB: Clearing buckets, count = ")
+                                        PrintNumber(bucket_count)
                                     }
-
-                                    i = Add(i, 1)
+                                    
+                                    // Iterate through each bucket
+                                    bucket_idx = 0
+                                    WhileLoop LessThan(bucket_idx, bucket_count) {
+                                        current = ArrayGet(buckets, bucket_idx)
+                                        
+                                        // Process all nodes in this bucket
+                                        WhileLoop NotEqual(current, 0) {
+                                            // Save next before we free current
+                                            next_node = Dereference(Add(current, 16))
+                                            
+                                            // Get the key and value wrapper
+                                            stored_key = Dereference(current)
+                                            value_wrapper_ptr = Dereference(Add(current, 8))
+                                            
+                                            Debug("command.flushdb", level=3) {
+                                                PrintMessage("[DEBUG] FLUSHDB: Freeing key: ")
+                                                PrintString(stored_key)
+                                            }
+                                            
+                                            // Free the value based on its type
+                                            IfCondition NotEqual(value_wrapper_ptr, 0) ThenBlock: {
+                                                type = Dereference(value_wrapper_ptr)
+                                                value_ptr = Dereference(Add(value_wrapper_ptr, 16))
+                                                
+                                                IfCondition EqualTo(type, DataTypes.TYPE_STRING) ThenBlock: {
+                                                    IfCondition NotEqual(value_ptr, 0) ThenBlock: {
+                                                        Deallocate(value_ptr, 0)
+                                                    }
+                                                }
+                                                IfCondition EqualTo(type, DataTypes.TYPE_LIST) ThenBlock: {
+                                                    IfCondition NotEqual(value_ptr, 0) ThenBlock: {
+                                                        XList.XDestroyDeep(value_ptr)
+                                                    }
+                                                }
+                                                IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: {
+                                                    IfCondition NotEqual(value_ptr, 0) ThenBlock: {
+                                                        XSHash.XDestroy(value_ptr)
+                                                    }
+                                                }
+                                                IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                                    IfCondition NotEqual(value_ptr, 0) ThenBlock: {
+                                                        HashMap.DestroySimple(value_ptr)
+                                                    }
+                                                }
+                                                IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                                    IfCondition NotEqual(value_ptr, 0) ThenBlock: {
+                                                        ZSet.Destroy(value_ptr)
+                                                    }
+                                                }
+                                                IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: {
+                                                    IfCondition NotEqual(value_ptr, 0) ThenBlock: {
+                                                        XStream.XDestroy(value_ptr)
+                                                    }
+                                                }
+                                                
+                                                // Free the wrapper
+                                                Deallocate(value_wrapper_ptr, 0)
+                                            }
+                                            
+                                            // Free the key string
+                                            IfCondition NotEqual(stored_key, 0) ThenBlock: {
+                                                Deallocate(stored_key, 0)
+                                            }
+                                            
+                                            // Free the node itself
+                                            Deallocate(current, 0)
+                                            
+                                            // Move to next node
+                                            current = next_node
+                                        }
+                                        
+                                        // Clear the bucket head
+                                        ArraySet(buckets, bucket_idx, 0)
+                                        
+                                        bucket_idx = Add(bucket_idx, 1)
+                                    }
+                                    
+                                    // Reset the item count to 0
+                                    StoreValue(Add(store, 8), 0)
+                                    
+                                    Debug("command.flushdb", level=1) {
+                                        PrintMessage("[DEBUG] FLUSHDB: Successfully cleared all entries")
+                                    }
+                                } ElseBlock: {
+                                    Debug("command.flushdb", level=1) {
+                                        PrintMessage("[DEBUG] FLUSHDB: Store already empty, nothing to clear")
+                                    }
                                 }
-
-                                // 3. Clean up the temporary key list created by XKeys.
-                                i = 0
-                                WhileLoop LessThan(i, num_keys) {
-                                    key_to_del = XArray.XGet(all_keys, i)
-                                    Deallocate(key_to_del, 0) // Free the copied key string
-                                    i = Add(i, 1)
-                                }
-                                XArray.XDestroy(all_keys) // Free the XArray itself
+                                
+                                response = RESP.SimpleString("OK")
+                                command_handled = 1
                             }
-
-                            response = RESP.SimpleString("OK")
-                            command_handled = 1
                         }
 
                         // DBSIZE command (number of keys)
@@ -1802,6 +4162,12 @@ Function.Server.HandleClient {
                                         IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: {
                                             response = RESP.SimpleString("set")
                                         }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
+                                            response = RESP.SimpleString("hash")
+                                        }
+                                        IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                            response = RESP.SimpleString("zset")
+                                        }
                                         IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: {
                                             response = RESP.SimpleString("stream")
                                         }
@@ -1813,13 +4179,49 @@ Function.Server.HandleClient {
                             command_handled = 1
                         }
 
+                        // ZREM - Remove members from sorted set
+                        is_zrem = StringCompare(command, "ZREM")
+                        IfCondition EqualTo(is_zrem, 0) ThenBlock: {
+                            IfCondition LessThan(array_len, 3) ThenBlock: {
+                                response = RESP.Error("ERR wrong number of arguments for 'zrem' command")
+                            } ElseBlock: {
+                                key = ArrayGet(command_array, 1)
+                                
+                                wrapper = XSHash.XLookup(store, key)
+                                is_found = NotEqual(wrapper, XArrays.XNULL)
+                                removed_count = 0
+                                
+                                IfCondition is_found ThenBlock: {
+                                    type = Dereference(wrapper)
+                                    IfCondition NotEqual(type, DataTypes.TYPE_ZSET) ThenBlock: {
+                                        response = RESP.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                                    } ElseBlock: {
+                                        zset_ptr = Dereference(Add(wrapper, 16))
+                                        
+                                        i = 2
+                                        WhileLoop LessThan(i, array_len) {
+                                            member = ArrayGet(command_array, i)
+                                            result = ZSet.Remove(zset_ptr, member)
+                                            removed_count = Add(removed_count, result)
+                                            i = Add(i, 1)
+                                        }
+                                    }
+                                }
+                                IfCondition EqualTo(response, 0) ThenBlock: {
+                                    response = RESP.Integer(removed_count)
+                                }
+                            }
+                            command_handled = 1
+                        }
+
+                        } // End of IfCondition EqualTo(command_handled, 0)
                         // Send response
                         // Use NotEqual(response, -1) to check against our special flag from MONITOR
                         IfCondition NotEqual(response, -1) ThenBlock: {
                             IfCondition command_handled ThenBlock: {
                                 // Command was handled. If it produced a response, send it.
                                 IfCondition NotEqual(response, 0) ThenBlock: {
-                                    Debug("client.write", level=1) {
+                                    Debug("client.response", level=2) {
                                         PrintMessage("[DEBUG] Sending response to client:")
                                         PrintMessage(response)
                                     }
@@ -1838,6 +4240,9 @@ Function.Server.HandleClient {
                         
                         // --- FIX: Proper cleanup for response data structures ---
                         // This block must come after the response is sent, but before the command array is cleaned up.
+                        IfCondition NotEqual(response_source_single_alloc, 0) ThenBlock: {
+                            Deallocate(response_source_single_alloc, 0)
+                        }
                         IfCondition NotEqual(response_source_array, 0) ThenBlock: {
                             ArrayDestroy(response_source_array)
                         }
@@ -1895,23 +4300,21 @@ Function.Server.HandleClient {
                 bytes_read = SocketRead(client_socket, read_target_ptr, read_max_len)
                 IfCondition GreaterThan(bytes_read, 0) ThenBlock: {
                     buffer_data_len = Add(buffer_data_len, bytes_read)
-                    Debug("buffer.read", level=1) {
+                    Debug("client.read", level=2) {
                         PrintMessage("[DEBUG] Read bytes from socket: ")
                         PrintNumber(bytes_read)
-                        PrintMessage("\n[DEBUG] Total buffer length: ")
+                        PrintMessage(", Total buffer length: ")
                         PrintNumber(buffer_data_len)
-                        PrintMessage("\n[DEBUG] Buffer offset: ")
-                        PrintNumber(buffer_offset)
-                        
-                        // Print first few bytes to see what we received
-                        PrintMessage("\n[DEBUG] First bytes: ")
+                    }
+                    // The user-requested section, now properly wrapped
+                    Debug("client.read.bytes", level=3) {
+                        PrintMessage("[DEBUG] First bytes received: ")
                         i = 0
                         WhileLoop And(LessThan(i, 20), LessThan(i, buffer_data_len)) {
                             PrintNumber(GetByte(buffer, i))
                             PrintMessage(" ")
                             i = Add(i, 1)
                         }
-                        PrintMessage("\n")
                     }
                 } ElseBlock: {
                     client_connected = 0
@@ -1930,13 +4333,43 @@ Function.Server.HandleClient {
     }
 }
 
-SubRoutine.Main {
-    
-    Debug("server.start", level=1) {
-        PrintMessage("[DEBUG] Server Main subroutine started.")
-        PrintMessage("[DEBUG] Initializing main data store...")
-    }
 
+SubRoutine.Main {
+    Debug("server.init", level=1) { PrintMessage("[MAIN] Starting Main subroutine") }
+    
+    // Create and assign the hash table
+    local_store = XSHash.XCreate(1024)
+    RedisData.store_ptr = local_store
+    
+    // Initialize scheduler for transaction handling
+    TransactionState.sched_mem = Scheduler.CreateMemory()
+    Scheduler.Init(TransactionState.sched_mem)
+    TransactionState.MAIN_ACTOR = 0
+    Scheduler.RegisterActor(TransactionState.sched_mem, TransactionState.MAIN_ACTOR)
+    
+    TransactionState.tx_queue = MessageQueue.Create()
+    TransactionState.tx_args_queue = MessageQueue.Create()
+    
+    // Seed the random number generator at startup with various memory addresses for entropy
+    RNG.AutoSeed(local_store, TransactionState.sched_mem, 12345)
+    
+    Debug("server.init", level=1) {
+        PrintMessage("[MAIN] Store initialized at address: ")
+        PrintNumber(RedisData.store_ptr)
+    }
+    
+    // After creating store, verify we can read it back
+    temp_verify = RedisData.store_ptr
+    PrintMessage("[MAIN] Verification read: ")
+    PrintNumber(temp_verify)
+    PrintMessage("\n")
+    
+    // Verify it was created successfully
+    IfCondition EqualTo(RedisData.store_ptr, 0) ThenBlock: {
+        PrintMessage("[ERROR] Failed to create Redis data store!")
+        Exit(1)
+    }
+    
     // Create server socket
     server_socket = SocketCreate()
     IfCondition LessEqual(server_socket, 0) ThenBlock: {
@@ -1978,7 +4411,7 @@ SubRoutine.Main {
             // --- FIX: Revert from broken concurrent model to a stable iterative model ---
             // The previous use of RunTask with a global mailbox created a race condition.
             // This direct call handles one client completely before accepting the next.
-            Server.HandleClient(client_socket)
+            Server.HandleClient(client_socket, RedisData.store_ptr)
         }
     }
 

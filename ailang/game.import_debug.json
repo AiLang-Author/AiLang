@@ -1,0 +1,79 @@
+{
+  "main_file": "game.ailang",
+  "loaded_modules": [
+    "AIMacro",
+    "XArrays",
+    "FixedPointTrig"
+  ],
+  "conflicts": {
+    "XArray.XSize": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XSet": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XPush": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "Math.ISqrt": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "Trig.Cos": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XGet": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "Trig.Sin": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XCreate": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XHash.XCreate": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XPop": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "v1.0": [
+      "XArrays",
+      "FixedPointTrig"
+    ]
+  },
+  "prefixes": {
+    "FixedPointTrig": "NSW7H8MM",
+    "XArrays": "NSWDEFBQ",
+    "AIMacro": "NS4LQ4AA"
+  },
+  "resolution_log": [
+    {
+      "file": "game.ailang",
+      "line": 1,
+      "import": "AIMacro",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.AIMacro.ailang",
+      "line": 6,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.AIMacro.ailang",
+      "line": 7,
+      "import": "FixedPointTrig",
+      "type": "library"
+    }
+  ]
+}

@@ -51,6 +51,7 @@ class MemoryManager:  # <-- THIS WAS MISSING!
         try:
             print("DEBUG: Starting program compilation")
             self.discover_pool_variables(node)
+            self.allocate_pool_table()  # Allocate pool table after discovery
             # --- NEW: Discover actors to determine table size ---
             self.compiler.scheduler.discover_actors(node)
             self.calculate_stack_size(node)
@@ -112,14 +113,6 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             self.asm.emit_push_r13()
             self.asm.emit_push_r14()
             
-            # CRITICAL: Allocate pool table BEFORE compiling any pools!
-             # CRITICAL: Allocate the global pool table BEFORE any declarations are compiled.
-            # This ensures R15 is valid before any library that uses a pool is imported.
-            if not self.pool_table_allocated:
-                print("DEBUG: Allocating global pool table at program start.")
-                self.allocate_pool_table()
-                self.pool_table_allocated = True
-            
             # NOW compile all declarations (including pools)
             # Pool initialization code will now have R15 set correctly
             for decl in node.declarations:
@@ -157,6 +150,33 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             for decl in node.declarations:
                 self.calculate_stack_size(decl, depth + 1)
         
+        # ==================== ADD THIS SECTION ====================
+        elif node_type == 'Function':
+            # Traverse function parameters
+            if hasattr(node, 'parameters') and node.parameters:
+                for param in node.parameters:
+                    # Parameters need stack space too
+                    if hasattr(param, 'name'):
+                        param_name = param.name
+                        if param_name not in self.compiler.variables:
+                            self.compiler.stack_size += 8  # Parameters are typically 8 bytes
+                            self.compiler.variables[param_name] = self.compiler.stack_size
+                            print(f"DEBUG: Allocated parameter {param_name} at stack offset {self.compiler.stack_size}")
+            
+            # Traverse function body
+            if hasattr(node, 'body') and node.body:
+                for stmt in node.body:
+                    self.calculate_stack_size(stmt, depth + 1)
+            print(f"DEBUG: Scanned Function {node.name if hasattr(node, 'name') else 'unnamed'}")
+        
+        elif node_type == 'SubRoutine':
+            # SubRoutines don't have parameters but still have bodies
+            if hasattr(node, 'body') and node.body:
+                for stmt in node.body:
+                    self.calculate_stack_size(stmt, depth + 1)
+            print(f"DEBUG: Scanned SubRoutine {node.name if hasattr(node, 'name') else 'unnamed'}")
+        # ==================== END ADDITION ====================
+            
         elif node_type == 'Assignment' or (hasattr(node, 'target') and hasattr(node, 'value')):
             if node.target not in self.compiler.variables:
                 self.compiler.stack_size += 16
@@ -201,19 +221,21 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             if node.pool_type == 'DynamicPool':
                 pool_var_name = f"{node.pool_type}.{node.name}"
                 if pool_var_name not in self.compiler.variables:
-                    self.compiler.stack_size += 8 # Just space for a pointer
+                    self.compiler.stack_size += 8  # Just space for a pointer
                     self.compiler.variables[pool_var_name] = self.compiler.stack_size
                     print(f"DEBUG: Allocated stack pointer for DynamicPool '{pool_var_name}' at offset {self.compiler.stack_size}")
-            else: # For FixedPool, recurse into items
+            else:  # For FixedPool, recurse into items
                 for item in node.body:
                     self.calculate_stack_size(item, depth + 1)
         
         elif hasattr(node, 'body') and isinstance(node.body, list):
+            # Generic handler for any other node with a body
             for stmt in node.body:
                 self.calculate_stack_size(stmt, depth + 1)
         
         elif hasattr(node, 'message'):
             self.calculate_stack_size(node.message, depth + 1)
+
     
     def scan_for_locals(self, node, known_vars):
         """Recursively scans a node (like a function body) to find all local variable assignments."""

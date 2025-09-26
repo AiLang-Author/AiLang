@@ -1,0 +1,181 @@
+# dungeon_escape_fixed.aim - Using actual AILang functions
+
+def show_character_sheet(stats):
+    print("=== CHARACTER SHEET ===")
+    print("Level: ")
+    print(stats[0])
+    # ... rest unchanged
+end
+
+def fight_monster(player_attack, player_health, player_dexterity, monster_health_init):
+    monster_health = monster_health_init
+    monster_attack = 15
+    
+    while monster_health > 0:
+        print("Your Health: ")
+        print(player_health)
+        print(" | Monster Health: ")
+        print(monster_health)
+        print("\nCombat: 1. Attack, 2. Defend\n")
+        
+        choice_str = input()
+        choice = int(choice_str)
+        
+        if choice == 1:
+            print("You attack!\n")
+            monster_health = monster_health - player_attack
+        elif choice == 2:
+            print("You defend!\n")
+            monster_attack = 15 - (player_dexterity * 2)
+        else:
+            print("Invalid choice!\n")
+        end
+        
+        if monster_health > 0:
+            print("Monster attacks!\n")
+            player_health = player_health - monster_attack
+            monster_attack = 15
+        end
+
+        if player_health <= 0:
+            print("You died!\n")
+            return 0
+        end
+    end
+    
+    print("You won!\n")
+    return player_health
+end
+
+def create_simple_map():
+    # Use a single list to represent a 5x5 grid
+    # 0=wall, 1=floor, 2=door, 3=treasure, 4=monster, 5=exit
+    grid = list()
+    # 25 tiles for 5x5 grid
+    i = 0
+    while i < 25:
+        grid.append(0)  # Initialize all as walls
+        i = i + 1
+    end
+    
+    # Set specific tiles (row * 5 + col)
+    grid[6] = 1   # Start position
+    grid[7] = 1   # Floor
+    grid[8] = 2   # Door
+    grid[11] = 1  # Floor
+    grid[12] = 4  # Monster
+    grid[13] = 3  # Treasure
+    grid[16] = 1  # Floor
+    grid[17] = 1  # Floor
+    grid[18] = 5  # Exit
+    
+    return grid
+end
+
+def main():
+    print("=================================")
+    print("    DUNGEON ESCAPE SIMPLE")
+    print("=================================")
+    
+    print("Enter a number for your character: ")
+    seed_str = input()
+    seed = int(seed_str)
+    
+    strength = (seed % 5) + 3
+    dexterity = ((seed / 5) % 5) + 3
+    health = 50 + (seed % 20)
+    
+    print("Stats - STR: ")
+    print(strength)
+    print(" DEX: ")
+    print(dexterity)
+    print(" HP: ")
+    print(health)
+    
+    grid = create_simple_map()
+    px = 1  # Start at position (1,1) -> index 6
+    py = 1
+    gold = 0
+    
+    game_running = 1
+    while game_running == 1:
+        # Simple position display
+        print("\n--- Position (")
+        print(px)
+        print(",")
+        print(py)
+        print(") ---")
+        print("Health: ")
+        print(health)
+        print(" Gold: ")
+        print(gold)
+        print("\n1=Up 2=Down 3=Left 4=Right 5=Quit\n> ")
+        
+        move_str = input()
+        move = int(move_str)
+        
+        new_x = px
+        new_y = py
+        
+        if move == 1:
+            new_y = py - 1
+        elif move == 2:
+            new_y = py + 1
+        elif move == 3:
+            new_x = px - 1
+        elif move == 4:
+            new_x = px + 1
+        elif move == 5:
+            game_running = 0
+        end
+        
+        if game_running == 1:
+            # Check bounds
+            if new_x < 0 or new_x > 4 or new_y < 0 or new_y > 4:
+                print("Can't go there - wall!\n")
+            else:
+                idx = new_y * 5 + new_x
+                tile = grid[idx]
+                
+                if tile == 0:
+                    print("Wall blocks you!\n")
+                elif tile == 1:
+                    px = new_x
+                    py = new_y
+                    print("You move.\n")
+                elif tile == 2:
+                    print("Door opened!\n")
+                    grid[idx] = 1
+                    px = new_x
+                    py = new_y
+                elif tile == 3:
+                    print("Found treasure! +50 gold!\n")
+                    gold = gold + 50
+                    grid[idx] = 1
+                    px = new_x
+                    py = new_y
+                elif tile == 4:
+                    print("Monster attacks!\n")
+                    attack = strength * 2
+                    health = fight_monster(attack, health, dexterity, 30)
+                    if health > 0:
+                        grid[idx] = 1
+                        px = new_x
+                        py = new_y
+                    else:
+                        print("GAME OVER!\n")
+                        game_running = 0
+                    end
+                elif tile == 5:
+                    print("You found the exit! YOU WIN!\n")
+                    gold = gold + 100
+                    game_running = 0
+                end
+            end
+        end
+    end
+    
+    print("\nFinal Score: ")
+    print(gold)
+    print(" gold\n")
+end

@@ -1,0 +1,54 @@
+// test_pool_persistence.ailang
+// Test if pool variables maintain their values across function calls
+
+LibraryImport.XArrays
+
+FixedPool.TestData {
+    "persistent_value": Initialize=0
+}
+
+Function.SetValue {
+    Body: {
+        PrintMessage("Setting value to 0xABCDEF\n")
+        TestData.persistent_value = 0xABCDEF
+        
+        value = TestData.persistent_value
+        PrintMessage("Read back immediately: ")
+        PrintNumber(value)
+        PrintMessage("\n")
+    }
+}
+
+Function.CheckValue {
+    Body: {
+        PrintMessage("Checking value in different function...\n")
+        value = TestData.persistent_value
+        PrintMessage("Value is: ")
+        PrintNumber(value)
+        PrintMessage("\n")
+        
+        IfCondition EqualTo(value, 0xABCDEF) ThenBlock: {
+            PrintMessage("SUCCESS: Pool variable persisted!\n")
+        } ElseBlock: {
+            PrintMessage("FAILURE: Pool variable lost!\n")
+        }
+    }
+}
+
+SubRoutine.Main {
+    PrintMessage("Testing pool variable persistence\n")
+    
+    // Set in one function
+    SetValue()
+    
+    // Check in another function
+    CheckValue()
+    
+    // Check again in Main
+    main_value = TestData.persistent_value
+    PrintMessage("Value in Main: ")
+    PrintNumber(main_value)
+    PrintMessage("\n")
+}
+
+RunTask(Main)

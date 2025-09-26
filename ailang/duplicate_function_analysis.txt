@@ -1,0 +1,13 @@
+DUPLICATE FUNCTION ANALYSIS
+========================================
+
+Found 2 definitions of enhanced_load_source
+  Line 401: def enhanced_load_source(filepath: str) -> str:
+  Line 454: def enhanced_load_source(filepath):
+
+Python uses the LAST definition in the file!
+
+This explains the confusion:
+- Test shows it returns tuple
+- But main.py might be expecting single value
+- Or vice versa

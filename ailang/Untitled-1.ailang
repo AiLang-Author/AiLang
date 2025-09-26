@@ -1,0 +1,178 @@
+// test_stringtrim.ailang
+// Test program to verify StringTrim functionality
+
+Program TestStringTrim {
+    Main {
+        PrintMessage("=== StringTrim Test Suite ===\n")
+        
+        // Test 1: Trim spaces
+        test1 = "  hello world  "
+        result1 = StringTrim(test1)
+        PrintMessage("Test 1 - Trim spaces:\n")
+        PrintMessage("  Input:  '")
+        PrintMessage(test1)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(test1))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result1)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result1))
+        PrintMessage(")\n")
+        
+        // Test 2: Trim newline
+        test2 = "SMEMBERS\n"
+        result2 = StringTrim(test2)
+        PrintMessage("\nTest 2 - Trim newline:\n")
+        PrintMessage("  Input:  'SMEMBERS\\n' (length: ")
+        PrintNumber(StringLength(test2))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result2)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result2))
+        PrintMessage(")\n")
+        
+        // Test 3: Trim carriage return + newline
+        test3 = "PING\r\n"
+        result3 = StringTrim(test3)
+        PrintMessage("\nTest 3 - Trim \\r\\n:\n")
+        PrintMessage("  Input:  'PING\\r\\n' (length: ")
+        PrintNumber(StringLength(test3))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result3)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result3))
+        PrintMessage(")\n")
+        
+        // Test 4: Trim tabs
+        test4 = "\t\tGET key\t\t"
+        result4 = StringTrim(test4)
+        PrintMessage("\nTest 4 - Trim tabs:\n")
+        PrintMessage("  Input:  '\\t\\tGET key\\t\\t' (length: ")
+        PrintNumber(StringLength(test4))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result4)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result4))
+        PrintMessage(")\n")
+        
+        // Test 5: No whitespace (should remain unchanged)
+        test5 = "DBSIZE"
+        result5 = StringTrim(test5)
+        PrintMessage("\nTest 5 - No whitespace:\n")
+        PrintMessage("  Input:  '")
+        PrintMessage(test5)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(test5))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result5)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result5))
+        PrintMessage(")\n")
+        
+        // Test 6: Empty string
+        test6 = ""
+        result6 = StringTrim(test6)
+        PrintMessage("\nTest 6 - Empty string:\n")
+        PrintMessage("  Input:  '' (length: ")
+        PrintNumber(StringLength(test6))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result6)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result6))
+        PrintMessage(")\n")
+        
+        // Test 7: Only whitespace
+        test7 = "   \t\n\r  "
+        result7 = StringTrim(test7)
+        PrintMessage("\nTest 7 - Only whitespace:\n")
+        PrintMessage("  Input:  '   \\t\\n\\r  ' (length: ")
+        PrintNumber(StringLength(test7))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result7)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result7))
+        PrintMessage(")\n")
+        
+        // Test 8: Mixed whitespace with command
+        test8 = "  \tSET key value\n\r"
+        result8 = StringTrim(test8)
+        PrintMessage("\nTest 8 - Mixed whitespace:\n")
+        PrintMessage("  Input:  '  \\tSET key value\\n\\r' (length: ")
+        PrintNumber(StringLength(test8))
+        PrintMessage(")\n")
+        PrintMessage("  Result: '")
+        PrintMessage(result8)
+        PrintMessage("' (length: ")
+        PrintNumber(StringLength(result8))
+        PrintMessage(")\n")
+        
+        // Test 9: Comparison test - the real issue
+        PrintMessage("\n=== Comparison Test ===\n")
+        command_with_newline = "SMEMBERS\n"
+        trimmed_command = StringTrim(command_with_newline)
+        expected = "SMEMBERS"
+        
+        PrintMessage("Comparing trimmed '")
+        PrintMessage(trimmed_command)
+        PrintMessage("' (len: ")
+        PrintNumber(StringLength(trimmed_command))
+        PrintMessage(") with expected '")
+        PrintMessage(expected)
+        PrintMessage("' (len: ")
+        PrintNumber(StringLength(expected))
+        PrintMessage(")\n")
+        
+        comparison_result = StringCompare(trimmed_command, expected)
+        PrintMessage("StringCompare result: ")
+        PrintNumber(comparison_result)
+        PrintMessage(" (0 = match, non-zero = no match)\n")
+        
+        IfCondition EqualTo(comparison_result, 0) ThenBlock: {
+            PrintMessage("✓ SUCCESS: StringTrim correctly removes newline!\n")
+        } ElseBlock: {
+            PrintMessage("✗ FAIL: StringTrim is not working correctly!\n")
+            
+            // Debug byte-by-byte
+            PrintMessage("Byte comparison:\n")
+            i = 0
+            WhileLoop LessThan(i, StringLength(trimmed_command)) {
+                byte = GetByte(trimmed_command, i)
+                PrintMessage("  Byte ")
+                PrintNumber(i)
+                PrintMessage(": ")
+                PrintNumber(byte)
+                
+                // Show ASCII character if printable
+                IfCondition And(GreaterEqual(byte, 32), LessEqual(byte, 126)) ThenBlock: {
+                    PrintMessage(" ('")
+                    c = CharToString(byte)
+                    PrintMessage(c)
+                    PrintMessage("')")
+                    Deallocate(c, 0)
+                }
+                PrintMessage("\n")
+                i = Add(i, 1)
+            }
+        }
+        
+        PrintMessage("\n=== Test Complete ===\n")
+        
+        // Clean up
+        Deallocate(result1, 0)
+        Deallocate(result2, 0)
+        Deallocate(result3, 0)
+        Deallocate(result4, 0)
+        Deallocate(result5, 0)
+        Deallocate(result6, 0)
+        Deallocate(result7, 0)
+        Deallocate(result8, 0)
+        Deallocate(trimmed_command, 0)
+    }
+}

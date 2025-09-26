@@ -1,0 +1,87 @@
+// test_stringtrim.ailang
+// Test program to verify StringTrim functionality
+
+
+   
+        PrintMessage("=== StringTrim Test Suite ===\n")
+        
+        // Test 2: The critical test for Redis - trim newline from SMEMBERS
+        PrintMessage("\nTest: Trim newline from command\n")
+        PrintMessage("  Creating string with newline...\n")
+        
+        // Build the test string
+        test_cmd = Allocate(10)
+        SetByte(test_cmd, 0, 83)  // S
+        SetByte(test_cmd, 1, 77)  // M
+        SetByte(test_cmd, 2, 69)  // E
+        SetByte(test_cmd, 3, 77)  // M
+        SetByte(test_cmd, 4, 66)  // B
+        SetByte(test_cmd, 5, 69)  // E
+        SetByte(test_cmd, 6, 82)  // R
+        SetByte(test_cmd, 7, 83)  // S
+        SetByte(test_cmd, 8, 10)  // \n
+        SetByte(test_cmd, 9, 0)   // null terminator
+        
+        PrintMessage("  Input: SMEMBERS\\n (with newline)\n")
+        PrintMessage("  Input length: ")
+        PrintNumber(StringLength(test_cmd))
+        PrintMessage("\n")
+        
+        // Test StringTrim
+        PrintMessage("  Calling StringTrim...\n")
+        trimmed = StringTrim(test_cmd)
+        
+        PrintMessage("  Result: '")
+        PrintMessage(trimmed)
+        PrintMessage("'\n")
+        PrintMessage("  Result length: ")
+        PrintNumber(StringLength(trimmed))
+        PrintMessage("\n")
+        
+        // Test comparison
+        expected = Allocate(9)
+        SetByte(expected, 0, 83)  // S
+        SetByte(expected, 1, 77)  // M
+        SetByte(expected, 2, 69)  // E
+        SetByte(expected, 3, 77)  // M
+        SetByte(expected, 4, 66)  // B
+        SetByte(expected, 5, 69)  // E
+        SetByte(expected, 6, 82)  // R
+        SetByte(expected, 7, 83)  // S
+        SetByte(expected, 8, 0)   // null terminator
+        
+        comparison = StringCompare(trimmed, expected)
+        PrintMessage("\n  StringCompare result: ")
+        PrintNumber(comparison)
+        PrintMessage(" (0 = match)\n")
+        
+        IfCondition EqualTo(comparison, 0) ThenBlock: {
+            PrintMessage("\n  SUCCESS: StringTrim works!\n")
+        } ElseBlock: {
+            PrintMessage("\n  FAIL: StringTrim not working\n")
+            PrintMessage("  Checking bytes of trimmed string:\n")
+            i = 0
+            WhileLoop LessThan(i, Add(StringLength(trimmed), 1)) {
+                byte_val = GetByte(trimmed, i)
+                PrintMessage("    Byte ")
+                PrintNumber(i) 
+                PrintMessage(": ")
+                PrintNumber(byte_val)
+                IfCondition EqualTo(byte_val, 10) ThenBlock: {
+                    PrintMessage(" <-- NEWLINE STILL HERE!")
+                }
+                IfCondition EqualTo(byte_val, 0) ThenBlock: {
+                    PrintMessage(" <-- null terminator")
+                }
+                PrintMessage("\n")
+                i = Add(i, 1)
+            }
+        }
+        
+        // Cleanup
+        Deallocate(test_cmd, 0)
+        Deallocate(expected, 0)
+        Deallocate(trimmed, 0)
+        
+        PrintMessage("\n=== Test Complete ===\n")
+    

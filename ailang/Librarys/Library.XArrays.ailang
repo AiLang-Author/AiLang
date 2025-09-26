@@ -1,9 +1,11 @@
 // Library.XArrays.ailang
 // Advanced array and data structure operations for AILANG
 // Uses X-prefix to avoid lexer keyword collisions
-
-PrintMessage("Loading XArrays Library v1.0")
-PrintMessage("================================")
+ 
+Debug("library.load", level=1) {
+    PrintMessage("Loading XArrays Library v1.0")
+    PrintMessage("================================")
+}
 
 // ====================
 // Configuration & Constants
@@ -492,12 +494,161 @@ Function.XList.XPrepend {
     }
 }
 
+// Pop from front of list
+Function.XList.XPopFront {
+    Input: list: Address
+    Output: Integer
+    Body: {
+        head = Dereference(list)
+        
+        IfCondition EqualTo(head, 0) ThenBlock: {
+            ReturnValue(0) // List is empty
+        }
+        
+        // Get value and next node
+        value = Dereference(head)
+        next_node = Dereference(Add(head, 8))
+        
+        // Update list head
+        StoreValue(list, next_node)
+        
+        // If list is now empty, update tail as well
+        IfCondition EqualTo(next_node, 0) ThenBlock: {
+            StoreValue(Add(list, 8), 0)
+        }
+        
+        // Decrement size
+        size = Dereference(Add(list, 16))
+        StoreValue(Add(list, 16), Subtract(size, 1))
+        
+        // Free the old node
+        Deallocate(head, 0)
+        
+        // Return the value (caller now owns this memory)
+        ReturnValue(value)
+    }
+}
+
+// Pop from back of list (less efficient for singly-linked list)
+Function.XList.XPopBack {
+    Input: list: Address
+    Output: Integer
+    Body: {
+        tail = Dereference(Add(list, 8))
+        
+        IfCondition EqualTo(tail, 0) ThenBlock: {
+            ReturnValue(0) // List is empty
+        }
+        
+        // For singly-linked list, we need to find the node before the tail
+        head = Dereference(list)
+        
+        // Special case: only one node
+        IfCondition EqualTo(head, tail) ThenBlock: {
+            value = Dereference(tail)
+            Deallocate(tail, 0)
+            StoreValue(list, 0)        // Clear head
+            StoreValue(Add(list, 8), 0) // Clear tail
+            StoreValue(Add(list, 16), 0) // Size = 0
+            ReturnValue(value)
+        }
+        
+        // Find the node before the tail
+        current = head
+        WhileLoop NotEqual(Dereference(Add(current, 8)), tail) {
+            current = Dereference(Add(current, 8))
+        }
+        
+        // Get value from tail
+        value = Dereference(tail)
+        
+        // Remove tail
+        Deallocate(tail, 0)
+        StoreValue(Add(current, 8), 0)  // Clear next pointer
+        StoreValue(Add(list, 8), current) // Update tail
+        
+        // Decrement size
+        size = Dereference(Add(list, 16))
+        StoreValue(Add(list, 16), Subtract(size, 1))
+        
+        ReturnValue(value)
+    }
+}
+
 // Get list size
 Function.XList.XSize {
     Input: list: Address
     Output: Integer
     Body: {
         ReturnValue(Dereference(Add(list, 16)))
+    }
+}
+
+// Destroy a linked list and free all nodes
+Function.XList.XDestroy {
+    Input: list: Address
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(list, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        head = Dereference(list)
+        
+        // Free all nodes
+        WhileLoop NotEqual(head, 0) {
+            next = Dereference(Add(head, 8))
+            value = Dereference(head)
+            
+            // If value is a pointer, free it
+            // This heuristic assumes small integers are not pointers
+            IfCondition GreaterThan(value, 1000) ThenBlock: {
+                Deallocate(value, 0)
+            }
+            
+            Deallocate(head, 0)
+            
+            head = next
+        }
+        
+        // Free the list structure itself
+        Deallocate(list, 0)
+        
+        ReturnValue(1)
+    }
+}
+
+// Also add XDestroyDeep for lists that own their string values
+Function.XList.XDestroyDeep {
+    Input: list: Address
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(list, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        head = Dereference(list)
+        
+        // Free all nodes and their values
+        WhileLoop NotEqual(head, 0) {
+            next = Dereference(Add(head, 8))
+            value = Dereference(head)
+            
+            // Free the value (assuming it's a string/pointer)
+            IfCondition NotEqual(value, 0) ThenBlock: {
+                Deallocate(value, 0)
+            }
+            
+            // Free the node
+            Deallocate(head, 0)
+            
+            head = next
+        }
+        
+        // Free the list structure
+        Deallocate(list, 0)
+        
+        ReturnValue(1)
     }
 }
 
@@ -683,32 +834,34 @@ Function.XArray.XDestroy {
     }
 }
 
-// Deep destroy a linked list (free all nodes and their values)
-Function.XList.XDestroyDeep {
-    Input: list: Address
-    Output: Integer
-    Body: {
-        IfCondition NotEqual(list, 0) ThenBlock: {
-            head = Dereference(list)
-            WhileLoop NotEqual(head, 0) {
-                next_node = Dereference(Add(head, 8))
-                value = Dereference(head)
-                Deallocate(value, 0)  // Free the string value
-                Deallocate(head, 0)   // Free the node
-                head = next_node
-            }
-            Deallocate(list, 0)
-        }
-        ReturnValue(1)
-    }
-}
-
-// Create XSHash as alias for XHash
+// NEW CORRECT VERSION:
 Function.XSHash.XCreate {
     Input: bucket_count: Integer
     Output: Address
     Body: {
-        ReturnValue(XHash.XCreate(bucket_count))
+        // Structure: [bucket_count:8, item_count:8, buckets_ptr:8] = 24 bytes
+        hash_table = Allocate(24)
+        
+        // Store bucket count at offset 0
+        StoreValue(hash_table, bucket_count)
+        
+        // Store initial item count (0) at offset 8
+        StoreValue(Add(hash_table, 8), 0)
+        
+        // Create array of buckets (each bucket is a linked list head)
+        buckets = ArrayCreate(bucket_count)
+        
+        // Initialize all buckets to NULL (0)
+        i = 0
+        WhileLoop LessThan(i, bucket_count) {
+            ArraySet(buckets, i, 0)
+            i = Add(i, 1)
+        }
+        
+        // Store buckets pointer at offset 16
+        StoreValue(Add(hash_table, 16), buckets)
+        
+        ReturnValue(hash_table)
     }
 }
 
@@ -733,7 +886,22 @@ Function.XSHash.XInsert {
         bucket_idx = Modulo(hash_value, bucket_count)
         buckets = Dereference(Add(hash_table, 16))
         
-        // Create new node: [key_copy, value, next]
+        // First, check if the key already exists in this bucket
+        current = ArrayGet(buckets, bucket_idx)
+        WhileLoop NotEqual(current, 0) {
+            stored_key = Dereference(current)
+            cmp = StringCompare(stored_key, key)
+            IfCondition EqualTo(cmp, 0) ThenBlock: {
+                // Key exists - update the value instead of inserting
+                old_value = Dereference(Add(current, 8))
+                StoreValue(Add(current, 8), value)
+                // Return 0 to indicate update (not a new insertion)
+                ReturnValue(0)
+            }
+            current = Dereference(Add(current, 16))
+        }
+        
+        // Key doesn't exist, so create new node: [key_copy, value, next]
         new_node = Allocate(24)
         key_copy = Helpers.StringCopy(key)
         StoreValue(new_node, key_copy)
@@ -748,6 +916,7 @@ Function.XSHash.XInsert {
         item_count = Dereference(Add(hash_table, 8))
         StoreValue(Add(hash_table, 8), Add(item_count, 1))
         
+        // Return 1 to indicate new insertion
         ReturnValue(1)
     }
 }
@@ -929,6 +1098,8 @@ Function.XStream.XDestroy {
 }
 
 
-PrintMessage("XArrays Library loaded successfully!")
-PrintMessage("Features: Dynamic arrays, stacks, queues, hash tables, linked lists")
-PrintMessage("All functions use X-prefix to avoid keyword conflicts")
+Debug("library.load", level=1) {
+    PrintMessage("XArrays Library loaded successfully!")
+    PrintMessage("Features: Dynamic arrays, stacks, queues, hash tables, linked lists")
+    PrintMessage("All functions use X-prefix to avoid keyword conflicts")
+}

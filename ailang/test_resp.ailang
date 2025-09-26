@@ -1,0 +1,9 @@
+LibraryImport.RESP
+
+PrintMessage("Testing RESP.Integer(1):\n")
+result = RESP.Integer(1)
+PrintMessage("Result: ")
+PrintMessage(result)
+PrintMessage("\n\nExpected: :1\\r\\n\n")
+
+Deallocate(result, 0)

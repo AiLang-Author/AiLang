@@ -1,0 +1,17 @@
+LibraryImport.RESP
+
+// Test RESP.Array
+test_array = ArrayCreate(3)
+ArraySet(test_array, 0, "first")
+ArraySet(test_array, 1, "second")  
+ArraySet(test_array, 2, "third")
+
+PrintMessage("Testing RESP.Array with 3 elements:\n")
+result = RESP.Array(test_array)
+PrintMessage("Result: ")
+PrintMessage(result)
+PrintMessage("\n")
+
+// Clean up
+ArrayDestroy(test_array)
+Deallocate(result, 0)

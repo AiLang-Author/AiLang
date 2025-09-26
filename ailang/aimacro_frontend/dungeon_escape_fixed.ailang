@@ -1,0 +1,206 @@
+LibraryImport.AIMacro
+
+Function.show_character_sheet {
+    Input: stats: Integer
+    Body: {
+        PrintMessage("=== CHARACTER SHEET ===")
+        PrintMessage("Level: ")
+        PrintNumber(AIMacro.Get(stats, 0))
+    }
+}
+Function.fight_monster {
+    Input: player_attack: Integer
+    Input: player_health: Integer
+    Input: player_dexterity: Integer
+    Input: monster_health_init: Integer
+    Body: {
+        monster_health = monster_health_init
+        monster_attack = 15
+        WhileLoop GreaterThan(monster_health, 0) {
+            PrintMessage("Your Health: ")
+            PrintNumber(player_health)
+            PrintMessage(" | Monster Health: ")
+            PrintNumber(monster_health)
+            PrintMessage("
+Combat: 1. Attack, 2. Defend
+")
+            choice_str = AIMacro.Input()
+            choice = AIMacro.Int(choice_str)
+            IfCondition EqualTo(choice, 1) ThenBlock: {
+                PrintMessage("You attack!
+")
+                monster_health = Subtract(monster_health, player_attack)
+            } ElseBlock: {
+                IfCondition EqualTo(choice, 2) ThenBlock: {
+                    PrintMessage("You defend!
+")
+                    monster_attack = Subtract(15, Multiply(player_dexterity, 2))
+                } ElseBlock: {
+                    PrintMessage("Invalid choice!
+")
+                }
+            }
+            IfCondition GreaterThan(monster_health, 0) ThenBlock: {
+                PrintMessage("Monster attacks!
+")
+                player_health = Subtract(player_health, monster_attack)
+                monster_attack = 15
+            }
+            IfCondition LessEqual(player_health, 0) ThenBlock: {
+                PrintMessage("You died!
+")
+                ReturnValue(0)
+            }
+        }
+        PrintMessage("You won!
+")
+        ReturnValue(player_health)
+    }
+}
+Function.create_simple_map {
+    Body: {
+        grid = AIMacro.List()
+        i = 0
+        WhileLoop LessThan(i, 25) {
+            AIMacro.ListAppend(grid, 0)
+            i = Add(i, 1)
+        }
+        AIMacro.Set(grid, 6, 1)
+        AIMacro.Set(grid, 7, 1)
+        AIMacro.Set(grid, 8, 2)
+        AIMacro.Set(grid, 11, 1)
+        AIMacro.Set(grid, 12, 4)
+        AIMacro.Set(grid, 13, 3)
+        AIMacro.Set(grid, 16, 1)
+        AIMacro.Set(grid, 17, 1)
+        AIMacro.Set(grid, 18, 5)
+        ReturnValue(grid)
+    }
+}
+SubRoutine.Main {
+        PrintMessage("=================================")
+        PrintMessage("    DUNGEON ESCAPE SIMPLE")
+        PrintMessage("=================================")
+        PrintMessage("Enter a number for your character: ")
+        seed_str = AIMacro.Input()
+        seed = AIMacro.Int(seed_str)
+        strength = Add(Modulo(seed, 5), 3)
+        dexterity = Add(Modulo(Divide(seed, 5), 5), 3)
+        health = Add(50, Modulo(seed, 20))
+        PrintMessage("Stats - STR: ")
+        PrintNumber(strength)
+        PrintMessage(" DEX: ")
+        PrintNumber(dexterity)
+        PrintMessage(" HP: ")
+        PrintNumber(health)
+        grid = create_simple_map()
+        px = 1
+        py = 1
+        gold = 0
+        game_running = 1
+        WhileLoop EqualTo(game_running, 1) {
+            PrintMessage("
+--- Position (")
+            PrintNumber(px)
+            PrintMessage(",")
+            PrintNumber(py)
+            PrintMessage(") ---")
+            PrintMessage("Health: ")
+            PrintNumber(health)
+            PrintMessage(" Gold: ")
+            PrintNumber(gold)
+            PrintMessage("
+1=Up 2=Down 3=Left 4=Right 5=Quit
+> ")
+            move_str = AIMacro.Input()
+            move = AIMacro.Int(move_str)
+            new_x = px
+            new_y = py
+            IfCondition EqualTo(move, 1) ThenBlock: {
+                new_y = Subtract(py, 1)
+            } ElseBlock: {
+                IfCondition EqualTo(move, 2) ThenBlock: {
+                    new_y = Add(py, 1)
+                } ElseBlock: {
+                    IfCondition EqualTo(move, 3) ThenBlock: {
+                        new_x = Subtract(px, 1)
+                    } ElseBlock: {
+                        IfCondition EqualTo(move, 4) ThenBlock: {
+                            new_x = Add(px, 1)
+                        } ElseBlock: {
+                            IfCondition EqualTo(move, 5) ThenBlock: {
+                                game_running = 0
+                            }
+                        }
+                    }
+                }
+            }
+            IfCondition EqualTo(game_running, 1) ThenBlock: {
+                IfCondition Or(Or(Or(LessThan(new_x, 0), GreaterThan(new_x, 4)), LessThan(new_y, 0)), GreaterThan(new_y, 4)) ThenBlock: {
+                    PrintMessage("Can't go there - wall!
+")
+                } ElseBlock: {
+                    idx = Add(Multiply(new_y, 5), new_x)
+                    tile = AIMacro.Get(grid, idx)
+                    IfCondition EqualTo(tile, 0) ThenBlock: {
+                        PrintMessage("Wall blocks you!
+")
+                    } ElseBlock: {
+                        IfCondition EqualTo(tile, 1) ThenBlock: {
+                            px = new_x
+                            py = new_y
+                            PrintMessage("You move.
+")
+                        } ElseBlock: {
+                            IfCondition EqualTo(tile, 2) ThenBlock: {
+                                PrintMessage("Door opened!
+")
+                                AIMacro.Set(grid, idx, 1)
+                                px = new_x
+                                py = new_y
+                            } ElseBlock: {
+                                IfCondition EqualTo(tile, 3) ThenBlock: {
+                                    PrintMessage("Found treasure! +50 gold!
+")
+                                    gold = Add(gold, 50)
+                                    AIMacro.Set(grid, idx, 1)
+                                    px = new_x
+                                    py = new_y
+                                } ElseBlock: {
+                                    IfCondition EqualTo(tile, 4) ThenBlock: {
+                                        PrintMessage("Monster attacks!
+")
+                                        attack = Multiply(strength, 2)
+                                        health = fight_monster(attack, health, dexterity, 30)
+                                        IfCondition GreaterThan(health, 0) ThenBlock: {
+                                            AIMacro.Set(grid, idx, 1)
+                                            px = new_x
+                                            py = new_y
+                                        } ElseBlock: {
+                                            PrintMessage("GAME OVER!
+")
+                                            game_running = 0
+                                        }
+                                    } ElseBlock: {
+                                        IfCondition EqualTo(tile, 5) ThenBlock: {
+                                            PrintMessage("You found the exit! YOU WIN!
+")
+                                            gold = Add(gold, 100)
+                                            game_running = 0
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        PrintMessage("
+Final Score: ")
+        PrintNumber(gold)
+        PrintMessage(" gold
+")
+}
+
+RunTask(Main)

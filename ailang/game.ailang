@@ -1,0 +1,218 @@
+LibraryImport.AIMacro
+
+Function.v_show_character_sheet {
+    Input: v_level: Integer
+    Input: v_exp: Integer
+    Input: v_exp_next: Integer
+    Input: v_health: Integer
+    Input: v_strength: Integer
+    Input: v_dexterity: Integer
+    Input: v_vitality: Integer
+    Input: v_torch_count: Integer
+    Input: v_opener_count: Integer
+    Input: v_sword_count: Integer
+    Input: v_coin_count: Integer
+    Body: {
+    PrintMessage("=== CHARACTER SHEET ===")
+    PrintMessage("Level: ")
+    PrintNumber(v_level)
+    PrintMessage("EXP: ")
+    PrintNumber(v_exp)
+    PrintMessage(" / ")
+    PrintNumber(v_exp_next)
+    PrintMessage("Health: ")
+    PrintNumber(v_health)
+    PrintMessage("Strength: ")
+    PrintNumber(v_strength)
+    PrintMessage("Dexterity: ")
+    PrintNumber(v_dexterity)
+    PrintMessage("Vitality: ")
+    PrintNumber(v_vitality)
+    PrintMessage("--- INVENTORY ---")
+    PrintMessage("Torches: ")
+    PrintNumber(v_torch_count)
+    PrintMessage("Door openers: ")
+    PrintNumber(v_opener_count)
+    PrintMessage("Swords: ")
+    PrintNumber(v_sword_count)
+    PrintMessage("Gold coins: ")
+    PrintNumber(v_coin_count)
+    PrintMessage("================")
+    }
+}
+Function.v_fight_monster {
+    Input: v_player_attack: Integer
+    Input: v_player_health: Integer
+    Input: v_player_dexterity: Integer
+    Body: {
+    v_monster_health = 40
+    v_monster_attack = 15
+
+    PrintMessage("")
+    PrintMessage("A goblin appears!")
+    WhileLoop GreaterThan(v_monster_health, 0) {
+        PrintMessage("Your Health: ")
+        PrintNumber(v_player_health)
+        PrintMessage("Goblin's Health: ")
+        PrintNumber(v_monster_health)
+        PrintMessage("Combat: 1. Attack, 2. Defend")
+        v_choice_str = AIMacro.Input()
+        v_choice = AIMacro.Int(v_choice_str)
+        IfCondition EqualTo(v_choice, 1) ThenBlock: {
+            PrintMessage("You attack the goblin!")
+            v_monster_health = Subtract(v_monster_health, v_player_attack)
+        } ElseBlock: {
+            IfCondition EqualTo(v_choice, 2) ThenBlock: {
+                PrintMessage("You brace for the goblin's attack!")
+                v_monster_attack = Subtract(15, Multiply(v_player_dexterity, 2))
+            } ElseBlock: {
+                PrintMessage("Invalid combat choice, the goblin gets a free hit!")
+            }
+        }
+        IfCondition GreaterThan(v_monster_health, 0) ThenBlock: {
+            PrintMessage("The goblin attacks you!")
+            v_player_health = Subtract(v_player_health, v_monster_attack)
+            v_monster_attack = 15
+        }
+        IfCondition LessEqual(v_player_health, 0) ThenBlock: {
+            PrintMessage("You have been defeated by the goblin...")
+            v_monster_health = 0
+        }
+    }
+    IfCondition GreaterThan(v_player_health, 0) ThenBlock: {
+        PrintMessage("You defeated the goblin!")
+        ReturnValue(v_player_health)
+    }
+    ReturnValue(0)
+    }
+}
+SubRoutine.Main {
+    v_seed_str = AIMacro.Input()
+    v_seed = AIMacro.Int(v_seed_str)
+    v_strength = Add(Modulo(v_seed, 5), 1)
+    v_dexterity = Add(Modulo(Divide(v_seed, 5), 5), 1)
+    v_vitality = Add(Modulo(Divide(v_seed, 10), 5), 1)
+    v_health = Add(75, Multiply(v_vitality, 5))
+    v_torch = 0
+    v_opener = 0
+    v_sword = 0
+    v_potion = 0
+    v_coins = 0
+    v_level = 1
+    v_exp = 0
+    v_exp_to_next_level = 50
+    v_game_over = 0
+    v_turns = 0
+
+    PrintMessage("=================================")
+    PrintMessage("    DUNGEON ESCAPE")
+    PrintMessage("=================================")
+    PrintMessage("")
+    PrintMessage("You wake up in a dark dungeon cell.")
+    PrintMessage("The door is locked. You must escape!")
+    PrintMessage("")
+    PrintMessage("To determine your fate, enter a number: ")
+    PrintMessage("Your fate is sealed!")
+    PrintMessage("Strength: ")
+    PrintNumber(v_strength)
+    PrintMessage("Dexterity: ")
+    PrintNumber(v_dexterity)
+    PrintMessage("Vitality: ")
+    PrintNumber(v_vitality)
+    WhileLoop EqualTo(v_game_over, 0) {
+        v_turns = Add(v_turns, 1)
+        PrintMessage("")
+        PrintMessage("Turn ")
+        PrintNumber(v_turns)
+        PrintMessage(" - Health: ")
+        PrintNumber(v_health)
+        IfCondition LessEqual(v_health, 0) ThenBlock: {
+            PrintMessage("You have succumbed to your wounds.")
+            v_game_over = 1
+        }
+        IfCondition EqualTo(v_game_over, 0) ThenBlock: {
+            PrintMessage("What do you do?")
+            PrintMessage("1. Search the cell")
+            PrintMessage("2. View Character Sheet")
+            PrintMessage("3. Use health potion")
+            PrintMessage("4. Try to escape")
+            PrintMessage("Enter choice: ")
+            v_choice_str = AIMacro.Input()
+            v_choice = AIMacro.Int(v_choice_str)
+            IfCondition EqualTo(v_choice, 1) ThenBlock: {
+                IfCondition EqualTo(v_sword, 0) ThenBlock: {
+                    PrintMessage("You find a rusty sword!")
+                    v_sword = 1
+                } ElseBlock: {
+                    v_event = Modulo(v_turns, 3)
+                    IfCondition And(EqualTo(v_event, 0), EqualTo(v_opener, 0)) ThenBlock: {
+                        PrintMessage("You find a strange door opener!")
+                        v_opener = 1
+                    } ElseBlock: {
+                        IfCondition And(EqualTo(v_event, 1), EqualTo(v_potion, 0)) ThenBlock: {
+                            PrintMessage("You find a bubbling health potion!")
+                            v_potion = 1
+                        } ElseBlock: {
+                            v_player_attack = Multiply(v_strength, 2)
+                            IfCondition EqualTo(v_sword, 1) ThenBlock: {
+                                v_player_attack = Add(v_player_attack, 10)
+                            }
+                            v_combat_result = v_fight_monster(v_player_attack, v_health, v_dexterity)
+                            v_health = v_combat_result
+                            IfCondition GreaterThan(v_health, 0) ThenBlock: {
+                                PrintMessage("You gain 25 EXP and 10 gold coins!")
+                                v_exp = Add(v_exp, 25)
+                                v_coins = Add(v_coins, 10)
+                                IfCondition GreaterEqual(v_exp, v_exp_to_next_level) ThenBlock: {
+                                    v_level = Add(v_level, 1)
+                                    v_exp = 0
+                                    v_exp_to_next_level = Multiply(v_exp_to_next_level, 2)
+                                    v_strength = Add(v_strength, 1)
+                                    v_dexterity = Add(v_dexterity, 1)
+                                    v_vitality = Add(v_vitality, 1)
+                                    v_health = Add(75, Multiply(v_vitality, 5))
+                                    PrintMessage("*************************")
+                                    PrintMessage("  LEVEL UP! You are now Level ")
+                                    PrintNumber(v_level)
+                                    PrintMessage("  Stats increased! Health restored!")
+                                    PrintMessage("*************************")
+                                }
+                            }
+                        }
+                    }
+                }
+            } ElseBlock: {
+                IfCondition EqualTo(v_choice, 2) ThenBlock: {
+                    v_show_character_sheet(v_level, v_exp, v_exp_to_next_level, v_health, v_strength, v_dexterity, v_vitality, v_torch, v_opener, v_sword, v_coins)
+                } ElseBlock: {
+                    IfCondition EqualTo(v_choice, 3) ThenBlock: {
+                        IfCondition EqualTo(v_potion, 1) ThenBlock: {
+                            PrintMessage("You drink the potion and feel invigorated! (+40 Health)")
+                            v_health = Add(v_health, 40)
+                            v_potion = 0
+                        } ElseBlock: {
+                            PrintMessage("You have no potions to use.")
+                        }
+                    } ElseBlock: {
+                        IfCondition EqualTo(v_choice, 4) ThenBlock: {
+                            IfCondition EqualTo(v_opener, 1) ThenBlock: {
+                                PrintMessage("You use the opener, unlock the door, and ESCAPE!")
+                                PrintMessage("Victory!")
+                                v_game_over = 1
+                            } ElseBlock: {
+                                PrintMessage("The door is locked tight!")
+                            }
+                        } ElseBlock: {
+                            PrintMessage("Invalid choice!")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    PrintMessage("")
+    PrintMessage("=== GAME OVER ===")
+    PrintMessage("Thanks for playing!")
+}
+
+RunTask(Main)

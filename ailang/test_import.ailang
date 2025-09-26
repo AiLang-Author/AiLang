@@ -1,0 +1,7 @@
+Import XArrays from "./Library.XArrays.ailang"
+
+Program Test {
+    Main: {
+        x = XArrays.XArray.XCreate(10)
+    }
+}

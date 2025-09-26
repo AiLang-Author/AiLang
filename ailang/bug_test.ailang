@@ -1,0 +1,9 @@
+Import XArrays from "./Library.XArrays.ailang"
+
+Program BugTest {
+    Main: {
+        // This line causes: "Unknown function: XXXXX_XArray.XCreate"
+        arr = XArrays.XArray.XCreate(10)
+        ReturnValue(0)
+    }
+}

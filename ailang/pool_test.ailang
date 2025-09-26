@@ -1,0 +1,27 @@
+// Minimal pool variable test - checking store/retrieve
+FixedPool.RedisData {
+    "store_ptr": Initialize=0
+}
+
+SubRoutine.Main {
+    PrintMessage("Testing pool variable...\n")
+    
+    // Store a value
+    PrintMessage("Storing value 0xDEADBEEF...\n")
+    RedisData.store_ptr = 0xDEADBEEF
+    
+    // Read it back
+    value = RedisData.store_ptr
+    PrintMessage("Retrieved value: ")
+    PrintNumber(value)
+    PrintMessage("\n")
+    
+    // Verify it worked
+    IfCondition EqualTo(value, 0xDEADBEEF) ThenBlock: {
+        PrintMessage("SUCCESS: Pool variable works!\n")
+    } ElseBlock: {
+        PrintMessage("FAILURE: Got wrong value!\n")
+    }
+}
+
+RunTask(Main)

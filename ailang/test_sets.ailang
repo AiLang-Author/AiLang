@@ -1,0 +1,46 @@
+LibraryImport.RESP
+LibraryImport.XArrays
+
+// Test RESP responses for sets
+PrintMessage("Testing SET operations:\n\n")
+
+// Create a simple set simulation
+set_ptr = XSHash.XCreate(16)
+
+// Add members
+XSHash.XInsert(set_ptr, "a", 1)
+XSHash.XInsert(set_ptr, "b", 1)
+XSHash.XInsert(set_ptr, "c", 1)
+
+// Test 1: SADD response (should be integer)
+PrintMessage("SADD response (should be :3):\n")
+sadd_response = RESP.Integer(3)
+PrintMessage(sadd_response)
+PrintMessage("\n\n")
+
+// Test 2: SMEMBERS response (should be array)
+PrintMessage("SMEMBERS response (should be array):\n")
+members = XSHash.XKeys(set_ptr)
+num_members = XArray.XSize(members)
+PrintMessage("Number of members: ")
+PrintNumber(num_members)
+PrintMessage("\n")
+
+members_array = ArrayCreate(num_members)
+i = 0
+WhileLoop LessThan(i, num_members) {
+    member = XArray.XGet(members, i)
+    ArraySet(members_array, i, member)
+    i = Add(i, 1)
+}
+
+smembers_response = RESP.Array(members_array)
+PrintMessage(smembers_response)
+PrintMessage("\n")
+
+// Clean up
+Deallocate(sadd_response, 0)
+Deallocate(smembers_response, 0)
+ArrayDestroy(members_array)
+XArray.XDestroy(members)
+XSHash.XDestroy(set_ptr)

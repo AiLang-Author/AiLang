@@ -1,0 +1,18 @@
+SubRoutine.Main {
+    test_str = "1-0"
+    PrintMessage("Testing StringIndexOf with: ")
+    PrintString(test_str)
+    PrintMessage("\n")
+    
+    pos = StringIndexOf(test_str, "-")
+    PrintMessage("Result: ")
+    PrintNumber(pos)
+    PrintMessage("\n")
+    
+    // Test with single char
+    pos2 = StringIndexOf(test_str, "1")
+    PrintMessage("Position of '1': ")
+    PrintNumber(pos2)
+    PrintMessage("\n")
+}
+RunTask(Main)

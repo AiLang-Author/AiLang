@@ -1,0 +1,794 @@
+// Library.HashMap.ailang
+// Nested hash table implementation for AILANG
+// Provides hash-of-hashes functionality for Redis HSET/HGET and general use
+
+LibraryImport.XArrays
+
+// Helper function for string copy
+Function.HashMap.StringCopy {
+    Input: source: Address
+    Output: Address
+    Body: {
+        IfCondition EqualTo(source, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        len = StringLength(source)
+        copy = Allocate(Add(len, 1))
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            byte = GetByte(source, i)
+            SetByte(copy, i, byte)
+            i = Add(i, 1)
+        }
+        SetByte(copy, len, 0)  // Null terminator
+        
+        ReturnValue(copy)
+    }
+}
+
+// Create a new HashMap (hash of hashes)
+Function.HashMap.Create {
+    Output: Address
+    Body: {
+        // Main hash table that stores other hash tables as values
+        hashmap = XSHash.XCreate(256)
+        ReturnValue(hashmap)
+    }
+}
+
+// Set a field in a hash
+// Returns: 1 if new field was created, 0 if existing field was updated
+Function.HashMap.HSet {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: field: Address
+    Input: value: Address
+    Output: Integer
+    Body: {
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        is_new_field = 0
+        
+        // Create inner hash if it doesn't exist
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            inner_hash = XSHash.XCreate(16)
+            XSHash.XInsert(hashmap, key, inner_hash)
+        }
+        
+        // Check if field already exists
+        existing_value = XSHash.XLookup(inner_hash, field)
+        IfCondition EqualTo(existing_value, XArrays.XNULL) ThenBlock: {
+            is_new_field = 1
+        } ElseBlock: {
+            // Free old value if updating
+            Deallocate(existing_value, 0)
+        }
+        
+        // Store copy of the value
+        value_copy = HashMap.StringCopy(value)
+        XSHash.XInsert(inner_hash, field, value_copy)
+        
+        ReturnValue(is_new_field)
+    }
+}
+
+// Get a field from a hash
+// Returns: Address of copied value or 0 if not found
+Function.HashMap.HGet {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: field: Address
+    Output: Address
+    Body: {
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Get the field value from inner hash
+        value = XSHash.XLookup(inner_hash, field)
+        
+        IfCondition EqualTo(value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // CRITICAL FIX: Return a COPY, not the internal pointer
+        value_copy = HashMap.StringCopy(value)
+        ReturnValue(value_copy)
+    }
+}
+
+// Get all fields and values from a hash
+// Returns: XArray with alternating field/value COPIES
+Function.HashMap.HGetAll {
+    Input: hashmap: Address
+    Input: key: Address
+    Output: Address
+    Body: {
+        result = XArray.XCreate(16)
+        
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(result)  // Return empty array
+        }
+        
+        // Get all keys from inner hash (XKeys returns copies)
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            value = XSHash.XLookup(inner_hash, field)
+            
+            // CRITICAL FIX: Create copies of both field and value
+            field_copy = HashMap.StringCopy(field)
+            value_copy = HashMap.StringCopy(value)
+            
+            // Add copies to result
+            XArray.XPush(result, field_copy)
+            XArray.XPush(result, value_copy)
+            
+            // Clean up the field from XKeys (it's a copy)
+            Deallocate(field, 0)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(fields)
+        
+        ReturnValue(result)
+    }
+}
+
+// Delete a field from a hash
+// Returns: 1 if field was deleted, 0 if not found
+Function.HashMap.HDel {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: field: Address
+    Output: Integer
+    Body: {
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Delete the field from inner hash
+        old_value = XSHash.XDelete(inner_hash, field)
+        
+        IfCondition EqualTo(old_value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Free the old value
+        Deallocate(old_value, 0)
+        
+        // Check if inner hash is now empty
+        keys = XSHash.XKeys(inner_hash)
+        num_keys = XArray.XSize(keys)
+        
+        // Clean up keys array (contains copies)
+        i = 0
+        WhileLoop LessThan(i, num_keys) {
+            key_copy = XArray.XGet(keys, i)
+            Deallocate(key_copy, 0)
+            i = Add(i, 1)
+        }
+        XArray.XDestroy(keys)
+        
+        // If inner hash is empty, remove it from main hashmap
+        IfCondition EqualTo(num_keys, 0) ThenBlock: {
+            XSHash.XDelete(hashmap, key)
+            XSHash.XDestroy(inner_hash)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Check if a field exists in a hash
+// Returns: 1 if exists, 0 if not
+Function.HashMap.HExists {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: field: Address
+    Output: Integer
+    Body: {
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Check if field exists in inner hash
+        value = XSHash.XLookup(inner_hash, field)
+        
+        IfCondition EqualTo(value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Get all field names from a hash
+// Returns: XArray of field names
+Function.HashMap.HKeys {
+    Input: hashmap: Address
+    Input: key: Address
+    Output: Address
+    Body: {
+        result = XArray.XCreate(16)
+        
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(result)  // Return empty array
+        }
+        
+        // Get all keys from inner hash (XKeys returns copies)
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        // CRITICAL FIX: Create fresh copies for the caller
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            
+            // Make a copy of the field name
+            field_copy = HashMap.StringCopy(field)
+            XArray.XPush(result, field_copy)
+            
+            // Clean up the original from XKeys
+            Deallocate(field, 0)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(fields)
+        ReturnValue(result)
+    }
+}
+
+// Get all values from a hash
+// Returns: XArray of value COPIES
+Function.HashMap.HVals {
+    Input: hashmap: Address
+    Input: key: Address
+    Output: Address
+    Body: {
+        result = XArray.XCreate(16)
+        
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(result)  // Return empty array
+        }
+        
+        // Get all keys from inner hash
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            value = XSHash.XLookup(inner_hash, field)
+            
+            // CRITICAL FIX: Add COPY of value to result
+            value_copy = HashMap.StringCopy(value)
+            XArray.XPush(result, value_copy)
+            
+            // Clean up field copy from XKeys
+            Deallocate(field, 0)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(fields)
+        ReturnValue(result)
+    }
+}
+
+// Get the number of fields in a hash
+// Returns: Number of fields
+Function.HashMap.HLen {
+    Input: hashmap: Address
+    Input: key: Address
+    Output: Integer
+    Body: {
+        // Get the inner hash for this key
+        inner_hash = XSHash.XLookup(hashmap, key)
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Count the fields
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        // Clean up fields array
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            Deallocate(field, 0)
+            i = Add(i, 1)
+        }
+        XArray.XDestroy(fields)
+        
+        ReturnValue(num_fields)
+    }
+}
+
+// Set multiple fields at once
+// fields_values is an XArray with alternating field/value pairs
+// Returns: Number of new fields created
+Function.HashMap.HMSet {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: fields_values: Address
+    Output: Integer
+    Body: {
+        new_fields = 0
+        array_size = XArray.XSize(fields_values)
+        
+        // Process pairs
+        i = 0
+        WhileLoop LessThan(i, array_size) {
+            field = XArray.XGet(fields_values, i)
+            value = XArray.XGet(fields_values, Add(i, 1))
+            
+            is_new = HashMap.HSet(hashmap, key, field, value)
+            new_fields = Add(new_fields, is_new)
+            
+            i = Add(i, 2)
+        }
+        
+        ReturnValue(new_fields)
+    }
+}
+
+// Get multiple fields at once
+// fields is an XArray of field names
+// Returns: XArray of values (0 for non-existent fields)
+Function.HashMap.HMGet {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: fields: Address
+    Output: Address
+    Body: {
+        num_fields = XArray.XSize(fields)
+        result = XArray.XCreate(num_fields)
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            value = HashMap.HGet(hashmap, key, field)
+            
+            // Add value or 0 for non-existent
+            XArray.XPush(result, value)
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Increment a numeric field by a given amount
+// Returns: New value after increment
+Function.HashMap.HIncrBy {
+    Input: hashmap: Address
+    Input: key: Address
+    Input: field: Address
+    Input: increment: Integer
+    Output: Integer
+    Body: {
+        // Get current value
+        current_str = HashMap.HGet(hashmap, key, field)
+        current_val = 0
+        
+        IfCondition NotEqual(current_str, 0) ThenBlock: {
+            current_val = StringToNumber(current_str)
+            // Clean up the copy from HGet
+            Deallocate(current_str, 0)
+        }
+        
+        // Increment
+        new_val = Add(current_val, increment)
+        
+        // Store new value
+        new_str = NumberToString(new_val)
+        HashMap.HSet(hashmap, key, field, new_str)
+        Deallocate(new_str, 0)
+        
+        ReturnValue(new_val)
+    }
+}
+
+// Destroy a HashMap and all its contents
+Function.HashMap.Destroy {
+    Input: hashmap: Address
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(hashmap, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Get all main keys
+        main_keys = XSHash.XKeys(hashmap)
+        num_keys = XArray.XSize(main_keys)
+        
+        i = 0
+        WhileLoop LessThan(i, num_keys) {
+            key = XArray.XGet(main_keys, i)
+            inner_hash = XSHash.XLookup(hashmap, key)
+            
+            IfCondition NotEqual(inner_hash, XArrays.XNULL) ThenBlock: {
+                // Get all fields in this inner hash
+                fields = XSHash.XKeys(inner_hash)
+                num_fields = XArray.XSize(fields)
+                
+                j = 0
+                WhileLoop LessThan(j, num_fields) {
+                    field = XArray.XGet(fields, j)
+                    value = XSHash.XLookup(inner_hash, field)
+                    
+                    // Free the value
+                    IfCondition NotEqual(value, XArrays.XNULL) ThenBlock: {
+                        Deallocate(value, 0)
+                    }
+                    
+                    // Free the field copy
+                    Deallocate(field, 0)
+                    
+                    j = Add(j, 1)
+                }
+                
+                XArray.XDestroy(fields)
+                XSHash.XDestroy(inner_hash)
+            }
+            
+            // Free the key copy
+            Deallocate(key, 0)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(main_keys)
+        XSHash.XDestroy(hashmap)
+        
+        ReturnValue(1)
+    }
+}
+
+// ============================================
+// SIMPLE INTERFACE FOR SINGLE HASH INSTANCES
+// ============================================
+
+// Create a simple hash (actually creates a HashMap with one internal hash)
+Function.HashMap.CreateSimple {
+    Output: Address
+    Body: {
+        // Create the main hashmap container
+        hashmap = XSHash.XCreate(256)
+        
+        // Create a single internal hash and store it with a fixed key
+        inner_hash = XSHash.XCreate(16)
+        XSHash.XInsert(hashmap, "default", inner_hash)
+        
+        ReturnValue(hashmap)
+    }
+}
+
+// Simple HSet - works on a single hash instance
+Function.HashMap.HSetSimple {
+    Input: hash_ptr: Address    // The hash instance
+    Input: field: Address        // Field name
+    Input: value: Address        // Value to set
+    Output: Integer
+    Body: {
+        // Get the internal hash (always stored at "default" key)
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            // Create it if missing (shouldn't happen with CreateSimple)
+            inner_hash = XSHash.XCreate(16)
+            XSHash.XInsert(hash_ptr, "default", inner_hash)
+        }
+        
+        // Make a copy of the value
+        value_copy = HashMap.StringCopy(value)
+        
+        // Check if field exists
+        existing_value = XSHash.XLookup(inner_hash, field)
+        
+        // Free old value if it exists
+        IfCondition NotEqual(existing_value, XArrays.XNULL) ThenBlock: {
+            Deallocate(existing_value, 0)
+        }
+        
+        // Insert the new value
+        is_new_field = XSHash.XInsert(inner_hash, field, value_copy)
+        ReturnValue(is_new_field)
+    }
+}
+
+// Simple HGet - returns a COPY
+Function.HashMap.HGetSimple {
+    Input: hash_ptr: Address    // The hash instance
+    Input: field: Address        // Field name
+    Output: Address
+    Body: {
+        // Get the internal hash
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Get the field value
+        value = XSHash.XLookup(inner_hash, field)
+        
+        IfCondition EqualTo(value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // CRITICAL: Return a COPY
+        value_copy = HashMap.StringCopy(value)
+        ReturnValue(value_copy)
+    }
+}
+
+// Simple HDel
+Function.HashMap.HDelSimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Output: Integer
+    Body: {
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        old_value = XSHash.XDelete(inner_hash, field)
+        
+        IfCondition EqualTo(old_value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        Deallocate(old_value, 0)
+        ReturnValue(1)
+    }
+}
+
+// Simple HExists
+Function.HashMap.HExistsSimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Output: Integer
+    Body: {
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        value = XSHash.XLookup(inner_hash, field)
+        
+        IfCondition EqualTo(value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+// Simple HLen
+Function.HashMap.HLenSimple {
+    Input: hash_ptr: Address
+    Output: Integer
+    Body: {
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        // Clean up the keys array
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            Deallocate(field, 0)
+            i = Add(i, 1)
+        }
+        XArray.XDestroy(fields)
+        
+        ReturnValue(num_fields)
+    }
+}
+
+// Simple HKeys - returns COPIES
+Function.HashMap.HKeysSimple {
+    Input: hash_ptr: Address
+    Output: Address
+    Body: {
+        result = XArray.XCreate(16)
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(result)
+        }
+        
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            field_copy = HashMap.StringCopy(field)
+            XArray.XPush(result, field_copy)
+            Deallocate(field, 0)
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(fields)
+        ReturnValue(result)
+    }
+}
+
+// Simple HVals - returns COPIES
+Function.HashMap.HValsSimple {
+    Input: hash_ptr: Address
+    Output: Address
+    Body: {
+        result = XArray.XCreate(16)
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(result)
+        }
+        
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            value = XSHash.XLookup(inner_hash, field)
+            value_copy = HashMap.StringCopy(value)
+            XArray.XPush(result, value_copy)
+            Deallocate(field, 0)
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(fields)
+        ReturnValue(result)
+    }
+}
+
+// Simple HGetAll - returns COPIES of keys and values
+Function.HashMap.HGetAllSimple {
+    Input: hash_ptr: Address
+    Output: Address
+    Body: {
+        result = XArray.XCreate(32)
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            ReturnValue(result)
+        }
+        
+        fields = XSHash.XKeys(inner_hash)
+        num_fields = XArray.XSize(fields)
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            field = XArray.XGet(fields, i)
+            value = XSHash.XLookup(inner_hash, field)
+            
+            // Add copies of both field and value
+            field_copy = HashMap.StringCopy(field)
+            value_copy = HashMap.StringCopy(value)
+            
+            XArray.XPush(result, field_copy)
+            XArray.XPush(result, value_copy)
+            
+            Deallocate(field, 0)
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(fields)
+        ReturnValue(result)
+    }
+}
+
+// Simple HIncrBy - increment numeric field
+Function.HashMap.HIncrBySimple {
+    Input: hash_ptr: Address
+    Input: field: Address  
+    Input: increment: Integer
+    Output: Integer
+    Body: {
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition EqualTo(inner_hash, XArrays.XNULL) ThenBlock: {
+            // This case should not happen if created with CreateSimple, but handle defensively.
+            inner_hash = XSHash.XCreate(16)
+            XSHash.XInsert(hash_ptr, "default", inner_hash)
+        }
+        
+        // Get current value
+        value = XSHash.XLookup(inner_hash, field)
+        current_val = 0
+        
+        IfCondition NotEqual(value, XArrays.XNULL) ThenBlock: {
+            current_val = Helpers.StringToInt(value)
+            // The old value string will be replaced by XInsert, so we must free it.
+            Deallocate(value, 0)
+        }
+        
+        // Calculate new value
+        new_val = Add(current_val, increment)
+        
+        // Store as string
+        new_str = Helpers.IntToString(new_val)
+        XSHash.XInsert(inner_hash, field, new_str)
+        
+        ReturnValue(new_val)
+    }
+}
+
+// Simple Destroy
+Function.HashMap.DestroySimple {
+    Input: hash_ptr: Address
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(hash_ptr, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        inner_hash = XSHash.XLookup(hash_ptr, "default")
+        
+        IfCondition NotEqual(inner_hash, XArrays.XNULL) ThenBlock: {
+            // Get all fields and free their values
+            fields = XSHash.XKeys(inner_hash)
+            num_fields = XArray.XSize(fields)
+            
+            i = 0
+            WhileLoop LessThan(i, num_fields) {
+                field = XArray.XGet(fields, i)
+                value = XSHash.XLookup(inner_hash, field)
+                
+                IfCondition NotEqual(value, XArrays.XNULL) ThenBlock: {
+                    Deallocate(value, 0)
+                }
+                
+                Deallocate(field, 0)
+                i = Add(i, 1)
+            }
+            
+            XArray.XDestroy(fields)
+            XSHash.XDestroy(inner_hash)
+        }
+        
+        XSHash.XDestroy(hash_ptr)
+        ReturnValue(1)
+    }
+}

@@ -447,3 +447,23 @@ if __name__ == "__main__":
     print(f"   Modules loaded: {len(debug_info['loaded_modules'])}")
     print(f"   Conflicts found: {len(debug_info['conflicts'])}")
     print(f"   Prefixes generated: {len(debug_info['prefixes'])}")
+
+# Fixed version that returns mappings
+_original_enhanced_load_source = enhanced_load_source
+
+def enhanced_load_source(filepath):
+    """Enhanced version that also returns alias mappings"""
+    processed_source = _original_enhanced_load_source(filepath)
+    
+    # Extract alias mappings from processed source
+    import re
+    alias_mappings = {}
+    
+    # Find all RANDOM_Module patterns
+    pattern = r'([A-Z0-9]{6,8})_(\w+)'
+    for match in re.finditer(pattern, processed_source):
+        alias = match.group(0)  # Full alias like ABCDEF_Module
+        original = match.group(2)  # Original module name
+        alias_mappings[alias] = original
+    
+    return processed_source, alias_mappings

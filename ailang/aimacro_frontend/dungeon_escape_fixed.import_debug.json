@@ -1,0 +1,79 @@
+{
+  "main_file": "/mnt/c/Users/Sean/Documents/Ailang/ailang/aimacro_frontend/dungeon_escape_fixed.ailang",
+  "loaded_modules": [
+    "AIMacro",
+    "XArrays",
+    "FixedPointTrig"
+  ],
+  "conflicts": {
+    "XArray.XSize": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "Trig.Sin": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XGet": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XHash.XCreate": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XSet": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "Trig.Cos": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XPop": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XCreate": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "Math.ISqrt": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XPush": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "v1.0": [
+      "XArrays",
+      "FixedPointTrig"
+    ]
+  },
+  "prefixes": {
+    "AIMacro": "NSH2LGS3",
+    "XArrays": "NS44TVCN",
+    "FixedPointTrig": "NSW5VSG6"
+  },
+  "resolution_log": [
+    {
+      "file": "/mnt/c/Users/Sean/Documents/Ailang/ailang/aimacro_frontend/dungeon_escape_fixed.ailang",
+      "line": 1,
+      "import": "AIMacro",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.AIMacro.ailang",
+      "line": 6,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.AIMacro.ailang",
+      "line": 7,
+      "import": "FixedPointTrig",
+      "type": "library"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+Import TestModule from "./TestLib.ailang"
+
+Program TestImportBug {
+    Main: {
+        // This should work
+        result = TestModule.TestFunc(42)
+        PrintNumber(result)
+        ReturnValue(0)
+    }
+}

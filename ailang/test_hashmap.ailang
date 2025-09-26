@@ -1,0 +1,144 @@
+// test_hashmap.ailang
+// Test program for HashMap library - no direct XArray calls
+
+LibraryImport.HashMap
+
+PrintMessage("=== HashMap Library Test ===\n")
+
+// Create a hashmap
+hm = HashMap.Create()
+PrintMessage("Created HashMap\n\n")
+
+// Test HSet
+PrintMessage("Test 1: HSet\n")
+result = HashMap.HSet(hm, "user:1000", "name", "Alice")
+PrintMessage("  HSet(user:1000, name, Alice) = ")
+PrintNumber(result)
+PrintMessage(" (expected 1 for new)\n")
+
+result = HashMap.HSet(hm, "user:1000", "age", "30")
+PrintMessage("  HSet(user:1000, age, 30) = ")
+PrintNumber(result)
+PrintMessage(" (expected 1 for new)\n")
+
+result = HashMap.HSet(hm, "user:1000", "name", "Bob")
+PrintMessage("  HSet(user:1000, name, Bob) = ")
+PrintNumber(result)
+PrintMessage(" (expected 0 for update)\n\n")
+
+// Test HGet
+PrintMessage("Test 2: HGet\n")
+value = HashMap.HGet(hm, "user:1000", "name")
+PrintMessage("  HGet(user:1000, name) = ")
+PrintMessage(value)
+PrintMessage(" (expected Bob)\n")
+
+value = HashMap.HGet(hm, "user:1000", "age")
+PrintMessage("  HGet(user:1000, age) = ")
+PrintMessage(value)
+PrintMessage(" (expected 30)\n")
+
+value = HashMap.HGet(hm, "user:1000", "missing")
+PrintMessage("  HGet(user:1000, missing) = ")
+IfCondition EqualTo(value, 0) ThenBlock: {
+    PrintMessage("(nil)")
+} ElseBlock: {
+    PrintMessage(value)
+}
+PrintMessage(" (expected nil)\n\n")
+
+// Test HExists
+PrintMessage("Test 3: HExists\n")
+exists = HashMap.HExists(hm, "user:1000", "name")
+PrintMessage("  HExists(user:1000, name) = ")
+PrintNumber(exists)
+PrintMessage(" (expected 1)\n")
+
+exists = HashMap.HExists(hm, "user:1000", "missing")
+PrintMessage("  HExists(user:1000, missing) = ")
+PrintNumber(exists)
+PrintMessage(" (expected 0)\n\n")
+
+// Test HLen
+PrintMessage("Test 4: HLen\n")
+len = HashMap.HLen(hm, "user:1000")
+PrintMessage("  HLen(user:1000) = ")
+PrintNumber(len)
+PrintMessage(" (expected 2)\n\n")
+
+// Add more fields
+HashMap.HSet(hm, "user:1000", "email", "bob@example.com")
+HashMap.HSet(hm, "user:1000", "city", "New York")
+
+// Test HKeys - just get them, don't analyze
+PrintMessage("Test 5: HKeys\n")
+keys = HashMap.HKeys(hm, "user:1000")
+PrintMessage("  HKeys returned results (check manually for: name, age, email, city)\n\n")
+
+// Test HVals - just get them, don't analyze
+PrintMessage("Test 6: HVals\n")
+vals = HashMap.HVals(hm, "user:1000")
+PrintMessage("  HVals returned results (check manually for: Bob, 30, bob@example.com, New York)\n\n")
+
+// Test HGetAll
+PrintMessage("Test 7: HGetAll\n")
+all = HashMap.HGetAll(hm, "user:1000")
+PrintMessage("  HGetAll returned results (should have field/value pairs)\n\n")
+
+// Test HIncrBy
+PrintMessage("Test 8: HIncrBy\n")
+new_age = HashMap.HIncrBy(hm, "user:1000", "age", 5)
+PrintMessage("  HIncrBy(user:1000, age, 5) = ")
+PrintNumber(new_age)
+PrintMessage(" (expected 35)\n")
+
+// Verify the increment
+age_str = HashMap.HGet(hm, "user:1000", "age")
+PrintMessage("  HGet(user:1000, age) = ")
+PrintMessage(age_str)
+PrintMessage(" (expected 35)\n\n")
+
+// Test HDel
+PrintMessage("Test 9: HDel\n")
+deleted = HashMap.HDel(hm, "user:1000", "email")
+PrintMessage("  HDel(user:1000, email) = ")
+PrintNumber(deleted)
+PrintMessage(" (expected 1)\n")
+
+deleted = HashMap.HDel(hm, "user:1000", "missing")
+PrintMessage("  HDel(user:1000, missing) = ")
+PrintNumber(deleted)
+PrintMessage(" (expected 0)\n")
+
+len = HashMap.HLen(hm, "user:1000")
+PrintMessage("  HLen after delete = ")
+PrintNumber(len)
+PrintMessage(" (expected 3)\n\n")
+
+// Test with multiple hashes
+PrintMessage("Test 10: Multiple hashes\n")
+HashMap.HSet(hm, "user:2000", "name", "Charlie")
+HashMap.HSet(hm, "user:2000", "age", "25")
+HashMap.HSet(hm, "product:100", "name", "Widget")
+HashMap.HSet(hm, "product:100", "price", "19.99")
+
+name1 = HashMap.HGet(hm, "user:1000", "name")
+name2 = HashMap.HGet(hm, "user:2000", "name")
+product = HashMap.HGet(hm, "product:100", "name")
+
+PrintMessage("  user:1000 name = ")
+PrintMessage(name1)
+PrintMessage("\n")
+PrintMessage("  user:2000 name = ")
+PrintMessage(name2)
+PrintMessage("\n")
+PrintMessage("  product:100 name = ")
+PrintMessage(product)
+PrintMessage("\n\n")
+
+// Clean up
+PrintMessage("Test 11: Cleanup\n")
+HashMap.Destroy(hm)
+PrintMessage("  HashMap destroyed\n\n")
+
+PrintMessage("=== All Tests Complete ===\n")

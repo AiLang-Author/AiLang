@@ -1,0 +1,9 @@
+Import XArrays from "./Library.XArrays.ailang"
+
+Program TestFix {
+    Main: {
+        arr = XArrays.XArray.XCreate(10)
+        PrintMessage("Import fix works!")
+        ReturnValue(0)
+    }
+}

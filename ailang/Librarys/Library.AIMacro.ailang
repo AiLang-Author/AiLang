@@ -75,6 +75,62 @@ Function.AIMacro.Bool {
     }
 }
 
+Function.AIMacro.Get {
+    Input: container: Address
+    Input: index: Integer
+    Output: Address
+    Body: {
+        // Use XArray's get function
+        ReturnValue(XArray.XGet(container, index))
+    }
+}
+
+Function.AIMacro.Set {
+    Input: container: Address
+    Input: index: Integer
+    Input: value: Address
+    Body: {
+        // Use XArray's set function
+        XArray.XSet(container, index, value)
+    }
+}
+
+Function.AIMacro.CreateListWithElements {
+    Input: e0: Address
+    Input: e1: Address
+    Input: e2: Address
+    Input: e3: Address
+    Input: e4: Address
+    Output: Address
+    Body: {
+        list = XArray.XCreate(5)
+        XArray.XPush(list, e0)
+        XArray.XPush(list, e1)
+        XArray.XPush(list, e2)
+        XArray.XPush(list, e3)
+        XArray.XPush(list, e4)
+        ReturnValue(list)
+    }
+}
+
+Function.AIMacro.CreateList5 {
+    Input: e0: Address
+    Input: e1: Address
+    Input: e2: Address
+    Input: e3: Address
+    Input: e4: Address
+    Output: Address
+    Body: {
+        list = XArray.XCreate(5)
+        XArray.XPush(list, e0)
+        XArray.XPush(list, e1)
+        XArray.XPush(list, e2)
+        XArray.XPush(list, e3)
+        XArray.XPush(list, e4)
+        ReturnValue(list)
+    }
+}
+
 // =============================================================================
 // MATHEMATICAL FUNCTIONS
 // =============================================================================
@@ -327,7 +383,7 @@ Function.AIMacro.StrSplit {
 
         // Loop through the string to find all occurrences of the delimiter.
         WhileLoop LessThan(current_pos, text_len) {
-            found_pos = StringFind(text, delimiter, current_pos)
+            found_pos = StringIndexOf(text, delimiter, current_pos)
 
             IfCondition EqualTo(found_pos, -1) ThenBlock: {
                 // No more delimiters, the rest of the string is the final segment.
@@ -335,14 +391,14 @@ Function.AIMacro.StrSplit {
                 break
             }
 
-            segment = Substring(text, last_pos, found_pos)
+            segment = StringSubstring(text, last_pos, found_pos)
             XArray.XPush(results, segment)
             last_pos = Add(found_pos, delim_len)
             current_pos = last_pos
         }
 
         // Add the final segment after the last delimiter (or the whole string if no delimiter was found).
-        final_segment = Substring(text, last_pos, text_len)
+        final_segment = StringSubstring(text, last_pos, text_len)
         XArray.XPush(results, final_segment)
 
         ReturnValue(results)

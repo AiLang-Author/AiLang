@@ -1,0 +1,216 @@
+Loading XArrays Library v1.0
+================================
+XArrays Library loaded successfully!
+Features: Dynamic arrays, stacks, queues, hash tables, linked lists
+All functions use X-prefix to avoid keyword conflicts
+[MAIN] Starting Main subroutine
+[MAIN] Store initialized: 
+128419550621696
+
+[MAIN] Verification read: 
+128419550621696
+
+Server listening on port 6379
+[DEBUG] Parsing array...
+[DEBUG FindCRLF] Starting search from offset 
+0
+ in buffer of length 
+47
+
+[DEBUG FindCRLF] Found CRLF at position 
+2
+
+[DEBUG] arr_crlf after FindCRLF: 
+2
+
+[DEBUG] arr_crlf after ParseIntFromSlice: 
+2
+
+[DEBUG] Array length: 
+5
+
+[DEBUG] arr_crlf after XArray.XCreate: 
+2
+
+[DEBUG] current_offset = Add(
+2
+, 2) = 
+4
+
+[DEBUG FindCRLF] Starting search from offset 
+4
+ in buffer of length 
+47
+
+[DEBUG FindCRLF] Found CRLF at position 
+6
+
+[DEBUG FindCRLF] Starting search from offset 
+14
+ in buffer of length 
+47
+
+[DEBUG FindCRLF] Found CRLF at position 
+16
+
+[DEBUG FindCRLF] Starting search from offset 
+24
+ in buffer of length 
+47
+
+[DEBUG FindCRLF] Found CRLF at position 
+26
+
+[DEBUG FindCRLF] Starting search from offset 
+31
+ in buffer of length 
+47
+
+[DEBUG FindCRLF] Found CRLF at position 
+33
+
+[DEBUG FindCRLF] Starting search from offset 
+39
+ in buffer of length 
+47
+
+[DEBUG FindCRLF] Found CRLF at position 
+41
+
+[DEBUG] About to do first StringCompare for PING
+[DEBUG] PING comparison done, result: 
+1
+
+[DEBUG] About to do ECHO StringCompare
+[DEBUG] ECHO comparison done, result: 
+1
+
+[DEBUG] About to do SET StringCompare
+[DEBUG] SET comparison done, result: 
+1
+
+[DEBUG] About to compare XREAD
+[DEBUG] XREAD comparison result: 
+1
+
+[DEBUG] Parsing array...
+[DEBUG FindCRLF] Starting search from offset 
+0
+ in buffer of length 
+45
+
+[DEBUG FindCRLF] Found CRLF at position 
+2
+
+[DEBUG] arr_crlf after FindCRLF: 
+2
+
+[DEBUG] arr_crlf after ParseIntFromSlice: 
+2
+
+[DEBUG] Array length: 
+4
+
+[DEBUG] arr_crlf after XArray.XCreate: 
+2
+
+[DEBUG] current_offset = Add(
+2
+, 2) = 
+4
+
+[DEBUG FindCRLF] Starting search from offset 
+4
+ in buffer of length 
+45
+
+[DEBUG FindCRLF] Found CRLF at position 
+6
+
+[DEBUG FindCRLF] Starting search from offset 
+15
+ in buffer of length 
+45
+
+[DEBUG FindCRLF] Found CRLF at position 
+17
+
+[DEBUG FindCRLF] Starting search from offset 
+28
+ in buffer of length 
+45
+
+[DEBUG FindCRLF] Found CRLF at position 
+30
+
+[DEBUG FindCRLF] Starting search from offset 
+38
+ in buffer of length 
+45
+
+[DEBUG FindCRLF] Found CRLF at position 
+40
+
+[DEBUG] About to do first StringCompare for PING
+[DEBUG] PING comparison done, result: 
+1
+
+[DEBUG] About to do ECHO StringCompare
+[DEBUG] ECHO comparison done, result: 
+1
+
+[DEBUG] About to do SET StringCompare
+[DEBUG] SET comparison done, result: 
+1
+
+[DEBUG] About to compare XREAD
+[DEBUG] XREAD comparison result: 
+0
+
+[DEBUG] Entering XREAD handler
+[DEBUG] XREAD: Getting arg 1
+[DEBUG] XREAD: arg1 = 
+128419550470144
+
+[DEBUG] XREAD: About to StringToUpper
+[DEBUG] XREAD: arg1 value = 
+128419550470144
+
+[DEBUG] XREAD: StringToUpper completed
+[DEBUG] XREAD: streams_keyword = 
+128419550433280
+
+[DEBUG] XREAD: About to StringCompare with STREAMS
+[DEBUG] XREAD: StringCompare result = 
+0
+
+[DEBUG] XREAD: STREAMS confirmed, getting key
+[DEBUG] XREAD: key = 
+128419550461952
+
+[DEBUG] XREAD: Getting start_id
+[DEBUG] XREAD: start_id_str = 
+128419550453760
+
+[DEBUG] XREAD: Looking up stream in store
+[DEBUG] XREAD: Lookup completed, wrapper = 
+128419550531584
+
+[DEBUG] XREAD: Lookup completed
+[DEBUG] XREAD: About to compare IDs
+  entry_id_ptr = 
+128419550515200
+
+  start_id_str = 
+128419550453760
+
+[DEBUG] ParseStreamID: parsing 
+1-0
+[DEBUG] ParseStreamID: dash_pos = 
+-1
+
+[DEBUG] ParseStreamID: parsing 
+0
+[DEBUG] ParseStreamID: dash_pos = 
+-1
+

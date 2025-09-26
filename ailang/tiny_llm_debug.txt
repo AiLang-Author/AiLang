@@ -1,29 +1,29 @@
 Enhanced Tiny LLM Weights (NumPy version)
 ============================================================
 Model Configuration:
-  Vocab Size: 256
-  Hidden Dim: 256
+  Vocab Size: 115
+  Hidden Dim: 512
   Num Layers: 2
-  Total Params: 524,288
+  Total Params: 1,690,624
 
 Weight Statistics:
-  Embedding: mean=0.0157, std=1.4112
-  Layer 0 W_q: mean=-0.1175, std=6.6971
-  Layer 0 W_k: mean=-0.1182, std=6.6985
-  Layer 0 W_v: mean=-0.1183, std=6.6985
-  Layer 1 W_q: mean=-0.0032, std=0.6380
-  Layer 1 W_k: mean=-0.0035, std=0.6378
-  Layer 1 W_v: mean=-0.0034, std=0.6365
-  Output Proj: mean=0.2423, std=0.5098
+  Embedding: mean=-1.3884, std=30.0599
+  Layer 0 W_q: mean=8.5849, std=186.9056
+  Layer 0 W_k: mean=8.5851, std=186.9054
+  Layer 0 W_v: mean=8.5852, std=186.9055
+  Layer 1 W_q: mean=0.7501, std=9.1275
+  Layer 1 W_k: mean=0.7501, std=9.1278
+  Layer 1 W_v: mean=0.7500, std=9.1274
+  Output Proj: mean=0.0073, std=0.1425
 
 Sample weights (first 10 embedding values):
-  [0]: -0.000583 -> 0 (fixed-point)
-  [1]: 0.004426 -> 4 (fixed-point)
-  [2]: -0.000919 -> 0 (fixed-point)
-  [3]: 0.000151 -> 0 (fixed-point)
-  [4]: 0.000354 -> 0 (fixed-point)
-  [5]: -0.001989 -> -1 (fixed-point)
-  [6]: 0.002638 -> 2 (fixed-point)
-  [7]: 0.002419 -> 2 (fixed-point)
-  [8]: 0.002386 -> 2 (fixed-point)
-  [9]: 0.000216 -> 0 (fixed-point)
+  [0]: -9.372897 -> -9372 (fixed-point)
+  [1]: -9.556825 -> -9556 (fixed-point)
+  [2]: -11.797758 -> -11797 (fixed-point)
+  [3]: -7.855600 -> -7855 (fixed-point)
+  [4]: -12.102652 -> -12102 (fixed-point)
+  [5]: -8.429686 -> -8429 (fixed-point)
+  [6]: -9.199934 -> -9199 (fixed-point)
+  [7]: -8.388399 -> -8388 (fixed-point)
+  [8]: -5.652055 -> -5652 (fixed-point)
+  [9]: -4.580114 -> -4580 (fixed-point)

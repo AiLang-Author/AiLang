@@ -1,0 +1,79 @@
+{
+  "main_file": "/mnt/c/Users/Sean/Documents/Ailang/ailang/aimacro_frontend/simple_function_test.ailang",
+  "loaded_modules": [
+    "AIMacro",
+    "XArrays",
+    "FixedPointTrig"
+  ],
+  "conflicts": {
+    "Trig.Cos": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "Trig.Sin": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XSize": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XSet": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XHash.XCreate": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "Math.ISqrt": [
+      "AIMacro",
+      "FixedPointTrig"
+    ],
+    "XArray.XPop": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XGet": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XCreate": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "XArray.XPush": [
+      "AIMacro",
+      "XArrays"
+    ],
+    "v1.0": [
+      "XArrays",
+      "FixedPointTrig"
+    ]
+  },
+  "prefixes": {
+    "AIMacro": "NSJ5XDA9",
+    "XArrays": "NSQ2086D",
+    "FixedPointTrig": "NSVZSIKO"
+  },
+  "resolution_log": [
+    {
+      "file": "/mnt/c/Users/Sean/Documents/Ailang/ailang/aimacro_frontend/simple_function_test.ailang",
+      "line": 1,
+      "import": "AIMacro",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.AIMacro.ailang",
+      "line": 6,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.AIMacro.ailang",
+      "line": 7,
+      "import": "FixedPointTrig",
+      "type": "library"
+    }
+  ]
+}

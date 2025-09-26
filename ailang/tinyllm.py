@@ -461,7 +461,7 @@ def main():
     print("\n🏃 Starting training...")
     print("-" * 40)
     
-    epochs = 300
+    epochs = 2 
     best_loss = float('inf')
     
     start_time = time.time()

@@ -1,0 +1,9 @@
+# simple_function_test.aim
+def test_func(my_param):
+    print("Parameter value: ");
+    print(my_param);
+end;
+
+def main():
+    test_func(42);
+end;

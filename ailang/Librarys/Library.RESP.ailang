@@ -68,48 +68,222 @@ message_param = 0
 str_debug = 0
 num_debug = 0
 
+// Variables for checking RESP format
+first_byte = 0
+is_resp_formatted = 0
+is_resp_integer = 0
+is_resp_simple = 0
+is_resp_error = 0
+is_resp_bulk = 0
+is_resp_array = 0
+empty_resp = 0
+last_pos = 0
+second_last = 0
+last_byte = 0
+second_last_byte = 0
+has_crlf = 0
+
 // Build an array response: *<count>\r\n<elements>
+// Fixed RESP.Array function that correctly handles pre-formatted RESP responses
+// This replaces the existing Function.RESP.Array in Library.RESP.ailang
+
 Function.RESP.Array {
     Input: elements: Array
     Output: Address
     Body: {
-        elements_param = elements
+        // First, validate the input
+        Debug("resp.build", level=2) {
+            PrintMessage("[DEBUG] RESP.Array: Entry point, elements ptr: ")
+            PrintNumber(elements)
+            PrintMessage("\n")
+        }
+        
+        // Handle null array early
+        IfCondition EqualTo(elements, 0) ThenBlock: {
+            Debug("resp.build", level=2) {
+                PrintMessage("[DEBUG] RESP.Array: NULL array passed, returning empty\n")
+            }
+            // Return empty array response: *0\r\n
+            empty_resp = Allocate(6)
+            SetByte(empty_resp, 0, 42)  // '*'
+            SetByte(empty_resp, 1, 48)  // '0'
+            SetByte(empty_resp, 2, 13)  // '\r'
+            SetByte(empty_resp, 3, 10)  // '\n'
+            SetByte(empty_resp, 4, 0)   // null terminator
+            ReturnValue(empty_resp)
+        }
+        
+        // Get array length safely
+        count = ArrayLength(elements)
+        
         Debug("resp.build", level=2) {
             PrintMessage("[DEBUG] RESP.Array: Building array with ")
-            PrintNumber(ArrayLength(elements_param))
-            PrintMessage(" elements.")
+            PrintNumber(count)
+            PrintMessage(" elements\n")
         }
-        count = ArrayLength(elements)
+        
+        // Handle empty array
+        IfCondition EqualTo(count, 0) ThenBlock: {
+            Debug("resp.build", level=2) {
+                PrintMessage("[DEBUG] RESP.Array: Empty array (count=0)\n")
+            }
+            // Return empty array response: *0\r\n
+            empty_resp = Allocate(6)
+            SetByte(empty_resp, 0, 42)  // '*'
+            SetByte(empty_resp, 1, 48)  // '0'
+            SetByte(empty_resp, 2, 13)  // '\r'
+            SetByte(empty_resp, 3, 10)  // '\n'
+            SetByte(empty_resp, 4, 0)   // null terminator
+            ReturnValue(empty_resp)
+        }
+        
+        // Convert count to string
         count_str = RESP.IntToString(count)
         count_len = StringLength(count_str)
         
-        // Calculate total size needed
-        // Start with header: * + count + \r\n
-        total_size = Add(count_len, 3)
+        Debug("resp.build", level=3) {
+            PrintMessage("[DEBUG] RESP.Array: Count string: ")
+            PrintMessage(count_str)
+            PrintMessage(" (length: ")
+            PrintNumber(count_len)
+            PrintMessage(")\n")
+        }
         
-        // Add size for each element (bulk strings)
+        // First pass: Calculate total size needed
+        total_size = 1  // '*'
+        total_size = Add(total_size, count_len)  // count digits
+        total_size = Add(total_size, 2)  // '\r\n' after count
+        
         i = 0
         WhileLoop LessThan(i, count) {
-            elem = ArrayGet(elements, i)
-            elem_len = StringLength(elem)
-            elem_len_str = RESP.IntToString(elem_len)
-            len_digits = StringLength(elem_len_str)
-            Deallocate(elem_len_str, 0)
+            Debug("resp.build", level=3) {
+                PrintMessage("[DEBUG] RESP.Array: Processing element ")
+                PrintNumber(i)
+                PrintMessage("\n")
+            }
             
-            // Calculate bulk string size: $ + len_digits + \r\n + string + \r\n
-            elem_size = Add(Add(len_digits, elem_len), 5)
-            total_size = Add(total_size, elem_size)
+            elem = ArrayGet(elements, i)
+            
+            Debug("resp.build", level=3) {
+                PrintMessage("[DEBUG] RESP.Array: Element ptr: ")
+                PrintNumber(elem)
+                PrintMessage("\n")
+            }
+            
+            IfCondition NotEqual(elem, 0) ThenBlock: {
+                elem_len = StringLength(elem)
+                
+                Debug("resp.build", level=3) {
+                    PrintMessage("[DEBUG] RESP.Array: Element length: ")
+                    PrintNumber(elem_len)
+                    PrintMessage("\n")
+                }
+                
+                // Check if this is already a RESP-formatted response
+                first_byte = GetByte(elem, 0)
+                
+                Debug("resp.build", level=3) {
+                    PrintMessage("[DEBUG] RESP.Array: First byte: ")
+                    PrintNumber(first_byte)
+                    PrintMessage("\n")
+                }
+                
+                // Check for RESP type markers: : + - $ *
+                is_resp_formatted = 0
+                
+                // Integer response starts with ':'
+                IfCondition EqualTo(first_byte, 58) ThenBlock: {
+                    is_resp_formatted = 1
+                    Debug("resp.build", level=3) {
+                        PrintMessage("[DEBUG] RESP.Array: Element is RESP integer\n")
+                    }
+                }
+                // Simple string starts with '+'
+                IfCondition EqualTo(first_byte, 43) ThenBlock: {
+                    is_resp_formatted = 1
+                    Debug("resp.build", level=3) {
+                        PrintMessage("[DEBUG] RESP.Array: Element is RESP simple string\n")
+                    }
+                }
+                // Error starts with '-'
+                IfCondition EqualTo(first_byte, 45) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                // Bulk string starts with '$'
+                IfCondition EqualTo(first_byte, 36) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                // Array starts with '*'
+                IfCondition EqualTo(first_byte, 42) ThenBlock: {
+                    is_resp_formatted = 1
+                }
+                
+                IfCondition EqualTo(is_resp_formatted, 1) ThenBlock: {
+                    // Already RESP formatted - just add its length
+                    total_size = Add(total_size, elem_len)
+                    
+                    // Check if it already has \r\n at end
+                    has_crlf = 0
+                    IfCondition GreaterEqual(elem_len, 2) ThenBlock: {
+                        last_pos = Subtract(elem_len, 1)
+                        second_last = Subtract(elem_len, 2)
+                        last_byte = GetByte(elem, last_pos)
+                        second_last_byte = GetByte(elem, second_last)
+                        IfCondition And(EqualTo(second_last_byte, 13), EqualTo(last_byte, 10)) ThenBlock: {
+                            has_crlf = 1
+                        }
+                    }
+                    
+                    // If no CRLF at end, add space for it
+                    IfCondition EqualTo(has_crlf, 0) ThenBlock: {
+                        total_size = Add(total_size, 2)
+                    }
+                } ElseBlock: {
+                    // Not RESP formatted - treat as bulk string
+                    elem_len_str = RESP.IntToString(elem_len)
+                    elem_len_digits = StringLength(elem_len_str)
+                    Deallocate(elem_len_str, 0)
+                    
+                    total_size = Add(total_size, 1)  // '$'
+                    total_size = Add(total_size, elem_len_digits)  // length digits
+                    total_size = Add(total_size, 2)  // '\r\n' after length
+                    total_size = Add(total_size, elem_len)  // content
+                    total_size = Add(total_size, 2)  // '\r\n' after content
+                }
+            } ElseBlock: {
+                Debug("resp.build", level=3) {
+                    PrintMessage("[DEBUG] RESP.Array: Element is NULL\n")
+                }
+                // NULL element - represent as $-1\r\n
+                total_size = Add(total_size, 5)  // "$-1\r\n"
+            }
+            
             i = Add(i, 1)
         }
         
-        // Allocate response buffer
-        response = Allocate(Add(total_size, 1))
-        pos = 0
+        total_size = Add(total_size, 1)  // null terminator
         
-        // Write header: *<count>\r\n
+        Debug("resp.build", level=2) {
+            PrintMessage("[DEBUG] RESP.Array: Total size calculated: ")
+            PrintNumber(total_size)
+            PrintMessage("\n")
+        }
+        
+        // Allocate response buffer
+        response = Allocate(total_size)
+        
+        Debug("resp.build", level=3) {
+            PrintMessage("[DEBUG] RESP.Array: Response buffer allocated at: ")
+            PrintNumber(response)
+            PrintMessage("\n")
+        }
+        
+        // Write array header
+        pos = 0
         SetByte(response, pos, 42)  // '*'
         pos = Add(pos, 1)
         
+        // Write count
         i = 0
         WhileLoop LessThan(i, count_len) {
             SetByte(response, pos, GetByte(count_str, i))
@@ -117,50 +291,117 @@ Function.RESP.Array {
             i = Add(i, 1)
         }
         
+        // Write \r\n after count
         SetByte(response, pos, 13)  // '\r'
         pos = Add(pos, 1)
         SetByte(response, pos, 10)  // '\n'
         pos = Add(pos, 1)
         
-        // Write each element as bulk string
+        Debug("resp.build", level=3) {
+            PrintMessage("[DEBUG] RESP.Array: Header written, pos: ")
+            PrintNumber(pos)
+            PrintMessage("\n")
+        }
+        
+        // Second pass: Write each element
         i = 0
         WhileLoop LessThan(i, count) {
             elem = ArrayGet(elements, i)
-            elem_len = StringLength(elem)
-            elem_len_str = RESP.IntToString(elem_len)
-            elem_len_digits = StringLength(elem_len_str)
             
-            // Write $<length>\r\n
-            SetByte(response, pos, 36)  // '$'
-            pos = Add(pos, 1)
-            
-            j = 0
-            WhileLoop LessThan(j, elem_len_digits) {
-                SetByte(response, pos, GetByte(elem_len_str, j))
+            IfCondition NotEqual(elem, 0) ThenBlock: {
+                // Check if already RESP formatted
+                first_byte = GetByte(elem, 0)
+                
+                is_resp_formatted = 0
+                IfCondition EqualTo(first_byte, 58) ThenBlock: { is_resp_formatted = 1 }  // ':'
+                IfCondition EqualTo(first_byte, 43) ThenBlock: { is_resp_formatted = 1 }  // '+'
+                IfCondition EqualTo(first_byte, 45) ThenBlock: { is_resp_formatted = 1 }  // '-'
+                IfCondition EqualTo(first_byte, 36) ThenBlock: { is_resp_formatted = 1 }  // '$'
+                IfCondition EqualTo(first_byte, 42) ThenBlock: { is_resp_formatted = 1 }  // '*'
+                
+                IfCondition EqualTo(is_resp_formatted, 1) ThenBlock: {
+                    // Copy the already-formatted RESP response directly
+                    elem_len = StringLength(elem)
+                    
+                    // Check if it has CRLF at end
+                    has_crlf = 0
+                    IfCondition GreaterEqual(elem_len, 2) ThenBlock: {
+                        last_pos = Subtract(elem_len, 1)
+                        second_last = Subtract(elem_len, 2)
+                        last_byte = GetByte(elem, last_pos)
+                        second_last_byte = GetByte(elem, second_last)
+                        IfCondition And(EqualTo(second_last_byte, 13), EqualTo(last_byte, 10)) ThenBlock: {
+                            has_crlf = 1
+                        }
+                    }
+                    
+                    // Copy the response
+                    j = 0
+                    WhileLoop LessThan(j, elem_len) {
+                        SetByte(response, pos, GetByte(elem, j))
+                        pos = Add(pos, 1)
+                        j = Add(j, 1)
+                    }
+                    
+                    // Add CRLF if not present
+                    IfCondition EqualTo(has_crlf, 0) ThenBlock: {
+                        SetByte(response, pos, 13)  // '\r'
+                        pos = Add(pos, 1)
+                        SetByte(response, pos, 10)  // '\n'
+                        pos = Add(pos, 1)
+                    }
+                } ElseBlock: {
+                    // Format as bulk string
+                    elem_len = StringLength(elem)
+                    elem_len_str = RESP.IntToString(elem_len)
+                    elem_len_digits = StringLength(elem_len_str)
+                    
+                    // Write $<length>\r\n
+                    SetByte(response, pos, 36)  // '$'
+                    pos = Add(pos, 1)
+                    
+                    j = 0
+                    WhileLoop LessThan(j, elem_len_digits) {
+                        SetByte(response, pos, GetByte(elem_len_str, j))
+                        pos = Add(pos, 1)
+                        j = Add(j, 1)
+                    }
+                    
+                    SetByte(response, pos, 13)  // '\r'
+                    pos = Add(pos, 1)
+                    SetByte(response, pos, 10)  // '\n'
+                    pos = Add(pos, 1)
+                    
+                    // Write string content
+                    j = 0
+                    WhileLoop LessThan(j, elem_len) {
+                        SetByte(response, pos, GetByte(elem, j))
+                        pos = Add(pos, 1)
+                        j = Add(j, 1)
+                    }
+                    
+                    // Write trailing \r\n
+                    SetByte(response, pos, 13)  // '\r'
+                    pos = Add(pos, 1)
+                    SetByte(response, pos, 10)  // '\n'
+                    pos = Add(pos, 1)
+                    
+                    Deallocate(elem_len_str, 0)
+                }
+            } ElseBlock: {
+                // NULL element - write $-1\r\n
+                SetByte(response, pos, 36)  // '$'
                 pos = Add(pos, 1)
-                j = Add(j, 1)
+                SetByte(response, pos, 45)  // '-'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 49)  // '1'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 13)  // '\r'
+                pos = Add(pos, 1)
+                SetByte(response, pos, 10)  // '\n'
+                pos = Add(pos, 1)
             }
             
-            SetByte(response, pos, 13)  // '\r'
-            pos = Add(pos, 1)
-            SetByte(response, pos, 10)  // '\n'
-            pos = Add(pos, 1)
-            
-            // Write string content
-            j = 0
-            WhileLoop LessThan(j, elem_len) {
-                SetByte(response, pos, GetByte(elem, j))
-                pos = Add(pos, 1)
-                j = Add(j, 1)
-            }
-            
-            // Write trailing \r\n
-            SetByte(response, pos, 13)  // '\r'
-            pos = Add(pos, 1)
-            SetByte(response, pos, 10)  // '\n'
-            pos = Add(pos, 1)
-            
-            Deallocate(elem_len_str, 0)
             i = Add(i, 1)
         }
         
@@ -171,6 +412,7 @@ Function.RESP.Array {
         Debug("resp.build", level=3) {
             PrintMessage("[DEBUG] RESP.Array: Final response string:\n")
             PrintMessage(response)
+            PrintMessage("\n")
         }
 
         ReturnValue(response)

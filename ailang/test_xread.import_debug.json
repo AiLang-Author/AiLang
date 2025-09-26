@@ -1,0 +1,23 @@
+{
+  "main_file": "test_xread.ailang",
+  "loaded_modules": [
+    "RESP",
+    "XArrays"
+  ],
+  "conflicts": {},
+  "prefixes": {},
+  "resolution_log": [
+    {
+      "file": "test_xread.ailang",
+      "line": 4,
+      "import": "RESP",
+      "type": "library"
+    },
+    {
+      "file": "test_xread.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

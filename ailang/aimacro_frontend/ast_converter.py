@@ -405,6 +405,7 @@ class AIMacroToAILangConverter:
                 'upper': 'AIMacro.StrUpper',
                 'lower': 'AIMacro.StrLower',
                 'split': 'AIMacro.StrSplit',
+                'find': 'StringIndexOf', 
             },
             'list': {
                 'append': 'AIMacro.ListAppend',
@@ -443,7 +444,11 @@ class AIMacroToAILangConverter:
     
     def convert_AIMacroString(self, node: AIMacroString) -> String:
         """Convert string literal"""
-        return String(line=node.line, column=node.column, value=node.value)
+        value = node.value
+        # Replace newlines with ASCII value comparison
+        if value == "\n":
+            return Number(line=node.line, column=node.column, value=10)
+        return String(line=node.line, column=node.column, value=value)
     
     def convert_AIMacroBoolean(self, node: AIMacroBoolean) -> Number:
         """Convert boolean to number"""
@@ -451,8 +456,22 @@ class AIMacroToAILangConverter:
     
     def convert_AIMacroList(self, node: AIMacroList) -> FunctionCall:
         """Convert list literal"""
+        num_elements = len(node.elements)
         elements = [self.convert(elem) for elem in node.elements]
-        return FunctionCall(line=node.line, column=node.column, function='AIMacro.CreateListWithElements', arguments=elements)
+        
+        if num_elements == 0:
+            return FunctionCall(line=node.line, column=node.column, 
+                            function='AIMacro.List', arguments=[])
+        elif num_elements <= 10:
+            # Use a specific function for this number of elements
+            func_name = f'AIMacro.CreateList{num_elements}'
+            return FunctionCall(line=node.line, column=node.column,
+                            function=func_name, arguments=elements)
+        else:
+            # Too many elements, fall back to creating empty list
+            # (This is a limitation - would need a different approach)
+            return FunctionCall(line=node.line, column=node.column,
+                            function='AIMacro.List', arguments=[])
     
     def convert_AIMacroDict(self, node: AIMacroDict) -> FunctionCall:
         """Convert dict literal"""
@@ -550,7 +569,7 @@ class AILangASTSerializer:
     def serialize_Function(self, node: Function) -> str:
         # If it's main with no params/return, make it a SubRoutine
         if node.name == 'main' and not node.input_params and not node.output_type:
-            header = f"SubRoutine.Main {{\n"  # Note: Main with capital M
+            header = f"SubRoutine.Main {{\n"
             self.indent_level += 1
             body = self.serialize_body(node.body)
             self.indent_level -= 1
@@ -558,12 +577,14 @@ class AILangASTSerializer:
             return header + body + footer
         else:
             # Regular function with full syntax
-            params = ", ".join([f"{p_name}: {p_type}" for p_name, p_type in node.input_params])
             output_line = f"    Output: {node.output_type}\n" if node.output_type else ""
             
             header = f"Function.{node.name} {{\n"
-            if params:
-                header += f"    Input: {params}\n"
+            
+            # FIX: Each parameter gets its own Input line
+            for p_name, p_type in node.input_params:
+                header += f"    Input: {p_name}: {p_type}\n"
+                
             header += output_line
             header += "    Body: {\n"
             
@@ -603,7 +624,9 @@ class AILangASTSerializer:
         return str(node.value)
 
     def serialize_String(self, node: String) -> str:
-        return f'"{node.value.replace('"', '\\"')}"'
+        # Escape newlines and other special characters
+        escaped = node.value.replace('\\', '\\\\').replace('\n', '\\n').replace('\t', '\\t').replace('"', '\\"')
+        return f'"{escaped}"'
 
     def serialize_ReturnValue(self, node: ReturnValue) -> str:
         value_str = self.serialize_inline(node.value)

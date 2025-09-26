@@ -1,0 +1,664 @@
+LibraryImport.AIMacro
+
+Function.v_show_character_sheet {
+    Input: v_stats: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_show_character_sheet ---")
+    AIMacro.SmartPrint("--- DEBUG: v_stats list address is:")
+    AIMacro.SmartPrint(v_stats)
+    AIMacro.SmartPrint("--- DEBUG: v_stats[0] (level) is:")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 0))
+    AIMacro.SmartPrint("--- DEBUG: v_stats[3] (health) is:")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 3))
+    AIMacro.SmartPrint("--- DEBUG: v_stats[10] (coins) is:")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 10))
+    AIMacro.SmartPrint("--- DEBUG: Now printing character sheet... ---")
+
+    AIMacro.SmartPrint("=== CHARACTER SHEET ===")
+    AIMacro.SmartPrint("Level: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 0))
+    AIMacro.SmartPrint("EXP: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 1))
+    AIMacro.SmartPrint(" / ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 2))
+    AIMacro.SmartPrint("Health: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 3))
+    AIMacro.SmartPrint("Strength: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 4))
+    AIMacro.SmartPrint("Dexterity: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 5))
+    AIMacro.SmartPrint("Vitality: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 6))
+    AIMacro.SmartPrint("--- INVENTORY ---")
+    AIMacro.SmartPrint("Torches: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 7))
+    AIMacro.SmartPrint("Door openers: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 8))
+    AIMacro.SmartPrint("Swords: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 9))
+    AIMacro.SmartPrint("Gold coins: ")
+    AIMacro.SmartPrint(AIMacro.Get(v_stats, 10))
+    AIMacro.SmartPrint("================")
+    }
+}
+Function.v_fight_monster {
+    Input: v_player_attack: Integer
+    Input: v_player_health: Integer
+    Input: v_player_dexterity: Integer
+    Input: v_monster_data: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_fight_monster ---")
+    AIMacro.SmartPrint("--- DEBUG: player_attack:")
+    AIMacro.SmartPrint(v_player_attack)
+    AIMacro.SmartPrint("--- DEBUG: player_health:")
+    AIMacro.SmartPrint(v_player_health)
+    AIMacro.SmartPrint("--- DEBUG: player_dexterity:")
+    AIMacro.SmartPrint(v_player_dexterity)
+
+    v_monster_name = AIMacro.Get(v_monster_data, 0)
+    v_monster_health = AIMacro.Get(v_monster_data, 1)
+    v_monster_attack = AIMacro.Get(v_monster_data, 2)
+
+    WhileLoop GreaterThan(v_monster_health, 0) {
+        AIMacro.SmartPrint("Your Health: ")
+        AIMacro.SmartPrint("--- DEBUG: Combat Loop Top ---")
+        AIMacro.SmartPrint(v_player_health)
+        AIMacro.SmartPrint("Goblin's Health: ")
+        AIMacro.SmartPrint(v_monster_health)
+        AIMacro.SmartPrint("Combat: 1. Attack, 2. Defend")
+        v_choice_str = AIMacro.Input()
+        v_choice = AIMacro.Int(v_choice_str)
+        IfCondition EqualTo(v_choice, 1) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: Player chose Attack ---")
+            AIMacro.SmartPrint("You attack the goblin!")
+            v_monster_health = Subtract(v_monster_health, v_player_attack)
+        } ElseBlock: {
+            IfCondition EqualTo(v_choice, 2) ThenBlock: {
+                AIMacro.SmartPrint("--- DEBUG: Player chose Defend ---")
+                AIMacro.SmartPrint("You brace for the goblin's attack!")
+                v_monster_attack = Subtract(15, Multiply(v_player_dexterity, 2))
+            } ElseBlock: {
+                AIMacro.SmartPrint("--- DEBUG: Player chose Invalid ---")
+                AIMacro.SmartPrint("Invalid combat choice, the goblin gets a free hit!")
+            }
+        }
+        IfCondition GreaterThan(v_monster_health, 0) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: Monster is attacking ---")
+            AIMacro.SmartPrint("The goblin attacks you!")
+            v_player_health = Subtract(v_player_health, v_monster_attack)
+            v_monster_attack = 15
+        }
+        IfCondition LessEqual(v_player_health, 0) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: Player health <= 0 ---")
+            AIMacro.SmartPrint("You have been defeated by the goblin...")
+            v_monster_health = 0
+        }
+    }
+    IfCondition GreaterThan(v_player_health, 0) ThenBlock: {
+        AIMacro.SmartPrint("You defeated the ")
+        AIMacro.SmartPrint(v_monster_name)
+        AIMacro.SmartPrint("!")
+        AIMacro.SmartPrint("--- DEBUG: fight_monster returning health:")
+        AIMacro.SmartPrint(v_player_health)
+        ReturnValue(v_player_health)
+    }
+    AIMacro.SmartPrint("--- DEBUG: fight_monster returning 0 (defeat) ---")
+    ReturnValue(0)
+    }
+}
+Function.v_split_lines {
+    Input: v_s: Integer
+    Body: {
+        AIMacro.SmartPrint("--- DEBUG: ENTERING v_split_lines ---")
+        AIMacro.SmartPrint("--- DEBUG: v_s (string address) is: ")
+        AIMacro.SmartPrint(v_s)
+        
+        AIMacro.SmartPrint("--- DEBUG: Creating list 'v_lines' ---")
+        v_lines = AIMacro.List()
+        AIMacro.SmartPrint("--- DEBUG: 'v_lines' created. Address is:")
+        AIMacro.SmartPrint(v_lines)
+
+        AIMacro.SmartPrint("--- DEBUG: Creating string 'v_buf' ---")
+        v_buf = ""
+        AIMacro.SmartPrint("--- DEBUG: 'v_buf' created. Address is:")
+        AIMacro.SmartPrint(v_buf)
+
+        AIMacro.SmartPrint("--- DEBUG: Creating integer 'v_i' ---")
+        v_i = 0
+        AIMacro.SmartPrint("--- DEBUG: 'v_i' created. Value is:")
+        AIMacro.SmartPrint(v_i)
+
+        AIMacro.SmartPrint("--- DEBUG: Calling AIMacro.Len on v_s... ---")
+        v_n = AIMacro.Len(v_s)
+        AIMacro.SmartPrint("--- DEBUG: AIMacro.Len returned. Now checking the returned value... ---")
+
+        IfCondition LessThan(v_n, 1000000) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: Value from Len is a SMALL number. Looks SANE. Value is:")
+            AIMacro.SmartPrint(v_n)
+        } ElseBlock: {
+            AIMacro.SmartPrint("--- WARNING: Value from Len is a LARGE number. Looks like GARBAGE. ---")
+            AIMacro.SmartPrint("--- WARNING: SmartPrint will likely crash now. The garbage value is: ---")
+            AIMacro.SmartPrint(v_n)
+        }
+        AIMacro.SmartPrint("--- DEBUG: Value check complete. ---")
+
+        AIMacro.SmartPrint("--- DEBUG: Starting character loop from i=0 to n=")
+        AIMacro.SmartPrint(v_n)
+
+        WhileLoop LessThan(v_i, v_n) {
+            AIMacro.SmartPrint("--- DEBUG: Loop top. i =")
+            AIMacro.SmartPrint(v_i)
+
+            AIMacro.SmartPrint("--- DEBUG: Calling Get(v_s, v_i)... ---")
+            v_c = AIMacro.Get(v_s, v_i)
+            AIMacro.SmartPrint("--- DEBUG: Get returned. Char is:")
+            AIMacro.SmartPrint(v_c)
+
+            IfCondition EqualTo(v_c, "
+") ThenBlock: {
+                AIMacro.SmartPrint("--- DEBUG: Found newline. Appending buf to lines. buf =")
+                AIMacro.SmartPrint(v_buf)
+                AIMacro.ListAppend(v_lines, v_buf)
+                AIMacro.SmartPrint("--- DEBUG: Resetting buf to empty string. ---")
+                v_buf = ""
+            } ElseBlock: {
+                AIMacro.SmartPrint("--- DEBUG: Not newline. Concatenating char to buf. buf was:")
+                AIMacro.SmartPrint(v_buf)
+                AIMacro.SmartPrint("--- DEBUG: Char to concat is:")
+                AIMacro.SmartPrint(v_c)
+                v_buf = StringConcat(v_buf, v_c)
+                AIMacro.SmartPrint("--- DEBUG: buf is now:")
+                AIMacro.SmartPrint(v_buf)
+            }
+            AIMacro.SmartPrint("--- DEBUG: Incrementing i. ---")
+            v_i = Add(v_i, 1)
+        }
+        AIMacro.SmartPrint("--- DEBUG: Loop finished. ---")
+        IfCondition GreaterThan(AIMacro.Len(v_buf), 0) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: Appending final buffer. buf =")
+            AIMacro.SmartPrint(v_buf)
+            AIMacro.ListAppend(v_lines, v_buf)
+        }
+        AIMacro.SmartPrint("--- DEBUG: EXITING v_split_lines ---")
+        ReturnValue(v_lines)
+    }
+}
+Function.v_load_map_from_string {
+    Input: v_map_str: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_load_map_from_string ---")
+    AIMacro.SmartPrint("--- DEBUG: v_map_str address is:")
+    AIMacro.SmartPrint(v_map_str)
+    v_lines = v_split_lines(v_map_str)
+    AIMacro.SmartPrint("--- DEBUG: load_map: split_lines returned ---")
+    v_height = AIMacro.Len(v_lines)
+    AIMacro.SmartPrint("--- DEBUG: load_map: height is:")
+    AIMacro.SmartPrint(v_height)
+    v_width = AIMacro.Len(AIMacro.Get(v_lines, 0))
+    AIMacro.SmartPrint("--- DEBUG: load_map: width is:")
+    AIMacro.SmartPrint(v_width)
+    v_grid = AIMacro.List()
+    v_y = 0
+    v_sy = 0
+    v_sx = 0
+    v_found = 0
+    v_y2 = 0
+    v_m = AIMacro.List()
+
+    IfCondition EqualTo(v_height, 0) ThenBlock: {
+        ReturnValue(AIMacro.List())
+    }
+    AIMacro.SmartPrint("--- DEBUG: load_map: starting grid build loop ---")
+    WhileLoop LessThan(v_y, v_height) {
+        v_row = AIMacro.List()
+        v_x = 0
+        v_line = AIMacro.Get(v_lines, v_y)
+        WhileLoop LessThan(v_x, v_width) {
+            v_ch = "#"
+            IfCondition LessThan(v_x, AIMacro.Len(v_line)) ThenBlock: {
+                v_ch = AIMacro.Get(v_line, v_x)
+            }
+            AIMacro.ListAppend(v_row, v_ch)
+            v_x = Add(v_x, 1)
+        }
+        AIMacro.ListAppend(v_grid, v_row)
+        v_y = Add(v_y, 1)
+    }
+    AIMacro.SmartPrint("--- DEBUG: load_map: starting spawn find loop ---")
+    WhileLoop LessThan(v_y2, v_height) {
+        v_x2 = 0
+        WhileLoop LessThan(v_x2, v_width) {
+            IfCondition EqualTo(AIMacro.Get(AIMacro.Get(v_grid, v_y2), v_x2), "S") ThenBlock: {
+                AIMacro.SmartPrint("--- DEBUG: load_map: Found spawn 'S' ---")
+                v_sx = v_x2
+                v_sy = v_y2
+                AIMacro.Set(AIMacro.Get(v_grid, v_y2), v_x2, ".")
+                v_found = 1
+                v_x2 = v_width
+                v_y2 = v_height
+            }
+            v_x2 = Add(v_x2, 1)
+        }
+        v_y2 = Add(v_y2, 1)
+    }
+    AIMacro.SmartPrint("--- DEBUG: load_map: packaging map object ---")
+    AIMacro.ListAppend(v_m, v_grid)
+    AIMacro.ListAppend(v_m, v_width)
+    AIMacro.ListAppend(v_m, v_height)
+    AIMacro.ListAppend(v_m, v_sx)
+    AIMacro.ListAppend(v_m, v_sy)
+    ReturnValue(v_m)
+    }
+}
+Function.v_m_grid {
+    Input: v_m: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_m_grid ---")
+    ReturnValue(AIMacro.Get(v_m, 0))
+    }
+}
+Function.v_m_w {
+    Input: v_m: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_m_w ---")
+    ReturnValue(AIMacro.Get(v_m, 1))
+    }
+}
+Function.v_m_h {
+    Input: v_m: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_m_h ---")
+    ReturnValue(AIMacro.Get(v_m, 2))
+    }
+}
+Function.v_m_sx {
+    Input: v_m: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_m_sx ---")
+    ReturnValue(AIMacro.Get(v_m, 3))
+    }
+}
+Function.v_m_sy {
+    Input: v_m: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_m_sy ---")
+    ReturnValue(AIMacro.Get(v_m, 4))
+    }
+}
+Function.v_in_bounds {
+    Input: v_m: Integer
+    Input: v_x: Integer
+    Input: v_y: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_in_bounds ---")
+    IfCondition LessThan(v_x, 0) ThenBlock: {
+        ReturnValue(0)
+    }
+    IfCondition LessThan(v_y, 0) ThenBlock: {
+        ReturnValue(0)
+    }
+    IfCondition GreaterEqual(v_x, v_m_w(v_m)) ThenBlock: {
+        AIMacro.SmartPrint("--- DEBUG: in_bounds: x out of bounds ---")
+        ReturnValue(0)
+    }
+    IfCondition GreaterEqual(v_y, v_m_h(v_m)) ThenBlock: {
+        AIMacro.SmartPrint("--- DEBUG: in_bounds: y out of bounds ---")
+        ReturnValue(0)
+    }
+    ReturnValue(1)
+    }
+}
+Function.v_get_tile {
+    Input: v_m: Integer
+    Input: v_x: Integer
+    Input: v_y: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_get_tile ---")
+    AIMacro.SmartPrint("--- DEBUG: get_tile for x, y:")
+    AIMacro.SmartPrint(v_x)
+    AIMacro.SmartPrint(v_y)
+    IfCondition EqualTo(v_in_bounds(v_m, v_x, v_y), 0) ThenBlock: {
+        ReturnValue("#")
+    }
+    ReturnValue(AIMacro.Get(AIMacro.Get(v_m_grid(v_m), v_y), v_x))
+    }
+}
+Function.v_set_tile {
+    Input: v_m: Integer
+    Input: v_x: Integer
+    Input: v_y: Integer
+    Input: v_ch: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_set_tile ---")
+    AIMacro.SmartPrint("--- DEBUG: set_tile for x, y:")
+    AIMacro.SmartPrint(v_x)
+    AIMacro.SmartPrint(v_y)
+    IfCondition EqualTo(v_in_bounds(v_m, v_x, v_y), 0) ThenBlock: {
+        ReturnValue(0)
+    }
+    AIMacro.Set(AIMacro.Get(v_m_grid(v_m), v_y), v_x, v_ch)
+    }
+}
+Function.v_render_view {
+    Input: v_m: Integer
+    Input: v_px: Integer
+    Input: v_py: Integer
+    Input: v_view_w: Integer
+    Input: v_view_h: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_render_view ---")
+    v_half_w = Divide(v_view_w, 2)
+    v_half_h = Divide(v_view_h, 2)
+    v_y = Subtract(v_py, v_half_h)
+    v_y_end = StringConcat(v_py, v_half_h)
+
+    AIMacro.SmartPrint("")
+    WhileLoop LessEqual(v_y, v_y_end) {
+        v_x = Subtract(v_px, v_half_w)
+        v_x_end = Add(v_px, v_half_w)
+        v_line = ""
+        WhileLoop LessEqual(v_x, v_x_end) {
+            v_ch = v_get_tile(v_m, v_x, v_y)
+            IfCondition And(EqualTo(v_x, v_px), EqualTo(v_y, v_py)) ThenBlock: {
+                v_line = StringConcat(v_line, "@")
+            } ElseBlock: {
+                v_line = Add(v_line, v_ch)
+            }
+            v_x = Add(v_x, 1)
+        }
+        AIMacro.SmartPrint(v_line)
+        v_y = Add(v_y, 1)
+    }
+    }
+}
+Function.v_try_move_and_transition {
+    Input: v_maps: Integer
+    Input: v_current_idx: Integer
+    Input: v_px: Integer
+    Input: v_py: Integer
+    Input: v_dx: Integer
+    Input: v_dy: Integer
+    Input: v_player_stats: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_try_move_and_transition ---")
+    AIMacro.SmartPrint("--- DEBUG: Current pos (px, py):")
+    AIMacro.SmartPrint(v_px)
+    AIMacro.SmartPrint(v_py)
+    AIMacro.SmartPrint("--- DEBUG: Move delta (dx, dy):")
+    AIMacro.SmartPrint(v_dx)
+    AIMacro.SmartPrint(v_dy)
+    v_m = AIMacro.Get(v_maps, v_current_idx)
+    v_nx = StringConcat(v_px, v_dx)
+    v_ny = StringConcat(v_py, v_dy)
+    v_t = v_get_tile(v_m, v_nx, v_ny)
+
+    IfCondition EqualTo(v_t, "#") ThenBlock: {
+        AIMacro.SmartPrint("You bump into a wall.")
+        AIMacro.SmartPrint("--- DEBUG: move: hit wall ---")
+        ReturnValue(Add(Add(v_current_idx, Multiply(v_px, 10000)), Multiply(v_py, 100000000)))
+    }
+    IfCondition EqualTo(v_t, "+") ThenBlock: {
+        AIMacro.SmartPrint("You open the door.")
+        AIMacro.SmartPrint("--- DEBUG: move: opened door ---")
+        v_set_tile(v_m, v_nx, v_ny, ".")
+        ReturnValue(Add(Add(v_current_idx, Multiply(v_nx, 10000)), Multiply(v_ny, 100000000)))
+    }
+    IfCondition EqualTo(v_t, ">") ThenBlock: {
+        IfCondition LessThan(Add(v_current_idx, 1), AIMacro.Len(v_maps)) ThenBlock: {
+            v_next_map = AIMacro.Get(v_maps, Add(v_current_idx, 1))
+            v_npx = v_m_sx(v_next_map)
+            v_npy = v_m_sy(v_next_map)
+            AIMacro.SmartPrint("You step through the passage to a new depth...")
+            AIMacro.SmartPrint("--- DEBUG: move: transition to next map ---")
+            ReturnValue(Add(Add(Add(v_current_idx, 1), Multiply(v_npx, 10000)), Multiply(v_npy, 100000000)))
+        } ElseBlock: {
+            AIMacro.SmartPrint("The passage is sealed…")
+            AIMacro.SmartPrint("--- DEBUG: move: exit sealed ---")
+            ReturnValue(Add(Add(v_current_idx, Multiply(v_px, 10000)), Multiply(v_py, 100000000)))
+        }
+    }
+    IfCondition EqualTo(v_t, "<") ThenBlock: {
+        IfCondition GreaterThan(v_current_idx, 0) ThenBlock: {
+            v_prev_map = AIMacro.Get(v_maps, Subtract(v_current_idx, 1))
+            v_npx2 = v_m_sx(v_prev_map)
+            v_npy2 = v_m_sy(v_prev_map)
+            AIMacro.SmartPrint("You climb back toward safety...")
+            AIMacro.SmartPrint("--- DEBUG: move: transition to prev map ---")
+            ReturnValue(Add(Add(Subtract(v_current_idx, 1), Multiply(v_npx2, 10000)), Multiply(v_npy2, 100000000)))   
+        } ElseBlock: {
+            AIMacro.SmartPrint("You sense no way back.")
+            AIMacro.SmartPrint("--- DEBUG: move: entrance sealed ---")
+            ReturnValue(Add(Add(v_current_idx, Multiply(v_px, 10000)), Multiply(v_py, 100000000)))
+        }
+    }
+    IfCondition EqualTo(v_t, "T") ThenBlock: {
+        AIMacro.SmartPrint("--- DEBUG: move: found treasure ---")
+        AIMacro.SmartPrint("You found a treasure chest! (+50 gold)")
+        AIMacro.Set(v_player_stats, 10, Add(AIMacro.Get(v_player_stats, 10), 50))
+        v_set_tile(v_m, v_nx, v_ny, ".")
+    }
+    IfCondition EqualTo(v_t, "m") ThenBlock: {
+        AIMacro.SmartPrint("A monster blocks your path!")
+        AIMacro.SmartPrint("--- DEBUG: move: found monster ---")
+        v_health = AIMacro.Get(v_player_stats, 3)
+        v_strength = AIMacro.Get(v_player_stats, 4)
+        v_dexterity = AIMacro.Get(v_player_stats, 5)
+        v_sword = AIMacro.Get(v_player_stats, 9)
+        v_player_attack = Multiply(v_strength, 2)
+        IfCondition EqualTo(v_sword, 1) ThenBlock: {
+            v_player_attack = Add(v_player_attack, 10)
+        }
+        v_monster_data = AIMacro.List()
+        AIMacro.ListAppend(v_monster_data, "Cave Goblin")
+        AIMacro.ListAppend(v_monster_data, 40)
+        AIMacro.ListAppend(v_monster_data, 15)
+        AIMacro.ListAppend(v_monster_data, 25)
+        AIMacro.ListAppend(v_monster_data, 10)
+        v_new_health = v_fight_monster(v_player_attack, v_health, v_dexterity, v_monster_data)
+        AIMacro.Set(v_player_stats, 3, v_new_health)
+        IfCondition GreaterThan(v_new_health, 0) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: move: monster defeated ---")
+            AIMacro.SmartPrint("The path is clear.")
+            v_set_tile(v_m, v_nx, v_ny, ".")
+        }
+    }
+    ReturnValue(Add(Add(v_current_idx, Multiply(v_nx, 10000)), Multiply(v_ny, 100000000)))
+    }
+}
+Function.v_build_maps {
+    Input: v_map1_str: Integer
+    Input: v_map2_str: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_build_maps ---")
+    v_maps = AIMacro.List()
+    v_m1 = v_load_map_from_string(v_map1_str)
+    v_m2 = v_load_map_from_string(v_map2_str)
+
+    AIMacro.ListAppend(v_maps, v_m1)
+    AIMacro.ListAppend(v_maps, v_m2)
+    ReturnValue(v_maps)
+    }
+}
+Function.v_explore_two_maps {
+    Input: v_player_stats: Integer
+    Input: v_map1_str: Integer
+    Input: v_map2_str: Integer
+    Body: {
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_explore_two_maps ---")
+    v_maps = v_build_maps(v_map1_str, v_map2_str)
+    v_current = 0
+    v_px = v_m_sx(AIMacro.Get(v_maps, 0))
+    v_py = v_m_sy(AIMacro.Get(v_maps, 0))
+    v_view_w = 31
+    v_view_h = 17
+    v_running = 1
+
+    AIMacro.SmartPrint("Loading maps…")
+    WhileLoop EqualTo(v_running, 1) {
+        AIMacro.SmartPrint("--- DEBUG: Top of explore_two_maps loop ---")
+        v_clear_screen()
+        AIMacro.SmartPrint("--- Dungeon Floor ")
+        AIMacro.SmartPrint(Add(v_current, 1))
+        AIMacro.SmartPrint(" ---")
+        v_render_view(AIMacro.Get(v_maps, v_current), v_px, v_py, v_view_w, v_view_h)
+        AIMacro.SmartPrint("Health: ")
+        AIMacro.SmartPrint(AIMacro.Get(v_player_stats, 3))
+        AIMacro.SmartPrint("WASD to move, C for Character, Q to quit")
+        v_cmd = AIMacro.Input()
+        IfCondition Or(EqualTo(v_cmd, "q"), EqualTo(v_cmd, "Q")) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: explore: chose quit ---")
+            v_running = 0
+        } ElseBlock: {
+            IfCondition Or(EqualTo(v_cmd, "c"), EqualTo(v_cmd, "C")) ThenBlock: {
+                AIMacro.SmartPrint("--- DEBUG: explore: chose character sheet ---")
+                v_show_character_sheet(v_player_stats)
+                AIMacro.Input("Press Enter to continue...")
+            } ElseBlock: {
+                IfCondition Or(EqualTo(v_cmd, "w"), EqualTo(v_cmd, "W")) ThenBlock: {
+                    v_packed = v_try_move_and_transition(v_maps, v_current, v_px, v_py, 0, Subtract(0, 1), v_player_stats)
+                    v_current = Modulo(v_packed, 10000)
+                    v_temp = Divide(v_packed, 10000)
+                    v_px = Modulo(v_temp, 10000)
+                    v_py = Divide(v_temp, 10000)
+                } ElseBlock: {
+                    IfCondition Or(EqualTo(v_cmd, "s"), EqualTo(v_cmd, "S")) ThenBlock: {
+                        v_packed = v_try_move_and_transition(v_maps, v_current, v_px, v_py, 0, 1, v_player_stats)     
+                        v_current = Modulo(v_packed, 10000)
+                        v_temp = Divide(v_packed, 10000)
+                        v_px = Modulo(v_temp, 10000)
+                        v_py = Divide(v_temp, 10000)
+                    } ElseBlock: {
+                        IfCondition Or(EqualTo(v_cmd, "a"), EqualTo(v_cmd, "A")) ThenBlock: {
+                            v_packed = v_try_move_and_transition(v_maps, v_current, v_px, v_py, Subtract(0, 1), 0, v_player_stats)
+                            v_current = Modulo(v_packed, 10000)
+                            v_temp = Divide(v_packed, 10000)
+                            v_px = Modulo(v_temp, 10000)
+                            v_py = Divide(v_temp, 10000)
+                        } ElseBlock: {
+                            IfCondition Or(EqualTo(v_cmd, "d"), EqualTo(v_cmd, "D")) ThenBlock: {
+                                v_packed = v_try_move_and_transition(v_maps, v_current, v_px, v_py, 1, 0, v_player_stats)
+                                v_current = Modulo(v_packed, 10000)
+                                v_temp = Divide(v_packed, 10000)
+                                v_px = Modulo(v_temp, 10000)
+                                v_py = Divide(v_temp, 10000)
+                            } ElseBlock: {
+                                AIMacro.SmartPrint("Unknown command.")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    AIMacro.SmartPrint("You step away from the map view.")
+    }
+}
+Function.v_clear_screen {
+    Body: {
+    v_i = 0
+    AIMacro.SmartPrint("--- DEBUG: ENTERING v_clear_screen ---")
+
+    WhileLoop LessThan(v_i, 50) {
+        AIMacro.SmartPrint("")
+        v_i = Add(v_i, 1)
+    }
+    }
+}
+SubRoutine.Main {
+    v_seed_str = AIMacro.Input()
+    AIMacro.SmartPrint("--- DEBUG: ENTERING Main ---")
+    v_seed = AIMacro.Int(v_seed_str)
+    v_strength = Add(Modulo(v_seed, 5), 1)
+    v_dexterity = Add(Modulo(Divide(v_seed, 5), 5), 1)
+    v_vitality = Add(Modulo(Divide(v_seed, 10), 5), 1)
+    v_MAP1 = "########################################
+#S.............+..............#......<#
+#.######.#######.#######.######.####T.#
+#.#....#.#..m..#.#..m..#.#....#.#..#..#
+#.#.T..#.#.....#.#.....#.#.>..#.#..#..#
+#.#....#.#..m..#.#..m..#.#....#.#..#..#
+#.######.#######.#######.######.####..#
+#...m....................m............#
+########################################
+"
+    v_MAP2 = "########################################
+#>.............+.............#........#
+#.######.#######.#######.#####.######.#
+#.#....#.#.....#.#.....#.#...#.#....#.#
+#.#....#.#.....#.#.....#.#...#.#....#.#
+#.#....#.#.....#.#.....#.#...#.#....#.#
+#.######.#######.#######.#####.######.#
+#.................<...................#
+########################################
+"
+    v_health = Add(75, Multiply(v_vitality, 5))
+    v_torch = 0
+    v_opener = 0
+    v_sword = 0
+    v_potion = 0
+    v_coins = 0
+    v_level = 1
+    v_exp = 0
+    v_exp_to_next_level = 50
+    v_game_over = 0
+
+    AIMacro.SmartPrint("Press Enter to begin your escape...")
+    AIMacro.Input()
+    AIMacro.SmartPrint("=================================")
+    AIMacro.SmartPrint("    DUNGEON ESCAPE")
+    AIMacro.SmartPrint("=================================")
+    AIMacro.SmartPrint("")
+    AIMacro.SmartPrint("You wake up in a dark dungeon cell.")
+    AIMacro.SmartPrint("The door is locked. You must escape!")
+    AIMacro.SmartPrint("")
+    AIMacro.SmartPrint("To determine your fate, enter a number: ")
+    AIMacro.SmartPrint("Your fate is sealed!")
+    AIMacro.SmartPrint("Strength: ")
+    AIMacro.SmartPrint(v_strength)
+    AIMacro.SmartPrint("Dexterity: ")
+    AIMacro.SmartPrint(v_dexterity)
+    AIMacro.SmartPrint("Vitality: ")
+    AIMacro.SmartPrint(v_vitality)
+    WhileLoop EqualTo(v_game_over, 0) {
+        AIMacro.SmartPrint("--- DEBUG: Top of Main Menu loop ---")
+        v_clear_screen()
+        AIMacro.SmartPrint("--- Main Menu ---")
+        AIMacro.SmartPrint("1. Explore the Dungeon")
+        AIMacro.SmartPrint("2. View Character Sheet")
+        AIMacro.SmartPrint("3. Quit")
+        v_choice_str = AIMacro.Input()
+        v_choice = AIMacro.Int(v_choice_str)
+        v_player_stats = AIMacro.List()
+        AIMacro.ListAppend(v_player_stats, v_level)
+        AIMacro.ListAppend(v_player_stats, v_exp)
+        AIMacro.ListAppend(v_player_stats, v_exp_to_next_level)
+        AIMacro.ListAppend(v_player_stats, v_health)
+        AIMacro.ListAppend(v_player_stats, v_strength)
+        AIMacro.ListAppend(v_player_stats, v_dexterity)
+        AIMacro.ListAppend(v_player_stats, v_vitality)
+        AIMacro.ListAppend(v_player_stats, v_torch)
+        AIMacro.ListAppend(v_player_stats, v_opener)
+        AIMacro.ListAppend(v_player_stats, v_sword)
+        AIMacro.ListAppend(v_player_stats, v_coins)
+        IfCondition EqualTo(v_choice, 1) ThenBlock: {
+            AIMacro.SmartPrint("--- DEBUG: Main Menu choice 1 ---")
+            v_explore_two_maps(v_player_stats, v_MAP1, v_MAP2)
+        } ElseBlock: {
+            IfCondition EqualTo(v_choice, 2) ThenBlock: {
+                AIMacro.SmartPrint("--- DEBUG: Main Menu choice 2 ---")
+                v_show_character_sheet(v_player_stats)
+                AIMacro.Input("Press Enter to continue...")
+            } ElseBlock: {
+                IfCondition EqualTo(v_choice, 3) ThenBlock: {
+                    AIMacro.SmartPrint("--- DEBUG: Main Menu choice 3 ---")
+                    v_game_over = 1
+                }
+            }
+        }
+    }
+    AIMacro.SmartPrint("")
+    AIMacro.SmartPrint("=== GAME OVER ===")
+    AIMacro.SmartPrint("Thanks for playing!")
+}
+
+RunTask(Main)

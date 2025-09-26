@@ -1,0 +1,78 @@
+// test_xread.ailang
+// Minimal test to debug XREAD crash
+
+LibraryImport.RESP
+LibraryImport.XArrays
+
+FixedPool.TestData {
+    "store_ptr": Initialize=0
+}
+
+SubRoutine.Main {
+    PrintMessage("Testing XREAD command...\n")
+    
+    // Initialize store
+    store = XSHash.XCreate(16)
+    TestData.store_ptr = store
+    
+    // Create a stream with one entry
+    stream = XArray.XCreate(1)
+    
+    // Create an entry: ["1-0", "field1", "value1"]
+    entry = XArray.XCreate(3)
+    id_str = "1-0"
+    field_str = "field1"  
+    value_str = "value1"
+    XArray.XPush(entry, id_str)
+    XArray.XPush(entry, field_str)
+    XArray.XPush(entry, value_str)
+    
+    // Add entry to stream
+    XArray.XPush(stream, entry)
+    
+    // Store stream in hash under key "mystream"
+    key = "mystream"
+    
+    // Create wrapper for stream
+    wrapper = Allocate(24)
+    StoreValue(wrapper, 2)  // TYPE_STREAM
+    StoreValue(Add(wrapper, 8), 0)  // no expiration
+    StoreValue(Add(wrapper, 16), stream)  // stream pointer
+    
+    XSHash.XInsert(store, key, wrapper)
+    
+    PrintMessage("Stream created and stored\n")
+    
+    // Now simulate XREAD
+    start_id = "0-0"
+    
+    // Look up the stream
+    lookup_result = XSHash.XLookup(store, key)
+    PrintMessage("Lookup result: ")
+    PrintNumber(lookup_result)
+    PrintMessage("\n")
+    
+    IfCondition NotEqual(lookup_result, -1) ThenBlock: {
+        PrintMessage("Stream found!\n")
+        
+        // Get the stream pointer
+        stream_ptr = Dereference(Add(lookup_result, 16))
+        stream_size = XArray.XSize(stream_ptr)
+        PrintMessage("Stream has entries: ")
+        PrintNumber(stream_size)
+        PrintMessage("\n")
+        
+        // Try to get first entry
+        IfCondition GreaterThan(stream_size, 0) ThenBlock: {
+            first_entry = XArray.XGet(stream_ptr, 0)
+            entry_size = XArray.XSize(first_entry)
+            PrintMessage("First entry has elements: ")
+            PrintNumber(entry_size)
+            PrintMessage("\n")
+        }
+    }
+    
+    PrintMessage("Test complete\n")
+}
+
+RunTask(Main)

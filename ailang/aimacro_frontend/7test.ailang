@@ -1,0 +1,108 @@
+// Test case to verify stack parameter handling (7+ parameters)
+// This should compile and run successfully after the fix
+
+Function.TestSevenParams {
+    Input: p1: Integer, p2: Integer, p3: Integer, p4: Integer, p5: Integer, p6: Integer, p7: Integer
+    Output: Integer
+    
+    // Sum all parameters to verify they're all accessible
+    sum = Add(p1, p2)
+    sum = Add(sum, p3)
+    sum = Add(sum, p4)
+    sum = Add(sum, p5)
+    sum = Add(sum, p6)
+    sum = Add(sum, p7)  // This is the critical 7th parameter on the stack
+    
+    PrintMessage("TestSevenParams called with 7 params")
+    PrintNumber(p1)
+    PrintNumber(p2)
+    PrintNumber(p3)
+    PrintNumber(p4)
+    PrintNumber(p5)
+    PrintNumber(p6)
+    PrintNumber(p7)  // Should print 70 in our test
+    PrintMessage("Sum of all params:")
+    PrintNumber(sum)
+    
+    ReturnValue(sum)
+}
+
+Function.TestTenParams {
+    Input: p1: Integer, p2: Integer, p3: Integer, p4: Integer, p5: Integer, 
+           p6: Integer, p7: Integer, p8: Integer, p9: Integer, p10: Integer
+    Output: Integer
+    
+    // Test with even more stack parameters
+    sum = Add(p1, p2)
+    sum = Add(sum, p3)
+    sum = Add(sum, p4)
+    sum = Add(sum, p5)
+    sum = Add(sum, p6)
+    sum = Add(sum, p7)   // First stack param
+    sum = Add(sum, p8)   // Second stack param
+    sum = Add(sum, p9)   // Third stack param
+    sum = Add(sum, p10)  // Fourth stack param
+    
+    PrintMessage("TestTenParams - All params:")
+    PrintNumber(p1)
+    PrintNumber(p2)
+    PrintNumber(p3)
+    PrintNumber(p4)
+    PrintNumber(p5)
+    PrintNumber(p6)
+    PrintNumber(p7)
+    PrintNumber(p8)
+    PrintNumber(p9)
+    PrintNumber(p10)
+    PrintMessage("Sum:")
+    PrintNumber(sum)
+    
+    ReturnValue(sum)
+}
+
+// Main test code
+PrintMessage("=== Testing Stack Parameter Handling ===")
+
+// Test with 7 parameters (first stack parameter test)
+PrintMessage("\nTest 1: Seven Parameters")
+result7 = TestSevenParams(10, 20, 30, 40, 50, 60, 70)
+PrintMessage("Expected sum: 280")
+PrintMessage("Actual sum:")
+PrintNumber(result7)
+
+// Verify result
+IfCondition EqualTo(result7, 280) ThenBlock {
+    PrintMessage("✓ Seven parameter test PASSED!")
+} ElseBlock {
+    PrintMessage("✗ Seven parameter test FAILED!")
+}
+
+// Test with 10 parameters (multiple stack parameters)
+PrintMessage("\nTest 2: Ten Parameters")
+result10 = TestTenParams(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+PrintMessage("Expected sum: 55")
+PrintMessage("Actual sum:")
+PrintNumber(result10)
+
+// Verify result
+IfCondition EqualTo(result10, 55) ThenBlock {
+    PrintMessage("✓ Ten parameter test PASSED!")
+} ElseBlock {
+    PrintMessage("✗ Ten parameter test FAILED!")
+}
+
+// Edge case: Call with different values to ensure no register corruption
+PrintMessage("\nTest 3: Register Corruption Check")
+result_check = TestSevenParams(100, 200, 300, 400, 500, 600, 700)
+PrintMessage("Expected sum: 2800")
+PrintMessage("Actual sum:")
+PrintNumber(result_check)
+
+IfCondition EqualTo(result_check, 2800) ThenBlock {
+    PrintMessage("✓ Register corruption test PASSED!")
+} ElseBlock {
+    PrintMessage("✗ Register corruption test FAILED!")
+}
+
+PrintMessage("\n=== All Tests Complete ===")
+PrintMessage("If all tests passed, stack parameter handling is working correctly!")

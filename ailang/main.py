@@ -7,7 +7,7 @@ from ailang_parser.compiler import AILANGCompiler
 from ailang_compiler.ailang_compiler import AILANGToX64Compiler
 from import_resolver import enhanced_load_source
 
-def compile_ailang_to_executable(source_code, output_file, debug_level=0, perf_enabled=False, vm_mode="user"):
+def compile_ailang_to_executable(source_code, output_file, debug_level=0, perf_enabled=False, vm_mode="user", alias_mappings=None):
     """Compiles a single AILANG source string to an executable file."""
     try:
         print(f"🔨 Compiling AILANG source...")
@@ -16,6 +16,7 @@ def compile_ailang_to_executable(source_code, output_file, debug_level=0, perf_e
         
         # Create compiler with debug settings
         compiler = AILANGToX64Compiler(vm_mode=vm_mode)
+        compiler.alias_mappings = alias_mappings if alias_mappings else {}
         
         # Pass debug settings to the debug module if it exists
         if hasattr(compiler, 'debug_ops') and (debug_level > 0 or perf_enabled):
@@ -136,15 +137,16 @@ def main():
             with open(source_file, 'r') as f:
                 source_code = f.read()
         else:
-            # Use import resolver which handles conflicts automatically
-            source_code = enhanced_load_source(source_file)
+            # Use import resolver which handles conflicts and aliases
+            source_code, alias_mappings = enhanced_load_source(source_file)
 
         success = compile_ailang_to_executable(
             source_code, 
             output_file,
             debug_level=args.debug_level,
             perf_enabled=args.perf_enabled,
-            vm_mode=args.vm_mode
+            vm_mode=args.vm_mode,
+            alias_mappings=alias_mappings
         )
         
         if success:

@@ -1,0 +1,83 @@
+// Test 7+ parameters with Body: keyword
+
+Function.Test7Params {
+    Input: p1: Integer
+    Input: p2: Integer
+    Input: p3: Integer
+    Input: p4: Integer
+    Input: p5: Integer
+    Input: p6: Integer
+    Input: p7: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("Test7Params called")
+        PrintMessage("p1-p6 (registers):")
+        PrintNumber(p1)
+        PrintNumber(p2)
+        PrintNumber(p3)
+        PrintNumber(p4)
+        PrintNumber(p5)
+        PrintNumber(p6)
+        PrintMessage("p7 (stack):")
+        PrintNumber(p7)
+        
+        sum = Add(p1, p2)
+        sum = Add(sum, p3)
+        sum = Add(sum, p4)
+        sum = Add(sum, p5)
+        sum = Add(sum, p6)
+        sum = Add(sum, p7)
+        
+        PrintMessage("Sum:")
+        PrintNumber(sum)
+        ReturnValue(sum)
+    }
+}
+
+Function.Test10Params {
+    Input: p1: Integer
+    Input: p2: Integer
+    Input: p3: Integer
+    Input: p4: Integer
+    Input: p5: Integer
+    Input: p6: Integer
+    Input: p7: Integer
+    Input: p8: Integer
+    Input: p9: Integer
+    Input: p10: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("Test10Params called")
+        PrintMessage("Stack params (7-10):")
+        PrintNumber(p7)
+        PrintNumber(p8)
+        PrintNumber(p9)
+        PrintNumber(p10)
+        
+        sum = Add(p1, p2)
+        sum = Add(sum, p3)
+        sum = Add(sum, p4)
+        sum = Add(sum, p5)
+        sum = Add(sum, p6)
+        sum = Add(sum, p7)
+        sum = Add(sum, p8)
+        sum = Add(sum, p9)
+        sum = Add(sum, p10)
+        
+        ReturnValue(sum)
+    }
+}
+
+PrintMessage("=== 7+ PARAMETER TEST ===")
+
+PrintMessage("\nTest 1: 7 parameters")
+result7 = Test7Params(10, 20, 30, 40, 50, 60, 70)
+PrintMessage("Expected: 280, Got:")
+PrintNumber(result7)
+
+PrintMessage("\nTest 2: 10 parameters")
+result10 = Test10Params(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+PrintMessage("Expected: 55, Got:")
+PrintNumber(result10)
+
+PrintMessage("\n=== END TEST ===")

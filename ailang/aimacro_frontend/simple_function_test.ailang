@@ -1,0 +1,14 @@
+LibraryImport.AIMacro
+
+Function.test_func {
+    Input: my_param: Integer
+    Body: {
+        PrintMessage("Parameter value: ")
+        PrintNumber(my_param)
+    }
+}
+SubRoutine.Main {
+        test_func(42)
+}
+
+RunTask(Main)

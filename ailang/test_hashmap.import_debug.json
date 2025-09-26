@@ -1,0 +1,55 @@
+{
+  "main_file": "test_hashmap.ailang",
+  "loaded_modules": [
+    "HashMap",
+    "XArrays"
+  ],
+  "conflicts": {
+    "XArrays.XNULL": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XArray.XCreate": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XSHash.XLookup": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XArray.XSize": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XArray.XDestroy": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XArray.XPush": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XArray.XGet": [
+      "HashMap",
+      "XArrays"
+    ]
+  },
+  "prefixes": {
+    "HashMap": "NSQZ2G1D",
+    "XArrays": "NSSB5YI3"
+  },
+  "resolution_log": [
+    {
+      "file": "test_hashmap.ailang",
+      "line": 4,
+      "import": "HashMap",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.HashMap.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

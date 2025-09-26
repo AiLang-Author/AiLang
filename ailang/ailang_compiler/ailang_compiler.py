@@ -33,7 +33,6 @@ from ailang_compiler.modules.atomic_ops import AtomicOps
 from ailang_compiler.modules.user_functions import UserFunctions
 from ailang_compiler.modules.string_ops import StringOps
 from ailang_compiler.modules.expression_compiler import ExpressionCompiler
-# REMOVED DUPLICATE: from ailang_compiler.modules.user_functions import UserFunctions
 from ailang_compiler.modules.memory_pool import MemoryPool
 from ailang_compiler.modules.function_dispatch import FunctionDispatch
 from ailang_compiler.modules.try_catch import SimplifiedTryCatchCompiler, register_try_catch_in_compiler
@@ -333,6 +332,42 @@ class AILANGToX64Compiler:
             
 
     def compile_function_call(self, node):
+
+        # Handle aliased module functions
+        if hasattr(self, 'alias_mappings') and self.alias_mappings:
+            function_name = node.function
+            if '.' in function_name:
+                # Check all aliases
+                for alias, original in self.alias_mappings.items():
+                    if alias in function_name:
+                        # Replace alias with original module name
+                        node.function = function_name.replace(alias, original)
+                        break
+
+        
+
+        # Handle aliased module functions
+
+        function_name = node.function
+
+        if hasattr(self, 'alias_mappings') and self.alias_mappings:
+
+            if '.' in function_name:
+
+                # Check all aliases
+
+                for alias, original in self.alias_mappings.items():
+
+                    if alias in function_name:
+
+                        # Replace alias with original module name
+
+                        node.function = function_name.replace(alias, original)
+
+                        break
+
+        
+
         """Compile function call with user-defined functions and enhanced module support."""
         try:
             print(f"DEBUG: Compiling function call: {node.function}")
