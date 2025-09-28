@@ -420,3 +420,17 @@ class LibraryInliner:
             
         else:
             raise ValueError(f"Unknown Math function: {function}")
+        
+        
+    def inline_lifetime_checker_function(self, function, arguments):
+        """Lifetime checker operations"""
+        if function == "Init":
+            # Inline as HashCreate
+            node = FunctionCall('HashCreate', [Number('256')])
+            self.compiler.compile_function_call(node)
+            # ... additional initialization
+            
+        elif function == "EnterScope":
+            # Inline the scope entry logic
+            # This would expand to the function body
+            pass

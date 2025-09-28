@@ -1113,4 +1113,3 @@ class MemoryManager:  # <-- THIS WAS MISSING!
         
         print("DEBUG: ArrayDestroy completed")
         return True
-    

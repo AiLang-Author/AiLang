@@ -550,17 +550,10 @@ class FileIOOps:
         self.compiler.asm.emit_jump_to_label(err_seek, "JL")   # lseek error → err_seek
 
         self.compiler.asm.emit_mov_rbx_rax()                   # RBX=size
-
-        # rewind to start
-        self.compiler.asm.emit_mov_rdi_mem_offset('RSP', 0)    # fd
-        self.compiler.asm.emit_xor_esi_esi()                   # offset=0
-        self.compiler.asm.emit_xor_edx_edx()                   # SEEK_SET=0
-        self.compiler.asm.emit_mov_rax_imm64(8)                # sys_lseek
-        self.compiler.asm.emit_syscall()
-
+        
         # === mmap(size+1) ===
-        self.compiler.asm.emit_mov_rdi_rbx()                   # RDI=size
-        self.compiler.asm.emit_inc_rdi()                       # +1 for '\0'
+        self.compiler.asm.emit_mov_rax_rbx()                   # RAX=size
+        self.compiler.asm.emit_inc_rax()                       # +1 for '\0'
         self.compiler.asm.emit_push_rbx()                      # save size (discard later)
         self.compiler.asm.emit_push_rdi()                      # save size+1 (discard later)
         self.compiler.asm.emit_mov_rsi_rdi()                   # RSI=len
@@ -569,8 +562,7 @@ class FileIOOps:
         self.compiler.asm.emit_mov_r10_imm64(0x22)             # MAP_PRIVATE|MAP_ANONYMOUS
         self.compiler.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)# fd=-1
         self.compiler.asm.emit_xor_r9_r9()                     # off=0
-        self.compiler.asm.emit_mov_rax_imm64(9)                # sys_mmap
-        self.compiler.asm.emit_syscall()                       # RAX=buffer
+        self.compiler.memory._bump_allocate()                  # RAX=buffer
 
         # Stack for read(): [dummy][buffer][fd] so buf at [RSP+8], fd at [RSP+16]
         self.compiler.asm.emit_mov_rcx_rax()                   # RCX=buffer
@@ -580,6 +572,14 @@ class FileIOOps:
         self.compiler.asm.emit_push_rcx()                      # -> [buffer][fd]
         self.compiler.asm.emit_push_rax()                      # save RAX
         self.compiler.asm.emit_xor_eax_eax()                   # RAX=0
+
+        # rewind to start
+        self.compiler.asm.emit_mov_rdi_mem_offset('RSP', 16)   # fd
+        self.compiler.asm.emit_xor_esi_esi()                   # offset=0
+        self.compiler.asm.emit_xor_edx_edx()                   # SEEK_SET=0
+        self.compiler.asm.emit_mov_rax_imm64(8)                # sys_lseek
+        self.compiler.asm.emit_syscall()
+
         self.compiler.asm.emit_push_rax()                      # -> [dummy][buffer][fd]
         self.compiler.asm.emit_pop_rax()                       # restore RAX
 
@@ -610,16 +610,8 @@ class FileIOOps:
         # ----------------------------------------------------------------------------------------
 
         # ===== Common empty-string return (mmap(1), never NULL) =====
-        self.compiler.asm.emit_xor_edi_edi()                   # addr=NULL
         self.compiler.asm.emit_mov_rax_imm64(1)                # RAX=1
-        self.compiler.asm.emit_mov_rsi_rax()                   # RSI=1
-        self.compiler.asm.emit_mov_rdx_imm64(3)                # PROT_READ|WRITE
-        self.compiler.asm.emit_mov_r10_imm64(0x22)             # MAP_PRIVATE|ANON
-        self.compiler.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)# fd=-1
-        self.compiler.asm.emit_xor_r9_r9()                     # off=0
-        self.compiler.asm.emit_mov_rax_imm64(9)                # sys_mmap
-        self.compiler.asm.emit_syscall()                       # RAX=buf ("")
-        self.compiler.asm.emit_mov_rsi_rax()                   # RSI=buf
+        self.compiler.memory._bump_allocate()                  # RAX=buf ("")
         self.compiler.asm.emit_pop_rbx()                       # restore RBX
         self.compiler.asm.emit_push_rax()                      # return buf
         self.compiler.asm.emit_jump_to_label(end_lbl, "JMP")
@@ -648,17 +640,8 @@ class FileIOOps:
 
         # -------------------- open() error --------------------
         self.compiler.asm.mark_label(err_open)
-        # return "" via mmap(1)
-        self.compiler.asm.emit_xor_edi_edi()
         self.compiler.asm.emit_mov_rax_imm64(1)
-        self.compiler.asm.emit_mov_rsi_rax()
-        self.compiler.asm.emit_mov_rdx_imm64(3)
-        self.compiler.asm.emit_mov_r10_imm64(0x22)
-        self.compiler.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)
-        self.compiler.asm.emit_xor_r9_r9()
-        self.compiler.asm.emit_mov_rax_imm64(9)
-        self.compiler.asm.emit_syscall()
-        self.compiler.asm.emit_mov_rsi_rax()
+        self.compiler.memory._bump_allocate()
         self.compiler.asm.emit_pop_rbx()
         self.compiler.asm.emit_push_rax()
 
@@ -705,22 +688,23 @@ class FileIOOps:
             self.asm.emit_jump_to_label(error_seek, "JL")
             self.asm.emit_push_rax() # Save size
 
-            # lseek(fd, 0, SEEK_SET)
-            self.asm.emit_mov_rdi_from_stack(8) # fd from stack
-            self.asm.emit_mov_rsi_imm64(0)
-            self.asm.emit_mov_rdx_imm64(0) # SEEK_SET
-            self.asm.emit_mov_rax_imm64(8)
-            self.asm.emit_syscall()
-
             # mmap(size + 1)
             self.asm.emit_mov_rsi_from_stack(0) # size
-            self.asm.emit_bytes(0x48, 0xFF, 0xC6) # INC RSI (for null terminator)
+            self.asm.emit_mov_rax_rsi()
             self.asm.emit_mov_rax_imm64(9) # sys_mmap
             self.asm.emit_mov_rdi_imm64(0)
             self.asm.emit_mov_rdx_imm64(3) # PROT_READ|WRITE
             self.asm.emit_mov_r10_imm64(0x22) # MAP_PRIVATE|ANON
             self.asm.emit_mov_r8_imm64(-1)
             self.asm.emit_mov_r9_imm64(0)
+            self.asm.emit_syscall()
+            self.compiler.memory._bump_allocate()
+
+            # lseek(fd, 0, SEEK_SET)
+            self.asm.emit_mov_rdi_from_stack(8) # fd from stack
+            self.asm.emit_mov_rsi_imm64(0)
+            self.asm.emit_mov_rdx_imm64(0) # SEEK_SET
+            self.asm.emit_mov_rax_imm64(8)
             self.asm.emit_syscall()
             self.asm.emit_push_rax() # Save buffer address
 
