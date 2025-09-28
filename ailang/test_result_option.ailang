@@ -1,0 +1,327 @@
+// test_result_option.ailang
+// Test program for Result/Option library - simplified version
+
+Library.ResultOption
+
+// Test 1: Result type basic operations
+Function.Test.ResultBasics {
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 1: Result Basic Operations ===\n")
+        
+        // Test Ok creation
+        ok_value = 42
+        ok_result = Result.Ok(ok_value)
+        
+        is_ok = Result.IsOk(ok_result)
+        IfCondition EqualTo(is_ok, 0) ThenBlock: {
+            PrintMessage("ERROR: Result.Ok not recognized as Ok\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Result.Ok created successfully\n")
+        
+        // Test Err creation
+        err_msg = "Something went wrong"
+        err_result = Result.Err(err_msg, 404)
+        
+        is_err = Result.IsErr(err_result)
+        IfCondition EqualTo(is_err, 0) ThenBlock: {
+            PrintMessage("ERROR: Result.Err not recognized as Err\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Result.Err created successfully\n")
+        
+        // Test Unwrap on Ok
+        unwrapped = Result.Unwrap(ok_result)
+        IfCondition NotEqualTo(unwrapped, 42) ThenBlock: {
+            PrintMessage("ERROR: Unwrap returned wrong value\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Result.Unwrap works on Ok\n")
+        
+        // Test UnwrapOr
+        default_value = 99
+        unwrapped_or = Result.UnwrapOr(err_result, default_value)
+        IfCondition NotEqualTo(unwrapped_or, 99) ThenBlock: {
+            PrintMessage("ERROR: UnwrapOr didn't return default\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Result.UnwrapOr returns default on Err\n")
+        
+        PrintMessage("✓ Result basics passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 2: Option type basic operations
+Function.Test.OptionBasics {
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 2: Option Basic Operations ===\n")
+        
+        // Test Some creation
+        some_value = 123
+        some_option = Option.Some(some_value)
+        
+        is_some = Option.IsSome(some_option)
+        IfCondition EqualTo(is_some, 0) ThenBlock: {
+            PrintMessage("ERROR: Option.Some not recognized as Some\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Option.Some created successfully\n")
+        
+        // Test None creation
+        none_option = Option.None()
+        
+        is_none = Option.IsNone(none_option)
+        IfCondition EqualTo(is_none, 0) ThenBlock: {
+            PrintMessage("ERROR: Option.None not recognized as None\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Option.None created successfully\n")
+        
+        // Test Unwrap on Some
+        unwrapped = Option.Unwrap(some_option)
+        IfCondition NotEqualTo(unwrapped, 123) ThenBlock: {
+            PrintMessage("ERROR: Option.Unwrap returned wrong value\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Option.Unwrap works on Some\n")
+        
+        // Test UnwrapOr on None
+        default_value = 456
+        unwrapped_or = Option.UnwrapOr(none_option, default_value)
+        IfCondition NotEqualTo(unwrapped_or, 456) ThenBlock: {
+            PrintMessage("ERROR: Option.UnwrapOr didn't return default\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Option.UnwrapOr returns default on None\n")
+        
+        PrintMessage("✓ Option basics passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 3: Safe division example
+Function.Test.SafeDivision {
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 3: Safe Division Example ===\n")
+        
+        // Test successful division
+        result1 = Example.SafeDivide(10, 2)
+        is_ok = Result.IsOk(result1)
+        IfCondition EqualTo(is_ok, 0) ThenBlock: {
+            PrintMessage("ERROR: Valid division returned Err\n")
+            ReturnValue(0)
+        }
+        
+        value = Result.Unwrap(result1)
+        IfCondition NotEqualTo(value, 5) ThenBlock: {
+            PrintMessage("ERROR: Division result incorrect\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Safe division 10/2 = 5\n")
+        
+        // Test division by zero
+        result2 = Example.SafeDivide(10, 0)
+        is_err = Result.IsErr(result2)
+        IfCondition EqualTo(is_err, 0) ThenBlock: {
+            PrintMessage("ERROR: Division by zero didn't return Err\n")
+            ReturnValue(0)
+        }
+        
+        err_msg = ArrayGet(result2, 1)
+        PrintMessage("✓ Division by zero caught: ")
+        PrintMessage(err_msg)
+        PrintMessage("\n")
+        
+        // Test with UnwrapOr for safe default
+        safe_default = 0
+        result = Result.UnwrapOr(result2, safe_default)
+        IfCondition NotEqualTo(result, 0) ThenBlock: {
+            PrintMessage("ERROR: UnwrapOr didn't provide safe default\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ UnwrapOr provided safe default for division by zero\n")
+        
+        PrintMessage("✓ Safe division example passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 4: Array search with Option
+Function.Test.ArraySearch {
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 4: Array Search with Option ===\n")
+        
+        // Create test array
+        array = ArrayCreate(5)
+        ArraySet(array, 0, 10)
+        ArraySet(array, 1, 20)
+        ArraySet(array, 2, 30)
+        ArraySet(array, 3, 40)
+        ArraySet(array, 4, 50)
+        
+        // Search for existing element
+        result1 = Example.FindElement(array, 30)
+        is_some = Option.IsSome(result1)
+        IfCondition EqualTo(is_some, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to find existing element\n")
+            ReturnValue(0)
+        }
+        
+        index = Option.Unwrap(result1)
+        IfCondition NotEqualTo(index, 2) ThenBlock: {
+            PrintMessage("ERROR: Found wrong index\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Found element 30 at index 2\n")
+        
+        // Search for non-existing element
+        result2 = Example.FindElement(array, 99)
+        is_none = Option.IsNone(result2)
+        IfCondition EqualTo(is_none, 0) ThenBlock: {
+            PrintMessage("ERROR: Found non-existing element\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Correctly returned None for non-existing element\n")
+        
+        // Use UnwrapOr for safe default
+        default_index = -1
+        safe_index = Option.UnwrapOr(result2, default_index)
+        IfCondition NotEqualTo(safe_index, -1) ThenBlock: {
+            PrintMessage("ERROR: UnwrapOr didn't provide default index\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ UnwrapOr provided safe default index\n")
+        
+        PrintMessage("✓ Array search example passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 5: Option to Result conversion
+Function.Test.OptionToResult {
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 5: Option to Result Conversion ===\n")
+        
+        // Convert Some to Ok
+        value = 789
+        some_option = Option.Some(value)
+        
+        error_msg = "Value not found"
+        result1 = Option.OkOr(some_option, error_msg)
+        
+        is_ok = Result.IsOk(result1)
+        IfCondition EqualTo(is_ok, 0) ThenBlock: {
+            PrintMessage("ERROR: Some didn't convert to Ok\n")
+            ReturnValue(0)
+        }
+        
+        unwrapped = Result.Unwrap(result1)
+        IfCondition NotEqualTo(unwrapped, 789) ThenBlock: {
+            PrintMessage("ERROR: Converted value incorrect\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Option.Some converted to Result.Ok\n")
+        
+        // Convert None to Err
+        none_option = Option.None()
+        result2 = Option.OkOr(none_option, error_msg)
+        
+        is_err = Result.IsErr(result2)
+        IfCondition EqualTo(is_err, 0) ThenBlock: {
+            PrintMessage("ERROR: None didn't convert to Err\n")
+            ReturnValue(0)
+        }
+        
+        err_value = ArrayGet(result2, 1)
+        PrintMessage("✓ Option.None converted to Result.Err: ")
+        PrintMessage(err_value)
+        PrintMessage("\n")
+        
+        PrintMessage("✓ Option to Result conversion passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Main test runner
+Function.Main {
+    Body: {
+        PrintMessage("========================================\n")
+        PrintMessage("    RESULT/OPTION LIBRARY TESTS        \n")
+        PrintMessage("========================================\n")
+        
+        pass_count = 0
+        fail_count = 0
+        
+        // Run Test 1: Result Basics
+        result = Test.ResultBasics()
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 2: Option Basics
+        result = Test.OptionBasics()
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 3: Safe Division
+        result = Test.SafeDivision()
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 4: Array Search
+        result = Test.ArraySearch()
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 5: Option to Result
+        result = Test.OptionToResult()
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Final results
+        PrintMessage("\n========================================\n")
+        PrintMessage("           TEST RESULTS                 \n")
+        PrintMessage("========================================\n")
+        PrintMessage("PASSED: ")
+        PrintNumber(pass_count)
+        PrintMessage(" tests\n")
+        PrintMessage("FAILED: ")
+        PrintNumber(fail_count)
+        PrintMessage(" tests\n")
+        
+        IfCondition EqualTo(fail_count, 0) ThenBlock: {
+            PrintMessage("\n✅ ALL TESTS PASSED! ✅\n")
+            PrintMessage("The Result/Option library is working correctly!\n")
+            PrintMessage("\nKey features verified:\n")
+            PrintMessage("• Result type for error handling\n")
+            PrintMessage("• Option type for null safety\n")
+            PrintMessage("• Safe unwrapping with defaults\n")
+            PrintMessage("• Type conversions\n")
+        } ElseBlock: {
+            PrintMessage("\n❌ SOME TESTS FAILED ❌\n")
+            PrintMessage("Please review the failures above.\n")
+        }
+        
+        PrintMessage("========================================\n")
+    }
+}

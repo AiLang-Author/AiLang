@@ -1,0 +1,29 @@
+// test_string_corruption.ailang
+SubRoutine.Main {
+    PrintMessage("Testing string operations after bump allocator\n")
+    
+    // Allocate and write
+    buf1 = Allocate(10)
+    SetByte(buf1, 0, 65)  // 'A'
+    SetByte(buf1, 1, 66)  // 'B'
+    SetByte(buf1, 2, 0)   // null
+    
+    PrintMessage("buf1: ")
+    PrintMessage(buf1)
+    PrintMessage("\n")
+    
+    // Allocate another
+    buf2 = Allocate(10)
+    SetByte(buf2, 0, 67)  // 'C'
+    SetByte(buf2, 1, 68)  // 'D'
+    SetByte(buf2, 2, 0)   // null
+    
+    PrintMessage("buf2: ")
+    PrintMessage(buf2)
+    PrintMessage("\n")
+    
+    // Check if buf1 still valid
+    PrintMessage("buf1 again: ")
+    PrintMessage(buf1)
+    PrintMessage("\n")
+}

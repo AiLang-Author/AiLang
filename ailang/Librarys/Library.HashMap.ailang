@@ -1,10 +1,94 @@
 // Library.HashMap.ailang
-// Nested hash table implementation for AILANG
-// Provides hash-of-hashes functionality for Redis HSET/HGET and general use
+// Enhanced hash table with modern syntax and cache optimization
+// Extends existing HashMap functionality
 
 LibraryImport.XArrays
 
-// Helper function for string copy
+// --- START: Added Helper Functions ---
+// These functions are added to make the library self-contained.
+
+// Helper function to convert string to integer
+Function.HashMap.StringToInt {
+    Input: str: Address
+    Output: Integer
+    Body: {
+        result = 0
+        i = 0
+        len = StringLength(str)
+        negative = 0
+        
+        IfCondition GreaterThan(len, 0) ThenBlock: {
+            first = GetByte(str, 0)
+            IfCondition EqualTo(first, 45) ThenBlock: {  // '-'
+                negative = 1
+                i = 1
+            }
+        }
+        
+        WhileLoop LessThan(i, len) {
+            byte = GetByte(str, i)
+            IfCondition And(GreaterEqual(byte, 48), LessEqual(byte, 57)) ThenBlock: {
+                digit = Subtract(byte, 48)
+                result = Multiply(result, 10)
+                result = Add(result, digit)
+            }
+            i = Add(i, 1)
+        }
+        
+        IfCondition negative ThenBlock: {
+            result = Subtract(0, result)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Helper to convert integer to string
+Function.HashMap.IntToString {
+    Input: num: Integer
+    Output: Address
+    Body: {
+        buffer = Allocate(32)
+        pos = 0
+        value = num
+        
+        IfCondition LessThan(value, 0) ThenBlock: {
+            SetByte(buffer, pos, 45)  // '-'
+            pos = Add(pos, 1)
+            value = Subtract(0, value)
+        }
+        
+        IfCondition EqualTo(value, 0) ThenBlock: {
+            SetByte(buffer, pos, 48)  // '0'
+            pos = Add(pos, 1)
+            SetByte(buffer, pos, 0)   // null terminate
+            ReturnValue(buffer)
+        }
+        
+        start_pos = pos
+        WhileLoop GreaterThan(value, 0) {
+            digit = Modulo(value, 10)
+            SetByte(buffer, pos, Add(48, digit))
+            pos = Add(pos, 1)
+            value = Divide(value, 10)
+        }
+        
+        end_pos = Subtract(pos, 1)
+        WhileLoop LessThan(start_pos, end_pos) {
+            temp = GetByte(buffer, start_pos)
+            SetByte(buffer, start_pos, GetByte(buffer, end_pos))
+            SetByte(buffer, end_pos, temp)
+            start_pos = Add(start_pos, 1)
+            end_pos = Subtract(end_pos, 1)
+        }
+        
+        SetByte(buffer, pos, 0)
+        ReturnValue(buffer)
+    }
+}
+
+// --- END: Added Helper Functions ---
+
 Function.HashMap.StringCopy {
     Input: source: Address
     Output: Address
@@ -27,6 +111,10 @@ Function.HashMap.StringCopy {
         ReturnValue(copy)
     }
 }
+
+// ============================================================================
+// Original Nested Hash Table (for hash-of-hashes)
+// ============================================================================
 
 // Create a new HashMap (hash of hashes)
 Function.HashMap.Create {
@@ -377,14 +465,14 @@ Function.HashMap.HIncrBy {
         current_val = 0
         
         IfCondition NotEqual(current_str, 0) ThenBlock: {
-            current_val = StringToNumber(current_str)
+            current_val = HashMap.StringToInt(current_str)
         }
         
         // Increment
         new_val = Add(current_val, increment)
         
         // Store new value
-        new_str = NumberToString(new_val)
+        new_str = HashMap.IntToString(new_val)
         HashMap.HSet(hashmap, key, field, new_str)
         Deallocate(new_str, 0)
         
@@ -445,5 +533,422 @@ Function.HashMap.Destroy {
         XSHash.XDestroy(hashmap)
         
         ReturnValue(1)
+    }
+}
+
+// ============================================================================
+// Enhanced Hash Table with Open Addressing
+// ============================================================================
+
+// Create hash table with linear probing
+Function.HashMap.CreateOpen {
+    Input: capacity: Integer
+    Output: Address
+    Body: {
+        // Structure: [capacity, size, keys, values, deleted_flags]
+        table = Allocate(40)
+        StoreValue(table, capacity)
+        StoreValue(Add(table, 8), 0)
+        
+        // Allocate arrays for keys, values, and deleted flags
+        keys = ArrayCreate(capacity)
+        values = ArrayCreate(capacity)
+        deleted = ArrayCreate(capacity)
+        
+        // Initialize all slots as empty
+        i = 0
+        WhileLoop LessThan(i, capacity) {
+            ArraySet(keys, i, 0)
+            ArraySet(values, i, 0)
+            ArraySet(deleted, i, 0)
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(table, 16), keys)
+        StoreValue(Add(table, 24), values)
+        StoreValue(Add(table, 32), deleted)
+        
+        ReturnValue(table)
+    }
+}
+
+// Robin Hood hashing for better cache performance
+Function.HashMap.InsertRobinHood {
+    Input: table: Address
+    Input: key: Address
+    Input: value: Address
+    Output: Integer
+    Body: {
+        capacity = Dereference(table)
+        size = Dereference(Add(table, 8))
+        
+        // Check load factor
+        IfCondition GreaterThan(size, Multiply(capacity, 0.75)) ThenBlock: {
+            HashMap.ResizeOpen(table)
+            capacity = Dereference(table)
+        }
+        
+        hash = HashMap.HashString(key)
+        ideal_pos = Modulo(hash, capacity)
+        
+        keys_array = Dereference(Add(table, 16))
+        values_array = Dereference(Add(table, 24))
+        deleted_array = Dereference(Add(table, 32))
+        
+        current_key = HashMap.StringCopy(key)
+        current_value = HashMap.StringCopy(value)
+        current_distance = 0
+        pos = ideal_pos
+        
+        WhileLoop True {
+            existing_key = ArrayGet(keys_array, pos)
+            is_deleted = ArrayGet(deleted_array, pos)
+            
+            // Empty or deleted slot - insert here
+            IfCondition Or(EqualTo(existing_key, 0), EqualTo(is_deleted, 1)) ThenBlock: {
+                ArraySet(keys_array, pos, current_key)
+                ArraySet(values_array, pos, current_value)
+                ArraySet(deleted_array, pos, 0)
+                
+                new_size = Add(size, 1)
+                StoreValue(Add(table, 8), new_size)
+                ReturnValue(1)
+            }
+            
+            // Check if same key - update
+            IfCondition EqualTo(StringCompare(existing_key, current_key), 0) ThenBlock: {
+                Deallocate(ArrayGet(values_array, pos), 0)
+                ArraySet(values_array, pos, current_value)
+                Deallocate(current_key, 0)
+                ReturnValue(0)
+            }
+            
+            // Calculate existing item's distance from ideal position
+            existing_hash = HashMap.HashString(existing_key)
+            existing_ideal = Modulo(existing_hash, capacity)
+            existing_distance = Modulo(Add(pos, capacity, Subtract(0, existing_ideal)), capacity)
+            
+            // Robin Hood: swap if current has traveled further
+            IfCondition GreaterThan(current_distance, existing_distance) ThenBlock: {
+                // Swap with existing
+                temp_key = existing_key
+                temp_value = ArrayGet(values_array, pos)
+                
+                ArraySet(keys_array, pos, current_key)
+                ArraySet(values_array, pos, current_value)
+                
+                current_key = temp_key
+                current_value = temp_value
+                current_distance = existing_distance
+            }
+            
+            // Move to next position
+            pos = Modulo(Add(pos, 1), capacity)
+            current_distance = Add(current_distance, 1)
+            
+            // Safety check
+            IfCondition GreaterThan(current_distance, capacity) ThenBlock: {
+                BreakLoop
+            }
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+// Cache-friendly batch operations
+Function.HashMap.BatchInsert {
+    Input: table: Address
+    Input: keys: Address
+    Input: values: Address
+    Output: Integer
+    Body: {
+        num_items = XArray.XSize(keys)
+        inserted = 0
+        
+        i = 0
+        WhileLoop LessThan(i, num_items) {
+            key = XArray.XGet(keys, i)
+            value = XArray.XGet(values, i)
+            
+            result = HashMap.InsertRobinHood(table, key, value)
+            inserted = Add(inserted, result)
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(inserted)
+    }
+}
+
+// ============================================================================
+// Concurrent Hash Table with Striped Locking
+// ============================================================================
+
+Function.HashMap.CreateConcurrent {
+    Input: num_stripes: Integer
+    Output: Address
+    Body: {
+        // Structure: [num_stripes, tables_array, locks_array]
+        concurrent_map = Allocate(24)
+        StoreValue(concurrent_map, num_stripes)
+        
+        // Create array of hash tables
+        tables = ArrayCreate(num_stripes)
+        locks = ArrayCreate(num_stripes)
+        
+        i = 0
+        WhileLoop LessThan(i, num_stripes) {
+            table = HashMap.Create()
+            lock = Allocate(8)  // Simple mutex
+            
+            ArraySet(tables, i, table)
+            ArraySet(locks, i, lock)
+            
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(concurrent_map, 8), tables)
+        StoreValue(Add(concurrent_map, 16), locks)
+        
+        ReturnValue(concurrent_map)
+    }
+}
+
+Function.HashMap.ConcurrentPut {
+    Input: concurrent_map: Address
+    Input: key: Address
+    Input: value: Address
+    Output: Integer
+    Body: {
+        num_stripes = Dereference(concurrent_map)
+        tables = Dereference(Add(concurrent_map, 8))
+        locks = Dereference(Add(concurrent_map, 16))
+        
+        // Determine stripe based on key hash
+        hash = HashMap.HashString(key)
+        stripe_idx = Modulo(hash, num_stripes)
+        
+        // Acquire lock for this stripe
+        lock = ArrayGet(locks, stripe_idx)
+        HashMap.AcquireLock(lock)
+        
+        // Insert into the appropriate table
+        table = ArrayGet(tables, stripe_idx)
+        result = HashMap.HSet(table, key, "field", value)
+        
+        // Release lock
+        HashMap.ReleaseLock(lock)
+        
+        ReturnValue(result)
+    }
+}
+
+// ============================================================================
+// LRU Cache Integration
+// ============================================================================
+
+Function.HashMap.CreateLRU {
+    Input: capacity: Integer
+    Output: Address
+    Body: {
+        // Structure: [capacity, size, map, head, tail]
+        lru = Allocate(40)
+        StoreValue(lru, capacity)
+        StoreValue(Add(lru, 8), 0)
+        
+        // Create backing hash map
+        map = HashMap.Create()
+        StoreValue(Add(lru, 16), map)
+        
+        // Create sentinel nodes for doubly-linked list
+        head = Allocate(24)  // [key, value, prev, next]
+        tail = Allocate(24)
+        
+        StoreValue(Add(head, 16), tail)  // head.next = tail
+        StoreValue(Add(tail, 8), head)   // tail.prev = head
+        
+        StoreValue(Add(lru, 24), head)
+        StoreValue(Add(lru, 32), tail)
+        
+        ReturnValue(lru)
+    }
+}
+
+Function.HashMap.LRUGet {
+    Input: lru: Address
+    Input: key: Address
+    Output: Address
+    Body: {
+        map = Dereference(Add(lru, 16))
+        node_ptr = HashMap.HGet(map, "nodes", key)
+        
+        IfCondition EqualTo(node_ptr, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Move to front
+        HashMap.LRUMoveToFront(lru, node_ptr)
+        
+        // Return value
+        value = Dereference(Add(node_ptr, 8))
+        ReturnValue(value)
+    }
+}
+
+Function.HashMap.LRUPut {
+    Input: lru: Address
+    Input: key: Address
+    Input: value: Address
+    Output: Integer
+    Body: {
+        capacity = Dereference(lru)
+        size = Dereference(Add(lru, 8))
+        map = Dereference(Add(lru, 16))
+        
+        // Check if key exists
+        existing = HashMap.HGet(map, "nodes", key)
+        
+        IfCondition NotEqual(existing, 0) ThenBlock: {
+            // Update existing node
+            old_value = Dereference(Add(existing, 8))
+            Deallocate(old_value, 0)
+            
+            new_value = HashMap.StringCopy(value)
+            StoreValue(Add(existing, 8), new_value)
+            
+            HashMap.LRUMoveToFront(lru, existing)
+            ReturnValue(0)
+        }
+        
+        // Create new node
+        node = Allocate(32)  // [key, value, prev, next]
+        key_copy = HashMap.StringCopy(key)
+        value_copy = HashMap.StringCopy(value)
+        
+        StoreValue(node, key_copy)
+        StoreValue(Add(node, 8), value_copy)
+        
+        // Add to front
+        head = Dereference(Add(lru, 24))
+        old_first = Dereference(Add(head, 24))
+        
+        StoreValue(Add(node, 16), head)      // node.prev = head
+        StoreValue(Add(node, 24), old_first) // node.next = old_first
+        StoreValue(Add(old_first, 16), node) // old_first.prev = node
+        StoreValue(Add(head, 24), node)      // head.next = node
+        
+        // Store in map
+        HashMap.HSet(map, "nodes", key, node)
+        
+        // Update size
+        new_size = Add(size, 1)
+        StoreValue(Add(lru, 8), new_size)
+        
+        // Evict if over capacity
+        IfCondition GreaterThan(new_size, capacity) ThenBlock: {
+            HashMap.LRUEvictLast(lru)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+Function.HashMap.LRUMoveToFront {
+    Input: lru: Address
+    Input: node: Address
+    Body: {
+        // Remove from current position
+        prev = Dereference(Add(node, 16))
+        next = Dereference(Add(node, 24))
+        StoreValue(Add(prev, 24), next)
+        StoreValue(Add(next, 16), prev)
+        
+        // Add to front
+        head = Dereference(Add(lru, 24))
+        old_first = Dereference(Add(head, 24))
+        
+        StoreValue(Add(node, 16), head)
+        StoreValue(Add(node, 24), old_first)
+        StoreValue(Add(old_first, 16), node)
+        StoreValue(Add(head, 24), node)
+    }
+}
+
+Function.HashMap.LRUEvictLast {
+    Input: lru: Address
+    Body: {
+        tail = Dereference(Add(lru, 32))
+        last = Dereference(Add(tail, 16))  // tail.prev
+        
+        // Skip if it's the head sentinel
+        head = Dereference(Add(lru, 24))
+        IfCondition EqualTo(last, head) ThenBlock: {
+            ReturnValue()
+        }
+        
+        // Remove from list
+        prev = Dereference(Add(last, 16))
+        StoreValue(Add(prev, 24), tail)
+        StoreValue(Add(tail, 16), prev)
+        
+        // Remove from map
+        map = Dereference(Add(lru, 16))
+        key = Dereference(last)
+        HashMap.HDel(map, "nodes", key)
+        
+        // Free memory
+        value = Dereference(Add(last, 8))
+        Deallocate(key, 0)
+        Deallocate(value, 0)
+        Deallocate(last, 0)
+        
+        // Update size
+        size = Dereference(Add(lru, 8))
+        StoreValue(Add(lru, 8), Subtract(size, 1))
+    }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+Function.HashMap.HashString {
+    Input: str: Address
+    Output: Integer
+    Body: {
+        hash = 5381
+        i = 0
+        len = StringLength(str)
+        
+        WhileLoop LessThan(i, len) {
+            byte = GetByte(str, i)
+            hash = Add(Multiply(hash, 33), byte)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(hash)
+    }
+}
+
+Function.HashMap.AcquireLock {
+    Input: lock: Address
+    Body: {
+        // Simple spinlock
+        WhileLoop True {
+            expected = 0
+            IfCondition EqualTo(Dereference(lock), expected) ThenBlock: {
+                StoreValue(lock, 1)
+                BreakLoop
+            }
+            // Could add small delay here
+        }
+    }
+}
+
+Function.HashMap.ReleaseLock {
+    Input: lock: Address
+    Body: {
+        StoreValue(lock, 0)
     }
 }

@@ -1,0 +1,79 @@
+// Test_RESP_Library.ailang
+// Simple test for RESP library functions - just call and print
+
+LibraryImport.RESP
+LibraryImport.XArrays
+
+// Variables
+result = 0
+arr = 0
+str_result = 0
+
+SubRoutine.Main {
+    PrintMessage("=== Testing RESP Library ===\n")
+    
+    // Test SimpleString
+    PrintMessage("Testing SimpleString('OK'):\n")
+    result = RESP.SimpleString("OK")
+    PrintMessage(result)
+    PrintMessage("\n")
+    Deallocate(result, 0)
+    
+    // Test BulkString
+    PrintMessage("Testing BulkString('hello'):\n")
+    result = RESP.BulkString("hello")
+    PrintMessage(result)
+    PrintMessage("\n")
+    Deallocate(result, 0)
+    
+    // Test BulkString null
+    PrintMessage("Testing BulkString(null):\n")
+    result = RESP.BulkString(0)
+    PrintMessage(result)
+    PrintMessage("\n")
+    Deallocate(result, 0)
+    
+    // Test Integer
+    PrintMessage("Testing Integer(42):\n")
+    result = RESP.Integer(42)
+    PrintMessage(result)
+    PrintMessage("\n")
+    Deallocate(result, 0)
+    
+    // Test Integer negative
+    PrintMessage("Testing Integer(-123):\n")
+    result = RESP.Integer(-123)
+    PrintMessage(result)
+    PrintMessage("\n")
+    Deallocate(result, 0)
+    
+    // Test Error
+    PrintMessage("Testing Error('unknown command'):\n")
+    result = RESP.Error("unknown command")
+    PrintMessage(result)
+    PrintMessage("\n")
+    Deallocate(result, 0)
+    
+    // Test Array
+    PrintMessage("Testing Array with 3 elements:\n")
+    arr = ArrayCreate(3)
+    ArraySet(arr, 0, "SET")
+    ArraySet(arr, 1, "key")
+    ArraySet(arr, 2, "value")
+    result = RESP.Array(arr)
+    PrintMessage(result)
+    PrintMessage("\n")
+    ArrayDestroy(arr)
+    Deallocate(result, 0)
+    
+    // Test IntToString
+    PrintMessage("Testing IntToString(12345):\n")
+    str_result = RESP.IntToString(12345)
+    PrintMessage(str_result)
+    PrintMessage("\n")
+    Deallocate(str_result, 0)
+    
+    PrintMessage("\n=== Test Complete ===\n")
+}
+
+RunTask(Main)

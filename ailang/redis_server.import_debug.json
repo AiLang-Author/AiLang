@@ -7,10 +7,11 @@
     "SortedSet",
     "MessageQueue",
     "Scheduler",
-    "RNG"
+    "RNG",
+    "Signals"
   ],
   "conflicts": {
-    "value": [
+    "i": [
       "RESP",
       "MessageQueue"
     ],
@@ -18,13 +19,16 @@
       "RESP",
       "MessageQueue"
     ],
-    "i": [
+    "value": [
       "RESP",
       "MessageQueue"
     ],
-    "XArray.XPush": [
+    "XArray.XGet": [
       "HashMap",
-      "XArrays",
+      "XArrays"
+    ],
+    "LibraryImport.XArrays": [
+      "HashMap",
       "SortedSet"
     ],
     "XSHash.XLookup": [
@@ -35,23 +39,20 @@
       "HashMap",
       "XArrays"
     ],
-    "XArray.XGet": [
-      "HashMap",
-      "XArrays"
-    ],
-    "LibraryImport.XArrays": [
-      "HashMap",
-      "SortedSet"
-    ],
     "XArray.XDestroy": [
       "HashMap",
       "XArrays"
+    ],
+    "XArray.XCreate": [
+      "HashMap",
+      "XArrays",
+      "SortedSet"
     ],
     "XArrays.XNULL": [
       "HashMap",
       "XArrays"
     ],
-    "XArray.XCreate": [
+    "XArray.XPush": [
       "HashMap",
       "XArrays",
       "SortedSet"
@@ -62,11 +63,11 @@
     ]
   },
   "prefixes": {
-    "HashMap": "NSOZC6WI",
-    "RESP": "NSX11QPI",
-    "SortedSet": "NSET7E2N",
-    "MessageQueue": "NSS6O52Q",
-    "XArrays": "NS7VRK6W"
+    "HashMap": "NSKB1NKN",
+    "MessageQueue": "NSBL5CI4",
+    "XArrays": "NS38ST9V",
+    "RESP": "NS6H02B8",
+    "SortedSet": "NSJJBK6A"
   },
   "resolution_log": [
     {
@@ -109,6 +110,12 @@
       "file": "redis_server.ailang",
       "line": 13,
       "import": "RNG",
+      "type": "library"
+    },
+    {
+      "file": "redis_server.ailang",
+      "line": 14,
+      "import": "Signals",
       "type": "library"
     },
     {

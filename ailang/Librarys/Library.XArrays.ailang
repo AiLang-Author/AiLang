@@ -882,6 +882,10 @@ Function.XSHash.XInsert {
         }
         
         // Get bucket count and calculate bucket index
+        // CRITICAL FIX: Ensure hash_value is positive before modulo
+        IfCondition LessThan(hash_value, 0) ThenBlock: {
+            hash_value = Multiply(hash_value, -1)
+        }
         bucket_count = Dereference(hash_table)
         bucket_idx = Modulo(hash_value, bucket_count)
         buckets = Dereference(Add(hash_table, 16))
@@ -936,6 +940,10 @@ Function.XSHash.XLookup {
             i = Add(i, 1)
         }
         
+        // CRITICAL FIX: Ensure hash_value is positive before modulo
+        IfCondition LessThan(hash_value, 0) ThenBlock: {
+            hash_value = Multiply(hash_value, -1)
+        }
         bucket_count = Dereference(hash_table)
         bucket_idx = Modulo(hash_value, bucket_count)
         buckets = Dereference(Add(hash_table, 16))
@@ -979,6 +987,10 @@ Function.XSHash.XDelete {
             i = Add(i, 1)
         }
         
+        // CRITICAL FIX: Ensure hash_value is positive before modulo
+        IfCondition LessThan(hash_value, 0) ThenBlock: {
+            hash_value = Multiply(hash_value, -1)
+        }
         bucket_count = Dereference(hash_table)
         bucket_idx = Modulo(hash_value, bucket_count)
         buckets = Dereference(Add(hash_table, 16))
@@ -1071,6 +1083,120 @@ Function.XSHash.XKeys {
     }
 }
 
+// Add these functions to Library.XArrays.ailang to support storing addresses instead of integers
+// These are variants of XSHash functions that handle Address values
+
+// Insert key-address pair (instead of key-integer)
+Function.XSHash.XInsertAddr {
+    Input: hash_table: Address
+    Input: key: Address
+    Input: value: Address  // Changed from Integer to Address
+    Output: Integer
+    Body: {
+        // Use string hash for key
+        hash_value = 0
+        i = 0
+        key_len = StringLength(key)
+        WhileLoop LessThan(i, key_len) {
+            byte = GetByte(key, i)
+            hash_value = Add(Multiply(hash_value, 31), byte)
+            i = Add(i, 1)
+        }
+        
+        // Get bucket count and calculate bucket index
+        // CRITICAL FIX: Ensure hash_value is positive before modulo
+        IfCondition LessThan(hash_value, 0) ThenBlock: {
+            hash_value = Multiply(hash_value, -1)
+        }
+        bucket_count = Dereference(hash_table)
+        bucket_idx = Modulo(hash_value, bucket_count)
+        buckets = Dereference(Add(hash_table, 16))
+        
+        // First, check if the key already exists in this bucket
+        current = ArrayGet(buckets, bucket_idx)
+        WhileLoop NotEqual(current, 0) {
+            stored_key = Dereference(current)
+            cmp = StringCompare(stored_key, key)
+            IfCondition EqualTo(cmp, 0) ThenBlock: {
+                // Key exists - update the value instead of inserting
+                old_value = Dereference(Add(current, 8))
+                StoreValue(Add(current, 8), value)  // Store address directly
+                // Return 0 to indicate update (not a new insertion)
+                ReturnValue(0)
+            }
+            current = Dereference(Add(current, 16))
+        }
+        
+        // Key doesn't exist, so create new node: [key_copy, value, next]
+        new_node = Allocate(24)
+        key_copy = Helpers.StringCopy(key)
+        StoreValue(new_node, key_copy)
+        StoreValue(Add(new_node, 8), value)  // Store address directly
+        
+        // Insert at head of bucket
+        head = ArrayGet(buckets, bucket_idx)
+        StoreValue(Add(new_node, 16), head)
+        ArraySet(buckets, bucket_idx, new_node)
+        
+        // Update count
+        item_count = Dereference(Add(hash_table, 8))
+        StoreValue(Add(hash_table, 8), Add(item_count, 1))
+        
+        // Return 1 to indicate new insertion
+        ReturnValue(1)
+    }
+}
+
+// Lookup address value by key (instead of integer)
+Function.XSHash.XLookupAddr {
+    Input: hash_table: Address
+    Input: key: Address
+    Output: Address  // Changed from Integer to Address
+    Body: {
+        // Hash the key
+        hash_value = 0
+        i = 0
+        key_len = StringLength(key)
+        WhileLoop LessThan(i, key_len) {
+            byte = GetByte(key, i)
+            hash_value = Add(Multiply(hash_value, 31), byte)
+            i = Add(i, 1)
+        }
+        
+        // CRITICAL FIX: Ensure hash_value is positive before modulo
+        IfCondition LessThan(hash_value, 0) ThenBlock: {
+            hash_value = Multiply(hash_value, -1)
+        }
+        bucket_count = Dereference(hash_table)
+        bucket_idx = Modulo(hash_value, bucket_count)
+        buckets = Dereference(Add(hash_table, 16))
+        
+        current = ArrayGet(buckets, bucket_idx)
+        WhileLoop NotEqual(current, 0) {
+            stored_key = Dereference(current)
+            cmp = StringCompare(stored_key, key)
+            IfCondition EqualTo(cmp, 0) ThenBlock: {
+                ReturnValue(Dereference(Add(current, 8)))  // Return address
+            }
+            current = Dereference(Add(current, 16))
+        }
+        
+        ReturnValue(XArrays.XNULL)
+    }
+}
+
+// Check if a key exists using address lookup
+Function.XSHash.XExistsAddr {
+    Input: hash_table: Address
+    Input: key: Address
+    Output: Integer
+    Body: {
+        result = XSHash.XLookupAddr(hash_table, key)
+        // Return 1 if result is not XNULL, 0 otherwise
+        ReturnValue(NotEqual(result, XArrays.XNULL))
+    }
+}
+
 // Stream destruction
 Function.XStream.XDestroy {
     Input: stream: Address
@@ -1094,6 +1220,66 @@ Function.XStream.XDestroy {
             XArray.XDestroy(stream)
         }
         ReturnValue(1)
+    }
+}
+
+// Delete and return address value (instead of integer)
+Function.XSHash.XDeleteAddr {
+    Input: hash_table: Address
+    Input: key: Address
+    Output: Address  // Changed from Integer to Address
+    Body: {
+        // Hash the key
+        hash_value = 0
+        i = 0
+        key_len = StringLength(key)
+        WhileLoop LessThan(i, key_len) {
+            byte = GetByte(key, i)
+            hash_value = Add(Multiply(hash_value, 31), byte)
+            i = Add(i, 1)
+        }
+        
+        // CRITICAL FIX: Ensure hash_value is positive before modulo
+        IfCondition LessThan(hash_value, 0) ThenBlock: {
+            hash_value = Multiply(hash_value, -1)
+        }
+        bucket_count = Dereference(hash_table)
+        bucket_idx = Modulo(hash_value, bucket_count)
+        buckets = Dereference(Add(hash_table, 16))
+        
+        current = ArrayGet(buckets, bucket_idx)
+        prev = 0
+        
+        WhileLoop NotEqual(current, 0) {
+            stored_key = Dereference(current)
+            cmp = StringCompare(stored_key, key)
+            IfCondition EqualTo(cmp, 0) ThenBlock: {
+                // Found it - unlink from chain
+                value = Dereference(Add(current, 8))  // This is now an address
+                next = Dereference(Add(current, 16))
+                
+                IfCondition EqualTo(prev, 0) ThenBlock: {
+                    ArraySet(buckets, bucket_idx, next)
+                } ElseBlock: {
+                    StoreValue(Add(prev, 16), next)
+                }
+                
+                // Free the key and node
+                Deallocate(stored_key, 0)
+                Deallocate(current, 0)
+                
+                // Update count
+                item_count = Dereference(Add(hash_table, 8))
+                StoreValue(Add(hash_table, 8), Subtract(item_count, 1))
+                
+                ReturnValue(value)  // Return the address value
+            }
+            
+            prev = current
+            current = Dereference(Add(current, 16))
+        }
+        
+        ReturnValue(XArrays.XNULL)
     }
 }
 

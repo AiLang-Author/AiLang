@@ -1,0 +1,24 @@
+// test_r15_value.ailang
+SubRoutine.Main {
+    PrintMessage("Testing R15 heap pointer\n")
+    
+    // First allocation
+    buf1 = Allocate(16)
+    PrintMessage("First alloc: ")
+    PrintNumber(buf1)
+    PrintMessage("\n")
+    
+    // Manually allocate 16 more bytes
+    buf2 = Allocate(16)
+    PrintMessage("Second alloc: ")
+    PrintNumber(buf2)
+    PrintMessage("\n")
+    
+    // Calculate difference
+    diff = Subtract(buf2, buf1)
+    PrintMessage("Difference: ")
+    PrintNumber(diff)
+    PrintMessage(" (should be 16)\n")
+}
+
+RunTask(Main)

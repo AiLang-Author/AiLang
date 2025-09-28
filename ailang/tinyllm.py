@@ -1,550 +1,301 @@
 #!/usr/bin/env python3
 """
-Enhanced Tiny LLM Trainer - NumPy only version
-Trains a small transformer matching the enhanced AILANG architecture
+Optimized Tiny LLM Trainer - Fast version for overnight training
 """
 
 import numpy as np
 import struct
 import time
+import os
 
-class TinyTransformerNumPy:
-    """
-    Enhanced transformer using only NumPy
-    Matches enhanced AILANG architecture with 2 layers, 256 hidden dim
-    """
-    
-    def __init__(self, vocab_size):
+class FastTinyTransformer:
+    def __init__(self, vocab_size=128):
+        # Smaller architecture for faster training
         self.vocab_size = vocab_size
-        self.hidden_dim = 512  # Bigger!
-        self.num_layers = 2    # Now 2 layers
-        self.num_heads = 16    # Bigger! (hidden_dim / head_dim)
+        self.hidden_dim = 256  # Reduced from 512
+        self.num_layers = 1    # Single layer for speed
+        self.num_heads = 8     
         self.head_dim = 32
-        self.max_seq_len = 128 # Doubled
-        self.lr = 0.001       # Lower learning rate for bigger model
+        self.max_seq_len = 32  # Shorter sequences
+        self.lr = 0.003       # Higher learning rate
         
-        # Adam optimizer parameters
-        self.beta1 = 0.9
-        self.beta2 = 0.999
-        self.epsilon = 1e-8
-        self.t = 0 # Timestep for Adam
+        # Use float32 for speed
+        self.dtype = np.float32
         
-        # Calculate total parameters
-        self.total_params = (
-            self.vocab_size * self.hidden_dim +  # embeddings
-            self.num_layers * 3 * self.hidden_dim * self.hidden_dim + # Q,K,V per layer
-            self.hidden_dim * self.vocab_size    # Output projection
-        )
-        
-        print(f"🧠 Model Configuration:")
+        print(f"🧠 Fast Model Configuration:")
         print(f"  Vocab: {self.vocab_size}")
         print(f"  Hidden: {self.hidden_dim}")
         print(f"  Layers: {self.num_layers}")
-        print(f"  Heads: {self.num_heads}")
-        print(f"  Total Parameters: {self.total_params:,}")
-        print()
+        print(f"  Seq Length: {self.max_seq_len}")
         
-        # Initialize weights with Xavier/He initialization
+        # Initialize with float32
         scale = np.sqrt(2.0 / self.hidden_dim)
+        self.embedding = (np.random.randn(self.vocab_size, self.hidden_dim) * scale * 0.02).astype(self.dtype)
         
-        self.embedding = np.random.randn(self.vocab_size, self.hidden_dim) * scale * 0.02
-        
-        # Multiple layers of attention weights
         self.w_q = []
         self.w_k = []
         self.w_v = []
         
-        for layer in range(self.num_layers):
-            self.w_q.append(np.random.randn(self.hidden_dim, self.hidden_dim) * scale)
-            self.w_k.append(np.random.randn(self.hidden_dim, self.hidden_dim) * scale)
-            self.w_v.append(np.random.randn(self.hidden_dim, self.hidden_dim) * scale)
+        for _ in range(self.num_layers):
+            self.w_q.append((np.random.randn(self.hidden_dim, self.hidden_dim) * scale).astype(self.dtype))
+            self.w_k.append((np.random.randn(self.hidden_dim, self.hidden_dim) * scale).astype(self.dtype))
+            self.w_v.append((np.random.randn(self.hidden_dim, self.hidden_dim) * scale).astype(self.dtype))
         
-        # Output projection
-        self.output_proj = np.random.randn(self.hidden_dim, self.vocab_size) * scale
+        self.output_proj = (np.random.randn(self.hidden_dim, self.vocab_size) * scale).astype(self.dtype)
         
-        # Initialize Adam optimizer moments
-        self.m_embedding = np.zeros_like(self.embedding)
+        # Simple SGD momentum for faster convergence
+        self.momentum = 0.9
         self.v_embedding = np.zeros_like(self.embedding)
-        
-        self.m_w_q = [np.zeros_like(w) for w in self.w_q]
         self.v_w_q = [np.zeros_like(w) for w in self.w_q]
-        self.m_w_k = [np.zeros_like(w) for w in self.w_k]
         self.v_w_k = [np.zeros_like(w) for w in self.w_k]
-        self.m_w_v = [np.zeros_like(w) for w in self.w_v]
         self.v_w_v = [np.zeros_like(w) for w in self.w_v]
-        
-        self.m_output_proj = np.zeros_like(self.output_proj)
         self.v_output_proj = np.zeros_like(self.output_proj)
         
-        # Training statistics
-        self.loss_history = []
+        self.total_params = (
+            self.vocab_size * self.hidden_dim +
+            self.num_layers * 3 * self.hidden_dim * self.hidden_dim +
+            self.hidden_dim * self.vocab_size
+        )
+        print(f"  Total Parameters: {self.total_params:,}\n")
     
-    def gelu(self, x):
-        """
-        GELU Approximation (HardSwish variant) to perfectly match the AILANG implementation.
-        This is critical for preventing train/inference skew.
-        """
-        # Matches: x * clamp( (x * 1.702) * 0.2 + 0.5, 0, 1 )
-        hard_sigmoid = np.clip((x * 1.702) * 0.2 + 0.5, 0, 1)
-        return x * hard_sigmoid
-
-    def adam_update(self, weight, grad, m, v):
-        """Performs an Adam optimization step."""
-        # Update biased first moment estimate
-        m = self.beta1 * m + (1 - self.beta1) * grad
-        # Update biased second raw moment estimate
-        v = self.beta2 * v + (1 - self.beta2) * (grad**2)
-        
-        # Compute bias-corrected first moment estimate
-        m_hat = m / (1 - self.beta1**self.t)
-        # Compute bias-corrected second raw moment estimate
-        v_hat = v / (1 - self.beta2**self.t)
-        
-        # Update parameters
-        weight -= self.lr * m_hat / (np.sqrt(v_hat) + self.epsilon)
-        
-        return m, v
+    def gelu_fast(self, x):
+        """Fast GELU approximation"""
+        return x * (1.0 / (1.0 + np.exp(-1.702 * x)))
     
-    def softmax(self, x, temperature=1.0):
-        """Stable softmax with temperature"""
-        x = x / temperature
-        exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
-        return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
+    def softmax_fast(self, x):
+        """Fast stable softmax"""
+        e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
+        return e_x / np.sum(e_x, axis=-1, keepdims=True)
     
-    def layer_norm(self, x, eps=1e-5):
-        """Layer normalization"""
-        mean = np.mean(x, axis=-1, keepdims=True)
-        var = np.var(x, axis=-1, keepdims=True)
-        return (x - mean) / np.sqrt(var + eps)
-    
-    def attention(self, Q, K, V, mask=None):
-        """Multi-head attention"""
-        seq_len = Q.shape[0]
+    def forward_fast(self, tokens):
+        """Simplified forward pass"""
+        # Embedding
+        x = self.embedding[tokens]
         
-        # Scaled dot-product attention
-        scores = Q @ K.T / np.sqrt(self.head_dim) # Correct scaling is by head_dim
-        
-        if mask is not None:
-            scores = scores + mask
-        
-        attn_weights = self.softmax(scores)
-        output = attn_weights @ V
-        
-        return output, attn_weights
-    
-    def transformer_block(self, x, layer_idx):
-        """Single transformer block"""
-        # Multi-head attention
-        Q = x @ self.w_q[layer_idx]
-        K = x @ self.w_k[layer_idx]
-        V = x @ self.w_v[layer_idx]
-        
-        # Create causal mask
-        seq_len = x.shape[0]
-        mask = np.triu(np.ones((seq_len, seq_len)), k=1) * -1e9
-        
-        attn_output, _ = self.attention(Q, K, V, mask)
-        
-        # Residual connection and layer norm
-        x = self.layer_norm(x + attn_output)
-        
-        # Feedforward with GELU
-        ff_output = self.gelu(x)
-        
-        # Another residual connection
-        x = self.layer_norm(x + ff_output)
-        
-        return x
-    
-    def forward(self, tokens):
-        """Forward pass through the model"""
-        seq_len = len(tokens)
-        
-        # Embedding lookup
-        x = np.array([self.embedding[t] for t in tokens])
-        
-        # Pass through transformer layers
-        # Store intermediate outputs for backpropagation
-        intermediate_outputs = [x]
+        # Single transformer layer (or loop if multiple)
         for layer_idx in range(self.num_layers):
-            x = self.transformer_block(x, layer_idx)
-            intermediate_outputs.append(x)
+            # Attention
+            Q = x @ self.w_q[layer_idx]
+            K = x @ self.w_k[layer_idx]
+            V = x @ self.w_v[layer_idx]
+            
+            scores = (Q @ K.T) / np.sqrt(self.head_dim)
+            
+            # Causal mask
+            seq_len = len(tokens)
+            mask = np.triu(np.ones((seq_len, seq_len)), k=1) * -1e9
+            scores = scores + mask
+            
+            attn = self.softmax_fast(scores)
+            x_attn = attn @ V
+            
+            # Skip layer norm for speed, just residual
+            x = x + x_attn
+            
+            # Simple feedforward
+            x = x + self.gelu_fast(x)
         
         # Output projection
         logits = x @ self.output_proj
-        
-        # Return logits and the list of all layer outputs
-        return logits, intermediate_outputs
+        return logits
     
-    def train_step(self, input_tokens, target_tokens):
-        """Training step with proper gradient computation"""
-        self.t += 1 # Increment timestep for Adam
-
-        # Forward pass
-        logits, intermediate_outputs = self.forward(input_tokens)
-        transformer_output = intermediate_outputs[-1] # Final layer's output
+    def train_step_fast(self, tokens, targets):
+        """Fast training step with momentum SGD"""
+        seq_len = len(tokens)
         
-        # Cross-entropy loss
-        probs = self.softmax(logits)
-        loss = -np.mean(np.log(probs[np.arange(len(target_tokens)), target_tokens] + 1e-9))
-
-        # --- Backpropagation ---
-        # This version backprops through the output layer, embeddings, and
-        # provides a gradient approximation for the final attention layer.
+        # Forward
+        logits = self.forward_fast(tokens)
         
-        # 1. Gradient of the loss w.r.t. logits
-        d_logits = probs.copy()
-        d_logits[np.arange(len(target_tokens)), target_tokens] -= 1
-        d_logits /= len(target_tokens) # Normalize gradient
-
-        # 2. Gradient for the output projection weights
-        # d_output_proj = transformer_output.T @ d_logits
-        d_output_proj = transformer_output.T @ d_logits
+        # Loss
+        probs = self.softmax_fast(logits)
+        loss = -np.mean(np.log(probs[np.arange(seq_len), targets] + 1e-9))
         
-        # 3. Gradient for the transformer output (to be backpropped to embeddings)
-        # d_transformer_output = d_logits @ self.output_proj.T
-        d_transformer_output = d_logits @ self.output_proj.T
-
-        # --- Weight Updates ---
+        # Backward (simplified)
+        d_logits = probs
+        d_logits[np.arange(seq_len), targets] -= 1
+        d_logits /= seq_len
         
-        np.clip(d_output_proj, -1.0, 1.0, out=d_output_proj)
-        self.m_output_proj, self.v_output_proj = self.adam_update(
-            self.output_proj, d_output_proj, self.m_output_proj, self.v_output_proj
-        )
+        # Get embeddings for gradient calculation
+        x = self.embedding[tokens]
         
-        # Update embeddings
-        # We create a zero-gradient for the whole embedding table and add the gradients
-        # for the tokens that were actually used in the input sequence.
+        # Output projection gradient
+        d_output = x.T @ d_logits
+        
+        # Embedding gradients (vectorized)
+        d_x = d_logits @ self.output_proj.T
         d_embedding = np.zeros_like(self.embedding)
-        for i, token_idx in enumerate(input_tokens):
-            # Add the gradient for this token's embedding
-            d_embedding[token_idx] += d_transformer_output[i]
-        np.clip(d_embedding, -1.0, 1.0, out=d_embedding)
-        self.m_embedding, self.v_embedding = self.adam_update(
-            self.embedding, d_embedding, self.m_embedding, self.v_embedding
-        )
-
-        # --- Propagate gradient back one layer (approximately) ---
-        # This gives us an error signal for the output of the first layer.
-        # We approximate the gradient w.r.t the input of the final block by
-        # back-propagating through the final layer's Q,K,V weights.
-        d_layer1_output_approx = d_transformer_output @ (self.w_q[-1].T + self.w_k[-1].T + self.w_v[-1].T)
-
-        # Update attention weights
+        np.add.at(d_embedding, tokens, d_x)
+        
+        # Attention gradients (simplified)
         for layer_idx in range(self.num_layers):
-            if layer_idx == self.num_layers - 1:
-                # Update Layer 1 (the last layer)
-                d_attn_approx = d_transformer_output
-                x_in = intermediate_outputs[layer_idx] # Input to this layer
-                
-                d_w_q = x_in.T @ d_attn_approx
-                d_w_k = x_in.T @ d_attn_approx
-                d_w_v = x_in.T @ d_attn_approx
-                
-                np.clip(d_w_q, -1.0, 1.0, out=d_w_q)
-                np.clip(d_w_k, -1.0, 1.0, out=d_w_k)
-                np.clip(d_w_v, -1.0, 1.0, out=d_w_v)
-
-                self.m_w_q[layer_idx], self.v_w_q[layer_idx] = self.adam_update(
-                    self.w_q[layer_idx], d_w_q, self.m_w_q[layer_idx], self.v_w_q[layer_idx]
-                )
-                self.m_w_k[layer_idx], self.v_w_k[layer_idx] = self.adam_update(
-                    self.w_k[layer_idx], d_w_k, self.m_w_k[layer_idx], self.v_w_k[layer_idx]
-                )
-                self.m_w_v[layer_idx], self.v_w_v[layer_idx] = self.adam_update(
-                    self.w_v[layer_idx], d_w_v, self.m_w_v[layer_idx], self.v_w_v[layer_idx]
-                )
-            else:
-                # Update Layer 0 (and any other earlier layers)
-                d_attn_approx = d_layer1_output_approx # Use the back-propagated error
-                x_in = intermediate_outputs[layer_idx] # Input to this layer
-                
-                d_w_q = x_in.T @ d_attn_approx
-                d_w_k = x_in.T @ d_attn_approx
-                d_w_v = x_in.T @ d_attn_approx
-
-                np.clip(d_w_q, -1.0, 1.0, out=d_w_q)
-                np.clip(d_w_k, -1.0, 1.0, out=d_w_k)
-                np.clip(d_w_v, -1.0, 1.0, out=d_w_v)
-                
-                self.m_w_q[layer_idx], self.v_w_q[layer_idx] = self.adam_update(
-                    self.w_q[layer_idx], d_w_q, self.m_w_q[layer_idx], self.v_w_q[layer_idx]
-                )
-                self.m_w_k[layer_idx], self.v_w_k[layer_idx] = self.adam_update(
-                    self.w_k[layer_idx], d_w_k, self.m_w_k[layer_idx], self.v_w_k[layer_idx]
-                )
-                self.m_w_v[layer_idx], self.v_w_v[layer_idx] = self.adam_update(
-                    self.w_v[layer_idx], d_w_v, self.m_w_v[layer_idx], self.v_w_v[layer_idx]
-                )
+            d_w_q = x.T @ d_x * 0.1  # Scale down gradients
+            d_w_k = x.T @ d_x * 0.1
+            d_w_v = x.T @ d_x * 0.1
+            
+            # Momentum update
+            self.v_w_q[layer_idx] = self.momentum * self.v_w_q[layer_idx] - self.lr * d_w_q
+            self.v_w_k[layer_idx] = self.momentum * self.v_w_k[layer_idx] - self.lr * d_w_k
+            self.v_w_v[layer_idx] = self.momentum * self.v_w_v[layer_idx] - self.lr * d_w_v
+            
+            self.w_q[layer_idx] += self.v_w_q[layer_idx]
+            self.w_k[layer_idx] += self.v_w_k[layer_idx]
+            self.w_v[layer_idx] += self.v_w_v[layer_idx]
+        
+        # Update output projection and embeddings
+        self.v_output_proj = self.momentum * self.v_output_proj - self.lr * d_output
+        self.output_proj += self.v_output_proj
+        
+        self.v_embedding = self.momentum * self.v_embedding - self.lr * d_embedding
+        self.embedding += self.v_embedding
         
         return loss
     
-    def generate(self, prompt_tokens, max_length=50, temperature=0.8):
-        """Generate text from a prompt"""
-        generated = list(prompt_tokens)
+    def train_batch(self, sequences, targets, batch_size=32):
+        """Train on mini-batches"""
+        total_loss = 0
+        num_batches = 0
         
-        for _ in range(max_length - len(prompt_tokens)):
-            # Get logits for current sequence
-            logits, _ = self.forward(generated)
+        for i in range(0, len(sequences), batch_size):
+            batch_loss = 0
+            batch_end = min(i + batch_size, len(sequences))
             
-            # Take last token's logits
-            next_token_logits = logits[-1]
+            for j in range(i, batch_end):
+                loss = self.train_step_fast(sequences[j], targets[j])
+                batch_loss += loss
             
-            # Apply temperature and sample
-            probs = self.softmax(next_token_logits, temperature)
-            next_token = np.random.choice(self.vocab_size, p=probs)
-            
-            generated.append(next_token)
-            
-            # Stop if we generate end token (0 or newline)
-            if next_token in [0, 10]:
-                break
+            total_loss += batch_loss
+            num_batches += 1
         
-        return generated
+        return total_loss / num_batches if num_batches > 0 else 0
 
-# This function MUST be outside the class!
-def export_weights_for_ailang(model, filename="tiny_llm.weights"):
-    """Export weights in AILANG format"""
-    
-    print(f"\n📁 Exporting weights to {filename}")
-    
-    # Convert to fixed-point (scale by 1000) and save as int64 for AILANG compatibility
-    def to_fixed_point(array):
-        return (array * 1000).round().astype(np.int64)
-    
-    with open(filename, 'wb') as f:
-        print(f"  Total parameters: {model.total_params:,}")
-
-        # Write vocab_size as a single 64-bit integer at the start of the file
-        f.write(struct.pack('<q', model.vocab_size))
-        print(f"  ✓ Header: vocab_size ({model.vocab_size}) written")
-        
-        # Write weights in order expected by AILANG
-        # Order: embeddings, then for each layer: W_q, W_k, W_v
-        
-        # Flatten and write embeddings - now as int64
-        embeddings_fp = to_fixed_point(model.embedding.flatten())
-        embeddings_fp.tofile(f)
-        print(f"  ✓ Embeddings: {len(embeddings_fp)} values")
-        
-        # Write attention weights for each layer - now as int64
-        for layer_idx in range(model.num_layers):
-            w_q_fp = to_fixed_point(model.w_q[layer_idx].flatten())
-            w_k_fp = to_fixed_point(model.w_k[layer_idx].flatten())
-            w_v_fp = to_fixed_point(model.w_v[layer_idx].flatten())
-            
-            w_q_fp.tofile(f)
-            w_k_fp.tofile(f)
-            w_v_fp.tofile(f)
-            
-            print(f"  ✓ Layer {layer_idx}: Q,K,V weights written")
-
-        # Flatten and write output projection weights
-        output_proj_fp = to_fixed_point(model.output_proj.flatten())
-        output_proj_fp.tofile(f)
-        print(f"  ✓ Output Projection: {len(output_proj_fp)} values")
-
-        total_bytes = f.tell()
-        print(f"  ✓ Total bytes written: {total_bytes}")
-        if total_bytes != (model.total_params * 8 + 8):
-            print(f"  ⚠️ WARNING: Mismatch! Expected {model.total_params * 8 + 8} bytes (weights + header).")
-    
-    # Write human-readable debug file
-    debug_filename = filename.replace('.weights', '_debug.txt')
-    with open(debug_filename, 'w') as f:
-        f.write("Enhanced Tiny LLM Weights (NumPy version)\n")
-        f.write("=" * 60 + "\n")
-        f.write(f"Model Configuration:\n")
-        f.write(f"  Vocab Size: {model.vocab_size}\n")
-        f.write(f"  Hidden Dim: {model.hidden_dim}\n")
-        f.write(f"  Num Layers: {model.num_layers}\n")
-        f.write(f"  Total Params: {model.total_params:,}\n\n")
-        
-        f.write("Weight Statistics:\n")
-        f.write(f"  Embedding: mean={model.embedding.mean():.4f}, std={model.embedding.std():.4f}\n")
-        
-        for i in range(model.num_layers):
-            f.write(f"  Layer {i} W_q: mean={model.w_q[i].mean():.4f}, std={model.w_q[i].std():.4f}\n")
-            f.write(f"  Layer {i} W_k: mean={model.w_k[i].mean():.4f}, std={model.w_k[i].std():.4f}\n")
-            f.write(f"  Layer {i} W_v: mean={model.w_v[i].mean():.4f}, std={model.w_v[i].std():.4f}\n")
-        f.write(f"  Output Proj: mean={model.output_proj.mean():.4f}, std={model.output_proj.std():.4f}\n")
-        
-        f.write(f"\nSample weights (first 10 embedding values):\n")
-        for i in range(min(10, model.embedding.size)):
-            fp_val = int(model.embedding.flatten()[i] * 1000)
-            f.write(f"  [{i}]: {model.embedding.flatten()[i]:.6f} -> {fp_val} (fixed-point)\n")
-    
-    print(f"📝 Debug info: {debug_filename}")
-
-# Rest of the functions remain the same...
-def create_training_data(text, seq_len=64, chars=None):
-    """Create training sequences from text"""
-    if chars is None:
-        chars = sorted(list(set(text)))
+def create_fast_training_data(text, seq_len=32):
+    """Fast training data creation"""
+    chars = sorted(list(set(text)))
     char_to_int = {ch: i for i, ch in enumerate(chars)}
     
-    # Convert text to tokens using the provided character map
     tokens = [char_to_int.get(c, 0) for c in text]
     
     sequences = []
     targets = []
     
-    print("  Creating sequences (this may take a while)...", end='', flush=True)
-    # Create overlapping sequences
-    for i in range(0, len(tokens) - seq_len, seq_len // 2):
+    # Non-overlapping sequences for speed
+    for i in range(0, len(tokens) - seq_len, seq_len):
         sequences.append(tokens[i:i+seq_len])
         targets.append(tokens[i+1:i+seq_len+1])
-        # Add a progress dot to show it's working
-        if i > 0 and i % 50000 == 0:
-            print(".", end="", flush=True)
-    print(" Done.")
     
-    return sequences, targets
+    return sequences, targets, chars
 
-def visualize_attention(model, text, char_to_int, int_to_char):
-    """Visualize what the model is learning"""
-    tokens = [char_to_int.get(c, 0) for c in text[:8]]
-    text_to_show = "".join([int_to_char.get(t, "?") for t in tokens])
-    print("\n👁️ Attention Visualization")
-    print(f"Input: '{text[:8]}'")
+def export_weights(model, filename="tiny_llm.weights"):
+    """Export weights for AILANG"""
+    print(f"\n📁 Exporting weights to {filename}")
     
-    # Get embeddings
-    embedded = np.array([model.embedding[t] for t in tokens])
+    with open(filename, 'wb') as f:
+        # Write header
+        f.write(struct.pack('<q', model.vocab_size))
+        
+        # Convert to fixed-point int64
+        def to_fixed(arr):
+            return (arr * 1000).round().astype(np.int64)
+        
+        # Write weights
+        to_fixed(model.embedding.flatten()).tofile(f)
+        
+        for i in range(model.num_layers):
+            to_fixed(model.w_q[i].flatten()).tofile(f)
+            to_fixed(model.w_k[i].flatten()).tofile(f)
+            to_fixed(model.w_v[i].flatten()).tofile(f)
+        
+        to_fixed(model.output_proj.flatten()).tofile(f)
     
-    # Get attention for first layer
-    Q = embedded @ model.w_q[0]
-    K = embedded @ model.w_k[0]
+    size = os.path.getsize(filename)
+    print(f"  ✓ Exported {size:,} bytes")
     
-    scores = Q @ K.T / np.sqrt(model.hidden_dim)
-    attn = model.softmax(scores)
-    
-    # Show attention pattern
-    print("\nAttention weights (first 4x4):")
-    for i in range(min(4, len(tokens))):
-        print(f"  {text_to_show[i]}: ", end="")
-        for j in range(min(4, len(tokens))):
-            print(f"{attn[i,j]:.2f} ", end="")
-        print()
+    # Save config for AILANG
+    with open("model_config.txt", 'w') as f:
+        f.write(f"vocab_size={model.vocab_size}\n")
+        f.write(f"hidden_dim={model.hidden_dim}\n")
+        f.write(f"num_layers={model.num_layers}\n")
+        f.write(f"trained_epochs={epochs_completed}\n")
 
 def main():
-    print("=" * 60)
-    print("🤖 Enhanced Tiny LLM Trainer (NumPy Version)")
-    print("=" * 60)
-    print()
+    global epochs_completed
     
-    # --- Load Training Data & Determine Vocab Size ---
-    dictionary_file = "dictionary.txt"
+    print("=" * 60)
+    print("🚀 FAST Tiny LLM Trainer")
+    print("=" * 60)
+    
+    # Load training data
     try:
-        with open(dictionary_file, 'r', encoding='utf-8') as f:
-            training_text = f.read()
-        print(f"📖 Successfully loaded '{dictionary_file}' for training.")
-    except FileNotFoundError:
-        print(f"⚠️ '{dictionary_file}' not found. Falling back to small internal corpus.")
-        training_text = "The quick brown fox jumps over the lazy dog. AILang is a systems programming language."
-
-    chars = sorted(list(set(training_text)))
-    vocab_size = len(chars)
+        with open("dictionary.txt", 'r', encoding='utf-8') as f:
+            text = f.read()[:100000]  # Cap at 100k chars for speed
+        print(f"📖 Loaded dictionary.txt ({len(text)} chars)")
+    except:
+        print("📝 Using default text")
+        text = ("The quick brown fox jumps over the lazy dog. " * 50 +
+                "AILANG is a systems programming language. " * 50)
     
-    print(f"📚 Training corpus: {len(training_text)} characters")
-    print(f"📝 Sample: '{training_text[:50]}...'\n")
-    print(f"🌍 Vocabulary size: {vocab_size}")
+    # Prepare data
+    sequences, targets, chars = create_fast_training_data(text, seq_len=32)
+    vocab_size = min(len(chars), 256)  # Cap vocab size
+    
+    print(f"📊 Training data: {len(sequences)} sequences")
+    print(f"🔤 Vocabulary size: {vocab_size}")
     
     # Create model
+    model = FastTinyTransformer(vocab_size=vocab_size)
     
-    model = TinyTransformerNumPy(vocab_size=vocab_size)
+    # Training settings
+    epochs = 100  # More epochs since they're faster
+    save_every = 10  # Save checkpoint every N epochs
     
-    # Prepare training data
-    sequences, targets = create_training_data(training_text, seq_len=64, chars=chars)
-    print(f"🎯 Training sequences: {len(sequences)}")
-    
-    # Training loop
-    print("\n🏃 Starting training...")
-    print("-" * 40)
-    
-    epochs = 2 
-    best_loss = float('inf')
+    print(f"\n⏰ Starting training for {epochs} epochs...")
+    print("=" * 60)
     
     start_time = time.time()
+    best_loss = float('inf')
+    epochs_completed = 0
     
-    for epoch in range(epochs):
-        total_loss = 0
-        # Fix: Convert to list before shuffling
-        data = list(zip(sequences, targets))
-        np.random.shuffle(data)
-
-        num_sequences = len(data)
-        epoch_start_time = time.time()
-        for i, (seq, tgt) in enumerate(data):
-            loss = model.train_step(seq, tgt)
-            total_loss += loss
-
-            # Update progress indicator more frequently and with timing info
-            if (i + 1) % 100 == 0: # Update every 100 sequences
-                sequences_per_sec = (i + 1) / (time.time() - epoch_start_time + 1e-9)
-                print(f"\r    Epoch {epoch + 1} progress: [{i + 1:>6}/{num_sequences}] ({sequences_per_sec:.1f} seq/s)", end="", flush=True)
-        
-        # Clear the progress line before printing the final epoch summary
-        print("\r" + " " * 80 + "\r", end="")
-
-        avg_loss = total_loss / len(sequences)
-        model.loss_history.append(avg_loss)
-        
-        # Track best model
-        if avg_loss < best_loss:
-            best_loss = avg_loss
-            # Could save best weights here
-        
-        # Progress update every epoch
-        elapsed = time.time() - start_time
-        print(f"  Epoch {epoch + 1:3d}/{epochs} | Loss: {avg_loss:.4f} | "
-              f"Best: {best_loss:.4f} | Time: {elapsed:.1f}s")
+    try:
+        for epoch in range(epochs):
+            # Shuffle data
+            indices = np.random.permutation(len(sequences))
+            sequences_shuffled = [sequences[i] for i in indices]
+            targets_shuffled = [targets[i] for i in indices]
+            
+            # Train
+            epoch_loss = model.train_batch(sequences_shuffled, targets_shuffled)
+            
+            # Update tracking
+            epochs_completed = epoch + 1
+            if epoch_loss < best_loss:
+                best_loss = epoch_loss
+            
+            # Progress
+            elapsed = time.time() - start_time
+            eta = (elapsed / epochs_completed) * (epochs - epochs_completed)
+            
+            print(f"Epoch {epoch+1:3d}/{epochs} | Loss: {epoch_loss:.4f} | "
+                  f"Best: {best_loss:.4f} | Time: {elapsed:.0f}s | ETA: {eta:.0f}s")
+            
+            # Save checkpoint
+            if (epoch + 1) % save_every == 0:
+                export_weights(model, f"checkpoint_{epoch+1}.weights")
+                print(f"  💾 Checkpoint saved")
     
-    print("-" * 40)
-    print(f"✅ Training complete! Final loss: {avg_loss:.4f}")
-    print(f"⏱️ Total time: {time.time() - start_time:.1f} seconds")
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Training interrupted!")
     
-    # Test generation
-    print("\n🔮 Testing generation:")
-    print("-" * 40)
-    
-    test_prompts = [
-        "Hello",
-        "The quick",
-        "AILANG",
-        "Machine",
-        "Test"
-    ]
-    
-    # Create char_to_int and int_to_char for generation
-    char_to_int = {ch: i for i, ch in enumerate(chars)}
-    int_to_char = {i: ch for i, ch in enumerate(chars)}
-    
-    for prompt in test_prompts:
-        tokens = [char_to_int.get(c, 0) for c in prompt]
-        generated_tokens = model.generate(tokens, max_length=20, temperature=0.8)
-        generated_text = ''.join([int_to_char.get(t, '?') for t in generated_tokens])
-        print(f"  '{prompt}' -> '{generated_text}'")
-    
-    # Visualize attention
-    visualize_attention(model, "Hello world", char_to_int, int_to_char)
-    
-    # Export weights - THIS NOW WORKS!
-    export_weights_for_ailang(model)
-    
-    # Show loss curve
-    print("\n📊 Training Loss Curve (last 20 epochs):")
-    recent_losses = model.loss_history[-20:]
-    for i, loss in enumerate(recent_losses):
-        bar_length = int(40 * (1 - loss / max(recent_losses)))
-        bar = '█' * bar_length + '░' * (40 - bar_length)
-        print(f"  E{len(model.loss_history)-20+i+1:3d}: {bar} {loss:.4f}")
+    # Final export
+    export_weights(model, "tiny_llm.weights")
     
     print("\n" + "=" * 60)
-    print("🎉 Complete!")
-    print("Next steps:")
-    print("  1. tiny_llm.weights has been created")
-    print("  2. Compile: python3 main.py tiny_llm.ailang")  
-    print("  3. Run: ./tiny_llm_exec")
+    print(f"✅ Training complete! {epochs_completed} epochs")
+    print(f"⏱️  Total time: {time.time() - start_time:.1f} seconds")
+    print(f"📊 Final loss: {best_loss:.4f}")
+    print("\nFiles created:")
+    print("  - tiny_llm.weights (main model)")
+    print("  - model_config.txt (configuration)")
+    print(f"  - checkpoint_*.weights (backups)")
     print("=" * 60)
 
 if __name__ == "__main__":

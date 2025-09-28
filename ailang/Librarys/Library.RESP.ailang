@@ -409,15 +409,15 @@ Function.RESP.Array {
         SetByte(response, pos, 0)
         
         Deallocate(count_str, 0)
-        Debug("resp.build", level=3) {
-            PrintMessage("[DEBUG] RESP.Array: Final response string:\n")
-            PrintMessage(response)
-            PrintMessage("\n")
+        
+        Debug("resp.build", level=2) {
+            PrintMessage("[DEBUG] RESP.Array: Complete, returning response\n")
         }
-
         ReturnValue(response)
     }
 }
+
+
 
 Function.RESP.ParseArray {
     Input: buffer: Address

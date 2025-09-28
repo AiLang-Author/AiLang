@@ -1,0 +1,296 @@
+// test_lifetime_checker.ailang
+// Test program to verify the LifetimeChecker library functionality
+
+Library.LifetimeChecker
+
+// Test 1: Basic scope tracking
+Function.Test.BasicScopes {
+    Input: checker: Address
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 1: Basic Scope Tracking ===\n")
+        
+        // Enter nested scopes
+        scope1 = LifetimeChecker.EnterScope(checker)
+        PrintMessage("Entered scope ")
+        PrintNumber(scope1)
+        PrintMessage("\n")
+        
+        scope2 = LifetimeChecker.EnterScope(checker)
+        PrintMessage("Entered scope ")
+        PrintNumber(scope2)
+        PrintMessage("\n")
+        
+        // Exit scopes
+        result = LifetimeChecker.ExitScope(checker)
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to exit scope 2\n")
+            ReturnValue(0)
+        }
+        PrintMessage("Successfully exited scope 2\n")
+        
+        result = LifetimeChecker.ExitScope(checker)
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to exit scope 1\n")
+            ReturnValue(0)
+        }
+        PrintMessage("Successfully exited scope 1\n")
+        
+        PrintMessage("✓ Basic scope tracking passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 2: Pointer lifetime tracking
+Function.Test.PointerLifetimes {
+    Input: checker: Address
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 2: Pointer Lifetime Tracking ===\n")
+        
+        // Create some data
+        global_data = Allocate(100)
+        SetBytes(global_data, "Global data", 11)
+        
+        // Track global pointer (should be safe)
+        global_ptr = AddressOf(global_data)
+        LifetimeChecker.TrackPointer(checker, global_ptr, global_data, 0)
+        PrintMessage("Tracked global pointer\n")
+        
+        // Enter a scope
+        scope1 = LifetimeChecker.EnterScope(checker)
+        
+        // Create local data
+        local_data = Allocate(100)
+        SetBytes(local_data, "Local data", 10)
+        local_ptr = AddressOf(local_data)
+        
+        // Track local pointer
+        LifetimeChecker.TrackPointer(checker, local_ptr, local_data, 0)
+        PrintMessage("Tracked local pointer in scope ")
+        PrintNumber(scope1)
+        PrintMessage("\n")
+        
+        // Validate returning global pointer (should succeed)
+        result = LifetimeChecker.ValidateReturn(checker, global_ptr)
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to validate global pointer return\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Can return global pointer from local scope\n")
+        
+        // Try to validate returning local pointer (should fail)
+        result = LifetimeChecker.ValidateReturn(checker, local_ptr)
+        IfCondition EqualTo(result, 1) ThenBlock: {
+            PrintMessage("ERROR: Should not allow returning local pointer!\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Correctly prevented returning local pointer\n")
+        
+        // Exit scope
+        LifetimeChecker.ExitScope(checker)
+        
+        // Clean up
+        Deallocate(global_data, 100)
+        Deallocate(local_data, 100)
+        
+        PrintMessage("✓ Pointer lifetime tracking passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 3: Borrowing rules
+Function.Test.BorrowingRules {
+    Input: checker: Address
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 3: Borrowing Rules ===\n")
+        
+        // Create some data
+        data = Allocate(100)
+        SetBytes(data, "Shared data", 11)
+        ptr = AddressOf(data)
+        
+        // Track the pointer
+        LifetimeChecker.TrackPointer(checker, ptr, data, 0)
+        
+        // Test 1: Multiple immutable borrows (should work)
+        PrintMessage("Testing multiple immutable borrows...\n")
+        borrow1 = LifetimeChecker.Borrow(checker, ptr, 0) // immutable
+        IfCondition EqualTo(borrow1, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed first immutable borrow\n")
+            ReturnValue(0)
+        }
+        
+        borrow2 = LifetimeChecker.Borrow(checker, ptr, 0) // immutable
+        IfCondition EqualTo(borrow2, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed second immutable borrow\n")
+            ReturnValue(0)
+        }
+        
+        borrow3 = LifetimeChecker.Borrow(checker, ptr, 0) // immutable
+        IfCondition EqualTo(borrow3, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed third immutable borrow\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Multiple immutable borrows allowed\n")
+        
+        // Release all immutable borrows
+        LifetimeChecker.ReleaseBorrow(checker, ptr)
+        LifetimeChecker.ReleaseBorrow(checker, ptr)
+        LifetimeChecker.ReleaseBorrow(checker, ptr)
+        
+        // Test 2: Mutable borrow (exclusive)
+        PrintMessage("Testing exclusive mutable borrow...\n")
+        mut_borrow = LifetimeChecker.Borrow(checker, ptr, 1) // mutable
+        IfCondition EqualTo(mut_borrow, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed mutable borrow\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Mutable borrow acquired\n")
+        
+        // Try another borrow while mutable borrow is active (should fail)
+        bad_borrow = LifetimeChecker.Borrow(checker, ptr, 0) // try immutable
+        IfCondition NotEqualTo(bad_borrow, 0) ThenBlock: {
+            PrintMessage("ERROR: Should not allow borrow while mutably borrowed!\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Correctly prevented borrow during mutable borrow\n")
+        
+        // Release mutable borrow
+        LifetimeChecker.ReleaseBorrow(checker, ptr)
+        
+        // Now immutable borrow should work again
+        final_borrow = LifetimeChecker.Borrow(checker, ptr, 0)
+        IfCondition EqualTo(final_borrow, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed immutable borrow after releasing mutable\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Can borrow again after releasing mutable borrow\n")
+        
+        LifetimeChecker.ReleaseBorrow(checker, ptr)
+        
+        // Clean up
+        Deallocate(data, 100)
+        
+        PrintMessage("✓ Borrowing rules passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Test 4: Dangling pointer detection
+Function.Test.DanglingPointerDetection {
+    Input: checker: Address
+    Output: Boolean
+    Body: {
+        PrintMessage("\n=== Test 4: Dangling Pointer Detection ===\n")
+        
+        // This simulates the classic dangling pointer bug
+        outer_ptr = 0
+        
+        // Enter a scope
+        scope1 = LifetimeChecker.EnterScope(checker)
+        PrintMessage("Entered inner scope\n")
+        
+        // Create local data
+        local_array = ArrayCreate(10)
+        i = 0
+        WhileLoop LessThan(i, 10) {
+            ArraySet(local_array, i, Add(i, 100))
+            i = Add(i, 1)
+        }
+        
+        // Get pointer to local array
+        local_ptr = AddressOf(local_array)
+        LifetimeChecker.TrackPointer(checker, local_ptr, local_array, 0)
+        
+        // Try to "smuggle" the pointer out (checker should catch this)
+        outer_ptr = local_ptr  // This is the bug!
+        
+        // Validate this as a return value (should fail)
+        result = LifetimeChecker.ValidateReturn(checker, outer_ptr)
+        IfCondition EqualTo(result, 1) ThenBlock: {
+            PrintMessage("ERROR: Checker failed to detect dangling pointer!\n")
+            ReturnValue(0)
+        }
+        PrintMessage("✓ Detected attempt to return local pointer\n")
+        
+        // Exit scope - this should trigger dangling pointer check
+        result = LifetimeChecker.ExitScope(checker)
+        
+        // Note: In a real implementation, this would catch any
+        // pointers to local_array that escaped the scope
+        
+        PrintMessage("✓ Dangling pointer detection passed\n")
+        ReturnValue(1)
+    }
+}
+
+// Main test runner
+Function.Main {
+    Body: {
+        PrintMessage("========================================\n")
+        PrintMessage("    LIFETIME CHECKER LIBRARY TESTS     \n")
+        PrintMessage("========================================\n")
+        
+        // Initialize the lifetime checker
+        checker = LifetimeChecker.Init()
+        PrintMessage("Lifetime checker initialized\n")
+        
+        pass_count = 0
+        fail_count = 0
+        
+        // Run Test 1: Basic Scopes
+        result = Test.BasicScopes(checker)
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 2: Pointer Lifetimes
+        result = Test.PointerLifetimes(checker)
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 3: Borrowing Rules
+        result = Test.BorrowingRules(checker)
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Run Test 4: Dangling Pointer Detection
+        result = Test.DanglingPointerDetection(checker)
+        IfCondition result ThenBlock: {
+            pass_count = Add(pass_count, 1)
+        } ElseBlock: {
+            fail_count = Add(fail_count, 1)
+        }
+        
+        // Final results
+        PrintMessage("\n========================================\n")
+        PrintMessage("           TEST RESULTS                 \n")
+        PrintMessage("========================================\n")
+        PrintMessage("PASSED: ")
+        PrintNumber(pass_count)
+        PrintMessage(" tests\n")
+        PrintMessage("FAILED: ")
+        PrintNumber(fail_count)
+        PrintMessage(" tests\n")
+        
+        IfCondition EqualTo(fail_count, 0) ThenBlock: {
+            PrintMessage("\n✅ ALL TESTS PASSED! ✅\n")
+            PrintMessage("The LifetimeChecker library is working correctly!\n")
+        } ElseBlock: {
+            PrintMessage("\n❌ SOME TESTS FAILED ❌\n")
+            PrintMessage("Please review the failures above.\n")
+        }
+        
+        PrintMessage("========================================\n")
+    }
+}

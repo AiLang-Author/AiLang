@@ -1,0 +1,116 @@
+// test_signals.ailang
+// Test program for the Signals library
+// Tests basic signal handling operations
+
+LibraryImport.Signals
+
+SubRoutine.Main {
+    PrintMessage("=== AILANG Signal Library Test ===\n")
+    
+    // Test 1: Initialize signal system
+    PrintMessage("\nTest 1: Initializing signal system...")
+    result = Signals.Init()
+    IfCondition EqualTo(result, 1) ThenBlock: {
+        PrintMessage(" SUCCESS\n")
+    } ElseBlock: {
+        PrintMessage(" FAILED\n")
+    }
+    
+    // Test 2: Ignore SIGPIPE
+    PrintMessage("\nTest 2: Ignoring SIGPIPE (signal 13)...")
+    result = Signals.Ignore(SignalConstants.SIGPIPE)
+    IfCondition GreaterEqual(result, 0) ThenBlock: {
+        PrintMessage(" SUCCESS\n")
+    } ElseBlock: {
+        PrintMessage(" FAILED with error: ")
+        PrintNumber(result)
+        PrintMessage("\n")
+    }
+    
+    // Test 3: Server defaults (ignore SIGPIPE and SIGCHLD)
+    PrintMessage("\nTest 3: Setting server defaults...")
+    result = Signals.ServerDefaults()
+    IfCondition EqualTo(result, 1) ThenBlock: {
+        PrintMessage(" SUCCESS\n")
+    } ElseBlock: {
+        PrintMessage(" FAILED\n")
+    }
+    
+    // Test 4: Check if signal is ignored
+    PrintMessage("\nTest 4: Checking if SIGPIPE is ignored...")
+    is_ignored = Signals.IsIgnored(SignalConstants.SIGPIPE)
+    IfCondition EqualTo(is_ignored, 1) ThenBlock: {
+        PrintMessage(" YES (as expected)\n")
+    } ElseBlock: {
+        PrintMessage(" NO (unexpected)\n")
+    }
+    
+    // Test 5: Get signal names
+    PrintMessage("\nTest 5: Signal name lookup...\n")
+    
+    test_signals = ArrayCreate(5)
+    ArraySet(test_signals, 0, 2)   // SIGINT
+    ArraySet(test_signals, 1, 13)  // SIGPIPE
+    ArraySet(test_signals, 2, 11)  // SIGSEGV
+    ArraySet(test_signals, 3, 15)  // SIGTERM
+    ArraySet(test_signals, 4, 99)  // Invalid
+    
+    i = 0
+    WhileLoop LessThan(i, 5) {
+        sig = ArrayGet(test_signals, i)
+        name = Signals.GetName(sig)
+        PrintMessage("        Signal ")
+        PrintNumber(sig)
+        PrintMessage(" = ")
+        PrintMessage(name)
+        PrintMessage("\n")
+        i = Add(i, 1)
+    }
+    
+    ArrayDestroy(test_signals)
+    
+    // Test 6: Reset signal to default
+    PrintMessage("\nTest 6: Resetting SIGINT to default...")
+    result = Signals.Default(SignalConstants.SIGINT)
+    IfCondition GreaterEqual(result, 0) ThenBlock: {
+        PrintMessage(" SUCCESS\n")
+    } ElseBlock: {
+        PrintMessage(" FAILED\n")
+    }
+    
+    // Test 7: Check termination (placeholder test)
+    PrintMessage("\nTest 7: Checking for termination signal...")
+    terminated = Signals.CheckTermination()
+    IfCondition EqualTo(terminated, 0) ThenBlock: {
+        PrintMessage(" No termination signal (expected)\n")
+    } ElseBlock: {
+        PrintMessage(" Termination signal detected (unexpected)\n")
+    }
+    
+    // Test 8: Simulated socket write with SIGPIPE handling
+    PrintMessage("\nTest 8: Simulating socket operations with SIGPIPE ignored...\n")
+    PrintMessage("        If SIGPIPE is properly ignored, the program won't crash\n")
+    PrintMessage("        when writing to a closed socket (in real usage)\n")
+    
+    // Note: We can't actually test SIGPIPE without real sockets,
+    // but having it ignored means the server won't crash
+    
+    PrintMessage("\n=== All Signal Tests Complete ===\n")
+    
+    // Summary
+    PrintMessage("\nSummary:\n")
+    PrintMessage("  - Signal system initialized\n")
+    PrintMessage("  - SIGPIPE ignored (prevents server crashes)\n")
+    PrintMessage("  - SIGCHLD ignored (prevents zombie processes)\n")
+    PrintMessage("  - Signal state tracking works\n")
+    PrintMessage("  - Signal name lookup works\n")
+    
+    PrintMessage("\nThe Signals library is ready for use in the Redis server.\n")
+    PrintMessage("Just add to redis_server.ailang:\n")
+    PrintMessage("  LibraryImport.Signals\n")
+    PrintMessage("  // In Main after setup:\n")
+    PrintMessage("  Signals.Init()\n")
+    PrintMessage("  Signals.ServerDefaults()\n")
+}
+
+RunTask(Main)

@@ -1,0 +1,82 @@
+// test_getbyte_setbyte.ailang
+// Test GetByte and SetByte operations after bump allocator changes
+
+SubRoutine.Main {
+    PrintMessage("=== Testing GetByte/SetByte Operations ===\n")
+    
+    // Test 1: Basic allocation and byte operations
+    PrintMessage("Test 1: Allocate 10 bytes and set/get\n")
+    buf = Allocate(10)
+    PrintMessage("Allocated buffer at: ")
+    PrintNumber(buf)
+    PrintMessage("\n")
+    
+    // Set some bytes
+    PrintMessage("Setting bytes 0-4 to values 65-69\n")
+    SetByte(buf, 0, 65)  // 'A'
+    SetByte(buf, 1, 66)  // 'B'
+    SetByte(buf, 2, 67)  // 'C'
+    SetByte(buf, 3, 68)  // 'D'
+    SetByte(buf, 4, 69)  // 'E'
+    SetByte(buf, 5, 0)   // null
+    
+    // Read them back
+    PrintMessage("Reading back bytes 0-4:\n")
+    b0 = GetByte(buf, 0)
+    PrintMessage("  Byte 0: ")
+    PrintNumber(b0)
+    PrintMessage(" (expected 65)\n")
+    
+    b1 = GetByte(buf, 1)
+    PrintMessage("  Byte 1: ")
+    PrintNumber(b1)
+    PrintMessage(" (expected 66)\n")
+    
+    b2 = GetByte(buf, 2)
+    PrintMessage("  Byte 2: ")
+    PrintNumber(b2)
+    PrintMessage(" (expected 67)\n")
+    
+    // Test 2: Multiple allocations
+    PrintMessage("\nTest 2: Multiple allocations\n")
+    buf2 = Allocate(20)
+    PrintMessage("Second buffer at: ")
+    PrintNumber(buf2)
+    PrintMessage("\n")
+    
+    SetByte(buf2, 0, 42)  // '*' - the RESP array marker
+    SetByte(buf2, 1, 50)  // '2'
+    SetByte(buf2, 2, 13)  // '\r'
+    SetByte(buf2, 3, 10)  // '\n'
+    
+    PrintMessage("Set buf2[0] to 42 ('*')\n")
+    check = GetByte(buf2, 0)
+    PrintMessage("GetByte(buf2, 0) returns: ")
+    PrintNumber(check)
+    PrintMessage(" (expected 42)\n")
+    
+    // Test 3: Check if first buffer still valid
+    PrintMessage("\nTest 3: First buffer still valid?\n")
+    b0_again = GetByte(buf, 0)
+    PrintMessage("GetByte(buf, 0) returns: ")
+    PrintNumber(b0_again)
+    PrintMessage(" (expected 65)\n")
+    
+    // Test 4: Offset calculations
+    PrintMessage("\nTest 4: Testing offset calculations\n")
+    offset = 0
+    val = GetByte(buf2, offset)
+    PrintMessage("GetByte(buf2, offset=0): ")
+    PrintNumber(val)
+    PrintMessage(" (expected 42)\n")
+    
+    offset = Add(offset, 1)
+    val = GetByte(buf2, offset)
+    PrintMessage("GetByte(buf2, offset=1): ")
+    PrintNumber(val)
+    PrintMessage(" (expected 50)\n")
+    
+    PrintMessage("\n=== Test Complete ===\n")
+}
+
+RunTask(Main)

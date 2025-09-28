@@ -11,9 +11,10 @@ LibraryImport.XArrays
 LibraryImport.MessageQueue
 LibraryImport.Scheduler
 LibraryImport.RNG
+LibraryImport.Signals
 
 FixedPool.RedisData {
-    "store_ptr": Initialize=0
+    "store_ptr": Initialize=0, CanChange=True
 }
 
 // State for stream ID generation
@@ -307,8 +308,8 @@ Function.Helpers.CheckAndEvictExpiredKey {
             IfCondition LessThan(expiration_ms, now) ThenBlock: {
                 // --- Key is expired, evict it now ---
                 // This logic is a safe subset of the DEL command.
-                // We can call XDelete, which returns the wrapper for us to free.
-                deleted_wrapper = XSHash.XDelete(RedisData.store_ptr, key)
+                // We can call XDeleteAddr, which returns the wrapper for us to free.
+                deleted_wrapper = XSHash.XDeleteAddr(RedisData.store_ptr, key)
                 IfCondition NotEqual(deleted_wrapper, XArrays.XNULL) ThenBlock: {
                     type = Dereference(deleted_wrapper)
                     value_ptr = Dereference(Add(deleted_wrapper, 16)) // New offset for value
@@ -412,7 +413,23 @@ Function.Helpers.Internal.ParseValue {
     Input: offset: Integer
     Output: Address
     Body: {
-        Debug("parser.value", level=1) {
+        Debug("resp.parse.entry", level=1) {
+            PrintMessage("[RESP] Parse called with buffer length: ")
+            PrintNumber(length)
+            PrintMessage("\n[RESP] First 50 chars of buffer: ")
+            i = 0
+            WhileLoop And(LessThan(i, length), LessThan(i, 50)) {
+                byte = GetByte(buffer, i)
+                temp_char_str = Allocate(2)
+                SetByte(temp_char_str, 0, byte)
+                SetByte(temp_char_str, 1, 0)
+                PrintMessage(temp_char_str)
+                Deallocate(temp_char_str, 0)
+                i = Add(i, 1)
+            }
+            PrintMessage("\n")
+        }
+        Debug("parser.value", level=2) {
             PrintMessage("[DEBUG] ParseValue: length=")
             PrintNumber(length)
             PrintMessage(" offset=")
@@ -432,14 +449,21 @@ Function.Helpers.Internal.ParseValue {
         }
         
         type_char = GetByte(buffer, offset)
-        Debug("parser.type", level=1) {
-            PrintMessage("[DEBUG] ParseValue: type char = ")
+        Debug("resp.parse.type", level=2) {
+            PrintMessage("[RESP] Command type byte: ")
             PrintNumber(type_char)
-            PrintMessage(" (42=*, 36=$, 43=+, 45=-, 58=:)\n")
+            PrintMessage(" (")
+            PrintMessage(type_char)
+            PrintMessage(")\n")
         }
         
         // --- Case: Bulk String ($) ---
         IfCondition EqualTo(type_char, 36) ThenBlock: { // '$'
+            Debug("resp.bulk.entry", level=2) {
+                PrintMessage("[RESP.Bulk] Parsing at offset: ")
+                PrintNumber(offset)
+                PrintMessage("\n")
+            }
             line_end_pos = Helpers.Internal.FindCRLF(buffer, length, offset)
             IfCondition EqualTo(line_end_pos, -1) ThenBlock: { // Incomplete line
                 res_arr = XArray.XCreate(2)
@@ -449,6 +473,11 @@ Function.Helpers.Internal.ParseValue {
             }
             
             str_len = Helpers.Internal.ParseIntFromSlice(buffer, Add(offset, 1), line_end_pos)
+            Debug("resp.bulk.length", level=3) {
+                PrintMessage("[RESP.Bulk] String length: ")
+                PrintNumber(str_len)
+                PrintMessage("\n")
+            }
             
             IfCondition EqualTo(str_len, -1) ThenBlock: { // RESP Null Bulk String "$-1\r\n"
                 total_consumed = Add(Subtract(line_end_pos, offset), 2)
@@ -468,10 +497,24 @@ Function.Helpers.Internal.ParseValue {
             }
             
             new_str = Allocate(Add(str_len, 1))
+            Debug("resp.bulk.alloc", level=3) {
+                PrintMessage("[RESP.Bulk] Allocated ")
+                PrintNumber(Add(str_len, 1))
+                PrintMessage(" bytes at: ")
+                PrintNumber(new_str)
+                PrintMessage("\n")
+            }
             data_ptr = Add(buffer, data_start)
             MemoryCopy(new_str, data_ptr, str_len)
             SetByte(new_str, str_len, 0) // Null terminate
             
+            Debug("resp.bulk.content", level=2) {
+                PrintMessage("[RESP.Bulk] Content: '")
+                PrintString(new_str)
+                PrintMessage("' (")
+                PrintNumber(str_len)
+                PrintMessage(" bytes)\n")
+            }
             total_consumed = Subtract(total_needed, offset)
             
             res_arr = XArray.XCreate(2)
@@ -482,7 +525,7 @@ Function.Helpers.Internal.ParseValue {
         
         // --- Case: Array (*) ---
         IfCondition EqualTo(type_char, 42) ThenBlock: { // '*'
-            Debug("resp.parse", level=2) { PrintMessage("[DEBUG] Parsing array...") }
+            Debug("resp.parse.array", level=2) { PrintMessage("[DEBUG] Parsing array...") }
             
             arr_crlf = Helpers.Internal.FindCRLF(buffer, length, offset)
             
@@ -495,9 +538,10 @@ Function.Helpers.Internal.ParseValue {
             }
             
             array_len = Helpers.Internal.ParseIntFromSlice(buffer, Add(offset, 1), arr_crlf)
-            Debug("resp.parse", level=2) {
-                PrintMessage("[DEBUG] Array length: ")
+            Debug("resp.parse.array", level=2) {
+                PrintMessage("[RESP] Parsing array with ")
                 PrintNumber(array_len)
+                PrintMessage(" elements\n")
             }
             
             parsed_elements = XArray.XCreate(array_len)
@@ -533,6 +577,13 @@ Function.Helpers.Internal.ParseValue {
                 i = Add(i, 1)
             }
             
+            Debug("resp.parse.result", level=1) {
+                PrintMessage("[RESP] Parse complete, returning array at: ")
+                PrintNumber(parsed_elements)
+                PrintMessage(" with ")
+                PrintNumber(array_len)
+                PrintMessage(" elements\n")
+            }
             total_consumed = Subtract(current_offset, offset)
             res_arr = XArray.XCreate(2)
             XArray.XPush(res_arr, parsed_elements)
@@ -540,6 +591,49 @@ Function.Helpers.Internal.ParseValue {
             ReturnValue(res_arr)
         }
 
+        // --- Case: Inline PING command (P) ---
+        IfCondition EqualTo(type_char, 80) ThenBlock: { // 'P' for PING
+            Debug("resp.inline", level=2) { 
+                PrintMessage("[DEBUG] Detected inline PING command\n") 
+            }
+            
+            // Check if it's "PING\r\n" (4 chars + CRLF)
+            IfCondition GreaterEqual(length, Add(offset, 6)) ThenBlock: {
+                // Verify it's P-I-N-G
+                byte1 = GetByte(buffer, Add(offset, 1))  // Should be 'I' (73)
+                byte2 = GetByte(buffer, Add(offset, 2))  // Should be 'N' (78)
+                byte3 = GetByte(buffer, Add(offset, 3))  // Should be 'G' (71)
+                byte4 = GetByte(buffer, Add(offset, 4))  // Should be '\r' (13)
+                byte5 = GetByte(buffer, Add(offset, 5))  // Should be '\n' (10)
+                
+                is_ping = And(EqualTo(byte1, 73), EqualTo(byte2, 78))
+                is_ping = And(is_ping, EqualTo(byte3, 71))
+                is_ping = And(is_ping, EqualTo(byte4, 13))
+                is_ping = And(is_ping, EqualTo(byte5, 10))
+                
+                IfCondition is_ping ThenBlock: {
+                    // Create array with single "PING" element
+                    parsed_array = XArray.XCreate(1)
+                    
+                    // Create PING string
+                    ping_str = Allocate(5)
+                    SetByte(ping_str, 0, 80)  // P
+                    SetByte(ping_str, 1, 73)  // I
+                    SetByte(ping_str, 2, 78)  // N
+                    SetByte(ping_str, 3, 71)  // G
+                    SetByte(ping_str, 4, 0)   // null terminator
+                    
+                    XArray.XPush(parsed_array, ping_str)
+                    
+                    // Return array and consumed bytes (6 = "PING\r\n")
+                    res_arr = XArray.XCreate(2)
+                    XArray.XPush(res_arr, parsed_array)
+                    XArray.XPush(res_arr, 6)
+                    ReturnValue(res_arr)
+                }
+            }
+        }
+        
 // Unsupported type for client commands
 res_arr = XArray.XCreate(2)
 XArray.XPush(res_arr, 0)
@@ -585,6 +679,9 @@ Function.Helpers.ParsePipelinedArray {
             i = Add(i, 1)
         }
         
+        // CRITICAL FIX: Do not deep-destroy the parsed value.
+        // The native_array now owns the string pointers, and they will be cleaned up
+        // at the end of the HandleClient loop. We only destroy the XArray container.
         XArray.XDestroy(parsed_value)
         XArray.XDestroy(parse_result)
         
@@ -941,7 +1038,7 @@ Function.Transaction.ExecuteCommand {
                 value = ArrayGet(args_array, 2)
                 
                 // Delete old value if exists
-                old_wrapper = XSHash.XDelete(store, key)
+                old_wrapper = XSHash.XDeleteAddr(store, key)
                 IfCondition NotEqual(old_wrapper, XArrays.XNULL) ThenBlock: {
                     old_type = Dereference(old_wrapper)
                     old_value = Dereference(Add(old_wrapper, 16))
@@ -969,7 +1066,7 @@ Function.Transaction.ExecuteCommand {
                 StoreValue(wrapper, DataTypes.TYPE_STRING)
                 StoreValue(Add(wrapper, 8), 0)  // No expiry
                 StoreValue(Add(wrapper, 16), value_copy)
-                XSHash.XInsert(store, key, wrapper)
+                XSHash.XInsertAddr(store, key, wrapper)
                 
                 result = RESP.SimpleString("OK")
             } ElseBlock: {
@@ -982,7 +1079,7 @@ Function.Transaction.ExecuteCommand {
             // GET key - args: ["GET", key]
             IfCondition GreaterEqual(args_len, 2) ThenBlock: {
                 key = ArrayGet(args_array, 1)
-                wrapper = XSHash.XLookup(store, key)
+                wrapper = XSHash.XLookupAddr(store, key)
                 
                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                     result = RESP.BulkString(0)  // nil
@@ -1005,7 +1102,7 @@ Function.Transaction.ExecuteCommand {
             // INCR key - args: ["INCR", key]
             IfCondition GreaterEqual(args_len, 2) ThenBlock: {
                 key = ArrayGet(args_array, 1)
-                wrapper = XSHash.XLookup(store, key)
+                wrapper = XSHash.XLookupAddr(store, key)
                 
                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                     // Create new key with value 1
@@ -1014,7 +1111,7 @@ Function.Transaction.ExecuteCommand {
                     StoreValue(wrapper, DataTypes.TYPE_STRING)
                     StoreValue(Add(wrapper, 8), 0)
                     StoreValue(Add(wrapper, 16), new_val_str)
-                    XSHash.XInsert(store, key, wrapper)
+                    XSHash.XInsertAddr(store, key, wrapper)
                     result = RESP.Integer(1)
                 } ElseBlock: {
                     type = Dereference(wrapper)
@@ -1040,7 +1137,7 @@ Function.Transaction.ExecuteCommand {
             // DECR key - args: ["DECR", key]
             IfCondition GreaterEqual(args_len, 2) ThenBlock: {
                 key = ArrayGet(args_array, 1)
-                wrapper = XSHash.XLookup(store, key)
+                wrapper = XSHash.XLookupAddr(store, key)
                 
                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                     // Create new key with value -1
@@ -1049,7 +1146,7 @@ Function.Transaction.ExecuteCommand {
                     StoreValue(wrapper, DataTypes.TYPE_STRING)
                     StoreValue(Add(wrapper, 8), 0)
                     StoreValue(Add(wrapper, 16), new_val_str)
-                    XSHash.XInsert(store, key, wrapper)
+                    XSHash.XInsertAddr(store, key, wrapper)
                     result = RESP.Integer(-1)
                 } ElseBlock: {
                     type = Dereference(wrapper)
@@ -1077,7 +1174,7 @@ Function.Transaction.ExecuteCommand {
             // LPUSH key value [value ...] - args: ["LPUSH", key, value1, ...]
             IfCondition GreaterEqual(args_len, 3) ThenBlock: {
                 key = ArrayGet(args_array, 1)
-                wrapper = XSHash.XLookup(store, key)
+                wrapper = XSHash.XLookupAddr(store, key)
                 
                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                     // Create new list
@@ -1086,7 +1183,7 @@ Function.Transaction.ExecuteCommand {
                     StoreValue(wrapper, DataTypes.TYPE_LIST)
                     StoreValue(Add(wrapper, 8), 0)
                     StoreValue(Add(wrapper, 16), list_ptr)
-                    XSHash.XInsert(store, key, wrapper)
+                    XSHash.XInsertAddr(store, key, wrapper)
                 } ElseBlock: {
                     type = Dereference(wrapper)
                     IfCondition NotEqual(type, DataTypes.TYPE_LIST) ThenBlock: {
@@ -1120,7 +1217,7 @@ Function.Transaction.ExecuteCommand {
             // SADD key member [member ...] - args: ["SADD", key, member1, ...]
             IfCondition GreaterEqual(args_len, 3) ThenBlock: {
                 key = ArrayGet(args_array, 1)
-                wrapper = XSHash.XLookup(store, key)
+                wrapper = XSHash.XLookupAddr(store, key)
                 
                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                     // Create new set
@@ -1129,7 +1226,7 @@ Function.Transaction.ExecuteCommand {
                     StoreValue(wrapper, DataTypes.TYPE_SET)
                     StoreValue(Add(wrapper, 8), 0)
                     StoreValue(Add(wrapper, 16), set_ptr)
-                    XSHash.XInsert(store, key, wrapper)
+                    XSHash.XInsertAddr(store, key, wrapper)
                 } ElseBlock: {
                     type = Dereference(wrapper)
                     IfCondition NotEqual(type, DataTypes.TYPE_SET) ThenBlock: {
@@ -1166,7 +1263,7 @@ Function.Transaction.ExecuteCommand {
             // HSET key field value [field value ...] - args: ["HSET", key, field1, value1, ...]
             IfCondition GreaterEqual(args_len, 4) ThenBlock: {
                 key = ArrayGet(args_array, 1)
-                wrapper = XSHash.XLookup(store, key)
+                wrapper = XSHash.XLookupAddr(store, key)
                 
                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                     // Create new hash
@@ -1175,7 +1272,7 @@ Function.Transaction.ExecuteCommand {
                     StoreValue(wrapper, DataTypes.TYPE_HASH)
                     StoreValue(Add(wrapper, 8), 0)
                     StoreValue(Add(wrapper, 16), hash_ptr)
-                    XSHash.XInsert(store, key, wrapper)
+                    XSHash.XInsertAddr(store, key, wrapper)
                 } ElseBlock: {
                     type = Dereference(wrapper)
                     IfCondition NotEqual(type, DataTypes.TYPE_HASH) ThenBlock: {
@@ -1478,12 +1575,9 @@ Function.Server.HandleClient {
     Input: client_socket: Integer
     Input: store_ptr: Integer
     Body: {
-        // --- CRITICAL FIX: Get a local, reliable pointer to the global store ---
-        // This ensures we are using the runtime-initialized value from Main.
-        // Use the passed store pointer
-
+        // Use the passed store pointer for all operations in this function
         store = store_ptr
-
+        
         Debug("client.connect", level=1) { PrintMessage("[DEBUG] New client connected.") }
 
         buffer = Allocate(4096)
@@ -1524,6 +1618,26 @@ Function.Server.HandleClient {
                     array_len = ArrayLength(command_array)
                     
                     IfCondition GreaterThan(array_len, 0) ThenBlock: {
+                        Debug("command.extract", level=1) {
+                            PrintMessage("[CMD] Command array at: ")
+                            PrintNumber(command_array)
+                            PrintMessage(" with ")
+                            PrintNumber(array_len)
+                            PrintMessage(" elements\n")
+                            
+                            i = 0
+                            WhileLoop LessThan(i, array_len) {
+                                elem = ArrayGet(command_array, i)
+                                PrintMessage("[CMD] Element ")
+                                PrintNumber(i)
+                                PrintMessage(" at ")
+                                PrintNumber(elem)
+                                PrintMessage(": '")
+                                PrintString(elem)
+                                PrintMessage("'\n")
+                                i = Add(i, 1)
+                            }
+                        }
                         cmd_str = ArrayGet(command_array, 0)
                         command_upper = StringToUpper(cmd_str)
                         
@@ -1615,11 +1729,49 @@ Function.Server.HandleClient {
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
                                 value = ArrayGet(command_array, 2)
-                                Debug("command.set", level=1) {
-                                    PrintMessage("[DEBUG] SET Key:")
+                                Debug("command.set.raw", level=1) {
+                                    PrintMessage("[SET] Raw command_array: ")
+                                    PrintNumber(command_array)
+                                    PrintMessage("\n[SET] Array length: ")
+                                    PrintNumber(array_len)
+                                    PrintMessage("\n")
+                                    
+                                    cmd_ptr = ArrayGet(command_array, 0)
+                                    PrintMessage("[SET] Element 0 (cmd) ptr: ")
+                                    PrintNumber(cmd_ptr)
+                                    PrintMessage(" value: '")
+                                    PrintString(cmd_ptr)
+                                    PrintMessage("'\n")
+                                    
+                                    key_ptr = ArrayGet(command_array, 1)
+                                    PrintMessage("[SET] Element 1 (key) ptr: ")
+                                    PrintNumber(key_ptr)
+                                    PrintMessage(" value: '")
+                                    PrintString(key_ptr)
+                                    PrintMessage("'\n")
+                                    
+                                    val_ptr = ArrayGet(command_array, 2)
+                                    PrintMessage("[SET] Element 2 (val) ptr: ")
+                                    PrintNumber(val_ptr)
+                                    PrintMessage(" value: '")
+                                    PrintString(val_ptr)
+                                    PrintMessage("'\n")
+                                }
+                                Debug("command.set.extracted", level=1) {
+                                    PrintMessage("[SET] After extraction:\n")
+                                    PrintMessage("  Key addr: ")
                                     PrintMessage(key)
-                                    PrintMessage("[DEBUG] SET Value:")
+                                    PrintMessage(" content: '")
+                                    PrintString(key)
+                                    PrintMessage("' length: ")
+                                    PrintNumber(StringLength(key))
+                                    PrintMessage("\n  Value addr: ")
                                     PrintMessage(value)
+                                    PrintMessage(" content: '")
+                                    PrintString(value)
+                                    PrintMessage("' length: ")
+                                    PrintNumber(StringLength(value))
+                                    PrintMessage("\n")
                                 }
 
                                 Debug("data.store", level=2) {
@@ -1636,8 +1788,26 @@ Function.Server.HandleClient {
                                 // --- FIX: Properly handle overwriting existing keys to prevent memory leaks ---
                                 // To safely overwrite, we first delete the old key if it exists.
                                 // This ensures any complex data types (like lists) are properly freed.
-                                old_value_wrapper = XSHash.XDelete(store, key)
+                                Debug("hash.pre_operation", level=1) {
+                                    PrintMessage("[HASH] About to perform operation on store: ")
+                                    PrintNumber(store)
+                                    PrintMessage("\n[HASH] Store item count: ")
+                                    count = Dereference(Add(store, 8))
+                                    PrintNumber(count)
+                                    PrintMessage("\n[HASH] Store capacity: ")
+                                    capacity = Dereference(store)
+                                    PrintNumber(capacity)
+                                    PrintMessage("\n")
+                                }
+                                
+                                old_value_wrapper = XSHash.XDeleteAddr(store, key)
 
+                                Debug("hash.post_delete", level=1) {
+                                    PrintMessage("[HASH] Delete returned: ")
+                                    PrintNumber(old_value_wrapper)
+                                    PrintMessage("\n")
+                                }
+                                
                                 is_found = NotEqual(old_value_wrapper, XArrays.XNULL)
                                 IfCondition is_found ThenBlock: {
                                     // An old value was found and removed. Free its memory.
@@ -1659,17 +1829,47 @@ Function.Server.HandleClient {
                                     Deallocate(old_value_wrapper, 0) // Finally, free the wrapper itself
                                 }
 
-                                // Create a wrapper object: [type, expiration_ms, value_ptr] - 24 bytes
+                                // Create a wrapper object: [type, expiration_ms, value_ptr]
                                 new_wrapper = Allocate(24)
-                                StoreValue(new_wrapper, DataTypes.TYPE_STRING) // type at offset 0
-                                StoreValue(Add(new_wrapper, 8), 0) // expiration_ms at offset 8, 0=persistent
-                                // The wrapper now owns the value, so we must copy it.
-                                value_copy = Helpers.StringCopy(value)
-                                StoreValue(Add(new_wrapper, 16), value_copy) // value_ptr at offset 16
+                                IfCondition EqualTo(new_wrapper, 0) ThenBlock: {
+                                    PrintMessage("[FATAL] Memory allocation failed!")
+                                    response = RESP.Error("ERR Out of memory")
+                                    command_handled = 1
+                                } ElseBlock: {
+                                    // Continue with normal SET logic
+                                    StoreValue(new_wrapper, DataTypes.TYPE_STRING) // type at offset 0
+                                    StoreValue(Add(new_wrapper, 8), 0) // expiration_ms at offset 8, 0=persistent
+                                    
+                                    // The wrapper now owns the value, so we must copy it.
+                                    value_copy = Helpers.StringCopy(value)
+                                    StoreValue(Add(new_wrapper, 16), value_copy) // value_ptr at offset 16
 
-                                // Now, insert the new value. Since we deleted the old key, this is always a clean insert.
-                                XSHash.XInsert(store, key, new_wrapper)
-                                response = RESP.SimpleString("OK")
+                                    // Before XSHash.XInsert
+                                    Debug("hash.insert.pre", level=1) {
+                                        PrintMessage("[HASH] About to insert key: '")
+                                        PrintMessage(key)
+                                        PrintMessage("' with wrapper: ")
+                                        PrintNumber(new_wrapper)
+                                        
+                                        // Manually compute hash to verify
+                                        hash_val = 0
+                                        i = 0
+                                        key_len = StringLength(key)
+                                        WhileLoop LessThan(i, key_len) {
+                                            byte = GetByte(key, i)
+                                            hash_val = Add(Multiply(hash_val, 31), byte)
+                                            i = Add(i, 1)
+                                        }
+                                        PrintMessage(" Hash value: ")
+                                        PrintNumber(hash_val)
+                                        PrintMessage(" Bucket: ")
+                                        PrintNumber(Modulo(hash_val, 1024))
+                                        PrintMessage("\n")
+                                    }
+                                    // Now, insert the new value. Since we deleted the old key, this is always a clean insert.
+                                    XSHash.XInsertAddr(store, key, new_wrapper)
+                                    response = RESP.SimpleString("OK")
+                                }
                             }
                             command_handled = 1
                         }
@@ -1690,7 +1890,7 @@ Function.Server.HandleClient {
                                 expire_time_ms = Add(now, Multiply(seconds, 1000))
 
                                 // Delete existing key if present (same logic as SET)
-                                old_value_wrapper = XSHash.XDelete(store, key)
+                                old_value_wrapper = XSHash.XDeleteAddr(store, key)
                                 is_found = NotEqual(old_value_wrapper, XArrays.XNULL)
                                 IfCondition is_found ThenBlock: {
                                     type = Dereference(old_value_wrapper)
@@ -1716,7 +1916,7 @@ Function.Server.HandleClient {
                                 StoreValue(Add(new_wrapper, 8), expire_time_ms)  // Set expiration
                                 value_copy = Helpers.StringCopy(value)
                                 StoreValue(Add(new_wrapper, 16), value_copy)
-                                XSHash.XInsert(store, key, new_wrapper)
+                                XSHash.XInsertAddr(store, key, new_wrapper)
 
                                 response = RESP.SimpleString("OK")
                             }
@@ -1738,7 +1938,7 @@ Function.Server.HandleClient {
                                     value = ArrayGet(command_array, Add(i, 1))
 
                                     // Delete existing key (same logic as SET)
-                                    old_value_wrapper = XSHash.XDelete(store, key)
+                                    old_value_wrapper = XSHash.XDeleteAddr(store, key)
                                     is_found = NotEqual(old_value_wrapper, XArrays.XNULL)
                                     IfCondition is_found ThenBlock: {
                                         type = Dereference(old_value_wrapper)
@@ -1764,7 +1964,7 @@ Function.Server.HandleClient {
                                     StoreValue(Add(new_wrapper, 8), 0)  // No expiration
                                     value_copy = Helpers.StringCopy(value)
                                     StoreValue(Add(new_wrapper, 16), value_copy)
-                                    XSHash.XInsert(store, key, new_wrapper)
+                                    XSHash.XInsertAddr(store, key, new_wrapper)
 
                                     i = Add(i, 2)  // Skip to next key-value pair
                                 }
@@ -1783,7 +1983,7 @@ Function.Server.HandleClient {
                                 key = ArrayGet(command_array, 1)
                                 // --- PERFORMANCE OPTIMIZATION: Avoid double lookup ---
                                 // Call XLookup once and check the result instead of calling XExists then XLookup.
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
 
                                 // XLookup returns XNULL (-1) if not found.
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
@@ -1824,7 +2024,7 @@ Function.Server.HandleClient {
                                 i = 1
                                 WhileLoop LessThan(i, array_len) {
                                     key = ArrayGet(command_array, i)
-                                    wrapper = XSHash.XLookup(store, key)
+                                    wrapper = XSHash.XLookupAddr(store, key)
                                     
                                     value = 0
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
@@ -1858,7 +2058,7 @@ Function.Server.HandleClient {
 
                             // XSHash.XDelete finds, unlinks, and frees the hash node and its key.
                             // It returns the pointer to the value wrapper for us to clean up.
-                            value_wrapper_ptr = XSHash.XDelete(store, key)
+                            value_wrapper_ptr = XSHash.XDeleteAddr(store, key)
 
                             is_found = NotEqual(value_wrapper_ptr, XArrays.XNULL)
 
@@ -1898,7 +2098,7 @@ Function.Server.HandleClient {
                             key = ArrayGet(command_array, 1)
                             set_ptr = 0
 
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -1915,7 +2115,7 @@ Function.Server.HandleClient {
                                 StoreValue(new_wrapper, DataTypes.TYPE_SET)
                                 StoreValue(Add(new_wrapper, 8), 0) // expiration
                                 StoreValue(Add(new_wrapper, 16), set_ptr)
-                                XSHash.XInsert(store, key, new_wrapper)
+                                XSHash.XInsertAddr(store, key, new_wrapper)
                             }
 
                             // If we have a valid set_ptr, add the members
@@ -1953,7 +2153,7 @@ Function.Server.HandleClient {
                                 IfCondition NotEqual(remainder, 0) ThenBlock: {
                                     response = RESP.Error("ERR syntax error")
                                 } ElseBlock: {
-                                    wrapper = XSHash.XLookup(store, key)
+                                    wrapper = XSHash.XLookupAddr(store, key)
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
                                     zset_ptr = 0
                                     
@@ -1970,7 +2170,7 @@ Function.Server.HandleClient {
                                         StoreValue(wrapper, DataTypes.TYPE_ZSET)
                                         StoreValue(Add(wrapper, 8), 0)
                                         StoreValue(Add(wrapper, 16), zset_ptr)
-                                        XSHash.XInsert(store, key, wrapper)
+                                        XSHash.XInsertAddr(store, key, wrapper)
                                     }
                                     
                                     IfCondition NotEqual(zset_ptr, 0) ThenBlock: {
@@ -2016,7 +2216,7 @@ Function.Server.HandleClient {
                                     }
                                 }
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2070,7 +2270,7 @@ Function.Server.HandleClient {
                                 key = ArrayGet(command_array, 1)
                                 member = ArrayGet(command_array, 2)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2104,7 +2304,7 @@ Function.Server.HandleClient {
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2138,7 +2338,7 @@ Function.Server.HandleClient {
                                 IfCondition NotEqual(remainder, 0) ThenBlock: {
                                     response = RESP.Error("ERR wrong number of arguments for 'hset' command")
                                 } ElseBlock: {
-                                    wrapper = XSHash.XLookup(store, key)
+                                    wrapper = XSHash.XLookupAddr(store, key)
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
                                     hash_ptr = 0
                                     
@@ -2155,7 +2355,7 @@ Function.Server.HandleClient {
                                         StoreValue(wrapper, DataTypes.TYPE_HASH)
                                         StoreValue(Add(wrapper, 8), 0)
                                         StoreValue(Add(wrapper, 16), hash_ptr)
-                                        XSHash.XInsert(store, key, wrapper)
+                                        XSHash.XInsertAddr(store, key, wrapper)
                                     }
                                     
                                     IfCondition NotEqual(hash_ptr, 0) ThenBlock: {
@@ -2184,7 +2384,7 @@ Function.Server.HandleClient {
                                 key = ArrayGet(command_array, 1)
                                 field = ArrayGet(command_array, 2)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2218,7 +2418,7 @@ Function.Server.HandleClient {
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2246,7 +2446,7 @@ Function.Server.HandleClient {
                                 key = ArrayGet(command_array, 1)
                                 field = ArrayGet(command_array, 2)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2274,7 +2474,7 @@ Function.Server.HandleClient {
                                 key = ArrayGet(command_array, 1)
                                 deleted_count = 0
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2307,7 +2507,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'hgetall' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2351,7 +2551,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'hvals' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2393,7 +2593,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'hkeys' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2462,7 +2662,7 @@ Function.Server.HandleClient {
                                     PrintMessage("\n")
                                 }
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 Debug("hincrby.lookup", level=1) {
@@ -2499,7 +2699,7 @@ Function.Server.HandleClient {
                                     StoreValue(wrapper, DataTypes.TYPE_HASH)
                                     StoreValue(Add(wrapper, 8), 0)
                                     StoreValue(Add(wrapper, 16), hash_ptr)
-                                    XSHash.XInsert(store, key, wrapper)
+                                    XSHash.XInsertAddr(store, key, wrapper)
                                 }
                                 
                                 IfCondition NotEqual(hash_ptr, 0) ThenBlock: {
@@ -2536,7 +2736,7 @@ Function.Server.HandleClient {
                                 IfCondition NotEqual(remainder, 0) ThenBlock: {
                                     response = RESP.Error("ERR wrong number of arguments for 'hmset' command")
                                 } ElseBlock: {
-                                    wrapper = XSHash.XLookup(store, key)
+                                    wrapper = XSHash.XLookupAddr(store, key)
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
                                     hash_ptr = 0
                                     
@@ -2553,7 +2753,7 @@ Function.Server.HandleClient {
                                         StoreValue(wrapper, DataTypes.TYPE_HASH)
                                         StoreValue(Add(wrapper, 8), 0)
                                         StoreValue(Add(wrapper, 16), hash_ptr)
-                                        XSHash.XInsert(store, key, wrapper)
+                                        XSHash.XInsertAddr(store, key, wrapper)
                                     }
                                     
                                     IfCondition NotEqual(hash_ptr, 0) ThenBlock: {
@@ -2581,7 +2781,7 @@ Function.Server.HandleClient {
                                 key = ArrayGet(command_array, 1)
                                 num_fields = Subtract(array_len, 2)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 // Use an XArray to hold the copies for proper deep cleanup
@@ -2628,7 +2828,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'lpop' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2651,7 +2851,7 @@ Function.Server.HandleClient {
                                             new_size = XList.XSize(list_ptr)
                                             IfCondition EqualTo(new_size, 0) ThenBlock: {
                                                 // Remove empty list from store
-                                                XSHash.XDelete(store, key)
+                                                XSHash.XDeleteAddr(store, key)
                                                 XList.XDestroy(list_ptr)
                                                 Deallocate(wrapper, 0)
                                             }
@@ -2671,7 +2871,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'rpop' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 
                                 IfCondition is_found ThenBlock: {
@@ -2694,7 +2894,7 @@ Function.Server.HandleClient {
                                             new_size = XList.XSize(list_ptr)
                                             IfCondition EqualTo(new_size, 0) ThenBlock: {
                                                 // Remove empty list from store
-                                                XSHash.XDelete(store, key)
+                                                XSHash.XDeleteAddr(store, key)
                                                 XList.XDestroy(list_ptr)
                                                 Deallocate(wrapper, 0)
                                             }
@@ -2772,6 +2972,10 @@ Function.Server.HandleClient {
                                        // The RESP.Array function does not consume the input array, so we must clean it up.
                                        // The *contents* were already cleaned up in the loop.
                                        ArrayDestroy(results_array)
+                                       
+                                       // CRITICAL FIX: Prevent the main cleanup logic from trying to free this again.
+                                       // The response from EXEC is a single allocation, not a source array.
+                                       response_source_array = 0
                                    } ElseBlock: {
                                        // Empty transaction, return an empty array
                                        response = RESP.Array(0)
@@ -2872,7 +3076,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'srem' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 removed_count = 0
                                 
                                 IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
@@ -2908,7 +3112,7 @@ Function.Server.HandleClient {
                                 index_str = ArrayGet(command_array, 2)
                                 index = Helpers.StringToInt(index_str)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 
                                 IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
                                     type = Dereference(wrapper)
@@ -2954,13 +3158,13 @@ Function.Server.HandleClient {
                                 newkey = ArrayGet(command_array, 2)
                                 
                                 // Get old wrapper
-                                wrapper = XSHash.XDelete(store, oldkey)
+                                wrapper = XSHash.XDeleteAddr(store, oldkey)
                                 
                                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                                     response = RESP.Error("ERR no such key")
                                 } ElseBlock: {
                                     // Delete newkey if it exists
-                                    old_wrapper = XSHash.XDelete(store, newkey)
+                                    old_wrapper = XSHash.XDeleteAddr(store, newkey)
                                     IfCondition NotEqual(old_wrapper, XArrays.XNULL) ThenBlock: {
                                         // Clean up old value
                                         type = Dereference(old_wrapper)
@@ -2986,7 +3190,7 @@ Function.Server.HandleClient {
                                     }
                                     
                                     // Insert with new key
-                                    XSHash.XInsert(store, newkey, wrapper)
+                                    XSHash.XInsertAddr(store, newkey, wrapper)
                                     response = RESP.SimpleString("OK")
                                 }
                             }
@@ -3058,7 +3262,7 @@ Function.Server.HandleClient {
                                 response = RESP.Error("ERR wrong number of arguments for 'pttl' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 
                                 IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                                     response = RESP.Integer(-2)  // Key doesn't exist
@@ -3096,7 +3300,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
         key = ArrayGet(command_array, 1)
         
         // Look up the wrapper
-        wrapper = XSHash.XLookup(store, key)
+        wrapper = XSHash.XLookupAddr(store, key)
         
         IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
             response = RESP.Integer(0)  // Key doesn't exist
@@ -3127,10 +3331,10 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                     StoreValue(Add(new_wrapper, 16), value_ptr)
                     
                     // Delete old wrapper from hash
-                    old = XSHash.XDelete(store, key)
+                    old = XSHash.XDeleteAddr(store, key)
                     
                     // Insert new wrapper
-                    XSHash.XInsert(store, key, new_wrapper)
+                    XSHash.XInsertAddr(store, key, new_wrapper)
                     
                     // Free old wrapper (but not the value)
                     IfCondition NotEqual(old, XArrays.XNULL) ThenBlock: {
@@ -3197,7 +3401,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'smembers' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
 
                                 IfCondition is_found ThenBlock: {
@@ -3239,7 +3443,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'scard' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
 
                                 IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
                                     // Check expiration
@@ -3272,7 +3476,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
                                 member = ArrayGet(command_array, 2)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
 
                                 IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
                                     // Check expiration
@@ -3301,7 +3505,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                         IfCondition And(EqualTo(is_exists, 0), GreaterEqual(array_len, 2)) ThenBlock: {
                             key = ArrayGet(command_array, 1)
                             // With a proper DEL command, XExists is now sufficient.
-                            exists = XSHash.XExists(store, key)
+                            exists = XSHash.XExistsAddr(store, key)
                             response = RESP.Integer(exists)
                             command_handled = 1
                         }
@@ -3311,7 +3515,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                         IfCondition And(EqualTo(is_incr, 0), GreaterEqual(array_len, 2)) ThenBlock: {
                             // --- FIX: Update INCR to work with the type system ---
                             key = ArrayGet(command_array, 1)
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3337,7 +3541,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 StoreValue(new_wrapper, DataTypes.TYPE_STRING)
                                 StoreValue(Add(new_wrapper, 8), 0)
                                 StoreValue(Add(new_wrapper, 16), new_str)
-                                XSHash.XInsert(store, key, new_wrapper)
+                                XSHash.XInsertAddr(store, key, new_wrapper)
                                 response = RESP.Integer(new_val)
                             }
                             command_handled = 1
@@ -3348,7 +3552,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                         IfCondition And(EqualTo(is_decr, 0), GreaterEqual(array_len, 2)) ThenBlock: {
                             // --- FIX: Update DECR to work with the type system ---
                             key = ArrayGet(command_array, 1)
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3374,7 +3578,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 StoreValue(new_wrapper, DataTypes.TYPE_STRING)
                                 StoreValue(Add(new_wrapper, 8), 0)
                                 StoreValue(Add(new_wrapper, 16), new_str)
-                                XSHash.XInsert(store, key, new_wrapper)
+                                XSHash.XInsertAddr(store, key, new_wrapper)
                                 response = RESP.Integer(new_val)
                             }
                             command_handled = 1
@@ -3393,10 +3597,10 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 key = ArrayGet(command_array, 1)
                                 id_str_arg = ArrayGet(command_array, 2)
 
-                                // --- FIX: Make XADD type-aware ---
+                                // --- FIX: Make XADD type-aware and use Addr functions ---
                                 // Get or create the stream (an XArray of entries)
                                 stream_ptr = 0
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
 
                                 IfCondition is_found ThenBlock: {
@@ -3412,7 +3616,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                     StoreValue(new_wrapper, DataTypes.TYPE_STREAM)
                                     StoreValue(Add(new_wrapper, 8), 0)
                                     StoreValue(Add(new_wrapper, 16), stream_ptr)
-                                    XSHash.XInsert(store, key, new_wrapper)
+                                    XSHash.XInsertAddr(store, key, new_wrapper)
                                 }
 
                                 // If we have a valid stream_ptr, proceed
@@ -3492,7 +3696,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                     key = ArrayGet(command_array, 2)
                                     start_id_str = ArrayGet(command_array, 3)
                                     Debug("command.xread", level=2) { PrintMessage("[DEBUG] XREAD: Looking up stream in store") }
-                                    wrapper = XSHash.XLookup(store, key)
+                                    wrapper = XSHash.XLookupAddr(store, key)
                                     is_found = NotEqual(wrapper, XArrays.XNULL)
 
                                     IfCondition Not(is_found) ThenBlock: {
@@ -3572,7 +3776,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             key = ArrayGet(command_array, 1)
                             list_ptr = 0
 
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3588,7 +3792,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 StoreValue(wrapper, DataTypes.TYPE_LIST)
                                 StoreValue(Add(wrapper, 8), 0)
                                 StoreValue(Add(wrapper, 16), list_ptr)
-                                XSHash.XInsert(store, key, wrapper)
+                                XSHash.XInsertAddr(store, key, wrapper)
                             }
 
                             // If we have a valid list_ptr, proceed
@@ -3620,7 +3824,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             key = ArrayGet(command_array, 1)
                             list_ptr = 0
 
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3636,7 +3840,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 StoreValue(wrapper, DataTypes.TYPE_LIST)
                                 StoreValue(Add(wrapper, 8), 0)
                                 StoreValue(Add(wrapper, 16), list_ptr)
-                                XSHash.XInsert(store, key, wrapper)
+                                XSHash.XInsertAddr(store, key, wrapper)
                             }
 
                             // If we have a valid list_ptr, proceed
@@ -3669,7 +3873,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'lrange' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
 
                                 IfCondition Not(is_found) ThenBlock: {
@@ -3730,7 +3934,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'llen' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
                                     // Check for expiration first
                                     is_expired = Helpers.CheckAndEvictExpiredKey(key, wrapper)
@@ -3760,7 +3964,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             // --- FIX: Update APPEND to work with the type system ---
                             key = ArrayGet(command_array, 1)
                             append_val = ArrayGet(command_array, 2)
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3785,7 +3989,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 StoreValue(new_wrapper, DataTypes.TYPE_STRING)
                                 StoreValue(Add(new_wrapper, 8), 0)
                                 StoreValue(Add(new_wrapper, 16), new_str)
-                                XSHash.XInsert(store, key, new_wrapper)
+                                XSHash.XInsertAddr(store, key, new_wrapper)
                                 response = RESP.Integer(new_len)
                             }
                             command_handled = 1
@@ -3796,7 +4000,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                         IfCondition And(EqualTo(is_strlen, 0), GreaterEqual(array_len, 2)) ThenBlock: {
                             // --- FIX: Update STRLEN to work with the type system ---
                             key = ArrayGet(command_array, 1)
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3823,7 +4027,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             seconds_str = ArrayGet(command_array, 2)
                             seconds = Helpers.StringToInt(seconds_str)
 
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             is_found = NotEqual(wrapper, XArrays.XNULL)
 
                             IfCondition is_found ThenBlock: {
@@ -3841,7 +4045,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                         is_ttl = StringCompare(command, "TTL")
                         IfCondition And(EqualTo(is_ttl, 0), EqualTo(array_len, 2)) ThenBlock: {
                             key = ArrayGet(command_array, 1)
-                            wrapper = XSHash.XLookup(store, key)
+                            wrapper = XSHash.XLookupAddr(store, key)
                             
                             IfCondition EqualTo(wrapper, XArrays.XNULL) ThenBlock: {
                                 response = RESP.Integer(-2) // Key does not exist
@@ -3958,8 +4162,15 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             // to satisfy redis-cli, then keeps the connection open.
                             ok_response = RESP.SimpleString("OK")
                             ok_len = StringLength(ok_response)
-                            SocketWrite(client_socket, ok_response, ok_len)
+                            // When sending response, check for write errors
+                            bytes_written = SocketWrite(client_socket, ok_response, ok_len)
                             Deallocate(ok_response, 0)
+                            IfCondition LessThan(bytes_written, 0) ThenBlock: {
+                                Debug("client.error", level=1) {
+                                    PrintMessage("[DEBUG] Socket write failed - client disconnected\n")
+                                }
+                                client_connected = 0
+                            }
 
                             // Now, we enter a state where this client does nothing but wait.
                             // We loop here, consuming from the socket until the client disconnects.
@@ -4144,7 +4355,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                 response = RESP.Error("ERR wrong number of arguments for 'type' command")
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
 
                                 IfCondition NotEqual(wrapper, XArrays.XNULL) ThenBlock: {
                                     // Check expiration
@@ -4187,7 +4398,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                             } ElseBlock: {
                                 key = ArrayGet(command_array, 1)
                                 
-                                wrapper = XSHash.XLookup(store, key)
+                                wrapper = XSHash.XLookupAddr(store, key)
                                 is_found = NotEqual(wrapper, XArrays.XNULL)
                                 removed_count = 0
                                 
@@ -4226,14 +4437,28 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                         PrintMessage(response)
                                     }
                                     response_len = StringLength(response)
-                                    SocketWrite(client_socket, response, response_len)
+                                    // When sending response, check for write errors
+                                    bytes_written = SocketWrite(client_socket, response, response_len)
+                                    IfCondition LessThan(bytes_written, 0) ThenBlock: {
+                                        Debug("client.error", level=1) {
+                                            PrintMessage("[DEBUG] Socket write failed - client disconnected\n")
+                                        }
+                                        client_connected = 0
+                                    }
                                     Deallocate(response, 0)
                                 }
                             } ElseBlock: {
                                 // Command was not handled by any block, so it's unknown.
                                 error_msg = RESP.Error("unknown command")
                                 error_len = StringLength(error_msg)
-                                SocketWrite(client_socket, error_msg, error_len)
+                                // When sending response, check for write errors
+                                bytes_written = SocketWrite(client_socket, error_msg, error_len)
+                                IfCondition LessThan(bytes_written, 0) ThenBlock: {
+                                    Debug("client.error", level=1) {
+                                        PrintMessage("[DEBUG] Socket write failed - client disconnected\n")
+                                    }
+                                    client_connected = 0
+                                }
                                 Deallocate(error_msg, 0)
                             }
                         }
@@ -4340,6 +4565,13 @@ SubRoutine.Main {
     // Create and assign the hash table
     local_store = XSHash.XCreate(1024)
     RedisData.store_ptr = local_store
+    
+    // Initialize signal handling to prevent crashes on client disconnect
+    Signals.ServerDefaults()
+
+    Debug("server.init", level=1) {
+        PrintMessage("[DEBUG] Signal handlers configured (SIGPIPE ignored)\n")
+    }
     
     // Initialize scheduler for transaction handling
     TransactionState.sched_mem = Scheduler.CreateMemory()

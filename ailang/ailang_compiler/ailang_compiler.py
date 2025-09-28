@@ -332,45 +332,24 @@ class AILANGToX64Compiler:
             
 
     def compile_function_call(self, node):
-
-        # Handle aliased module functions
-        if hasattr(self, 'alias_mappings') and self.alias_mappings:
-            function_name = node.function
-            if '.' in function_name:
-                # Check all aliases
-                for alias, original in self.alias_mappings.items():
-                    if alias in function_name:
-                        # Replace alias with original module name
-                        node.function = function_name.replace(alias, original)
-                        break
-
-        
-
-        # Handle aliased module functions
-
-        function_name = node.function
-
-        if hasattr(self, 'alias_mappings') and self.alias_mappings:
-
-            if '.' in function_name:
-
-                # Check all aliases
-
-                for alias, original in self.alias_mappings.items():
-
-                    if alias in function_name:
-
-                        # Replace alias with original module name
-
-                        node.function = function_name.replace(alias, original)
-
-                        break
-
-        
-
         """Compile function call with user-defined functions and enhanced module support."""
         try:
             print(f"DEBUG: Compiling function call: {node.function}")
+            
+            # === ALIAS RESOLUTION FIX ===
+            # Check if this function name contains an aliased prefix (e.g., NS64KZ1X_XArray.XCreate)
+            if hasattr(self, 'alias_mappings') and self.alias_mappings:
+                original_name = node.function
+                # The aliases are like "NS64KZ1X_XArrays" -> "XArrays"
+                for alias, original in self.alias_mappings.items():
+                    # Check if the function starts with an alias prefix
+                    if node.function.startswith(alias):
+                        # Replace the entire alias with the original
+                        # e.g., "NS64KZ1X_XArray.XCreate" -> "XArray.XCreate"
+                        node.function = node.function.replace(alias, original, 1)
+                        print(f"DEBUG: Resolved alias {original_name} -> {node.function}")
+                        break
+            # === END ALIAS RESOLUTION FIX ===
             
             if node.function == "SystemCall":
                 # This is a special built-in function that maps to the x86-64 syscall instruction.
@@ -419,7 +398,7 @@ class AILANGToX64Compiler:
                 self.asm.emit_bytes(0x50)  # PUSH RAX
                 return
 
-            # --- NEW: Context-aware library function resolution ---
+            # --- Context-aware library function resolution ---
             # If compiling inside a library, try to resolve the function with the library's prefix.
             # This handles calls between functions within the same library (e.g., Trig.Sin calling Trig.NormalizeDegrees).
             if self.current_library_prefix:
@@ -432,7 +411,7 @@ class AILANGToX64Compiler:
                     if self.user_functions.compile_function_call(node_copy):
                         return
 
-            # === NEW: Check if this is a registered library function first ===
+            # === Check if this is a registered library function first ===
             # This handles forward references from the 2-pass registration
             if hasattr(self.user_functions, 'is_function_registered'):
                 # Try the name as-is first
@@ -441,10 +420,10 @@ class AILANGToX64Compiler:
                     if self.user_functions.compile_function_call(node):
                         return
                 
-                # --- NEW FIX: Search through imported libraries ---
+                # --- Search through imported libraries ---
                 # If the name wasn't found, try prefixing it with the names of imported libraries.
                 for lib_name in self.loaded_libraries:
-                    # lib_name is like "Library.FixedPointTrig"
+                    # lib_name is like "Library.XArrays"
                     lib_prefix = lib_name.split('.')[-1]
                     prefixed_name = f"{lib_prefix}.{node.function}"
                     if self.user_functions.is_function_registered(prefixed_name):
@@ -459,7 +438,7 @@ class AILANGToX64Compiler:
             if '.' in node.function:
                 parts = node.function.split('.')
                 
-                # === NEW: Check for library function patterns (e.g., RESP.ParseInteger) ===
+                # === Check for library function patterns (e.g., RESP.ParseInteger) ===
                 if len(parts) == 2:
                     lib_name, func_name = parts
                     
@@ -562,7 +541,7 @@ class AILANGToX64Compiler:
                     'PoolResize': self.memory.compile_pool_resize,
                     'PoolMove': self.memory.compile_pool_move,
                     'PoolCompact': self.memory.compile_pool_compact,
-                    'PoolAllocate': self.memory.compile_pool_allocate,
+                    'PoolAllocate': self.memory.compile_pool_allocation,
                     'PoolFree': self.memory.compile_pool_free,
                     'PoolGetSize': self.memory.compile_pool_get_size,
                     'ArrayCreate': self.memory.compile_array_create,
