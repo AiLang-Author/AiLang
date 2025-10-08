@@ -1,0 +1,28 @@
+Debug("redis_test", level=1) {
+    PrintMessage("=== Using Redis Server Socket Code ===")
+}
+
+server_socket = SocketCreate()
+
+Debug("redis_test", level=1) {
+    PrintMessage("Created socket: ")
+    PrintNumber(server_socket)
+}
+
+SocketSetOption(server_socket, 1, 2, 1)
+result = SocketBind(server_socket, 0, 6379)
+
+Debug("redis_test", level=1) {
+    PrintMessage("Bind result: ")
+    PrintNumber(result)
+}
+
+result = SocketListen(server_socket, 128)
+
+Debug("redis_test", level=1) {
+    PrintMessage("Listen result: ")
+    PrintNumber(result)
+}
+
+PrintMessage("Successfully bound to port 6379")
+SocketClose(server_socket)

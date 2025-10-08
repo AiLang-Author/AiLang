@@ -1,0 +1,61 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+SubRoutine.TEST_PERFORM_TIMES {
+    COUNTER = 0
+    I = 0
+    PrintMessage("Test 1: Inline PERFORM TIMES")
+    TEMP_TIMES_CTR_131996205783312 = 0
+    WhileLoop LessThan(TEMP_TIMES_CTR_131996205783312, 3) {
+            COUNTER = Add(COUNTER, 1)
+            PrintMessage(StringConcat("Counter: ", NumberToString(COUNTER)))
+            TEMP_TIMES_CTR_131996205783312 = Add(TEMP_TIMES_CTR_131996205783312, 1)
+        }
+    PrintMessage("Test 2: Paragraph PERFORM TIMES")
+    TEMP_TIMES_CTR_131996205783504 = 0
+    WhileLoop LessThan(TEMP_TIMES_CTR_131996205783504, 5) {
+            RunTask(TEST_PERFORM_TIMES_SHOW_MESSAGE)
+            TEMP_TIMES_CTR_131996205783504 = Add(TEMP_TIMES_CTR_131996205783504, 1)
+        }
+    PrintMessage("All tests complete")
+    ReturnValue(0)
+    RunTask(TEST_PERFORM_TIMES_SHOW_MESSAGE)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_TIMES_SHOW_MESSAGE {
+    PrintMessage("Hello from paragraph")
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_UNTIL {
+    COUNTER = 0
+    PrintMessage("Test 1: Inline PERFORM UNTIL")
+    WhileLoop Not(GreaterThan(COUNTER, 3)) {
+            COUNTER = Add(COUNTER, 1)
+            PrintMessage(StringConcat("Counter: ", NumberToString(COUNTER)))
+        }
+    COUNTER = 0
+    PrintMessage("Test 2: Paragraph PERFORM UNTIL")
+    WhileLoop Not(GreaterThan(COUNTER, 2)) {
+            RunTask(TEST_PERFORM_UNTIL_SHOW_MESSAGE)
+        }
+    PrintMessage("All tests complete")
+    ReturnValue(0)
+    RunTask(TEST_PERFORM_UNTIL_SHOW_MESSAGE)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_UNTIL_SHOW_MESSAGE {
+    COUNTER = Add(COUNTER, 1)
+    PrintMessage(StringConcat("Hello from paragraph: ", NumberToString(COUNTER)))
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(TEST_PERFORM_TIMES)
+    RunTask(TEST_PERFORM_UNTIL)
+}
+
+RunTask(Main)

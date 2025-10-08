@@ -1,0 +1,282 @@
+// Library.Socket.ailang
+// Low-level socket operations for network communication
+
+FixedPool.SocketConstants {
+    "AF_INET": Initialize=2
+    "AF_INET6": Initialize=10
+    "SOCK_STREAM": Initialize=1
+    "SOCK_DGRAM": Initialize=2
+    "IPPROTO_TCP": Initialize=6
+    "SOL_SOCKET": Initialize=1
+    "SO_REUSEADDR": Initialize=2
+    "SO_KEEPALIVE": Initialize=9
+    "MSG_NOSIGNAL": Initialize=16384
+}
+
+// Create a static memory location holding the integer 1 for socket options.
+FixedPool.SocketOptValOne {
+    "value": Initialize=1
+}
+
+// Create socket address structure for IPv4
+// Returns sockaddr_in: [family:2][port:2][addr:4][zero:8] = 16 bytes
+Function.Socket.CreateAddr {
+    Input: host: Address
+    Input: port: Integer
+    Output: Address
+    Body: {
+        Debug("socket_addr", level=1) { PrintMessage("DEBUG: Entered Socket.CreateAddr") }
+        addr = Allocate(16)
+        Debug("socket_addr", level=2) { PrintMessage("DEBUG: Allocated 16 bytes for sockaddr_in") }
+
+        // Set family to AF_INET
+        StoreValue(addr, SocketConstants.AF_INET)
+        Debug("socket_addr", level=2) { PrintMessage("DEBUG: Set family to AF_INET") }
+
+        // Convert port to network byte order (big-endian)
+        port_be = BitwiseOr(
+            LeftShift(BitwiseAnd(port, 255), 8),
+            RightShift(port, 8)
+        )
+        StoreValue(Add(addr, 2), port_be)
+        Debug("socket_addr", level=2) { PrintMessage("DEBUG: Set port (big-endian)") }
+
+        // Parse IP address
+        is_localhost = StringCompare(host, "localhost")
+        IfCondition EqualTo(is_localhost, 0) ThenBlock: {
+            Debug("socket_addr", level=2) { PrintMessage("DEBUG: Host is localhost, using 127.0.0.1") }
+            // 127.0.0.1 in network byte order
+            StoreValue(Add(addr, 4), 127)
+            StoreValue(Add(addr, 5), 0)
+            StoreValue(Add(addr, 6), 0)
+            StoreValue(Add(addr, 7), 1)
+        } ElseBlock: {
+            Debug("socket_addr", level=2) { PrintMessage("DEBUG: Parsing IP address string") }
+            // Parse dotted decimal
+            ip_parts = Socket.ParseIPAddress(host)
+            Debug("socket_addr", level=2) { PrintMessage("DEBUG: IP parts parsed") }
+            StoreValue(Add(addr, 4), ArrayGet(ip_parts, 0))
+            StoreValue(Add(addr, 5), ArrayGet(ip_parts, 1))
+            StoreValue(Add(addr, 6), ArrayGet(ip_parts, 2))
+            StoreValue(Add(addr, 7), ArrayGet(ip_parts, 3))
+            ArrayDestroy(ip_parts)
+            Debug("socket_addr", level=2) { PrintMessage("DEBUG: Stored IP parts and destroyed array") }
+        }
+
+        // Zero padding
+        Debug("socket_addr", level=2) { PrintMessage("DEBUG: Applying zero padding") }
+        i = 8
+        WhileLoop LessThan(i, 16) {
+            StoreValue(Add(addr, i), 0)
+            i = Add(i, 1)
+        }
+
+        Debug("socket_addr", level=1) { PrintMessage("DEBUG: Exiting Socket.CreateAddr") }
+        ReturnValue(addr)
+    }
+}
+
+// Create socket: socket(family, type, protocol)
+// Linux x86_64: syscall number 41
+Function.Socket.Create {
+    Input: family: Integer
+    Input: type: Integer
+    Output: Integer
+    Body: {
+        Debug("socket_create", level=1) {
+            PrintMessage("DEBUG: About to call SocketCreate() primitive")
+        }
+
+        // Use the direct compiler primitive which correctly loads registers,
+        // bypassing the general-purpose SystemCall wrapper that has a bug.
+        // The primitive internally uses the family and type arguments.
+        sock = SocketCreate(family, type)
+        
+        // IMMEDIATE check - before ANY other operations
+        Debug("socket_create", level=1) {
+            PrintMessage("DEBUG: Raw SocketCreate() return value:")
+            PrintNumber(sock)
+        }
+        
+        // Test if negative (error)
+        is_negative = LessThan(sock, 0)
+
+        IfCondition is_negative ThenBlock: {
+            PrintMessage("ERROR: SocketCreate primitive returned invalid fd:")
+            PrintNumber(sock)
+            ReturnValue(-1)
+        }
+        
+        Debug("socket_create", level=2) { PrintMessage("DEBUG: Setting SO_REUSEADDR") }
+        // Get the address of the static '1' value from the FixedPool. This is the
+        // correct and safe Ailang pattern for getting a stable pointer for a syscall.
+        optval_ptr = SocketOptValOne.value
+        
+        // setsockopt: syscall 54
+        SystemCall(54, sock, SocketConstants.SOL_SOCKET, SocketConstants.SO_REUSEADDR, optval_ptr, 4)
+        Debug("socket_create", level=2) { PrintMessage("DEBUG: SO_REUSEADDR set") }
+
+        Debug("socket_create", level=3) {
+            PrintMessage("-----------------------------------------")
+            PrintMessage("DEBUG: Preparing to set SO_KEEPALIVE")
+            PrintMessage("  Syscall: 54 (setsockopt)")
+            PrintMessage("  FD (sock): ")
+            PrintNumber(sock)
+            PrintMessage("  Level (SOL_SOCKET): ")
+            PrintNumber(SocketConstants.SOL_SOCKET)
+            PrintMessage("  OptName (SO_KEEPALIVE): ")
+            PrintNumber(SocketConstants.SO_KEEPALIVE)
+            PrintMessage("  OptVal Ptr: ")
+            PrintNumber(optval_ptr)
+            PrintMessage("  OptVal Value: ")
+            PrintNumber(SocketOptValOne.value) // Read the value directly from the pool
+            PrintMessage("  OptLen: 4")
+            PrintMessage("-----------------------------------------")
+        }
+        SystemCall(54, sock, SocketConstants.SOL_SOCKET, SocketConstants.SO_KEEPALIVE, optval_ptr, 4)
+        Debug("socket_create", level=2) { PrintMessage("DEBUG: SO_KEEPALIVE set") }
+        
+        Debug("socket_create", level=1) {
+            PrintMessage("DEBUG: Preparing to exit Socket.Create successfully. Return value:")
+            PrintNumber(sock)
+        }
+        ReturnValue(sock)
+    }
+}
+
+// Connect socket: connect(sockfd, addr, addrlen)
+// Linux x86_64: syscall number 42
+Function.Socket.Connect {
+    Input: sock: Integer
+    Input: addr: Address
+    Output: Integer
+    Body: {
+        // Extract IP (bytes 4-7) 
+        ip_byte1 = GetByte(addr, 4)
+        ip_byte2 = GetByte(addr, 5)
+        ip_byte3 = GetByte(addr, 6)
+        ip_byte4 = GetByte(addr, 7)
+        
+        ip = ip_byte1
+        ip = Add(ip, Multiply(ip_byte2, 256))
+        ip = Add(ip, Multiply(ip_byte3, 65536))
+        ip = Add(ip, Multiply(ip_byte4, 16777216))
+        
+        // Extract port (bytes 2-3, network order = big-endian)
+        port_high = GetByte(addr, 2)
+        port_low = GetByte(addr, 3)
+        port = Add(Multiply(port_high, 256), port_low)
+        
+        result = SocketConnect(sock, ip, port)
+        ReturnValue(result)
+    }
+}
+
+// Send data: send(sockfd, buf, len, flags)
+// Linux x86_64: syscall number 44
+Function.Socket.Send {
+    Input: sock: Integer
+    Input: buffer: Address
+    Input: length: Integer
+    Output: Integer
+    Body: {
+        sent = SystemCall(44, sock, buffer, length, SocketConstants.MSG_NOSIGNAL)
+        
+        IfCondition LessThan(sent, 0) ThenBlock: {
+            PrintMessage("ERROR: Send failed")
+        }
+        
+        ReturnValue(sent)
+    }
+}
+
+// Receive data: recv(sockfd, buf, len, flags)
+// Linux x86_64: syscall number 45
+Function.Socket.Recv {
+    Input: sock: Integer
+    Input: max_length: Integer
+    Output: Address
+    Body: {
+        buffer = Allocate(max_length)
+        
+        received = SystemCall(45, sock, buffer, max_length, 0)
+        
+        IfCondition LessEqual(received, 0) ThenBlock: {
+            Deallocate(buffer, max_length)
+            ReturnValue(0)
+        }
+        
+        // Null-terminate for safety
+        IfCondition LessThan(received, max_length) ThenBlock: {
+            StoreValue(Add(buffer, received), 0)
+        }
+        
+        ReturnValue(buffer)
+    }
+}
+
+// Receive exact number of bytes
+Function.Socket.RecvExact {
+    Input: sock: Integer
+    Input: length: Integer
+    Output: Address
+    Body: {
+        buffer = Allocate(length)
+        total_received = 0
+        
+        WhileLoop LessThan(total_received, length) {
+            remaining = Subtract(length, total_received)
+            chunk = SystemCall(45, sock, Add(buffer, total_received), remaining, 0)
+            
+            IfCondition LessEqual(chunk, 0) ThenBlock: {
+                Deallocate(buffer, length)
+                ReturnValue(0)
+            }
+            
+            total_received = Add(total_received, chunk)
+        }
+        
+        ReturnValue(buffer)
+    }
+}
+
+// Close socket: close(fd)
+// Linux x86_64: syscall number 3
+Function.Socket.Close {
+    Input: sock: Integer
+    Body: {
+        SystemCall(3, sock)
+    }
+}
+
+// Parse IP address string "192.168.1.100" to array of 4 bytes
+Function.Socket.ParseIPAddress {
+    Input: ip_str: Address
+    Output: Address
+    Body: {
+        parts = ArrayCreate(4)
+        part_idx = 0
+        current_num = 0
+        i = 0
+        ip_len = StringLength(ip_str)
+        
+        WhileLoop LessThan(i, ip_len) {
+            ch = GetByte(ip_str, i)
+            
+            IfCondition EqualTo(ch, 46) ThenBlock: {
+                ArraySet(parts, part_idx, current_num)
+                part_idx = Add(part_idx, 1)
+                current_num = 0
+            } ElseBlock: {
+                digit = Subtract(ch, 48)
+                current_num = Add(Multiply(current_num, 10), digit)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ArraySet(parts, part_idx, current_num)
+        
+        ReturnValue(parts)
+    }
+}

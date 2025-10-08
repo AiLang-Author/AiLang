@@ -1,0 +1,23 @@
+{
+  "main_file": "cobol_frontend/tests/nested_simple.ailang",
+  "loaded_modules": [
+    "Cobol",
+    "XArrays"
+  ],
+  "conflicts": {},
+  "prefixes": {},
+  "resolution_log": [
+    {
+      "file": "cobol_frontend/tests/nested_simple.ailang",
+      "line": 1,
+      "import": "Cobol",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.Cobol.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

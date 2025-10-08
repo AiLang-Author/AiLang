@@ -1,0 +1,17 @@
+// test_progressive.ailang
+
+LibraryImport.Cobol
+
+FixedPool.TestVars {
+    "MESSAGE": Initialize="Hello World"
+}
+
+SubRoutine.TestIt {
+    PrintMessage("Test INSPECT: REPLACING ALL")
+    PrintMessage(StringConcat("Before: ", TestVars.MESSAGE))
+    TestVars.MESSAGE = StringReplaceAll(TestVars.MESSAGE, "o", "0")
+    PrintMessage(StringConcat("After: ", TestVars.MESSAGE))
+    ReturnValue(0)
+}
+
+RunTask(TestIt)

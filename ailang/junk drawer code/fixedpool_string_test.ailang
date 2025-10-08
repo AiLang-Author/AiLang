@@ -1,0 +1,53 @@
+// Test FixedPool string initialization
+// Compile with: python3 main.py fixedpool_string_test.ailang
+
+// Test 1: Redis style (no spaces, with CanChange)
+FixedPool.Test1 {
+    "my_string": Initialize="hello", CanChange=True
+    "my_number": Initialize=42, CanChange=True
+}
+
+// Test 2: Your COBOL style (spaces, no CanChange)
+FixedPool.Test2 {
+    "my_string": Initialize = "world"
+    "my_number": Initialize = 99
+}
+
+// Test 3: Hybrid (no spaces, no CanChange)
+FixedPool.Test3 {
+    "my_string": Initialize="ailang"
+    "my_number": Initialize=123
+}
+
+SubRoutine.Main {
+    PrintMessage("Testing FixedPool string initialization...")
+    PrintMessage("")
+    
+    // Test 1
+    PrintMessage("Test 1 (Redis style):")
+    PrintMessage("  String: ")
+    PrintMessage(Test1.my_string)
+    PrintMessage("  Number: ")
+    PrintNumber(Test1.my_number)
+    PrintMessage("")
+    
+    // Test 2  
+    PrintMessage("Test 2 (COBOL style):")
+    PrintMessage("  String: ")
+    PrintMessage(Test2.my_string)
+    PrintMessage("  Number: ")
+    PrintNumber(Test2.my_number)
+    PrintMessage("")
+    
+    // Test 3
+    PrintMessage("Test 3 (Hybrid):")
+    PrintMessage("  String: ")
+    PrintMessage(Test3.my_string)
+    PrintMessage("  Number: ")
+    PrintNumber(Test3.my_number)
+    PrintMessage("")
+    
+    PrintMessage("If you see garbage/empty strings, that format doesn't work!")
+}
+
+RunTask(Main)

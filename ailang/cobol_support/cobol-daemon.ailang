@@ -1,0 +1,1092 @@
+// cobol-daemon.ailang
+// COBOL Program Orchestration Daemon
+// Manages execution of transpiled COBOL programs
+
+LibraryImport.HashMap
+LibraryImport.PostgreSQL
+LibraryImport.SQLPool_Advanced
+LibraryImport.XArrays
+
+// Configuration pool
+// programs_dir: /opt/ailang/cobol/programs
+// jcl_dir: /opt/ailang/cobol/jcl
+// data_dir: /opt/ailang/cobol/data
+// log_dir: /opt/ailang/cobol/logs
+// max_concurrent: Max parallel jobs
+// running_jobs: Current job count
+// shutdown: Shutdown flag
+// db_pool: Global database pool handle
+FixedPool.DaemonConfig {
+    "programs_dir": Initialize=0
+    "jcl_dir": Initialize=0
+    "data_dir": Initialize=0
+    "log_dir": Initialize=0
+    "max_concurrent": Initialize=10
+    "running_jobs": Initialize=0
+    "shutdown": Initialize=0
+    "db_pool": Initialize=0
+    
+}
+
+// Program registry
+// registry: HashMap of programs
+// loaded: Flag indicating if registry is loaded
+FixedPool.ProgramRegistry {
+    "registry": Initialize=0
+    "loaded": Initialize=0
+    
+}
+
+// Add this at the top after FixedPool.DaemonConfig
+FixedPool.JobIDCounter {
+    "current": Initialize=1000
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+Function.Daemon.Initialize {
+    Body: {
+        PrintMessage("=== AILANG COBOL Runtime Daemon ===")
+        PrintMessage("Initializing...")
+        
+        // Set paths
+        DaemonConfig.programs_dir = "/opt/ailang/cobol/programs"
+        DaemonConfig.jcl_dir = "/opt/ailang/cobol/jcl"
+        DaemonConfig.data_dir = "/opt/ailang/cobol/data"
+        DaemonConfig.log_dir = "/opt/ailang/cobol/logs"
+        
+        // Create registry
+        ProgramRegistry.registry = HashMap.CreateSimple()
+        
+        // Scan and register programs
+        Daemon.ScanPrograms()
+        
+        // Initialize database pool
+        Daemon.InitializeDatabase()
+        
+        // Setup signal handlers
+        Daemon.SetupSignals()
+        
+        PrintMessage("Daemon initialized successfully")
+        ReturnValue(1)
+    }
+}
+
+Function.Daemon.ScanPrograms {
+    Body: {
+        PrintMessage("Scanning programs directory...")
+        
+        programs_dir = DaemonConfig.programs_dir
+        
+        // List all .exec files
+        // For demonstration, manually add known programs
+        // In real implementation, use getdents64 syscall
+        // The ListDirectory function is a placeholder for this.
+        programs_found = Daemon.ListDirectory(programs_dir, ".exec")
+        
+        program_count = XArray.XSize(programs_found)
+        
+        PrintMessage("Found ")
+        PrintNumber(program_count)
+        PrintMessage(" programs")
+        
+        // Register each program
+        i = 0
+        WhileLoop LessThan(i, program_count) {
+            program_name = XArray.XGet(programs_found, i)
+            Daemon.RegisterProgram(program_name)
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(programs_found)
+    }
+}
+
+Function.Daemon.ListDirectory {
+    Input: dir_path: Address
+    Input: extension: Address
+    Output: Address
+    Body: {
+        // Simplified directory listing
+        // In production, use getdents64 syscall
+        
+        result = XArray.XCreate()
+        
+        // Placeholder - would scan actual directory
+        // For now, return empty array
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Daemon.RegisterProgram {
+    Input: program_name: Address
+    Body: {
+        // Create program entry
+        // [name(8), path(8), last_run(8), run_count(8), status(8)] = 40 bytes
+        entry = Allocate(40)
+        
+        StoreValue(entry, program_name)
+        
+        // Build full path
+        full_path = StringConcat(DaemonConfig.programs_dir, "/")
+        full_path = StringConcat(full_path, program_name)
+        StoreValue(Add(entry, 8), full_path)
+        
+        StoreValue(Add(entry, 16), 0)  // last_run timestamp
+        StoreValue(Add(entry, 24), 0)  // run_count (integer)
+        StoreValue(Add(entry, 32), 0)  // status: 0=idle, 1=running (integer)
+        
+        // Add to registry
+        registry = ProgramRegistry.registry
+        HashMap.HSetSimple(registry, program_name, entry)
+        
+        PrintMessage("  Registered: ")
+        PrintString(program_name)
+    }
+}
+
+Function.Daemon.InitializeDatabase {
+    Body: {
+        PrintMessage("Connecting to database...")
+        
+        Debug("db_init", level=1) {
+            PrintMessage("DEBUG: Calling CreateMultiServer")
+        }
+        
+        pool = SQLPool_Advanced.CreateMultiServer(
+            "ssa_claims_db",
+            "claims_processor",
+            "secure_password",
+            5,
+            20,
+            "least_connections")
+        
+        Debug("db_init", level=1) {
+            PrintMessage("DEBUG: CreateMultiServer returned")
+            PrintNumber(pool)
+        }
+        
+        Debug("db_init", level=1) {
+            PrintMessage("DEBUG: About to call AddServer")
+        }
+        
+        result = SQLPool_Advanced.AddServer(pool, "localhost", 5432, 1, 100)
+        
+        Debug("db_init", level=1) {
+            PrintMessage("DEBUG: AddServer returned")
+            PrintNumber(result)
+        }
+        
+        // Store globally
+        DaemonConfig.db_pool = pool
+        
+        PrintMessage("Database pool ready")
+    }
+}
+
+Function.Daemon.SetupSignals {
+    Body: {
+        // Setup SIGTERM handler for graceful shutdown
+        // Using signal syscall (simplified)
+        
+        PrintMessage("Setting up signal handlers... (conceptual)")
+        
+        // SIGTERM = 15
+        // Use rt_sigaction syscall to set a handler for SIGTERM.
+        // The handler would need to set DaemonConfig.shutdown = 1.
+        // SystemCall(13, 15, &new_action, &old_action)
+    }
+}
+
+// ============================================================================
+// MAIN DAEMON LOOP
+// ============================================================================
+
+Function.Daemon.MainLoop {
+    Body: {
+        PrintMessage("Entering main loop...")
+
+        // Run loop 10 times instead of infinite for testing
+        loop_count = 0
+        WhileLoop LessThan(loop_count, 10) {
+            
+            // 1. Check for scheduled jobs
+            Daemon.CheckSchedule()
+            
+            // 2. Process job queue
+            Daemon.ProcessQueue()
+
+            // 3. Monitor running jobs
+            Daemon.MonitorJobs()
+
+            // 4. Check for new JCL files
+            Daemon.CheckNewJobs()
+
+            // TODO: Replace with Sleep(1) when syscall wrapper ready
+            // Busy wait simulation for now
+            busy_wait = 0
+            WhileLoop LessThan(busy_wait, 1000000) {
+                busy_wait = Add(busy_wait, 1)
+            }
+
+            loop_count = Add(loop_count, 1)
+        }
+
+        PrintMessage("Main loop complete (stub mode)")
+        Daemon.Shutdown()
+    }
+}
+
+Function.Daemon.CheckSchedule {
+    Body: {
+        // Check for scheduled jobs in database
+        // Placeholder for cron-like functionality
+        ReturnValue(0)
+    }
+}
+
+Function.Daemon.ProcessQueue {
+    Body: {
+        // Check if we have capacity for more jobs
+        running = DaemonConfig.running_jobs
+        max_concurrent = DaemonConfig.max_concurrent
+        // Placeholder for job queue processing
+        ReturnValue(0)
+    }
+}
+
+Function.Daemon.MonitorJobs {
+    Body: {
+        // Monitor running jobs via waitpid or similar mechanism
+        // Placeholder
+        ReturnValue(0)
+    }
+}
+
+Function.Daemon.HandleRequests {
+    Body: {
+        // Handle IPC requests (e.g., from a Unix socket) for job submission,
+        // status checks, etc.
+        // Placeholder
+        ReturnValue(0)
+    }
+}
+
+// ============================================================================
+// DATABASE/QUEUE OPERATIONS (STUBS - TODO: Implement with SQL)
+// ============================================================================
+// TODO: Full SQL implementation requires:
+// 1. CREATE TABLE jobs (
+//      id SERIAL PRIMARY KEY,
+//      job_name TEXT,
+//      program_name TEXT,
+//      status TEXT,
+//      pid INTEGER,
+//      submit_time TIMESTAMP,
+//      start_time TIMESTAMP,
+//      end_time TIMESTAMP,
+//      exit_code INTEGER
+//    )
+//
+// 2. CREATE TABLE job_queue (
+//      job_id INTEGER REFERENCES jobs(id),
+//      priority INTEGER DEFAULT 0,
+//      queued_at TIMESTAMP DEFAULT NOW()
+//    )
+//
+// 3. Implement proper SQL queries using PostgreSQL library
+// ============================================================================
+
+Function.Daemon.CreateJobRecord {
+    Input: job: Address
+    Output: Integer              // Job ID
+    Body: {
+        // Generate sequential job ID
+        job_id = JobIDCounter.current
+        JobIDCounter.current = Add(job_id, 1)
+        
+        // Store job_id in job structure
+        StoreValue(job, job_id)
+        
+        PrintMessage("Created job record: ")
+        PrintNumber(job_id)
+        ReturnValue(job_id)
+    }
+}
+
+Function.Daemon.EnqueueJob {
+    Input: job_id: Integer
+    Input: job: Address
+    Body: {
+        // TODO: Add to job queue (could use XArray or database queue)
+        // For now, just log it
+        
+        PrintMessage("Enqueued job: ")
+        PrintNumber(job_id)
+        
+        // In full implementation:
+        // - Add to pending_jobs XArray
+        // - Or INSERT INTO job_queue table
+    }
+}
+
+Function.Daemon.GetNextQueuedJob {
+    Output: Address              // Job pointer or 0 if none
+    Body: {
+        // TODO: SELECT next pending job from database
+        // WHERE status='QUEUED' ORDER BY priority, submit_time
+        
+        // For now, return 0 (no jobs)
+        ReturnValue(0)
+    }
+}
+
+Function.Daemon.UpdateJobStatus {
+    Input: job_id: Integer
+    Input: status: Address       // "QUEUED", "RUNNING", "COMPLETED", "FAILED"
+    Input: pid: Integer
+    Body: {
+        // TODO: UPDATE jobs SET status=?, pid=?, updated_at=NOW() WHERE id=?
+        
+        PrintMessage("Job ")
+        PrintNumber(job_id)
+        PrintMessage(" status: ")
+        PrintString(status)
+        PrintMessage(" (PID: ")
+        PrintNumber(pid)
+        PrintMessage(")")
+    }
+}
+
+// ============================================================================
+// JOB EXECUTION
+// ============================================================================
+
+Function.Daemon.SubmitJob {
+    Input: jcl_file: Address
+    Output: Address              // Job ID or 0 on failure
+    Body: {
+        PrintMessage("Submitting job: ")
+        PrintString(jcl_file)
+        
+        // Parse JCL file
+        jcl_path = StringConcat(DaemonConfig.jcl_dir, "/")
+        jcl_path = StringConcat(jcl_path, jcl_file)
+        
+        jcl_content = ReadTextFile(jcl_path)
+        
+        IfCondition EqualTo(jcl_content, 0) ThenBlock: {
+            PrintMessage("ERROR: JCL file not found")
+            ReturnValue(0)
+        }
+        
+        // Parse JCL
+        job = JCL.Parse(jcl_content)
+        Deallocate(jcl_content, 0)
+        
+        // Create job record in database
+        job_id = Daemon.CreateJobRecord(job)
+        
+        // Add to queue
+        Daemon.EnqueueJob(job_id, job)
+        
+        PrintMessage("Job submitted: ")
+        PrintNumber(job_id)
+        
+        ReturnValue(job_id)
+    }
+}
+
+Function.Daemon.ExecuteJob {
+    Input: job: Address
+    Body: {
+        job_id = Dereference(job)
+        program_name = Dereference(Add(job, 8))
+
+        PrintMessage("Executing job ")
+        PrintNumber(job_id)
+        PrintMessage(": ")
+        PrintString(program_name)
+
+        // TODO: Implement Fork/Exec when syscall wrappers ready
+        PrintMessage("STUB: Fork/Exec not yet implemented")
+
+        // Simulate success for now
+        StoreValue(Add(job, 16), 12345)  // Fake PID
+
+        running = DaemonConfig.running_jobs
+        DaemonConfig.running_jobs = Add(running, 1)
+    }
+}
+
+Function.Daemon.SetupProgramEnvironment {
+    Input: job: Address
+    Body: {
+        // TODO: Implement SetEnv/Open/Dup2/Close when syscall wrappers ready
+        PrintMessage("STUB: Environment setup not yet implemented")
+    }
+}
+
+// ============================================================================
+// JCL PARSER
+// ============================================================================
+
+Function.JCL.Parse {
+    Input: jcl_content: Address
+    Output: Address              // Job structure
+    Body: {
+        // Simple JCL format:
+        // JOB name
+        // EXEC program
+        // DD data_file
+        job = Allocate(64)
+        lines = StringSplit(jcl_content, "\n")
+        line_count = XArray.XSize(lines)
+        i = 0
+        WhileLoop LessThan(i, line_count) {
+            line = XArray.XGet(lines, i)
+
+            // Parse JOB statement (use StringSubstring + StringEquals instead)
+            line_len = StringLength(line)
+            IfCondition GreaterEqual(line_len, 4) ThenBlock: {
+                prefix = StringSubstring(line, 0, 4)
+                is_job = StringEquals(prefix, "JOB ")
+
+                IfCondition EqualTo(is_job, 1) ThenBlock: {
+                    job_name = StringSubstring(line, 4, line_len)
+                    StoreValue(job, job_name)
+                }
+            }
+
+            // Parse EXEC statement
+            IfCondition GreaterEqual(line_len, 5) ThenBlock: {
+                prefix = StringSubstring(line, 0, 5)
+                is_exec = StringEquals(prefix, "EXEC ")
+
+                IfCondition EqualTo(is_exec, 1) ThenBlock: {
+                    program_name = StringSubstring(line, 5, line_len)
+                    StoreValue(Add(job, 8), program_name)
+                }
+            }
+
+            // Parse DD (data definition)
+            IfCondition GreaterEqual(line_len, 3) ThenBlock: {
+                prefix = StringSubstring(line, 0, 3)
+                is_dd = StringEquals(prefix, "DD ")
+
+                IfCondition EqualTo(is_dd, 1) ThenBlock: {
+                    // Store data file references
+                    // Simplified here
+                }
+            }
+            i = Add(i, 1)
+        }
+        XArray.XDestroy(lines)
+        ReturnValue(job)
+    }
+}
+
+// ============================================================================
+// INTER-PROGRAM COMMUNICATION
+// ============================================================================
+
+Function.Daemon.CallProgram {
+    Input: caller: Address       // Calling program name
+    Input: callee: Address       // Called program name
+    Input: params: Address       // Parameters (LINKAGE SECTION)
+    Output: Address              // Return value
+    Body: {
+        PrintMessage("CALL: ")
+        PrintString(caller) 
+        PrintMessage(" -> ") 
+        PrintString(callee)
+        
+        // Get callee from registry
+        registry = ProgramRegistry.registry
+        program_entry = HashMap.HGetSimple(registry, callee)
+        
+        IfCondition EqualTo(program_entry, 0) ThenBlock: {
+            PrintMessage("ERROR: Called program not found")
+            ReturnValue(0)
+        }
+        
+        program_path = Dereference(Add(program_entry, 8))
+        
+        // Execute with params (IPC via shared memory or socket)
+        result = Daemon.ExecuteProgramWithParams(program_path, params) // Placeholder
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Daemon.ExecuteProgramWithParams {
+    Input: program_name: Address
+    Input: params: Address
+    Output: Integer              // Execution ID or 0 on failure
+    Body: {
+        PrintMessage("STUB: ExecuteProgramWithParams not yet implemented")
+        PrintMessage("Program: ")
+        PrintString(program_name)
+        
+        // TODO: Implement when Fork/Exec ready
+        ReturnValue(0)
+    }
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+Function.Daemon.Sleep {
+    Input: seconds: Integer
+    Body: {
+        // Use nanosleep syscall
+        timespec = Allocate(16)
+        StoreValue(timespec, seconds)           // tv_sec
+        StoreValue(Add(timespec, 8), 0)         // tv_nsec
+        SystemCall(35, timespec, 0)             // nanosleep(timespec, NULL)
+        Deallocate(timespec, 16)
+    }
+}
+
+// ============================================================================
+// SHUTDOWN & CLEANUP
+// ============================================================================
+
+Function.Daemon.Shutdown {
+    Body: {
+        PrintMessage("Shutting down daemon...")
+        
+        // Wait for running jobs to complete
+        PrintMessage("Waiting for ")
+        PrintNumber(DaemonConfig.running_jobs)
+        PrintMessage(" jobs to complete...")
+        
+        WhileLoop GreaterThan(DaemonConfig.running_jobs, 0) {
+            Daemon.MonitorJobs()
+            Daemon.Sleep(1)
+        }
+        
+        // Close database connections
+        pool = DaemonConfig.db_pool
+        IfCondition NotEqual(pool, 0) ThenBlock: {
+            SQLPool_Advanced.ClosePool(pool) // Placeholder for pool cleanup
+        }
+        
+        PrintMessage("Daemon stopped")
+    }
+}
+
+// ============================================================================
+// MAIN ENTRY POINT
+// ============================================================================
+
+LoopMain.DaemonMain {
+    Daemon.Initialize()
+    Daemon.MainLoop()
+}
+// COBOL Program Orchestration Daemon
+// Manages execution of transpiled COBOL programs
+
+LibraryImport.PostgreSQL
+LibraryImport.SQLPool_Advanced
+LibraryImport.XArrays
+
+
+// "/opt/ailang/cobol/programs"
+ // "/opt/ailang/cobol/jcl"
+ // "/opt/ailang/cobol/data"
+ // "/opt/ailang/cobol/logs"
+  // Max parallel jobs
+ // Current job count
+ // Shutdown flag
+
+FixedPool.DaemonConfig {
+    "programs_dir": Initialize=0        
+    "jcl_dir": Initialize=0            
+    "data_dir": Initialize=0           
+    "log_dir": Initialize=0            
+    "max_concurrent": Initialize=10    
+    "running_jobs": Initialize=0       
+    "shutdown": Initialize=0           
+}
+
+
+
+// HashMap of programs
+// Program registry: [name, path, last_run, run_count, status]
+FixedPool.ProgramRegistry {
+    "registry": Initialize=0          
+    "loaded": Initialize=0
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+Function.Daemon.Initialize {
+    Body: {
+        PrintMessage("=== AILANG COBOL Runtime Daemon ===")
+        PrintMessage("Initializing...")
+        
+        // Set paths
+        DaemonConfig.programs_dir = "/opt/ailang/cobol/programs"
+        DaemonConfig.jcl_dir = "/opt/ailang/cobol/jcl"
+        DaemonConfig.data_dir = "/opt/ailang/cobol/data"
+        DaemonConfig.log_dir = "/opt/ailang/cobol/logs"
+        
+        // Create registry
+        ProgramRegistry.registry = HashMap.CreateSimple()
+        
+        // Scan and register programs
+        Daemon.ScanPrograms()
+        
+        // Initialize database pool
+        Daemon.InitializeDatabase()
+        
+        // Setup signal handlers
+        Daemon.SetupSignals()
+        
+        PrintMessage("Daemon initialized successfully")
+        ReturnValue(1)
+    }
+}
+
+Function.Daemon.ScanPrograms {
+    Body: {
+        PrintMessage("Scanning programs directory...")
+        
+        programs_dir = DaemonConfig.programs_dir
+        
+        // List all .exec files
+        // Simplified - would use actual directory listing syscalls
+        programs = ArrayCreate(100)
+        program_count = 0
+        
+        // For demonstration, manually add known programs
+        // In real implementation, use getdents64 syscall
+        programs_found = Daemon.ListDirectory(programs_dir, ".exec")
+        
+        program_count = XArray.XSize(programs_found)
+        
+        PrintMessage("Found ")
+        PrintNumber(program_count)
+        PrintMessage(" programs")
+        
+        // Register each program
+        i = 0
+        WhileLoop LessThan(i, program_count) {
+            program_name = XArray.XGet(programs_found, i)
+            Daemon.RegisterProgram(program_name)
+            i = Add(i, 1)
+        }
+        
+        ProgramRegistry.loaded = program_count
+    }
+}
+
+Function.Daemon.RegisterProgram {
+    Input: program_name: Address
+    Body: {
+        // Create program entry: [name, path, last_run, run_count, status]
+        entry = Allocate(64)
+        
+        name_copy = Helpers.StringCopy(program_name)
+        StoreValue(entry, name_copy)
+        
+        // Build full path
+        full_path = StringConcat(DaemonConfig.programs_dir, "/")
+        full_path = StringConcat(full_path, program_name)
+        StoreValue(Add(entry, 8), full_path)
+        
+        StoreValue(Add(entry, 16), 0)  // last_run timestamp
+        StoreValue(Add(entry, 24), 0)  // run_count
+        StoreValue(Add(entry, 32), 0)  // status: 0=idle, 1=running
+        
+        // Add to registry
+        registry = ProgramRegistry.registry
+        HashMap.HSetSimple(registry, program_name, entry)
+        
+        PrintMessage("  Registered: ")
+        PrintString(program_name)
+    }
+}
+
+Function.Daemon.InitializeDatabase {
+    Body: {
+        PrintMessage("Connecting to database...")
+        
+        // Create connection pool (from earlier code)
+        pool = SQLPool.CreateMultiServer(
+            "ssa_claims_db",
+            "claims_processor",
+            "secure_password",
+            5,
+            20,
+            "least_connections")
+        
+        SQLPool.AddServer(pool, "localhost", 5432, 1, 100)
+        
+        // Store globally
+        DaemonConfig.db_pool = pool
+        
+        PrintMessage("Database pool ready")
+    }
+}
+
+Function.Daemon.SetupSignals {
+    Body: {
+        // Setup SIGTERM handler for graceful shutdown
+        // Using signal syscall (simplified)
+        
+        PrintMessage("Setting up signal handlers...")
+        
+        // SIGTERM = 15
+        // Signal handler would set DaemonConfig.shutdown = 1
+        
+        // In real implementation:
+        // signal(SIGTERM, Daemon.HandleShutdown)
+    }
+}
+
+// ============================================================================
+// MAIN DAEMON LOOP
+// ============================================================================
+
+Function.Daemon.MainLoop {
+    Body: {
+        PrintMessage("Entering main loop...")
+        
+        // Main event loop
+        WhileLoop EqualTo(DaemonConfig.shutdown, 0) {
+            
+            // 1. Check for scheduled jobs
+            Daemon.CheckSchedule()
+            
+            // 2. Process job queue
+            Daemon.ProcessQueue()
+            
+            // 3. Monitor running jobs
+            Daemon.MonitorJobs()
+            
+            // 4. Check for new JCL files
+            Daemon.CheckNewJobs() // Placeholder
+            
+            // Sleep 1 second
+            Daemon.Sleep(1)
+        }
+        
+        PrintMessage("Shutdown signal received")
+        Daemon.Shutdown()
+    }
+}
+
+Function.Daemon.CheckSchedule {
+    Body: {
+        // Check if any scheduled jobs should run
+        // Like cron: check time and execute matching jobs
+        
+        current_time = GetCurrentTimestamp()
+        
+        // Read schedule from database or config file
+        // For each scheduled job, check if it's time to run
+        
+        // Example: Daily batch at midnight
+        hour = GetHourFromTimestamp(current_time)
+        minute = GetMinuteFromTimestamp(current_time)
+        
+        IfCondition And(EqualTo(hour, 0), EqualTo(minute, 0)) ThenBlock: {
+            PrintMessage("Triggering daily batch...")
+            Daemon.SubmitJob("daily_batch.jcl")
+        }
+    }
+}
+
+Function.Daemon.ProcessQueue {
+    Body: {
+        // Check if we have capacity for more jobs
+        running = DaemonConfig.running_jobs
+        max_concurrent = DaemonConfig.max_concurrent
+        
+        IfCondition LessThan(running, max_concurrent) ThenBlock: {
+            // Get next job from queue
+            next_job = Daemon.GetNextQueuedJob()
+            
+            IfCondition NotEqual(next_job, 0) ThenBlock: {
+                Daemon.ExecuteJob(next_job)
+            }
+        }
+    }
+}
+
+Function.Daemon.MonitorJobs {
+    Body: {
+        // Check status of running jobs
+        // Collect output, detect completion, handle failures
+        
+        // Use waitpid syscall to check child processes
+        // Update job status in database
+    }
+}
+
+Function.Daemon.CheckNewJobs {
+    Body: {
+        // Watch JCL directory for new files (inotify)
+        // Auto-submit new jobs
+        
+        jcl_dir = DaemonConfig.jcl_dir
+        
+        // Simplified: just scan directory periodically
+        // Real implementation would use inotify
+    }
+}
+
+// ============================================================================
+// JOB EXECUTION
+// ============================================================================
+
+Function.Daemon.SubmitJob {
+    Input: jcl_file: Address
+    Output: Integer              // Job ID
+    Body: {
+        PrintMessage("Submitting job: ")
+        PrintString(jcl_file)
+        
+        // Parse JCL file
+        jcl_path = StringConcat(DaemonConfig.jcl_dir, "/")
+        jcl_path = StringConcat(jcl_path, jcl_file)
+        
+        jcl_content = ReadTextFile(jcl_path)
+        
+        IfCondition EqualTo(jcl_content, 0) ThenBlock: {
+            PrintMessage("ERROR: JCL file not found")
+            ReturnValue(0)
+        }
+        
+        // Parse JCL
+        job = JCL.Parse(jcl_content)
+        Deallocate(jcl_content, 0)
+        
+        // Create job record in database
+        job_id = Daemon.CreateJobRecord(job)
+        
+        // Add to queue
+        Daemon.EnqueueJob(job_id, job)
+        
+        PrintMessage("Job submitted: ")
+        PrintNumber(job_id)
+        
+        ReturnValue(job_id)
+    }
+}
+
+Function.Daemon.ExecuteJob {
+    Input: job: Address
+    Body: {
+        job_id = Dereference(job)
+        program_name = Dereference(Add(job, 8))
+        
+        PrintMessage("Executing job ")
+        PrintNumber(job_id)
+        PrintMessage(": ")
+        PrintString(program_name)
+        
+        // Get program from registry
+        registry = ProgramRegistry.registry
+        program_entry = HashMap.HGetSimple(registry, program_name)
+        
+        IfCondition EqualTo(program_entry, 0) ThenBlock: {
+            PrintMessage("ERROR: Program not found in registry")
+            ReturnValue(0)
+        }
+        
+        program_path = Dereference(Add(program_entry, 8))
+        
+        // Fork and execute
+        pid = SystemCall(57) // fork()
+        
+        IfCondition EqualTo(pid, 0) ThenBlock: {
+            // Child process
+            
+            // Setup environment
+            Daemon.SetupProgramEnvironment(job) // This function uses SystemCalls internally
+            
+            // Execute program
+            SystemCall(59, program_path, 0, 0) // execve(program_path, NULL, NULL)
+            
+            // If exec fails
+            SystemCall(60, 127) // exit(127) - command not found
+        } ElseBlock: {
+            // Parent process
+            
+            // Store PID for monitoring
+            StoreValue(Add(job, 16), pid)
+            
+            // Increment running jobs
+            running = DaemonConfig.running_jobs
+            DaemonConfig.running_jobs = Add(running, 1)
+            
+            // Update job status in DB
+            Daemon.UpdateJobStatus(job_id, "RUNNING", pid)
+        }
+    }
+}
+
+Function.Daemon.SetupProgramEnvironment {
+    Input: job: Address
+    Body: {
+        // Set environment variables for COBOL program
+        
+        // Data directory
+        SetEnv("COBOL_DATA_DIR", DaemonConfig.data_dir)
+        
+        // Database connection info (from job)
+        db_host = Dereference(Add(job, 24))
+        IfCondition NotEqual(db_host, 0) ThenBlock: {
+            SetEnv("DB_HOST", db_host)
+        }
+        
+        // Log file
+        log_file = StringConcat(DaemonConfig.log_dir, "/job_")
+        job_id = Dereference(job)
+        log_file = StringConcat(log_file, NumberToString(job_id))
+        log_file = StringConcat(log_file, ".log")
+        
+        SetEnv("LOG_FILE", log_file)
+        
+        // Redirect stdout/stderr to log file
+        log_fd = SystemCall(2, log_file, 1089, 420) // open(path, O_CREAT|O_WRONLY|O_APPEND, 0644)
+        
+        IfCondition GreaterEqual(log_fd, 0) ThenBlock: {
+            SystemCall(33, log_fd, 1) // dup2(log_fd, STDOUT_FILENO)
+            SystemCall(33, log_fd, 2) // dup2(log_fd, STDERR_FILENO)
+            SystemCall(3, log_fd)     // close(log_fd)
+        }
+    }
+}
+
+// ============================================================================
+// JCL PARSER
+// ============================================================================
+
+Function.JCL.Parse {
+    Input: jcl_content: Address
+    Output: Address              // Job structure
+    Body: {
+        // Simple JCL format:
+        // JOB name
+        // EXEC program
+        // DD data_file
+        
+        job = Allocate(64)
+        
+        lines = StringSplit(jcl_content, "\n")
+        line_count = XArray.XSize(lines)
+        
+        i = 0
+        WhileLoop LessThan(i, line_count) {
+            line = XArray.XGet(lines, i)
+            
+            // Parse JOB statement
+            is_job = StringStartsWith(line, "JOB ")
+            IfCondition EqualTo(is_job, 1) ThenBlock: {
+                job_name = StringSubstring(line, 4, StringLength(line))
+                StoreValue(job, Helpers.StringCopy(job_name))
+            }
+            
+            // Parse EXEC statement
+            is_exec = StringStartsWith(line, "EXEC ")
+            IfCondition EqualTo(is_exec, 1) ThenBlock: {
+                program_name = StringSubstring(line, 5, StringLength(line))
+                StoreValue(Add(job, 8), Helpers.StringCopy(program_name))
+            }
+            
+            // Parse DD (data definition)
+            is_dd = StringStartsWith(line, "DD ")
+            IfCondition EqualTo(is_dd, 1) ThenBlock: {
+                // Store data file references
+                // Simplified here
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(lines)
+        
+        ReturnValue(job)
+    }
+}
+
+// ============================================================================
+// INTER-PROGRAM COMMUNICATION
+// ============================================================================
+
+Function.Daemon.CallProgram {
+    Input: caller: Address       // Calling program name
+    Input: callee: Address       // Called program name
+    Input: params: Address       // Parameters (LINKAGE SECTION)
+    Output: Address              // Return value
+    Body: {
+        PrintMessage("CALL: ")
+        PrintString(caller)
+        PrintMessage(" -> ")
+        PrintString(callee)
+        
+        // Get callee from registry
+        registry = ProgramRegistry.registry
+        program_entry = HashMap.HGetSimple(registry, callee)
+        
+        IfCondition EqualTo(program_entry, 0) ThenBlock: {
+            PrintMessage("ERROR: Called program not found")
+            ReturnValue(0)
+        }
+        
+        program_path = Dereference(Add(program_entry, 8))
+        
+        // Option 1: Execute as subprocess with shared memory
+        // Option 2: Load as shared library and call directly
+        // Option 3: IPC via Unix socket
+        
+        // For now, use subprocess with stdin/stdout
+        result = Daemon.ExecuteProgramWithParams(program_path, params)
+        
+        ReturnValue(result)
+    }
+}
+
+// ============================================================================
+// SHUTDOWN & CLEANUP
+// ============================================================================
+
+Function.Daemon.Shutdown {
+    Body: {
+        PrintMessage("Shutting down daemon...")
+        
+        // Wait for running jobs to complete
+        PrintMessage("Waiting for ")
+        PrintNumber(DaemonConfig.running_jobs)
+        PrintMessage(" jobs to complete...")
+        
+        WhileLoop GreaterThan(DaemonConfig.running_jobs, 0) {
+            Daemon.MonitorJobs()
+            Daemon.Sleep(1)
+        }
+        
+        // Close database connections
+        // TODO: Close pool
+        
+        PrintMessage("Daemon stopped")
+    }
+}
+
+// ============================================================================
+// MAIN ENTRY POINT
+// ============================================================================
+
+LoopMain.DaemonMain {
+    Daemon.Initialize()
+    Daemon.MainLoop()
+}

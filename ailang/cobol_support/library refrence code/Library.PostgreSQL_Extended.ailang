@@ -1,0 +1,514 @@
+// Library.PostgreSQL_Extended.ailang
+// Advanced PostgreSQL features: Prepared Statements, Transactions, Batch Operations
+
+LibraryImport.PostgreSQL
+LibraryImport.XArrays
+
+// ============================================================================
+// PREPARED STATEMENTS
+// ============================================================================
+
+// Prepared statement structure: [name, param_count, conn]
+Function.PostgreSQL.Prepare {
+    Input: conn: Address
+    Input: stmt_name: Address
+    Input: sql: Address
+    Output: Address              // Statement handle or 0
+    Body: {
+        sock = Dereference(conn)
+        
+        // Build Parse message
+        // Format: 'P' + int32(len) + name\0 + query\0 + int16(0)
+        
+        name_len = StringLength(stmt_name)
+        sql_len = StringLength(sql)
+        msg_len = Add(Add(Add(name_len, sql_len), 8), 0)  // type(1) + len(4) + name + null + sql + null + param_types(2)
+        
+        msg = Allocate(msg_len)
+        offset = 0
+        
+        // Message type 'P' (Parse)
+        StoreValue(msg, 80)
+        offset = Add(offset, 1)
+        
+        // Length (excluding type byte)
+        PostgreSQL.WriteInt32BE(msg, offset, Subtract(msg_len, 1))
+        offset = Add(offset, 4)
+        
+        // Statement name
+        offset = PostgreSQL.WriteString(msg, offset, stmt_name)
+        
+        // Query string
+        offset = PostgreSQL.WriteString(msg, offset, sql)
+        
+        // Number of parameter data types (0 = infer)
+        StoreValue(Add(msg, offset), 0)
+        StoreValue(Add(msg, Add(offset, 1)), 0)
+        
+        // Send Parse message
+        sent = Socket.Send(sock, msg, msg_len)
+        Deallocate(msg, msg_len)
+        
+        IfCondition LessThan(sent, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Send Sync message to get immediate response
+        sync_msg = Allocate(5)
+        StoreValue(sync_msg, 83)  // 'S'
+        PostgreSQL.WriteInt32BE(sync_msg, 1, 4)
+        Socket.Send(sock, sync_msg, 5)
+        Deallocate(sync_msg, 5)
+        
+        // Read response (ParseComplete + ReadyForQuery)
+        success = PostgreSQL.WaitForParseComplete(sock)
+        
+        IfCondition EqualTo(success, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Create statement handle
+        stmt = Allocate(32)
+        StoreValue(stmt, Helpers.StringCopy(stmt_name))
+        StoreValue(Add(stmt, 8), 0)  // param_count (will be set on first execute)
+        StoreValue(Add(stmt, 16), conn)
+        
+        // Store in connection's prepared statements hash
+        stmts_hash = Dereference(Add(conn, 32))
+        HashMap.HSetSimple(stmts_hash, stmt_name, stmt)
+        
+        PrintMessage("PostgreSQL: Prepared statement '")
+        PrintString(stmt_name)
+        PrintMessage("'")
+        
+        ReturnValue(stmt)
+    }
+}
+
+Function.PostgreSQL.WaitForParseComplete {
+    Input: sock: Integer
+    Output: Integer
+    Body: {
+        WhileLoop True {
+            msg_type_buf = Socket.RecvExact(sock, 1)
+            IfCondition EqualTo(msg_type_buf, 0) ThenBlock: {
+                ReturnValue(0)
+            }
+            
+            msg_type = GetByte(msg_type_buf, 0)
+            Deallocate(msg_type_buf, 1)
+            
+            len_buf = Socket.RecvExact(sock, 4)
+            msg_len = PostgreSQL.ReadInt32BE(len_buf, 0)
+            Deallocate(len_buf, 4)
+            
+            payload_len = Subtract(msg_len, 4)
+            
+            IfCondition GreaterThan(payload_len, 0) ThenBlock: {
+                payload = Socket.RecvExact(sock, payload_len)
+                
+                // '1' = ParseComplete
+                IfCondition EqualTo(msg_type, 49) ThenBlock: {
+                    Deallocate(payload, payload_len)
+                    // Continue to ReadyForQuery
+                } ElseBlock: {
+                    // 'E' = Error
+                    IfCondition EqualTo(msg_type, 69) ThenBlock: {
+                        PrintMessage("PostgreSQL: Parse error: ")
+                        PrintString(payload)
+                        Deallocate(payload, payload_len)
+                        ReturnValue(0)
+                    } ElseBlock: {
+                        // 'Z' = ReadyForQuery
+                        IfCondition EqualTo(msg_type, 90) ThenBlock: {
+                            Deallocate(payload, payload_len)
+                            ReturnValue(1)
+                        }
+                    }
+                }
+                
+                Deallocate(payload, payload_len)
+            } ElseBlock: {
+                IfCondition EqualTo(msg_type, 90) ThenBlock: {  // ReadyForQuery
+                    ReturnValue(1)
+                }
+            }
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.PostgreSQL.ExecutePrepared {
+    Input: stmt: Address
+    Input: params: Address       // XArray of parameter values (as strings)
+    Output: Address              // Result set
+    Body: {
+        conn = Dereference(Add(stmt, 16))
+        sock = Dereference(conn)
+        stmt_name = Dereference(stmt)
+        
+        param_count = XArray.XSize(params)
+        
+        // Build Bind message
+        // Format: 'B' + len + portal\0 + stmt_name\0 + param_formats + param_count + params + result_formats
+        
+        name_len = StringLength(stmt_name)
+        
+        // Calculate message size (simplified - text format for all params)
+        msg_len = Add(Add(Add(20, name_len), 0), Multiply(param_count, 4))
+        
+        // Add space for each parameter value
+        i = 0
+        WhileLoop LessThan(i, param_count) {
+            param = XArray.XGet(params, i)
+            IfCondition NotEqual(param, 0) ThenBlock: {
+                param_len = StringLength(param)
+                msg_len = Add(msg_len, param_len)
+            }
+            i = Add(i, 1)
+        }
+        
+        msg = Allocate(msg_len)
+        offset = 0
+        
+        // Message type 'B' (Bind)
+        StoreValue(msg, 66)
+        offset = Add(offset, 1)
+        
+        // Length (will update later)
+        len_offset = offset
+        offset = Add(offset, 4)
+        
+        // Portal name (empty = unnamed portal)
+        StoreValue(Add(msg, offset), 0)
+        offset = Add(offset, 1)
+        
+        // Statement name
+        offset = PostgreSQL.WriteString(msg, offset, stmt_name)
+        
+        // Parameter format codes (0 = all text)
+        StoreValue(Add(msg, offset), 0)
+        StoreValue(Add(msg, Add(offset, 1)), 0)
+        offset = Add(offset, 2)
+        
+        // Number of parameters
+        PostgreSQL.WriteInt16BE(msg, offset, param_count)
+        offset = Add(offset, 2)
+        
+        // Write each parameter
+        i = 0
+        WhileLoop LessThan(i, param_count) {
+            param = XArray.XGet(params, i)
+            
+            IfCondition EqualTo(param, 0) ThenBlock: {
+                // NULL parameter
+                PostgreSQL.WriteInt32BE(msg, offset, -1)
+                offset = Add(offset, 4)
+            } ElseBlock: {
+                param_len = StringLength(param)
+                PostgreSQL.WriteInt32BE(msg, offset, param_len)
+                offset = Add(offset, 4)
+                
+                // Copy parameter value
+                j = 0
+                WhileLoop LessThan(j, param_len) {
+                    ch = GetByte(param, j)
+                    StoreValue(Add(msg, Add(offset, j)), ch)
+                    j = Add(j, 1)
+                }
+                offset = Add(offset, param_len)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Result format codes (0 = all text)
+        StoreValue(Add(msg, offset), 0)
+        StoreValue(Add(msg, Add(offset, 1)), 0)
+        offset = Add(offset, 2)
+        
+        // Update length field
+        actual_len = offset
+        PostgreSQL.WriteInt32BE(msg, len_offset, Subtract(actual_len, 1))
+        
+        // Send Bind message
+        Socket.Send(sock, msg, actual_len)
+        Deallocate(msg, msg_len)
+        
+        // Send Execute message
+        exec_msg = Allocate(10)
+        StoreValue(exec_msg, 69)  // 'E'
+        PostgreSQL.WriteInt32BE(exec_msg, 1, 9)
+        StoreValue(Add(exec_msg, 5), 0)  // Portal name (empty)
+        PostgreSQL.WriteInt32BE(exec_msg, 6, 0)  // Max rows (0 = unlimited)
+        Socket.Send(sock, exec_msg, 10)
+        Deallocate(exec_msg, 10)
+        
+        // Send Sync
+        sync_msg = Allocate(5)
+        StoreValue(sync_msg, 83)  // 'S'
+        PostgreSQL.WriteInt32BE(sync_msg, 1, 4)
+        Socket.Send(sock, sync_msg, 5)
+        Deallocate(sync_msg, 5)
+        
+        // Read response
+        result = PostgreSQL.ReadQueryResponse(sock)
+        
+        ReturnValue(result)
+    }
+}
+
+Function.PostgreSQL.WriteInt16BE {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: value: Integer
+    Body: {
+        StoreValue(Add(buffer, offset), BitwiseShiftRight(value, 8))
+        StoreValue(Add(buffer, Add(offset, 1)), BitwiseAnd(value, 255))
+    }
+}
+
+// ============================================================================
+// TRANSACTIONS
+// ============================================================================
+
+Function.PostgreSQL.Begin {
+    Input: conn: Address
+    Output: Integer
+    Body: {
+        result = PostgreSQL.Query(conn, "BEGIN")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            
+            // Update connection transaction status
+            StoreValue(Add(conn, 16), PGConstants.TX_IN_TRANSACTION)
+            
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.PostgreSQL.Commit {
+    Input: conn: Address
+    Output: Integer
+    Body: {
+        result = PostgreSQL.Query(conn, "COMMIT")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            
+            // Update connection transaction status
+            StoreValue(Add(conn, 16), PGConstants.TX_IDLE)
+            
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.PostgreSQL.Rollback {
+    Input: conn: Address
+    Output: Integer
+    Body: {
+        result = PostgreSQL.Query(conn, "ROLLBACK")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            
+            // Update connection transaction status
+            StoreValue(Add(conn, 16), PGConstants.TX_IDLE)
+            
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.PostgreSQL.Savepoint {
+    Input: conn: Address
+    Input: savepoint_name: Address
+    Output: Integer
+    Body: {
+        sql = StringConcat("SAVEPOINT ", savepoint_name)
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.PostgreSQL.RollbackToSavepoint {
+    Input: conn: Address
+    Input: savepoint_name: Address
+    Output: Integer
+    Body: {
+        sql = StringConcat("ROLLBACK TO SAVEPOINT ", savepoint_name)
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+// ============================================================================
+// BATCH OPERATIONS
+// ============================================================================
+
+Function.PostgreSQL.BatchInsert {
+    Input: conn: Address
+    Input: table_name: Address
+    Input: columns: Address      // XArray of column names
+    Input: rows: Address         // XArray of XArrays (rows of values)
+    Output: Integer              // Number of rows inserted
+    Body: {
+        col_count = XArray.XSize(columns)
+        row_count = XArray.XSize(rows)
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Start transaction for batch
+        PostgreSQL.Begin(conn)
+        
+        // Build INSERT statement
+        sql = StringConcat("INSERT INTO ", table_name)
+        sql = StringConcat(sql, " (")
+        
+        // Add column names
+        i = 0
+        WhileLoop LessThan(i, col_count) {
+            col_name = XArray.XGet(columns, i)
+            sql = StringConcat(sql, col_name)
+            
+            IfCondition LessThan(i, Subtract(col_count, 1)) ThenBlock: {
+                sql = StringConcat(sql, ", ")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        sql = StringConcat(sql, ") VALUES ")
+        
+        // Add value tuples
+        i = 0
+        WhileLoop LessThan(i, row_count) {
+            row = XArray.XGet(rows, i)
+            sql = StringConcat(sql, "(")
+            
+            j = 0
+            WhileLoop LessThan(j, col_count) {
+                value = XArray.XGet(row, j)
+                
+                // Quote string values
+                sql = StringConcat(sql, "'")
+                sql = StringConcat(sql, value)
+                sql = StringConcat(sql, "'")
+                
+                IfCondition LessThan(j, Subtract(col_count, 1)) ThenBlock: {
+                    sql = StringConcat(sql, ", ")
+                }
+                
+                j = Add(j, 1)
+            }
+            
+            sql = StringConcat(sql, ")")
+            
+            IfCondition LessThan(i, Subtract(row_count, 1)) ThenBlock: {
+                sql = StringConcat(sql, ", ")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Execute batch insert
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            PostgreSQL.Commit(conn)
+            ReturnValue(row_count)
+        } ElseBlock: {
+            PostgreSQL.Rollback(conn)
+            ReturnValue(0)
+        }
+    }
+}
+
+// ============================================================================
+// COPY (BULK LOAD)
+// ============================================================================
+
+Function.PostgreSQL.CopyFrom {
+    Input: conn: Address
+    Input: table_name: Address
+    Input: columns: Address      // XArray of column names
+    Input: data: Address         // Tab-separated values (TSV format)
+    Output: Integer              // Rows loaded
+    Body: {
+        sock = Dereference(conn)
+        
+        // Build COPY command
+        sql = StringConcat("COPY ", table_name)
+        
+        IfCondition NotEqual(columns, 0) ThenBlock: {
+            sql = StringConcat(sql, " (")
+            
+            col_count = XArray.XSize(columns)
+            i = 0
+            WhileLoop LessThan(i, col_count) {
+                col = XArray.XGet(columns, i)
+                sql = StringConcat(sql, col)
+                
+                IfCondition LessThan(i, Subtract(col_count, 1)) ThenBlock: {
+                    sql = StringConcat(sql, ", ")
+                }
+                
+                i = Add(i, 1)
+            }
+            
+            sql = StringConcat(sql, ")")
+        }
+        
+        sql = StringConcat(sql, " FROM STDIN")
+        
+        // Send COPY query
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        // Send data followed by end marker
+        data_len = StringLength(data)
+        Socket.Send(sock, data, data_len)
+        
+        // Send copy done marker: "\.\n"
+        end_marker = Allocate(4)
+        StoreValue(end_marker, 92)   // '\'
+        StoreValue(Add(end_marker, 1), 46)  // '.'
+        StoreValue(Add(end_marker, 2), 10)  // '\n'
+        StoreValue(Add(end_marker, 3), 0)
+        Socket.Send(sock, end_marker, 3)
+        Deallocate(end_marker, 4)
+        
+        // Read completion response
+        // TODO: Parse row count from CommandComplete message
+        
+        ReturnValue(1)
+    }
+}

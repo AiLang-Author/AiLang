@@ -1,0 +1,14 @@
+SubRoutine.TestAssign {
+    X = 0
+    PrintMessage("X: ")
+    PrintNumber(X)
+    PrintMessage("\n")
+    ReturnValue(1)
+}
+
+SubRoutine.Main {
+    PrintMessage("Starting\n")
+    RunTask(TestAssign)
+    PrintMessage("Done\n")
+}
+RunTask(Main)

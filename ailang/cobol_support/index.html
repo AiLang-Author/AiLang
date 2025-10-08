@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSA Claims Processing System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SSA Claims Processing</h1>
+            <div class="status" id="dbStatus">
+                <span class="indicator"></span>
+                <span>Database Connected</span>
+            </div>
+        </header>
+        
+        <nav class="tabs">
+            <button class="tab active" data-view="claims">Claims</button>
+            <button class="tab" data-view="beneficiaries">Beneficiaries</button>
+            <button class="tab" data-view="reports">Reports</button>
+        </nav>
+        
+        <main id="mainContent">
+            <!-- Claims View -->
+            <div id="claimsView" class="view active">
+                <div class="toolbar">
+                    <input type="text" id="searchClaims" placeholder="Search claims...">
+                    <button class="btn-primary" id="newClaim">New Claim</button>
+                </div>
+                
+                <table id="claimsTable">
+                    <thead>
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>SSN</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Filed Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="claimsBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Beneficiaries View -->
+            <div id="beneficiariesView" class="view">
+                <div class="toolbar">
+                    <input type="text" id="searchBeneficiaries" placeholder="Search beneficiaries...">
+                    <button class="btn-primary" id="newBeneficiary">New Beneficiary</button>
+                </div>
+                
+                <div id="beneficiariesList" class="card-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Reports View -->
+            <div id="reportsView" class="view">
+                <h2>System Reports</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="totalClaims">0</h3>
+                        <p>Total Claims</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="pendingClaims">0</h3>
+                        <p>Pending</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="approvedClaims">0</h3>
+                        <p>Approved</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalAmount">$0</h3>
+                        <p>Total Disbursed</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal for claim details -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

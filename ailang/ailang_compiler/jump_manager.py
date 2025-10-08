@@ -120,12 +120,21 @@ class JumpManager:
         offset = label.position - jump_end
         print(f"DEBUG: Jump at {jump.position} to label at {label.position}: offset={offset}")
         
+        # CRITICAL CHECK: Verify the offset makes sense
+        if offset == 0:
+            print(f"WARNING: Jump offset is 0 - this means jumping to the next instruction!")
+            print(f"  Jump position: {jump.position}, Label position: {label.position}")
+            print(f"  Jump size: {jump.size}")
+        
         # Validate offset fits in 32 bits
         if not (-2147483648 <= offset <= 2147483647):
             raise ValueError(f"Jump offset {offset} exceeds 32-bit range")
         
         # Pack as 32-bit signed integer
         offset_bytes = struct.pack('<i', offset)
+        
+        # DEBUG: Print what we're writing
+        print(f"DEBUG: Writing offset bytes: {' '.join(f'{b:02x}' for b in offset_bytes)}")
         
         # Patch the code - the offset starts after the opcode(s)
         if jump.instruction_type == "JMP":
@@ -138,8 +147,14 @@ class JumpManager:
             # Extend buffer if needed
             code_buffer.extend([0x90] * (offset_position + 4 - len(code_buffer)))
             
+        # DEBUG: Show what's currently there
+        print(f"DEBUG: Current bytes at {offset_position}: {' '.join(f'{b:02x}' for b in code_buffer[offset_position:offset_position+4])}")
+            
         # Now safely write the offset
         code_buffer[offset_position:offset_position+4] = offset_bytes
+        
+        # DEBUG: Confirm what was written
+        print(f"DEBUG: After patch: {' '.join(f'{b:02x}' for b in code_buffer[offset_position:offset_position+4])}")
     
     def _resolve_single_lea(self, lea_fixup: LeaFixup, label: Label, 
                            code_buffer: bytearray) -> None:

@@ -145,7 +145,7 @@ class UserFunctions:
                 print(f"DEBUG: Allocated {stack_space} bytes for function locals")
             
             # Register parameters in LOCAL scope
-            for i, param_name in enumerate(func_info['params'][:6]):
+            for i, param_name in enumerate(func_info['params']):
                 self.compiler.stack_size += 8
                 offset = self.compiler.stack_size
                 self.compiler.variables[param_name] = offset

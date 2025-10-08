@@ -1,0 +1,489 @@
+// Library.Cobol.ailang - CORRECTED VERSION
+// Uses StringSubstring for character access (returns string, not int)
+
+LibraryImport.FixedPointTrig
+LibraryImport.XArrays
+
+// =============================================================================
+// COBOL LIBRARY STATE POOL - Integer workspace only!
+// =============================================================================
+FixedPool.COBOLState {
+    "input_buffer": Initialize=0, CanChange=True
+    "fmt_is_negative": Initialize=0, CanChange=True
+    "fmt_abs_value": Initialize=0, CanChange=True
+    "fmt_integer_part": Initialize=0, CanChange=True
+    "fmt_fractional_part": Initialize=0, CanChange=True
+    "fmt_scale_down": Initialize=1, CanChange=True
+    "fmt_decimals_to_remove": Initialize=0, CanChange=True
+    "fmt_half_scale": Initialize=0, CanChange=True
+    "fmt_rounded_frac": Initialize=0, CanChange=True
+    "fmt_frac_len": Initialize=0, CanChange=True
+    "loop_i": Initialize=0, CanChange=True
+    "loop_j": Initialize=0, CanChange=True
+    "loop_len": Initialize=0, CanChange=True
+    "sc_count": Initialize=0, CanChange=True
+    "sc_text_len": Initialize=0, CanChange=True
+    "sc_pattern_len": Initialize=0, CanChange=True
+    "sc_pos": Initialize=0, CanChange=True
+    "sc_should_continue": Initialize=1, CanChange=True
+    "sc_found_pos": Initialize=0, CanChange=True
+    "sra_iteration": Initialize=0, CanChange=True
+    "sra_max_iterations": Initialize=100, CanChange=True
+    "sra_pos": Initialize=0, CanChange=True
+    "fzs_found_nonzero": Initialize=0, CanChange=True
+    "faf_found_nonzero": Initialize=0, CanChange=True
+    "fwi_abs_value": Initialize=0, CanChange=True
+    "fwi_is_negative": Initialize=0, CanChange=True
+    "fwi_indicator_len": Initialize=0, CanChange=True
+    "fs_is_leading": Initialize=0, CanChange=True
+    "acn_decimal_pos": Initialize=-1, CanChange=True
+    "acn_found_decimal": Initialize=0, CanChange=True
+    "acn_int_len": Initialize=0, CanChange=True
+    "acn_counter": Initialize=0, CanChange=True
+    "acn_remainder": Initialize=0, CanChange=True
+}
+
+// =============================================================================
+// USER INPUT FUNCTIONS
+// =============================================================================
+
+Function.GetUserInput {
+    Output: Address
+    Body: {
+        COBOLState.input_buffer = ReadInput()
+        ReturnValue(COBOLState.input_buffer)
+    }
+}
+
+// =============================================================================
+// COBOL STRING HELPER FUNCTIONS
+// =============================================================================
+
+Function.StringCount {
+    Input: text
+    Input: pattern
+    Output: Integer
+    Body: {
+        COBOLState.sc_count = 0
+        COBOLState.sc_text_len = StringLength(text)
+        COBOLState.sc_pattern_len = StringLength(pattern)
+        COBOLState.sc_pos = 0
+        COBOLState.sc_should_continue = 1
+        
+        WhileLoop And(LessThan(COBOLState.sc_pos, COBOLState.sc_text_len), EqualTo(COBOLState.sc_should_continue, 1)) {
+            COBOLState.sc_found_pos = StringIndexOf(text, pattern, COBOLState.sc_pos)
+            
+            IfCondition EqualTo(COBOLState.sc_found_pos, -1) ThenBlock: {
+                COBOLState.sc_should_continue = 0
+            } ElseBlock: {
+                COBOLState.sc_count = Add(COBOLState.sc_count, 1)
+                COBOLState.sc_pos = Add(COBOLState.sc_found_pos, COBOLState.sc_pattern_len)
+            }
+        }
+        
+        ReturnValue(COBOLState.sc_count)
+    }
+}
+
+Function.StringReplaceAll {
+    Input: haystack
+    Input: needle
+    Input: replacement
+    Output: Address
+    Body: {
+        result = haystack
+        COBOLState.sra_iteration = 0
+        
+        WhileLoop LessThan(COBOLState.sra_iteration, COBOLState.sra_max_iterations) {
+            COBOLState.sra_pos = StringIndexOf(result, needle, 0)
+            
+            IfCondition LessThan(COBOLState.sra_pos, 0) ThenBlock: {
+                ReturnValue(result)
+            }
+            
+            result = StringReplace(result, needle, replacement)
+            COBOLState.sra_iteration = Add(COBOLState.sra_iteration, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// =============================================================================
+// DECIMAL FORMATTING FOR DISPLAY
+// =============================================================================
+
+Function.FormatDecimal {
+    Input: value
+    Input: decimal_places
+    Output: Address
+    Body: {
+        Debug("FormatDecimal.trace", level=3) {
+            PrintMessage("--- TRACE: FormatDecimal ---")
+            PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input decimal_places: ", NumberToString(decimal_places)))
+        }
+        
+        COBOLState.fmt_is_negative = LessThan(value, 0)
+        COBOLState.fmt_abs_value = value
+        
+        IfCondition COBOLState.fmt_is_negative ThenBlock: {
+            COBOLState.fmt_abs_value = Subtract(0, value)
+        }
+        
+        COBOLState.fmt_integer_part = Divide(COBOLState.fmt_abs_value, 10000)
+        COBOLState.fmt_fractional_part = Modulo(COBOLState.fmt_abs_value, 10000)
+        
+        Debug("FormatDecimal.trace", level=4) {
+            PrintMessage(StringConcat("    - integer_part: ", NumberToString(COBOLState.fmt_integer_part)))
+            PrintMessage(StringConcat("    - fractional_part: ", NumberToString(COBOLState.fmt_fractional_part)))
+        }
+        
+        COBOLState.fmt_scale_down = 1
+        COBOLState.fmt_decimals_to_remove = Subtract(4, decimal_places)
+        COBOLState.loop_i = 0
+        
+        WhileLoop LessThan(COBOLState.loop_i, COBOLState.fmt_decimals_to_remove) {
+            COBOLState.fmt_scale_down = Multiply(COBOLState.fmt_scale_down, 10)
+            COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+        }
+        
+        COBOLState.fmt_half_scale = Divide(COBOLState.fmt_scale_down, 2)
+        COBOLState.fmt_rounded_frac = Divide(Add(COBOLState.fmt_fractional_part, COBOLState.fmt_half_scale), COBOLState.fmt_scale_down)
+        
+        Debug("FormatDecimal.trace", level=4) {
+            PrintMessage(StringConcat("    - scale_down: ", NumberToString(COBOLState.fmt_scale_down)))
+            PrintMessage(StringConcat("    - half_scale: ", NumberToString(COBOLState.fmt_half_scale)))
+            PrintMessage(StringConcat("    - rounded_frac: ", NumberToString(COBOLState.fmt_rounded_frac)))
+        }
+        
+        result = ""
+        
+        IfCondition COBOLState.fmt_is_negative ThenBlock: {
+            result = "-"
+        }
+        
+        result = StringConcat(result, NumberToString(COBOLState.fmt_integer_part))
+        
+        IfCondition GreaterThan(decimal_places, 0) ThenBlock: {
+            result = StringConcat(result, ".")
+            
+            frac_str = NumberToString(COBOLState.fmt_rounded_frac)
+            COBOLState.fmt_frac_len = StringLength(frac_str)
+            
+            WhileLoop LessThan(COBOLState.fmt_frac_len, decimal_places) {
+                frac_str = StringConcat("0", frac_str)
+                COBOLState.fmt_frac_len = Add(COBOLState.fmt_frac_len, 1)
+            }
+            
+            result = StringConcat(result, frac_str)
+        }
+        
+        Debug("FormatDecimal.trace", level=4) {
+            PrintMessage(StringConcat("    - Final string: ", result))
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// =============================================================================
+// COBOL DISPLAY-EDITED FORMATTING FUNCTIONS
+// =============================================================================
+
+Function.FormatCurrency {
+    Input: value
+    Input: width
+    Input: decimals
+    Input: symbol
+    Input: has_commas
+    Input: float_symbol
+    Output: Address
+    Body: {
+        formatted = FormatDecimal(value, decimals)
+        
+        IfCondition EqualTo(has_commas, 1) ThenBlock:{
+            formatted = AddCommasToNumber(formatted)
+        }
+        
+        result = StringConcat(symbol, formatted)
+        
+        COBOLState.loop_len = StringLength(result)
+        WhileLoop LessThan(COBOLState.loop_len, width) {
+            result = StringConcat(" ", result)
+            COBOLState.loop_len = Add(COBOLState.loop_len, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.FormatWithCommas {
+    Input: value
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        formatted = FormatDecimal(value, decimals)
+        result = AddCommasToNumber(formatted)
+        
+        COBOLState.loop_len = StringLength(result)
+        WhileLoop LessThan(COBOLState.loop_len, width) {
+            result = StringConcat(" ", result)
+            COBOLState.loop_len = Add(COBOLState.loop_len, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.FormatZeroSuppress {
+    Input: value
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatZeroSuppress", level=3) {
+            PrintMessage("--- DEBUG: FormatZeroSuppress ---")
+            PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
+            PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
+        }
+        
+        formatted = FormatDecimal(value, decimals)
+        
+        COBOLState.loop_len = StringLength(formatted)
+        
+        result = formatted
+        WhileLoop LessThan(COBOLState.loop_len, width) {
+            result = StringConcat(" ", result)
+            COBOLState.loop_len = Add(COBOLState.loop_len, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.FormatAsteriskFill {
+    Input: value
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatAsteriskFill", level=3) {
+            PrintMessage("--- DEBUG: FormatAsteriskFill ---")
+            PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
+            PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
+        }
+        
+        formatted = FormatDecimal(value, decimals)
+        
+        COBOLState.loop_len = StringLength(formatted)
+        COBOLState.loop_i = 0
+        COBOLState.faf_found_nonzero = 0
+        
+        WhileLoop And(LessThan(COBOLState.loop_i, COBOLState.loop_len), EqualTo(COBOLState.faf_found_nonzero, 0)) {
+            char = StringSubstring(formatted, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
+            
+            IfCondition EqualTo(EqualTo(char, "0"), 0) ThenBlock:{
+                COBOLState.faf_found_nonzero = 1
+            } ElseBlock: {
+                COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+            }
+        }
+        
+        result = ""
+        COBOLState.loop_j = 0
+        
+        WhileLoop LessThan(COBOLState.loop_j, COBOLState.loop_len) {
+            IfCondition LessThan(COBOLState.loop_j, COBOLState.loop_i) ThenBlock:{
+                result = StringConcat(result, "*")
+            } ElseBlock: {
+                char = StringSubstring(formatted, COBOLState.loop_j, Add(COBOLState.loop_j, 1))
+                result = StringConcat(result, char)
+            }
+            COBOLState.loop_j = Add(COBOLState.loop_j, 1)
+        }
+        
+        padding_needed = Subtract(width, COBOLState.loop_len)
+        COBOLState.loop_i = 0
+        WhileLoop LessThan(COBOLState.loop_i, padding_needed) {
+            result = StringConcat("*", result)
+            COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.FormatWithIndicator {
+    Input: value
+    Input: indicator
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatWithIndicator", level=3) {
+            PrintMessage("--- DEBUG: FormatWithIndicator ---")
+            PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input indicator: ", indicator))
+            PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
+            PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
+        }
+        
+        COBOLState.fwi_abs_value = value
+        COBOLState.fwi_is_negative = LessThan(value, 0)
+        
+        IfCondition COBOLState.fwi_is_negative ThenBlock:{
+            COBOLState.fwi_abs_value = Subtract(0, value)
+        }
+        
+        formatted = FormatDecimal(COBOLState.fwi_abs_value, decimals)
+        
+        IfCondition COBOLState.fwi_is_negative ThenBlock:{
+            result = StringConcat(formatted, indicator)
+        } ElseBlock: {
+            COBOLState.fwi_indicator_len = StringLength(indicator)
+            spaces = ""
+            COBOLState.loop_i = 0
+            
+            WhileLoop LessThan(COBOLState.loop_i, COBOLState.fwi_indicator_len) {
+                spaces = StringConcat(spaces, " ")
+                COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+            }
+            
+            result = StringConcat(formatted, spaces)
+        }
+        
+        COBOLState.loop_len = StringLength(result)
+        WhileLoop LessThan(COBOLState.loop_len, width) {
+            result = StringConcat(" ", result)
+            COBOLState.loop_len = Add(COBOLState.loop_len, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.FormatSigned {
+    Input: value
+    Input: width
+    Input: decimals
+    Input: position
+    Output: Address
+    Body: {
+        Debug("FormatSigned", level=3) {
+            PrintMessage("--- DEBUG: FormatSigned ---")
+            PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
+            PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
+            PrintMessage(StringConcat("  Input position: ", position))
+        }
+        
+        formatted = FormatDecimal(value, decimals)
+        
+        sign = " "
+        
+        IfCondition LessThan(value, 0) ThenBlock: {
+            sign = "-"
+        } ElseBlock: {
+            IfCondition GreaterThan(value, 0) ThenBlock: {
+                sign = "+"
+            }
+        }
+        
+        COBOLState.fs_is_leading = StringEquals(position, "leading")
+        
+        IfCondition COBOLState.fs_is_leading ThenBlock: {
+            result = StringConcat(sign, formatted)
+        } ElseBlock: {
+            result = StringConcat(formatted, sign)
+        }
+        
+        COBOLState.loop_len = StringLength(result)
+        WhileLoop LessThan(COBOLState.loop_len, width) {
+            result = StringConcat(" ", result)
+            COBOLState.loop_len = Add(COBOLState.loop_len, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.AddCommasToNumber {
+    Input: number_str
+    Output: Address
+    Body: {
+        Debug("AddCommasToNumber", level=3) {
+            PrintMessage("--- DEBUG: AddCommasToNumber ---")
+            PrintMessage(StringConcat("  Input number_str: ", number_str))
+        }
+        
+        COBOLState.loop_len = StringLength(number_str)
+        COBOLState.acn_decimal_pos = -1
+        COBOLState.loop_i = 0
+        COBOLState.acn_found_decimal = 0
+        
+        WhileLoop And(LessThan(COBOLState.loop_i, COBOLState.loop_len), EqualTo(COBOLState.acn_found_decimal, 0)) {
+            char = StringSubstring(number_str, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
+            
+            IfCondition EqualTo(char, ".") ThenBlock:{
+                COBOLState.acn_decimal_pos = COBOLState.loop_i
+                COBOLState.acn_found_decimal = 1
+            } ElseBlock: {
+                COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+            }
+        }
+        
+        integer_part = ""
+        decimal_part = ""
+        
+        IfCondition EqualTo(COBOLState.acn_decimal_pos, -1) ThenBlock:{
+            integer_part = number_str
+        } ElseBlock: {
+            COBOLState.loop_i = 0
+            
+            WhileLoop LessThan(COBOLState.loop_i, COBOLState.acn_decimal_pos) {
+                char = StringSubstring(number_str, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
+                integer_part = StringConcat(integer_part, char)
+                COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+            }
+            
+            COBOLState.loop_i = COBOLState.acn_decimal_pos
+            
+            WhileLoop LessThan(COBOLState.loop_i, COBOLState.loop_len) {
+                char = StringSubstring(number_str, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
+                decimal_part = StringConcat(decimal_part, char)
+                COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+            }
+        }
+        
+        COBOLState.acn_int_len = StringLength(integer_part)
+        result = ""
+        COBOLState.acn_counter = 0
+        COBOLState.loop_i = Subtract(COBOLState.acn_int_len, 1)
+        
+        WhileLoop GreaterEqual(COBOLState.loop_i, 0) {
+            char = StringSubstring(integer_part, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
+            result = StringConcat(char, result)
+            COBOLState.acn_counter = Add(COBOLState.acn_counter, 1)
+            
+            COBOLState.acn_remainder = Modulo(COBOLState.acn_counter, 3)
+            
+            IfCondition And(EqualTo(COBOLState.acn_remainder, 0), GreaterThan(COBOLState.loop_i, 0)) ThenBlock:{
+                prev_char = StringSubstring(integer_part, Subtract(COBOLState.loop_i, 1), COBOLState.loop_i)
+                
+                IfCondition EqualTo(EqualTo(prev_char, "-"), 0) ThenBlock:{
+                    result = StringConcat(",", result)
+                }
+            }
+            
+            COBOLState.loop_i = Subtract(COBOLState.loop_i, 1)
+        }
+        
+        result = StringConcat(result, decimal_part)
+        
+        ReturnValue(result)
+    }
+}

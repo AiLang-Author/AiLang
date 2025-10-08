@@ -1,0 +1,130 @@
+// claims_web_server.ailang
+// Web-based SSA Claims Processing System
+
+LibraryImport.HTTPServer
+LibraryImport.PostgreSQL
+LibraryImport.SQLPool_Advanced
+LibraryImport.SQLORM
+
+// Initialize database connection pool
+pool = SQLPool.CreateMultiServer(
+    "ssa_claims_db",
+    "claims_processor",
+    "secure_password",
+    5,
+    20,
+    "least_connections"
+)
+
+// Add database server
+SQLPool.AddServer(pool, "192.168.1.10", 5432, 1, 100)
+
+// Define entities
+ClaimEntity = ORM.DefineEntity(
+    "claims",
+    CreateColumnList("claim_id", "ssn", "claim_type", "amount", "status", "filed_date", "processed_date", "processor_id"),
+    "claim_id"
+)
+
+// Request handler
+Function.HandleWebRequest {
+    Input: req: Address
+    Output: Address
+    Body: {
+        method = Dereference(req)
+        path = Dereference(Add(req, 8))
+        
+        PrintMessage("Request: ")
+        PrintString(method)
+        PrintMessage(" ")
+        PrintString(path)
+        
+        // API routes
+        is_api = StringStartsWith(path, "/api/")
+        
+        IfCondition EqualTo(is_api, 1) ThenBlock: {
+            ReturnValue(HandleAPIRequest(req))
+        }
+        
+        // Serve static files
+        ReturnValue(HTTP.ServeStaticFile(path))
+    }
+}
+
+Function.HandleAPIRequest {
+    Input: req: Address
+    Output: Address
+    Body: {
+        path = Dereference(Add(req, 8))
+        
+        // GET /api/claims
+        is_claims = StringCompare(path, "/api/claims")
+        IfCondition EqualTo(is_claims, 0) ThenBlock: {
+            ReturnValue(GetClaimsJSON())
+        }
+        
+        // POST /api/claims/process
+        is_process = StringStartsWith(path, "/api/claims/process")
+        IfCondition EqualTo(is_process, 1) ThenBlock: {
+            ReturnValue(ProcessClaimAPI(req))
+        }
+        
+        // 404
+        error = "{\"error\": \"Not found\"}"
+        ReturnValue(HTTP.BuildResponse(404, "application/json", error))
+    }
+}
+
+Function.GetClaimsJSON {
+    Output: Address
+    Body: {
+        conn = SQLPool.GetConnectionMulti(pool)
+        
+        result = PostgreSQL.Query(conn, "SELECT * FROM claims ORDER BY filed_date DESC")
+        
+        // Convert to JSON
+        json = "["
+        
+        row_count = XArray.XSize(result)
+        i = 0
+        
+        WhileLoop LessThan(i, row_count) {
+            row = XArray.XGet(result, i)
+            
+            json = StringConcat(json, "{")
+            json = StringConcat(json, "\"claim_id\":\"")
+            json = StringConcat(json, XArray.XGet(row, 0))
+            json = StringConcat(json, "\",\"ssn\":\"")
+            json = StringConcat(json, XArray.XGet(row, 1))
+            json = StringConcat(json, "\",\"claim_type\":\"")
+            json = StringConcat(json, XArray.XGet(row, 2))
+            json = StringConcat(json, "\",\"amount\":")
+            json = StringConcat(json, XArray.XGet(row, 3))
+            json = StringConcat(json, ",\"status\":\"")
+            json = StringConcat(json, XArray.XGet(row, 4))
+            json = StringConcat(json, "\",\"filed_date\":\"")
+            json = StringConcat(json, XArray.XGet(row, 5))
+            json = StringConcat(json, "\"}")
+            
+            IfCondition LessThan(i, Subtract(row_count, 1)) ThenBlock: {
+                json = StringConcat(json, ",")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        json = StringConcat(json, "]")
+        
+        SQLPool.ReleaseConnection(pool, conn)
+        XArray.XDestroy(result)
+        
+        response = HTTP.BuildResponse(200, "application/json", json)
+        ReturnValue(response)
+    }
+}
+
+// Start HTTP server
+PrintMessage("Starting SSA Claims Web Server...")
+PrintMessage("Access at: http://localhost:8080")
+
+HTTP.StartServer(8080, AddressOf(HandleWebRequest))

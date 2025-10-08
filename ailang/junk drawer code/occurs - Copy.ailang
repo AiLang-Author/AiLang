@@ -1,0 +1,572 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_ADD_NUMS_LINKAGE {
+    "A": Initialize=0
+    "B": Initialize=0
+    "SUM": Initialize=0
+}
+
+FixedPool.COBOL_TEST_OCCURS_1_VARS {
+    "NUMBER_ARRAY": Initialize=1
+}
+
+FixedPool.COBOL_TEST_OCCURS_2_VARS {
+    "NUMBERS": Initialize=1
+}
+
+FixedPool.COBOL_TEST_OCCURS_3_VARS {
+    "NUMBERS": Initialize=1
+    "I": Initialize=1
+}
+
+FixedPool.COBOL_TEST_OCCURS_4_VARS {
+    "NAMES": Initialize="SPACES"
+}
+
+FixedPool.COBOL_TEST_OCCURS_5_VARS {
+    "NUMBERS": Initialize=1
+    "I": Initialize=1
+    "SUM_VAL": Initialize=1
+}
+
+FixedPool.COBOL_SIMPLE_CALC_VARS {
+    "NUM1": Initialize=0
+    "NUM2": Initialize=0
+    "RESULT": Initialize=0
+    "OPERATION": Initialize=""
+}
+
+FixedPool.COBOL_TEST_UPPER_VARS {
+    "INPUT_TEXT": Initialize="hello world"
+    "UPPER_TEXT": Initialize=""
+    "TEST_VAR": Initialize="MixedCase"
+}
+
+FixedPool.COBOL_TEST_EVALUATE_VARS {
+    "OPERATION_CODE": Initialize=1
+    "RESULT": Initialize=1
+    "STATUS_MSG": Initialize=""
+}
+
+FixedPool.COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS {
+    "INPUT_NUMS": Initialize=10
+    "OUTPUT_NUMS": Initialize=1
+    "I": Initialize=0
+}
+
+FixedPool.COBOL_TEST_PERFORM_TIMES_VARS {
+    "COUNTER": Initialize=1
+    "TIMES_VAR": Initialize=3
+}
+
+FixedPool.COBOL_TEST_STRING_1_VARS {
+    "FIRST_NAME": Initialize="John"
+    "LAST_NAME": Initialize="Smith"
+    "FULL_NAME": Initialize=""
+}
+
+FixedPool.COBOL_TEST_STRING_2_VARS {
+    "GREETING": Initialize="Hello"
+    "SEPARATOR": Initialize=", "
+    "NAME_FIELD": Initialize="World"
+    "EXCLAIM": Initialize="!"
+    "RESULT": Initialize=""
+}
+
+FixedPool.COBOL_TEST_STRING_3_VARS {
+    "PART1": Initialize="ABC"
+    "PART2": Initialize="XYZ"
+    "OUTPUT_STR": Initialize=""
+    "STR_POINTER": Initialize=1
+}
+
+FixedPool.COBOL_TEST_UNSTRING_1_VARS {
+    "FULL_NAME": Initialize="John Smith"
+    "FIRST_NAME": Initialize=""
+    "LAST_NAME": Initialize=""
+}
+
+FixedPool.COBOL_TEST_UNSTRING_2_VARS {
+    "INPUT_DATA": Initialize="A,B,C,D,E"
+    "FIELD1": Initialize=""
+    "FIELD2": Initialize=""
+    "FIELD3": Initialize=""
+    "FIELD4": Initialize=""
+    "FIELD5": Initialize=""
+}
+
+FixedPool.COBOL_TEST_UNSTRING_3_VARS {
+    "INPUT_STR": Initialize="ONE TWO THREE"
+    "WORD1": Initialize="SPACES"
+    "WORD2": Initialize=""
+    "WORD3": Initialize=""
+    "WORD_COUNT": Initialize=1
+}
+
+FixedPool.COBOL_TEST_INSPECT_1_VARS {
+    "MESSAGE": Initialize="Hello World"
+}
+
+FixedPool.COBOL_TEST_INSPECT_2_VARS {
+    "TEXT_DATA": Initialize="COBOL is great!"
+}
+
+FixedPool.COBOL_TEST_INSPECT_3_VARS {
+    "SAMPLE_TEXT": Initialize="The quick brown fox"
+    "LETTER_COUNT": Initialize=10
+}
+
+FixedPool.COBOL_TEST_INSPECT_4_VARS {
+    "SENTENCE": Initialize="This is a test sentence"
+    "SPACE_COUNT": Initialize=1
+}
+
+FixedPool.COBOL_TEST_STRING_INSPECT_VARS {
+    "FIRST": Initialize="hello"
+    "SECOND": Initialize="world"
+    "COMBINED": Initialize=""
+}
+
+FixedPool.COBOL_TEST_ROUND_TRIP_VARS {
+    "ORIGINAL": Initialize="Alice,Bob,Charlie"
+    "NAME1": Initialize=""
+    "NAME2": Initialize=""
+    "NAME3": Initialize=""
+    "REBUILT": Initialize=""
+}
+
+FixedPool.COBOL_TEST_PERFORM_UNTIL_VARS {
+    "COUNTER": Initialize=1
+}
+
+FixedPool.COBOL_TEST_NESTED_PROGS_VARS {
+    "OUTER_CTR": Initialize=1
+}
+
+FixedPool.COBOL_NESTED_CHILD_VARS {
+    "INNER_CTR": Initialize=5
+}
+
+FixedPool.COBOL_MAIN_PROG_VARS {
+    "NUM1": Initialize=10
+    "NUM2": Initialize=20
+    "RESULT": Initialize=1
+}
+
+SubRoutine.TEST_OCCURS_1 {
+    COBOL_TEST_OCCURS_1_VARS.NUMBER_ARRAY = ArrayCreate(5)
+    PrintMessage("Array declaration test passed")
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_OCCURS_2 {
+    COBOL_TEST_OCCURS_2_VARS.NUMBERS = ArrayCreate(6)
+    ArraySet(COBOL_TEST_OCCURS_2_VARS.NUMBERS, Subtract(2, 1), 42)
+    ArraySet(COBOL_TEST_OCCURS_2_VARS.NUMBERS, Subtract(3, 1), 17)
+    ArraySet(COBOL_TEST_OCCURS_2_VARS.NUMBERS, Subtract(4, 1), 99)
+    PrintMessage("First element:")
+    PrintMessage(NumberToString(ArrayGet(COBOL_TEST_OCCURS_2_VARS.NUMBERS, Subtract(2, 1))))
+    PrintMessage("Second element:")
+    PrintMessage(NumberToString(ArrayGet(COBOL_TEST_OCCURS_2_VARS.NUMBERS, Subtract(3, 1))))
+    PrintMessage("Third element:")
+    PrintMessage(NumberToString(ArrayGet(COBOL_TEST_OCCURS_2_VARS.NUMBERS, Subtract(4, 1))))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_OCCURS_3 {
+    COBOL_TEST_OCCURS_3_VARS.NUMBERS = ArrayCreate(6)
+    PrintMessage("Populating array...")
+    COBOL_TEST_OCCURS_3_VARS.I = 2
+    WhileLoop Not(GreaterThan(COBOL_TEST_OCCURS_3_VARS.I, 6)) {
+            ArraySet(COBOL_TEST_OCCURS_3_VARS.NUMBERS, Subtract(COBOL_TEST_OCCURS_3_VARS.I, 1), COBOL_TEST_OCCURS_3_VARS.I)
+            COBOL_TEST_OCCURS_3_VARS.I = Add(COBOL_TEST_OCCURS_3_VARS.I, 1)
+        }
+    PrintMessage("Array contents:")
+    COBOL_TEST_OCCURS_3_VARS.I = 2
+    WhileLoop Not(GreaterThan(COBOL_TEST_OCCURS_3_VARS.I, 6)) {
+            PrintMessage(NumberToString(ArrayGet(COBOL_TEST_OCCURS_3_VARS.NUMBERS, Subtract(COBOL_TEST_OCCURS_3_VARS.I, 1))))
+            COBOL_TEST_OCCURS_3_VARS.I = Add(COBOL_TEST_OCCURS_3_VARS.I, 1)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_OCCURS_4 {
+    COBOL_TEST_OCCURS_4_VARS.NAMES = ArrayCreate(4)
+    ArraySet(COBOL_TEST_OCCURS_4_VARS.NAMES, Subtract(2, 1), "Alice")
+    ArraySet(COBOL_TEST_OCCURS_4_VARS.NAMES, Subtract(3, 1), "Bob")
+    ArraySet(COBOL_TEST_OCCURS_4_VARS.NAMES, Subtract(4, 1), "Charlie")
+    PrintMessage("Name 1:")
+    PrintMessage(ArrayGet(COBOL_TEST_OCCURS_4_VARS.NAMES, Subtract(2, 1)))
+    PrintMessage("Name 2:")
+    PrintMessage(ArrayGet(COBOL_TEST_OCCURS_4_VARS.NAMES, Subtract(3, 1)))
+    PrintMessage("Name 3:")
+    PrintMessage(ArrayGet(COBOL_TEST_OCCURS_4_VARS.NAMES, Subtract(4, 1)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_OCCURS_5 {
+    COBOL_TEST_OCCURS_5_VARS.NUMBERS = ArrayCreate(6)
+    ArraySet(COBOL_TEST_OCCURS_5_VARS.NUMBERS, Subtract(2, 1), 10)
+    ArraySet(COBOL_TEST_OCCURS_5_VARS.NUMBERS, Subtract(3, 1), 20)
+    ArraySet(COBOL_TEST_OCCURS_5_VARS.NUMBERS, Subtract(4, 1), 30)
+    ArraySet(COBOL_TEST_OCCURS_5_VARS.NUMBERS, Subtract(5, 1), 40)
+    ArraySet(COBOL_TEST_OCCURS_5_VARS.NUMBERS, Subtract(6, 1), 50)
+    PrintMessage("Computing sum of array...")
+    COBOL_TEST_OCCURS_5_VARS.SUM_VAL = 0
+    COBOL_TEST_OCCURS_5_VARS.I = 2
+    WhileLoop Not(GreaterThan(COBOL_TEST_OCCURS_5_VARS.I, 6)) {
+            COBOL_TEST_OCCURS_5_VARS.SUM_VAL = Add(COBOL_TEST_OCCURS_5_VARS.SUM_VAL, ArrayGet(COBOL_TEST_OCCURS_5_VARS.NUMBERS, Subtract(COBOL_TEST_OCCURS_5_VARS.I, 1)))
+            COBOL_TEST_OCCURS_5_VARS.I = Add(COBOL_TEST_OCCURS_5_VARS.I, 1)
+        }
+    PrintMessage("Sum: ")
+    PrintMessage(NumberToString(COBOL_TEST_OCCURS_5_VARS.SUM_VAL))
+    ReturnValue(0)
+}
+
+SubRoutine.SIMPLE_CALC {
+    RunTask(SIMPLE_CALC_MAIN_LOGIC)
+    ReturnValue(0)
+}
+
+SubRoutine.SIMPLE_CALC_MAIN_LOGIC {
+    PrintMessage("Enter first number: ")
+    COBOL_SIMPLE_CALC_VARS.NUM1 = StringToNumber(GetUserInput())
+    PrintMessage("Enter operation (+, -, *, /): ")
+    COBOL_SIMPLE_CALC_VARS.OPERATION = GetUserInput()
+    PrintMessage("Enter second number: ")
+    COBOL_SIMPLE_CALC_VARS.NUM2 = StringToNumber(GetUserInput())
+    IfCondition StringEquals(COBOL_SIMPLE_CALC_VARS.OPERATION, "+") ThenBlock: {
+            COBOL_SIMPLE_CALC_VARS.RESULT = Add(COBOL_SIMPLE_CALC_VARS.NUM1, COBOL_SIMPLE_CALC_VARS.NUM2)
+            PrintMessage(StringConcat("Result: ", NumberToString(COBOL_SIMPLE_CALC_VARS.RESULT)))
+        } ElseBlock: {
+            IfCondition StringEquals(COBOL_SIMPLE_CALC_VARS.OPERATION, "-") ThenBlock: {
+                        COBOL_SIMPLE_CALC_VARS.RESULT = Subtract(COBOL_SIMPLE_CALC_VARS.NUM1, COBOL_SIMPLE_CALC_VARS.NUM2)
+                        PrintMessage(StringConcat("Result: ", NumberToString(COBOL_SIMPLE_CALC_VARS.RESULT)))
+                    } ElseBlock: {
+                        IfCondition StringEquals(COBOL_SIMPLE_CALC_VARS.OPERATION, "*") ThenBlock: {
+                                        COBOL_SIMPLE_CALC_VARS.RESULT = Multiply(COBOL_SIMPLE_CALC_VARS.NUM1, COBOL_SIMPLE_CALC_VARS.NUM2)
+                                        PrintMessage(StringConcat("Result: ", NumberToString(COBOL_SIMPLE_CALC_VARS.RESULT)))
+                                    } ElseBlock: {
+                                        IfCondition StringEquals(COBOL_SIMPLE_CALC_VARS.OPERATION, "/") ThenBlock: {
+                                                            COBOL_SIMPLE_CALC_VARS.RESULT = Divide(COBOL_SIMPLE_CALC_VARS.NUM1, COBOL_SIMPLE_CALC_VARS.NUM2)
+                                                            PrintMessage(StringConcat("Result: ", NumberToString(COBOL_SIMPLE_CALC_VARS.RESULT)))
+                                                        } ElseBlock: {
+                                                            PrintMessage("Invalid operation")
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_UPPER {
+    PrintMessage("Test 1: Basic UPPER-CASE")
+    COBOL_TEST_UPPER_VARS.UPPER_TEXT = StringToUpper(COBOL_TEST_UPPER_VARS.INPUT_TEXT)
+    PrintMessage(StringConcat("Input: ", COBOL_TEST_UPPER_VARS.INPUT_TEXT))
+    PrintMessage(StringConcat("Upper: ", COBOL_TEST_UPPER_VARS.UPPER_TEXT))
+    PrintMessage("Test 2: UPPER-CASE in EVALUATE")
+    IfCondition StringEquals(StringToUpper(COBOL_TEST_UPPER_VARS.TEST_VAR), "MIXEDCASE") ThenBlock: {
+            PrintMessage("Matched MIXEDCASE")
+        } ElseBlock: {
+            PrintMessage("No match")
+        }
+    PrintMessage("Test 3: Direct display")
+    PrintMessage(StringConcat("Original: ", COBOL_TEST_UPPER_VARS.TEST_VAR))
+    PrintMessage(StringConcat("Uppercase: ", StringToUpper(COBOL_TEST_UPPER_VARS.TEST_VAR)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_EVALUATE {
+    RunTask(TEST_EVALUATE_MAIN_LOGIC)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_EVALUATE_MAIN_LOGIC {
+    PrintMessage("Testing EVALUATE statement")
+    IfCondition EqualTo(COBOL_TEST_EVALUATE_VARS.OPERATION_CODE, 1) ThenBlock: {
+            COBOL_TEST_EVALUATE_VARS.RESULT = 100
+            PrintMessage("Operation 1: Result = 100")
+        } ElseBlock: {
+            IfCondition EqualTo(COBOL_TEST_EVALUATE_VARS.OPERATION_CODE, 2) ThenBlock: {
+                        COBOL_TEST_EVALUATE_VARS.RESULT = 200
+                        PrintMessage("Operation 2: Result = 200")
+                    } ElseBlock: {
+                        IfCondition EqualTo(COBOL_TEST_EVALUATE_VARS.OPERATION_CODE, 3) ThenBlock: {
+                                        COBOL_TEST_EVALUATE_VARS.RESULT = 300
+                                        PrintMessage("Operation 3: Result = 300")
+                                    } ElseBlock: {
+                                        COBOL_TEST_EVALUATE_VARS.RESULT = 999
+                                        PrintMessage("Unknown operation")
+                                    }
+                    }
+        }
+    PrintMessage("Final result: ")
+    PrintMessage(NumberToString(COBOL_TEST_EVALUATE_VARS.RESULT))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_COMPLEX_ARRAY_LOGIC {
+    COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.INPUT_NUMS = ArrayCreate(6)
+    COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.OUTPUT_NUMS = ArrayCreate(6)
+    PrintMessage("Testing complex array logic...")
+    ArraySet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.INPUT_NUMS, Subtract(4, 1), 5)
+    COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I = 2
+    WhileLoop Not(GreaterThan(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 6)) {
+            IfCondition GreaterThan(ArrayGet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.INPUT_NUMS, Subtract(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1)), 8) ThenBlock: {
+                        ArraySet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.OUTPUT_NUMS, Subtract(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1), Multiply(ArrayGet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.INPUT_NUMS, Subtract(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1)), 10))
+                    } ElseBlock: {
+                        ArraySet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.OUTPUT_NUMS, Subtract(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1), Add(ArrayGet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.INPUT_NUMS, Subtract(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1)), 100))
+                    }
+            COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I = Add(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1)
+        }
+    PrintMessage("Output array contents:")
+    COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I = 2
+    WhileLoop Not(GreaterThan(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 6)) {
+            PrintMessage(StringConcat(StringConcat(StringConcat("Element ", NumberToString(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I)), ": "), NumberToString(ArrayGet(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.OUTPUT_NUMS, Subtract(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1)))))
+            COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I = Add(COBOL_TEST_COMPLEX_ARRAY_LOGIC_VARS.I, 1)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_TIMES {
+    PrintMessage("Test 1: Inline PERFORM TIMES")
+    TEMP_TIMES_CTR_140504842346112 = 0
+    WhileLoop LessThan(TEMP_TIMES_CTR_140504842346112, 3) {
+            COBOL_TEST_PERFORM_TIMES_VARS.COUNTER = Add(COBOL_TEST_PERFORM_TIMES_VARS.COUNTER, 1)
+            PrintMessage(StringConcat("Counter: ", NumberToString(COBOL_TEST_PERFORM_TIMES_VARS.COUNTER)))
+            TEMP_TIMES_CTR_140504842346112 = Add(TEMP_TIMES_CTR_140504842346112, 1)
+        }
+    PrintMessage("Test 2: Paragraph PERFORM TIMES")
+    TEMP_TIMES_CTR_140504842346448 = 0
+    WhileLoop LessThan(TEMP_TIMES_CTR_140504842346448, 5) {
+            RunTask(TEST_PERFORM_TIMES_SHOW_MESSAGE)
+            TEMP_TIMES_CTR_140504842346448 = Add(TEMP_TIMES_CTR_140504842346448, 1)
+        }
+    PrintMessage("Test 3: Variable TIMES")
+    COBOL_TEST_PERFORM_TIMES_VARS.TIMES_VAR = 2
+    TEMP_TIMES_CTR_140504842347216 = 0
+    WhileLoop LessThan(TEMP_TIMES_CTR_140504842347216, COBOL_TEST_PERFORM_TIMES_VARS.TIMES_VAR) {
+            PrintMessage("Var loop")
+            TEMP_TIMES_CTR_140504842347216 = Add(TEMP_TIMES_CTR_140504842347216, 1)
+        }
+    PrintMessage("All tests complete")
+    RunTask(TEST_PERFORM_TIMES_SHOW_MESSAGE)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_TIMES_SHOW_MESSAGE {
+    PrintMessage("Hello from paragraph")
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_STRING_1 {
+    PrintMessage("Test STRING: Basic concatenation")
+    COBOL_TEST_STRING_1_VARS.FULL_NAME = StringConcat(StringConcat(COBOL_TEST_STRING_1_VARS.FIRST_NAME, " "), COBOL_TEST_STRING_1_VARS.LAST_NAME)
+    PrintMessage(StringConcat("Full name: ", COBOL_TEST_STRING_1_VARS.FULL_NAME))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_STRING_2 {
+    PrintMessage("Test STRING: Multiple fields")
+    COBOL_TEST_STRING_2_VARS.RESULT = StringConcat(StringConcat(StringConcat(COBOL_TEST_STRING_2_VARS.GREETING, COBOL_TEST_STRING_2_VARS.SEPARATOR), COBOL_TEST_STRING_2_VARS.NAME_FIELD), COBOL_TEST_STRING_2_VARS.EXCLAIM)
+    PrintMessage(StringConcat("Result: ", COBOL_TEST_STRING_2_VARS.RESULT))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_STRING_3 {
+    PrintMessage("Test STRING: With POINTER clause")
+    COBOL_TEST_STRING_3_VARS.OUTPUT_STR = StringConcat(COBOL_TEST_STRING_3_VARS.PART1, COBOL_TEST_STRING_3_VARS.PART2)
+    PrintMessage(StringConcat("Output: ", COBOL_TEST_STRING_3_VARS.OUTPUT_STR))
+    PrintMessage(StringConcat("Pointer position: ", NumberToString(COBOL_TEST_STRING_3_VARS.STR_POINTER)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_UNSTRING_1 {
+    PrintMessage("Test UNSTRING: Basic split")
+    TEMP_UNSTRING_PARTS_140504842353216 = StringSplit(COBOL_TEST_UNSTRING_1_VARS.FULL_NAME, " ")
+    COBOL_TEST_UNSTRING_1_VARS.FIRST_NAME = ArrayGet(TEMP_UNSTRING_PARTS_140504842353216, 0)
+    COBOL_TEST_UNSTRING_1_VARS.LAST_NAME = ArrayGet(TEMP_UNSTRING_PARTS_140504842353216, 1)
+    PrintMessage(StringConcat("First name: ", COBOL_TEST_UNSTRING_1_VARS.FIRST_NAME))
+    PrintMessage(StringConcat("Last name: ", COBOL_TEST_UNSTRING_1_VARS.LAST_NAME))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_UNSTRING_2 {
+    PrintMessage("Test UNSTRING: Multiple delimiters")
+    TEMP_UNSTRING_PARTS_140504842355104 = StringSplit(COBOL_TEST_UNSTRING_2_VARS.INPUT_DATA, ",")
+    COBOL_TEST_UNSTRING_2_VARS.FIELD1 = ArrayGet(TEMP_UNSTRING_PARTS_140504842355104, 0)
+    COBOL_TEST_UNSTRING_2_VARS.FIELD2 = ArrayGet(TEMP_UNSTRING_PARTS_140504842355104, 1)
+    COBOL_TEST_UNSTRING_2_VARS.FIELD3 = ArrayGet(TEMP_UNSTRING_PARTS_140504842355104, 2)
+    COBOL_TEST_UNSTRING_2_VARS.FIELD4 = ArrayGet(TEMP_UNSTRING_PARTS_140504842355104, 3)
+    COBOL_TEST_UNSTRING_2_VARS.FIELD5 = ArrayGet(TEMP_UNSTRING_PARTS_140504842355104, 4)
+    PrintMessage(StringConcat("Field 1: ", COBOL_TEST_UNSTRING_2_VARS.FIELD1))
+    PrintMessage(StringConcat("Field 2: ", COBOL_TEST_UNSTRING_2_VARS.FIELD2))
+    PrintMessage(StringConcat("Field 3: ", COBOL_TEST_UNSTRING_2_VARS.FIELD3))
+    PrintMessage(StringConcat("Field 4: ", COBOL_TEST_UNSTRING_2_VARS.FIELD4))
+    PrintMessage(StringConcat("Field 5: ", COBOL_TEST_UNSTRING_2_VARS.FIELD5))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_UNSTRING_3 {
+    PrintMessage("Test UNSTRING: With TALLYING")
+    TEMP_UNSTRING_PARTS_140504842357744 = StringSplit(COBOL_TEST_UNSTRING_3_VARS.INPUT_STR, " ")
+    COBOL_TEST_UNSTRING_3_VARS.WORD1 = ArrayGet(TEMP_UNSTRING_PARTS_140504842357744, 0)
+    COBOL_TEST_UNSTRING_3_VARS.WORD2 = ArrayGet(TEMP_UNSTRING_PARTS_140504842357744, 1)
+    COBOL_TEST_UNSTRING_3_VARS.WORD3 = ArrayGet(TEMP_UNSTRING_PARTS_140504842357744, 2)
+    COBOL_TEST_UNSTRING_3_VARS.WORD_COUNT = ArrayLength(TEMP_UNSTRING_PARTS_140504842357744)
+    PrintMessage(StringConcat("Word 1: ", COBOL_TEST_UNSTRING_3_VARS.WORD1))
+    PrintMessage(StringConcat("Word 2: ", COBOL_TEST_UNSTRING_3_VARS.WORD2))
+    PrintMessage(StringConcat("Word 3: ", COBOL_TEST_UNSTRING_3_VARS.WORD3))
+    PrintMessage(StringConcat("Word count: ", NumberToString(COBOL_TEST_UNSTRING_3_VARS.WORD_COUNT)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_INSPECT_1 {
+    PrintMessage("Test INSPECT: REPLACING ALL")
+    PrintMessage(StringConcat("Before: ", COBOL_TEST_INSPECT_1_VARS.MESSAGE))
+    // FIX #1: Add the actual StringReplace operation
+    COBOL_TEST_INSPECT_1_VARS.MESSAGE = StringReplace(COBOL_TEST_INSPECT_1_VARS.MESSAGE, "o", "0")
+    PrintMessage(StringConcat("After: ", COBOL_TEST_INSPECT_1_VARS.MESSAGE))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_INSPECT_2 {
+    PrintMessage("Test INSPECT: Multiple replacements")
+    PrintMessage(StringConcat("Before: ", COBOL_TEST_INSPECT_2_VARS.TEXT_DATA))
+    // FIX #2: Add BOTH replacement operations in sequence
+    COBOL_TEST_INSPECT_2_VARS.TEXT_DATA = StringReplace(COBOL_TEST_INSPECT_2_VARS.TEXT_DATA, "O", "0")
+    COBOL_TEST_INSPECT_2_VARS.TEXT_DATA = StringReplace(COBOL_TEST_INSPECT_2_VARS.TEXT_DATA, "!", ".")
+    PrintMessage(StringConcat("After: ", COBOL_TEST_INSPECT_2_VARS.TEXT_DATA))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_INSPECT_3 {
+    PrintMessage("Test INSPECT: TALLYING")
+    PrintMessage(StringConcat("Text: ", COBOL_TEST_INSPECT_3_VARS.SAMPLE_TEXT))
+    // FIX #3: Add the actual StringCount operation
+    COBOL_TEST_INSPECT_3_VARS.LETTER_COUNT = StringCount(COBOL_TEST_INSPECT_3_VARS.SAMPLE_TEXT, "5")
+    PrintMessage(StringConcat("Count of '5': ", NumberToString(COBOL_TEST_INSPECT_3_VARS.LETTER_COUNT)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_INSPECT_4 {
+    PrintMessage("Test INSPECT: Count spaces")
+    PrintMessage(StringConcat("Sentence: ", COBOL_TEST_INSPECT_4_VARS.SENTENCE))
+    // FIX #4: Add the actual StringCount operation for spaces
+    COBOL_TEST_INSPECT_4_VARS.SPACE_COUNT = StringCount(COBOL_TEST_INSPECT_4_VARS.SENTENCE, " ")
+    PrintMessage(StringConcat("Number of spaces: ", NumberToString(COBOL_TEST_INSPECT_4_VARS.SPACE_COUNT)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_STRING_INSPECT {
+    PrintMessage("Test: STRING then INSPECT")
+    COBOL_TEST_STRING_INSPECT_VARS.COMBINED = StringConcat(StringConcat(COBOL_TEST_STRING_INSPECT_VARS.FIRST, " "), COBOL_TEST_STRING_INSPECT_VARS.SECOND)
+    PrintMessage(StringConcat("After STRING: ", COBOL_TEST_STRING_INSPECT_VARS.COMBINED))
+    // FIX #5: Add the actual StringReplace operation
+    COBOL_TEST_STRING_INSPECT_VARS.COMBINED = StringReplace(COBOL_TEST_STRING_INSPECT_VARS.COMBINED, "o", "O")
+    PrintMessage(StringConcat("After INSPECT: ", COBOL_TEST_STRING_INSPECT_VARS.COMBINED))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_ROUND_TRIP {
+    PrintMessage("Test: UNSTRING then STRING")
+    PrintMessage(StringConcat("Original: ", COBOL_TEST_ROUND_TRIP_VARS.ORIGINAL))
+    TEMP_UNSTRING_PARTS_140504842367824 = StringSplit(COBOL_TEST_ROUND_TRIP_VARS.ORIGINAL, ",")
+    COBOL_TEST_ROUND_TRIP_VARS.NAME1 = ArrayGet(TEMP_UNSTRING_PARTS_140504842367824, 0)
+    COBOL_TEST_ROUND_TRIP_VARS.NAME2 = ArrayGet(TEMP_UNSTRING_PARTS_140504842367824, 1)
+    COBOL_TEST_ROUND_TRIP_VARS.NAME3 = ArrayGet(TEMP_UNSTRING_PARTS_140504842367824, 2)
+    PrintMessage("Parsed names:")
+    PrintMessage(StringConcat("  Name1: ", COBOL_TEST_ROUND_TRIP_VARS.NAME1))
+    PrintMessage(StringConcat("  Name2: ", COBOL_TEST_ROUND_TRIP_VARS.NAME2))
+    PrintMessage(StringConcat("  Name3: ", COBOL_TEST_ROUND_TRIP_VARS.NAME3))
+    COBOL_TEST_ROUND_TRIP_VARS.REBUILT = StringConcat(StringConcat(StringConcat(StringConcat(COBOL_TEST_ROUND_TRIP_VARS.NAME1, " & "), COBOL_TEST_ROUND_TRIP_VARS.NAME2), " & "), COBOL_TEST_ROUND_TRIP_VARS.NAME3)
+    PrintMessage(StringConcat("Rebuilt: ", COBOL_TEST_ROUND_TRIP_VARS.REBUILT))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_UNTIL {
+    PrintMessage("Test 1: Inline PERFORM UNTIL")
+    WhileLoop Not(GreaterThan(COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER, 3)) {
+            COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER = Add(COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER, 1)
+            PrintMessage(StringConcat("Counter: ", NumberToString(COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER)))
+        }
+    COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER = 1
+    PrintMessage("Test 2: Paragraph PERFORM UNTIL")
+    WhileLoop Not(GreaterThan(COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER, 2)) {
+            RunTask(TEST_PERFORM_UNTIL_SHOW_MESSAGE)
+        }
+    PrintMessage("All tests complete")
+    RunTask(TEST_PERFORM_UNTIL_SHOW_MESSAGE)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_UNTIL_SHOW_MESSAGE {
+    COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER = Add(COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER, 1)
+    PrintMessage(StringConcat("Hello from paragraph: ", NumberToString(COBOL_TEST_PERFORM_UNTIL_VARS.COUNTER)))
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_NESTED_PROGS {
+    PrintMessage("Test nested programs")
+    COBOL_TEST_NESTED_PROGS_VARS.OUTER_CTR = Add(COBOL_TEST_NESTED_PROGS_VARS.OUTER_CTR, 1)
+    PrintMessage(StringConcat("Outer counter: ", NumberToString(COBOL_TEST_NESTED_PROGS_VARS.OUTER_CTR)))
+    RunTask(NESTED_CHILD)
+    PrintMessage("After nested program")
+    ReturnValue(0)
+}
+
+SubRoutine.NESTED_CHILD {
+    PrintMessage(StringConcat("Nested child counter: ", NumberToString(COBOL_NESTED_CHILD_VARS.INNER_CTR)))
+    ReturnValue(0)
+}
+
+SubRoutine.MAIN_PROG {
+    PrintMessage("Calling ADD-NUMS with 10 and 20")
+    COBOL_ADD_NUMS_LINKAGE.A = COBOL_MAIN_PROG_VARS.NUM1
+    COBOL_ADD_NUMS_LINKAGE.B = COBOL_MAIN_PROG_VARS.NUM2
+    COBOL_ADD_NUMS_LINKAGE.SUM = COBOL_MAIN_PROG_VARS.RESULT
+    RunTask(ADD_NUMS)
+    COBOL_MAIN_PROG_VARS.NUM1 = COBOL_ADD_NUMS_LINKAGE.A
+    COBOL_MAIN_PROG_VARS.NUM2 = COBOL_ADD_NUMS_LINKAGE.B
+    COBOL_MAIN_PROG_VARS.RESULT = COBOL_ADD_NUMS_LINKAGE.SUM
+    PrintMessage(StringConcat("Result: ", NumberToString(COBOL_MAIN_PROG_VARS.RESULT)))
+    ReturnValue(0)
+}
+
+SubRoutine.ADD_NUMS {
+    COBOL_ADD_NUMS_LINKAGE.SUM = Add(COBOL_ADD_NUMS_LINKAGE.A, COBOL_ADD_NUMS_LINKAGE.B)
+    PrintMessage(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat("Inside ADD-NUMS: ", NumberToString(COBOL_ADD_NUMS_LINKAGE.A)), " + "), NumberToString(COBOL_ADD_NUMS_LINKAGE.B)), " = "), NumberToString(COBOL_ADD_NUMS_LINKAGE.SUM)))
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(TEST_OCCURS_1)
+    RunTask(TEST_OCCURS_2)
+    RunTask(TEST_OCCURS_3)
+    RunTask(TEST_OCCURS_4)
+    RunTask(TEST_OCCURS_5)
+    RunTask(SIMPLE_CALC)
+    RunTask(TEST_UPPER)
+    RunTask(TEST_EVALUATE)
+    RunTask(TEST_COMPLEX_ARRAY_LOGIC)
+    RunTask(TEST_PERFORM_TIMES)
+    RunTask(TEST_STRING_1)
+    RunTask(TEST_STRING_2)
+    RunTask(TEST_STRING_3)
+    RunTask(TEST_UNSTRING_1)
+    RunTask(TEST_UNSTRING_2)
+    RunTask(TEST_UNSTRING_3)
+    RunTask(TEST_INSPECT_1)
+    RunTask(TEST_INSPECT_2)
+    RunTask(TEST_INSPECT_3)
+    RunTask(TEST_INSPECT_4)
+    RunTask(TEST_STRING_INSPECT)
+    RunTask(TEST_ROUND_TRIP)
+    RunTask(TEST_PERFORM_UNTIL)
+    RunTask(TEST_NESTED_PROGS)
+    RunTask(MAIN_PROG)
+}
+
+RunTask(Main)

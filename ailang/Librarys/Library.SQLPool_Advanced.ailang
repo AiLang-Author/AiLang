@@ -1,0 +1,437 @@
+// Library.SQLPool_Advanced.ailang
+// Enterprise-grade connection pooling with load balancing and failover
+
+LibraryImport.PostgreSQL
+LibraryImport.XArrays
+
+// ============================================================================
+// BASIC SINGLE-SERVER POOL
+// ============================================================================
+
+// Basic single-server connection pool
+// Pool structure: [host, port, database, user, password, min_conn, max_conn, connections, in_use]
+Function.Create {
+    Input: host: Address
+    Input: port: Integer
+    Input: database: Address
+    Input: user: Address
+    Input: password: Address
+    Input: min_conn: Integer
+    Input: max_connections: Integer
+    Output: Address
+    Body: {
+        Debug("create_pool", level=1) {
+            PrintMessage("DEBUG: Entered Create (single pool)")
+            PrintMessage("DEBUG: Host: ")
+            PrintString(host)
+        }
+
+        host_param = host
+        port_param = port
+        database_param = database
+        user_param = user
+        password_param = password
+        min_conn_param = min_conn
+        max_conn_param = max_connections
+        
+        pool = Allocate(128)
+        Debug("create_pool", level=1) { PrintMessage("DEBUG: Allocated pool structure") }
+        
+        // Just store the pointers directly - no copying needed
+        StoreValue(pool, host_param)
+        StoreValue(Add(pool, 8), port_param)
+        StoreValue(Add(pool, 16), database_param)
+        StoreValue(Add(pool, 24), user_param)
+        StoreValue(Add(pool, 32), password_param)
+        StoreValue(Add(pool, 40), min_conn_param)
+        StoreValue(Add(pool, 48), max_conn_param)
+        Debug("create_pool", level=1) { PrintMessage("DEBUG: Stored all parameters in pool structure") }
+        
+        connections = XArray.XCreate()
+        StoreValue(Add(pool, 56), connections)
+        StoreValue(Add(pool, 64), 0)
+        Debug("create_pool", level=1) { PrintMessage("DEBUG: Created connections XArray") }
+        
+        i = 0
+        Debug("create_pool", level=2) { PrintMessage("DEBUG: Starting to pre-allocate minimum connections...") }
+        WhileLoop LessThan(i, min_conn_param) {
+            Debug("create_pool", level=2) {
+                PrintMessage("DEBUG: Loop ")
+                PrintNumber(i)
+                PrintMessage(": Calling PostgreSQL.Connect")
+            }
+            conn = PostgreSQL.Connect(host_param, port_param, database_param, user_param, password_param)
+            Debug("create_pool", level=2) { PrintMessage("DEBUG: PostgreSQL.Connect returned") }
+
+            IfCondition NotEqual(conn, 0) ThenBlock: {
+                XArray.XPush(connections, conn)
+                Debug("create_pool", level=2) { PrintMessage("DEBUG: Pushed new connection to array") }
+            }
+            i = Add(i, 1)
+        }
+        Debug("create_pool", level=1) { PrintMessage("DEBUG: Finished pre-allocating connections") }
+        
+        PrintMessage("SQLPool: Created pool with ")
+        PrintNumber(min_conn_param)
+        PrintMessage(" connections")
+        
+        ReturnValue(pool)
+    }
+}
+
+Function.GetConnection {
+    Input: pool: Address
+    Output: Address
+    Body: {
+        connections = Dereference(Add(pool, 56))
+        conn_count = XArray.XSize(connections)
+        in_use = Dereference(Add(pool, 64))
+        
+        IfCondition GreaterThan(conn_count, in_use) ThenBlock: {
+            conn = XArray.XGet(connections, in_use)
+            in_use_new = Add(in_use, 1)
+            StoreValue(Add(pool, 64), in_use_new)
+            ReturnValue(conn)
+        }
+        
+        max_connections = Dereference(Add(pool, 48))
+        
+        IfCondition LessThan(conn_count, max_connections) ThenBlock: {
+            host = Dereference(pool)
+            port = Dereference(Add(pool, 8))
+            database = Dereference(Add(pool, 16))
+            user = Dereference(Add(pool, 24))
+            password = Dereference(Add(pool, 32))
+            
+            conn = PostgreSQL.Connect(host, port, database, user, password)
+            
+            IfCondition NotEqual(conn, 0) ThenBlock: {
+                XArray.XPush(connections, conn)
+                in_use_new = Add(in_use, 1)
+                StoreValue(Add(pool, 64), in_use_new)
+                ReturnValue(conn)
+            }
+        }
+        
+        PrintMessage("SQLPool: Pool exhausted")
+        ReturnValue(0)
+    }
+}
+
+Function.ReleaseConnection {
+    Input: pool: Address
+    Input: conn: Address
+    Body: {
+        in_use = Dereference(Add(pool, 64))
+        
+        IfCondition GreaterThan(in_use, 0) ThenBlock: {
+            in_use_new = Subtract(in_use, 1)
+            StoreValue(Add(pool, 64), in_use_new)
+        }
+    }
+}
+
+// ============================================================================
+// MULTI-SERVER POOL FUNCTIONS
+// ============================================================================
+
+Function.CreateServer {
+    Input: host: Address
+    Input: port: Integer
+    Input: priority: Integer
+    Input: weight: Integer
+    Output: Address
+    Body: {
+        server = Allocate(64)
+        
+        StoreValue(server, host)
+        StoreValue(Add(server, 8), port)
+        StoreValue(Add(server, 16), priority)
+        StoreValue(Add(server, 24), weight)
+        StoreValue(Add(server, 32), 1)
+        StoreValue(Add(server, 40), 0)
+        StoreValue(Add(server, 48), 0)
+        
+        ReturnValue(server)
+    }
+}
+
+Function.CreateMultiServer {
+    Input: database: Address
+    Input: user: Address
+    Input: password: Address
+    Input: min_per_server: Integer
+    Input: max_per_server: Integer
+    Input: lb_strategy: Address
+    Output: Address
+    Body: {
+        multi_pool = Allocate(128)
+        
+        servers = XArray.XCreate()
+        StoreValue(multi_pool, servers)
+        
+        pools = XArray.XCreate()
+        StoreValue(Add(multi_pool, 8), pools)
+        
+        StoreValue(Add(multi_pool, 16), database)
+        StoreValue(Add(multi_pool, 24), user)
+        StoreValue(Add(multi_pool, 32), password)
+        
+        StoreValue(Add(multi_pool, 40), min_per_server)
+        StoreValue(Add(multi_pool, 48), max_per_server)
+        StoreValue(Add(multi_pool, 56), lb_strategy)
+        StoreValue(Add(multi_pool, 64), 0)
+        StoreValue(Add(multi_pool, 72), 30)
+        
+        PrintMessage("SQLPool: Multi-server pool created")
+        
+        ReturnValue(multi_pool)
+    }
+}
+
+Function.AddServer {
+    Input: multi_pool: Address
+    Input: host: Address
+    Input: port: Integer
+    Input: priority: Integer
+    Input: weight: Integer
+    Output: Integer
+    Body: {
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Entered AddServer") }
+        
+        servers = Dereference(multi_pool)
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Dereferenced servers array from multi_pool")
+            PrintNumber(servers)
+        }
+
+        server = CreateServer(host, port, priority, weight)
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: CreateServer returned")
+            PrintNumber(server)
+        }
+
+        XArray.XPush(servers, server)
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Pushed new server to servers array") }
+        
+        database = Dereference(Add(multi_pool, 16))
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Dereferenced database name")
+            PrintString(database)
+        }
+
+        user = Dereference(Add(multi_pool, 24))
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Dereferenced user name")
+            PrintString(user)
+        }
+
+        password = Dereference(Add(multi_pool, 32))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced password") }
+
+        min_conn = Dereference(Add(multi_pool, 40))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced min_conn") }
+
+        max_conn = Dereference(Add(multi_pool, 48))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced max_conn") }
+        
+        pool = Create(host, port, database, user, password, min_conn, max_conn)
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Create (single pool) returned")
+            PrintNumber(pool)
+        }
+        
+        pools = Dereference(Add(multi_pool, 8))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced pools array") }
+
+        XArray.XPush(pools, pool)
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Pushed new pool to pools array") }
+        
+        PrintMessage("SQLPool: Added server ")
+        PrintString(host)
+        PrintMessage(":")
+        PrintNumber(port)
+        
+        Debug("add_server", level=1) { PrintMessage("DEBUG: AddServer complete, returning 1") }
+        ReturnValue(1)
+    }
+}
+
+Function.GetConnectionMulti {
+    Input: multi_pool: Address
+    Output: Address
+    Body: {
+        lb_strategy = Dereference(Add(multi_pool, 56))
+        
+        is_rr = StringCompare(lb_strategy, "round_robin")
+        IfCondition EqualTo(is_rr, 0) ThenBlock: {
+            ReturnValue(GetConnectionRoundRobin(multi_pool))
+        }
+        
+        is_weighted = StringCompare(lb_strategy, "weighted")
+        IfCondition EqualTo(is_weighted, 0) ThenBlock: {
+            ReturnValue(GetConnectionWeighted(multi_pool))
+        }
+        
+        is_least = StringCompare(lb_strategy, "least_connections")
+        IfCondition EqualTo(is_least, 0) ThenBlock: {
+            ReturnValue(GetConnectionLeastConn(multi_pool))
+        }
+        
+        ReturnValue(GetConnectionRoundRobin(multi_pool))
+    }
+}
+
+Function.GetConnectionRoundRobin {
+    Input: multi_pool: Address
+    Output: Address
+    Body: {
+        servers = Dereference(multi_pool)
+        pools = Dereference(Add(multi_pool, 8))
+        current_idx = Dereference(Add(multi_pool, 64))
+        
+        server_count = XArray.XSize(servers)
+        attempts = 0
+        
+        WhileLoop LessThan(attempts, server_count) {
+            server = XArray.XGet(servers, current_idx)
+            is_active = Dereference(Add(server, 32))
+            
+            IfCondition EqualTo(is_active, 1) ThenBlock: {
+                pool = XArray.XGet(pools, current_idx)
+                conn = GetConnection(pool)
+                
+                IfCondition NotEqual(conn, 0) ThenBlock: {
+                    next_idx = Modulo(Add(current_idx, 1), server_count)
+                    StoreValue(Add(multi_pool, 64), next_idx)
+                    
+                    ReturnValue(conn)
+                } ElseBlock: {
+                    failed_count = Dereference(Add(server, 40))
+                    StoreValue(Add(server, 40), Add(failed_count, 1))
+                    
+                    IfCondition GreaterThan(failed_count, 5) ThenBlock: {
+                        StoreValue(Add(server, 32), 0)
+                        PrintMessage("SQLPool: Server marked inactive: ")
+                        PrintString(Dereference(server))
+                    }
+                }
+            }
+            
+            current_idx = Modulo(Add(current_idx, 1), server_count)
+            attempts = Add(attempts, 1)
+        }
+        
+        PrintMessage("SQLPool: ALL SERVERS EXHAUSTED!")
+        ReturnValue(0)
+    }
+}
+
+Function.GetConnectionWeighted {
+    Input: multi_pool: Address
+    Output: Address
+    Body: {
+        ReturnValue(GetConnectionRoundRobin(multi_pool))
+    }
+}
+
+Function.GetConnectionLeastConn {
+    Input: multi_pool: Address
+    Output: Address
+    Body: {
+        servers = Dereference(multi_pool)
+        pools = Dereference(Add(multi_pool, 8))
+        
+        server_count = XArray.XSize(servers)
+        
+        min_connections = 999999
+        best_idx = 0
+        
+        i = 0
+        WhileLoop LessThan(i, server_count) {
+            server = XArray.XGet(servers, i)
+            is_active = Dereference(Add(server, 32))
+            
+            IfCondition EqualTo(is_active, 1) ThenBlock: {
+                pool = XArray.XGet(pools, i)
+                in_use = Dereference(Add(pool, 64))
+                
+                IfCondition LessThan(in_use, min_connections) ThenBlock: {
+                    min_connections = in_use
+                    best_idx = i
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        pool = XArray.XGet(pools, best_idx)
+        conn = GetConnection(pool)
+        
+        ReturnValue(conn)
+    }
+}
+
+Function.HealthCheck {
+    Input: multi_pool: Address
+    Body: {
+        servers = Dereference(multi_pool)
+        pools = Dereference(Add(multi_pool, 8))
+        
+        server_count = XArray.XSize(servers)
+        
+        PrintMessage("SQLPool: Running health checks on ")
+        PrintNumber(server_count)
+        PrintMessage(" servers")
+        
+        i = 0
+        WhileLoop LessThan(i, server_count) {
+            server = XArray.XGet(servers, i)
+            pool = XArray.XGet(pools, i)
+            
+            conn = GetConnection(pool)
+            
+            IfCondition NotEqual(conn, 0) ThenBlock: {
+                result = PostgreSQL.Query(conn, "SELECT 1")
+                
+                IfCondition NotEqual(result, 0) ThenBlock: {
+                    XArray.XDestroy(result)
+                    StoreValue(Add(server, 32), 1)
+                    StoreValue(Add(server, 40), 0)
+                    
+                    PrintMessage("  Server ")
+                    PrintString(Dereference(server))
+                    PrintMessage(" - HEALTHY")
+                } ElseBlock: {
+                    failed_count = Dereference(Add(server, 40))
+                    StoreValue(Add(server, 40), Add(failed_count, 1))
+                    
+                    PrintMessage("  Server ")
+                    PrintString(Dereference(server))
+                    PrintMessage(" - DEGRADED")
+                }
+                
+                ReleaseConnection(pool, conn)
+            } ElseBlock: {
+                PrintMessage("  Server ")
+                PrintString(Dereference(server))
+                PrintMessage(" - UNREACHABLE")
+                
+                StoreValue(Add(server, 32), 0)
+            }
+            
+            i = Add(i, 1)
+        }
+    }
+}
+
+Function.ClosePool {
+    Input: pool: Address
+    Body: {
+        PrintMessage("STUB: ClosePool not yet implemented")
+        // TODO: Close all connections in pool
+        // - Iterate through connections array
+        // - Call PostgreSQL.Disconnect on each
+        // - Free pool memory
+    }
+}

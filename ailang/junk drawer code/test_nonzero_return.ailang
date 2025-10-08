@@ -1,0 +1,11 @@
+SubRoutine.TestOne {
+    PrintMessage("Before return\n")
+    ReturnValue(1)
+}
+
+SubRoutine.Main {
+    PrintMessage("Starting\n")
+    RunTask(TestOne)
+    PrintMessage("After TestOne\n")
+}
+RunTask(Main)

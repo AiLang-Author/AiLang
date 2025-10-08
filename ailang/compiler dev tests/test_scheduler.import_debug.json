@@ -1,0 +1,75 @@
+{
+  "main_file": "compiler dev tests/test_scheduler.ailang",
+  "loaded_modules": [
+    "Scheduler",
+    "SchedulerAdvanced"
+  ],
+  "conflicts": {
+    "SchedulerConfig.MSG_TAILS_OFFSET": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.MSG_HEADS_OFFSET": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.RUN_QUEUE_OFFSET": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.MAX_ACTORS": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.CURRENT_ACTOR": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.NUM_ACTORS": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "ActorState.READY": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.RUN_QUEUE_HEAD": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.RUN_QUEUE_TAIL": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.ACTOR_STATES_OFFSET": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "SchedulerConfig.MSG_COUNTS_OFFSET": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ],
+    "ActorState.RUNNING": [
+      "Scheduler",
+      "SchedulerAdvanced"
+    ]
+  },
+  "prefixes": {
+    "SchedulerAdvanced": "NSH3LBM6",
+    "Scheduler": "NSA13NEI"
+  },
+  "resolution_log": [
+    {
+      "file": "compiler dev tests/test_scheduler.ailang",
+      "line": 4,
+      "import": "Scheduler",
+      "type": "library"
+    },
+    {
+      "file": "compiler dev tests/test_scheduler.ailang",
+      "line": 5,
+      "import": "SchedulerAdvanced",
+      "type": "library"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+FixedPool.TestPool {
+    "NUM1": Initialize=10
+    "NUM2": Initialize=20
+}
+
+SubRoutine.Main {
+    PrintMessage("NUM1: ")
+    PrintMessage(NumberToString(TestPool.NUM1))
+    PrintMessage("NUM2: ")
+    PrintMessage(NumberToString(TestPool.NUM2))
+}
+
+RunTask(Main)

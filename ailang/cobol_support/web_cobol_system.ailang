@@ -1,0 +1,558 @@
+// ============================================================================
+// COMPLETE COBOL WEB APPLICATION SYSTEM
+// ============================================================================
+
+// web_cobol_system.ailang
+// Full-featured web application for running transpiled COBOL programs
+// Handles: sessions, multi-user, job queuing, program spawning, results
+
+LibraryImport.HTTPServer
+LibraryImport.PostgreSQL
+LibraryImport.SQLPool_Advanced
+LibraryImport.XArrays
+LibraryImport.HashMap
+
+// ============================================================================
+// SESSION MANAGEMENT (Multi-User Support)
+// ============================================================================
+
+FixedPool.SessionConfig {
+    "sessions": Initialize=0           // HashMap: session_id -> session_data
+    "timeout": Initialize=1800         // 30 minutes
+    "max_sessions": Initialize=1000
+}
+
+// Session structure: [session_id, user_id, created_at, last_access, data]
+Function.Session.Create {
+    Input: user_id: Address
+    Output: Address              // Session ID
+    Body: {
+        // Generate unique session ID
+        timestamp = GetCurrentTimestamp()
+        random = Random()
+        
+        session_id = StringConcat("SESSION_", NumberToString(timestamp))
+        session_id = StringConcat(session_id, "_")
+        session_id = StringConcat(session_id, NumberToString(random))
+        
+        // Create session data structure
+        session = Allocate(64)
+        StoreValue(session, Helpers.StringCopy(session_id))
+        StoreValue(Add(session, 8), Helpers.StringCopy(user_id))
+        StoreValue(Add(session, 16), timestamp)  // created_at
+        StoreValue(Add(session, 24), timestamp)  // last_access
+        
+        // Session-specific data (variables, state)
+        session_data = HashMap.CreateSimple()
+        StoreValue(Add(session, 32), session_data)
+        
+        // Store in global sessions
+        sessions = SessionConfig.sessions
+        IfCondition EqualTo(sessions, 0) ThenBlock: {
+            sessions = HashMap.CreateSimple()
+            SessionConfig.sessions = sessions
+        }
+        
+        HashMap.HSetSimple(sessions, session_id, session)
+        
+        PrintMessage("Session created: ")
+        PrintString(session_id)
+        
+        ReturnValue(session_id)
+    }
+}
+
+Function.Session.Get {
+    Input: session_id: Address
+    Output: Address              // Session data or 0
+    Body: {
+        sessions = SessionConfig.sessions
+        
+        IfCondition EqualTo(sessions, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        session = HashMap.HGetSimple(sessions, session_id)
+        
+        IfCondition NotEqual(session, 0) ThenBlock: {
+            // Update last_access
+            current_time = GetCurrentTimestamp()
+            StoreValue(Add(session, 24), current_time)
+        }
+        
+        ReturnValue(session)
+    }
+}
+
+Function.Session.SetData {
+    Input: session_id: Address
+    Input: key: Address
+    Input: value: Address
+    Body: {
+        session = Session.Get(session_id)
+        
+        IfCondition NotEqual(session, 0) ThenBlock: {
+            session_data = Dereference(Add(session, 32))
+            HashMap.HSetSimple(session_data, key, value)
+        }
+    }
+}
+
+Function.Session.GetData {
+    Input: session_id: Address
+    Input: key: Address
+    Output: Address
+    Body: {
+        session = Session.Get(session_id)
+        
+        IfCondition EqualTo(session, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        session_data = Dereference(Add(session, 32))
+        value = HashMap.HGetSimple(session_data, key)
+        
+        ReturnValue(value)
+    }
+}
+
+// ============================================================================
+// PROGRAM EXECUTION MANAGER (Per-User Instance)
+// ============================================================================
+
+FixedPool.ExecutionConfig {
+    "running_programs": Initialize=0   // HashMap: execution_id -> program_state
+    "max_concurrent": Initialize=50    // Max programs running at once
+    "current_count": Initialize=0
+}
+
+// Program execution: [exec_id, session_id, program_name, pid, status, start_time, result]
+Function.Program.Execute {
+    Input: session_id: Address
+    Input: program_name: Address
+    Input: params: Address       // HashMap of parameters
+    Output: Address              // Execution ID
+    Body: {
+        PrintMessage("=== Executing Program ===")
+        PrintMessage("Session: ")
+        PrintString(session_id)
+        PrintMessage("Program: ")
+        PrintString(program_name)
+        
+        // Check capacity
+        current = ExecutionConfig.current_count
+        max_concurrent = ExecutionConfig.max_concurrent
+        
+        IfCondition GreaterEqual(current, max_concurrent) ThenBlock: {
+            PrintMessage("ERROR: Max concurrent programs reached")
+            ReturnValue(0)
+        }
+        
+        // Create execution record
+        exec_id = StringConcat("EXEC_", NumberToString(GetCurrentTimestamp()))
+        exec_id = StringConcat(exec_id, "_")
+        exec_id = StringConcat(exec_id, NumberToString(Random()))
+        
+        execution = Allocate(128)
+        StoreValue(execution, Helpers.StringCopy(exec_id))
+        StoreValue(Add(execution, 8), Helpers.StringCopy(session_id))
+        StoreValue(Add(execution, 16), Helpers.StringCopy(program_name))
+        StoreValue(Add(execution, 24), 0)  // pid (set after fork)
+        StoreValue(Add(execution, 32), 1)  // status: 1=running
+        StoreValue(Add(execution, 40), GetCurrentTimestamp())  // start_time
+        StoreValue(Add(execution, 48), 0)  // result (set when complete)
+        StoreValue(Add(execution, 56), params)  // parameters
+        
+        // Fork and execute program
+        pid = Program.Fork(execution)
+        
+        IfCondition LessThan(pid, 0) ThenBlock: {
+            PrintMessage("ERROR: Fork failed")
+            ReturnValue(0)
+        }
+        
+        StoreValue(Add(execution, 24), pid)
+        
+        // Store in running programs
+        running = ExecutionConfig.running_programs
+        IfCondition EqualTo(running, 0) ThenBlock: {
+            running = HashMap.CreateSimple()
+            ExecutionConfig.running_programs = running
+        }
+        
+        HashMap.HSetSimple(running, exec_id, execution)
+        
+        // Increment counter
+        ExecutionConfig.current_count = Add(current, 1)
+        
+        PrintMessage("Program spawned, PID: ")
+        PrintNumber(pid)
+        
+        ReturnValue(exec_id)
+    }
+}
+
+Function.Program.Fork {
+    Input: execution: Address
+    Output: Integer              // PID
+    Body: {
+        program_name = Dereference(Add(execution, 16))
+        session_id = Dereference(Add(execution, 8))
+        params = Dereference(Add(execution, 56))
+        
+        // Build program path
+        program_path = StringConcat("/opt/ailang/cobol/programs/", program_name)
+        
+        // Fork process
+        // syscall: fork() - syscall number 57 on x86_64
+        pid = Syscall0(57)
+        
+        IfCondition EqualTo(pid, 0) ThenBlock: {
+            // === CHILD PROCESS ===
+            
+            // Set up execution environment
+            Program.SetupEnvironment(session_id, params)
+            
+            // Create argument array for exec
+            args = ArrayCreate(2)
+            ArraySet(args, 0, program_path)
+            ArraySet(args, 1, 0)  // NULL terminator
+            
+            // Execute program
+            // syscall: execve(path, argv, envp)
+            Syscall3(59, program_path, args, 0)
+            
+            // If execve returns, it failed
+            PrintMessage("ERROR: execve failed")
+            Exit(1)
+        }
+        
+        // === PARENT PROCESS ===
+        ReturnValue(pid)
+    }
+}
+
+Function.Program.SetupEnvironment {
+    Input: session_id: Address
+    Input: params: Address
+    Body: {
+        // Set environment variables for COBOL program
+        
+        // Session ID (so program can access session data)
+        SetEnv("SESSION_ID", session_id)
+        
+        // Database connection
+        SetEnv("DB_HOST", "localhost")
+        SetEnv("DB_PORT", "5432")
+        SetEnv("DB_NAME", "ssa_claims_db")
+        SetEnv("DB_USER", "claims_processor")
+        SetEnv("DB_PASS", "secure_password")
+        
+        // Data directory
+        SetEnv("COBOL_DATA_DIR", "/opt/ailang/cobol/data")
+        
+        // Parameters as environment variables
+        IfCondition NotEqual(params, 0) ThenBlock: {
+            // Iterate through params and set as env vars
+            // Example: PARAM_CLAIM_ID=CLM-001234
+            
+            keys = HashMap.HKeysSimple(params)
+            key_count = XArray.XSize(keys)
+            
+            i = 0
+            WhileLoop LessThan(i, key_count) {
+                key = XArray.XGet(keys, i)
+                value = HashMap.HGetSimple(params, key)
+                
+                env_key = StringConcat("PARAM_", key)
+                SetEnv(env_key, value)
+                
+                i = Add(i, 1)
+            }
+            
+            XArray.XDestroy(keys)
+        }
+        
+        // Create log file for this execution
+        log_file = StringConcat("/opt/ailang/cobol/logs/", session_id)
+        log_file = StringConcat(log_file, ".log")
+        
+        // Redirect stdout/stderr to log
+        log_fd = Open(log_file, O_CREAT_WRONLY_APPEND, 0644)
+        
+        IfCondition GreaterEqual(log_fd, 0) ThenBlock: {
+            Dup2(log_fd, 1)  // stdout
+            Dup2(log_fd, 2)  // stderr
+            Close(log_fd)
+        }
+    }
+}
+
+Function.Program.WaitForCompletion {
+    Input: exec_id: Address
+    Input: timeout: Integer      // Seconds to wait (0 = wait forever)
+    Output: Address              // Result or 0 if still running
+    Body: {
+        running = ExecutionConfig.running_programs
+        execution = HashMap.HGetSimple(running, exec_id)
+        
+        IfCondition EqualTo(execution, 0) ThenBlock: {
+            PrintMessage("ERROR: Execution not found")
+            ReturnValue(0)
+        }
+        
+        pid = Dereference(Add(execution, 24))
+        start_time = Dereference(Add(execution, 40))
+        
+        // Poll for completion
+        elapsed = 0
+        
+        WhileLoop True {
+            // Check if process has exited
+            // syscall: waitpid(pid, status, WNOHANG)
+            // WNOHANG = 1 (non-blocking)
+            status_ptr = Allocate(4)
+            result = Syscall3(61, pid, status_ptr, 1)
+            
+            IfCondition GreaterThan(result, 0) ThenBlock: {
+                // Process has exited
+                exit_code = Dereference(status_ptr)
+                Deallocate(status_ptr, 4)
+                
+                // Update execution status
+                StoreValue(Add(execution, 32), 2)  // status=complete
+                
+                // Get result from program (via shared memory or file)
+                program_result = Program.GetResult(exec_id)
+                StoreValue(Add(execution, 48), program_result)
+                
+                // Decrement counter
+                current = ExecutionConfig.current_count
+                ExecutionConfig.current_count = Subtract(current, 1)
+                
+                PrintMessage("Program completed, exit code: ")
+                PrintNumber(exit_code)
+                
+                ReturnValue(program_result)
+            }
+            
+            Deallocate(status_ptr, 4)
+            
+            // Check timeout
+            IfCondition GreaterThan(timeout, 0) ThenBlock: {
+                IfCondition GreaterEqual(elapsed, timeout) ThenBlock: {
+                    PrintMessage("Program execution timeout")
+                    ReturnValue(0)
+                }
+            }
+            
+            // Sleep 100ms
+            Usleep(100000)
+            elapsed = Add(elapsed, 1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.Program.GetResult {
+    Input: exec_id: Address
+    Output: Address
+    Body: {
+        // Programs write results to /tmp/result_<exec_id>.json
+        result_file = StringConcat("/tmp/result_", exec_id)
+        result_file = StringConcat(result_file, ".json")
+        
+        exists = FileExists(result_file)
+        
+        IfCondition EqualTo(exists, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        result = LoadTextFile(result_file)
+        
+        // Delete temp file
+        DeleteFile(result_file)
+        
+        ReturnValue(result)
+    }
+}
+
+// ============================================================================
+// WEB API ENDPOINTS
+// ============================================================================
+
+Function.API.Login {
+    Input: req: Address
+    Output: Address
+    Body: {
+        // POST /api/login
+        // Body: {"username": "jdoe", "password": "***"}
+        
+        body = HTTP.GetRequestBody(req)
+        credentials = JSON.Parse(body)
+        
+        username = JSON.Get(credentials, "username")
+        password = JSON.Get(credentials, "password")
+        
+        // Authenticate user (check database)
+        user_id = AuthenticateUser(username, password)
+        
+        IfCondition EqualTo(user_id, 0) ThenBlock: {
+            error = "{\"error\": \"Invalid credentials\"}"
+            ReturnValue(HTTP.BuildResponse(401, "application/json", error))
+        }
+        
+        // Create session
+        session_id = Session.Create(user_id)
+        
+        // Return session token
+        response = StringConcat("{\"session_id\": \"", session_id)
+        response = StringConcat(response, "\", \"user_id\": \"")
+        response = StringConcat(response, user_id)
+        response = StringConcat(response, "\"}")
+        
+        ReturnValue(HTTP.BuildResponse(200, "application/json", response))
+    }
+}
+
+Function.API.ExecuteProgram {
+    Input: req: Address
+    Output: Address
+    Body: {
+        // POST /api/program/execute
+        // Body: {"program": "PAYCALC.exec", "params": {"ssn": "123-45-6789"}}
+        // Headers: {"X-Session-ID": "SESSION_123..."}
+        
+        // Get session from headers
+        session_id = HTTP.GetHeader(req, "X-Session-ID")
+        
+        IfCondition EqualTo(session_id, 0) ThenBlock: {
+            error = "{\"error\": \"No session\"}"
+            ReturnValue(HTTP.BuildResponse(401, "application/json", error))
+        }
+        
+        // Validate session
+        session = Session.Get(session_id)
+        
+        IfCondition EqualTo(session, 0) ThenBlock: {
+            error = "{\"error\": \"Invalid session\"}"
+            ReturnValue(HTTP.BuildResponse(401, "application/json", error))
+        }
+        
+        // Parse request body
+        body = HTTP.GetRequestBody(req)
+        request_data = JSON.Parse(body)
+        
+        program_name = JSON.Get(request_data, "program")
+        params = JSON.Get(request_data, "params")
+        
+        PrintMessage("API: Executing ")
+        PrintString(program_name)
+        PrintMessage(" for session ")
+        PrintString(session_id)
+        
+        // Execute program (spawns process for THIS USER)
+        exec_id = Program.Execute(session_id, program_name, params)
+        
+        IfCondition EqualTo(exec_id, 0) ThenBlock: {
+            error = "{\"error\": \"Failed to execute program\"}"
+            ReturnValue(HTTP.BuildResponse(500, "application/json", error))
+        }
+        
+        // Wait for completion (with timeout)
+        result = Program.WaitForCompletion(exec_id, 30)  // 30 second timeout
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            // Still running or timeout
+            response = StringConcat("{\"exec_id\": \"", exec_id)
+            response = StringConcat(response, "\", \"status\": \"running\"}")
+            ReturnValue(HTTP.BuildResponse(202, "application/json", response))
+        }
+        
+        // Return result
+        response = StringConcat("{\"exec_id\": \"", exec_id)
+        response = StringConcat(response, "\", \"status\": \"complete\", \"result\": ")
+        response = StringConcat(response, result)
+        response = StringConcat(response, "}")
+        
+        ReturnValue(HTTP.BuildResponse(200, "application/json", response))
+    }
+}
+
+Function.API.GetProgramStatus {
+    Input: req: Address
+    Output: Address
+    Body: {
+        // GET /api/program/status?exec_id=EXEC_123...
+        
+        exec_id = HTTP.GetQueryParam(req, "exec_id")
+        
+        running = ExecutionConfig.running_programs
+        execution = HashMap.HGetSimple(running, exec_id)
+        
+        IfCondition EqualTo(execution, 0) ThenBlock: {
+            error = "{\"error\": \"Execution not found\"}"
+            ReturnValue(HTTP.BuildResponse(404, "application/json", error))
+        }
+        
+        status = Dereference(Add(execution, 32))
+        
+        response = StringConcat("{\"exec_id\": \"", exec_id)
+        response = StringConcat(response, "\", \"status\": ")
+        
+        IfCondition EqualTo(status, 1) ThenBlock: {
+            response = StringConcat(response, "\"running\"}")
+        } ElseBlock: {
+            result = Dereference(Add(execution, 48))
+            response = StringConcat(response, "\"complete\", \"result\": ")
+            response = StringConcat(response, result)
+            response = StringConcat(response, "}")
+        }
+        
+        ReturnValue(HTTP.BuildResponse(200, "application/json", response))
+    }
+}
+
+// ============================================================================
+// MAIN WEB SERVER
+// ============================================================================
+
+Function.WebApp.HandleRequest {
+    Input: req: Address
+    Output: Address
+    Body: {
+        method = Dereference(req)
+        path = Dereference(Add(req, 8))
+        
+        PrintMessage("[")
+        PrintString(method)
+        PrintMessage("] ")
+        PrintString(path)
+        
+        // Route to API handlers
+        is_login = StringCompare(path, "/api/login")
+        IfCondition EqualTo(is_login, 0) ThenBlock: {
+            ReturnValue(API.Login(req))
+        }
+        
+        is_execute = StringCompare(path, "/api/program/execute")
+        IfCondition EqualTo(is_execute, 0) ThenBlock: {
+            ReturnValue(API.ExecuteProgram(req))
+        }
+        
+        is_status = StringStartsWith(path, "/api/program/status")
+        IfCondition EqualTo(is_status, 1) ThenBlock: {
+            ReturnValue(API.GetProgramStatus(req))
+        }
+        
+        // Serve static files (HTML/CSS/JS)
+        ReturnValue(HTTP.ServeStaticFile(path))
+    }
+}
+
+// Start web server
+PrintMessage("=== COBOL Web Application Server ===")
+PrintMessage("Starting HTTP server on port 8080...")
+
+HTTP.StartServer(8080, AddressOf(WebApp.HandleRequest))

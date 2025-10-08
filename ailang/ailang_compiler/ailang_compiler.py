@@ -12,6 +12,8 @@ import copy as copy_module
 # --- FIX: Import the parser from the ailang_parser package ---
 from ailang_parser.compiler import AILANGCompiler
 # --- End FIX ---
+from ailang_compiler.modules.symbol_table import SymbolTable
+from ailang_compiler.modules.semantic_analyzer import SemanticAnalyzer
 from ailang_parser.ailang_ast import *
 
 from ailang_compiler.assembler import X64Assembler
@@ -28,6 +30,7 @@ from ailang_compiler.modules.virtual_memory import VirtualMemoryOps
 from ailang_compiler.modules.library_inliner import LibraryInliner
 from ailang_compiler.modules.hash_ops import HashOps
 from ailang_compiler.modules.network_ops import NetworkOps
+from ailang_compiler.modules.process_ops import ProcessOps
 from ailang_compiler.modules.scheduling_primitives import SchedulingPrimitives
 from ailang_compiler.modules.atomic_ops import AtomicOps
 from ailang_compiler.modules.user_functions import UserFunctions
@@ -48,6 +51,13 @@ class AILANGToX64Compiler:
         self.elf = ELFGenerator()
         self.asm = X64Assembler(self.elf)
         self.variables = {}
+        self.symbol_table = SymbolTable()      # New symbol table for variable lookups
+        self.semantic_analyzer = None          # Will be instantiated in compile()
+        
+        # Stack balance tracker
+        self.stack_depth = 0
+        self.stack_trace = []
+        
         self.stack_size = 0
         self.label_counter = 0
         self.max_depth = 0
@@ -101,6 +111,10 @@ class AILANGToX64Compiler:
         
         self.network_ops = NetworkOps(self)
         
+        # ADD THIS:
+        self.process_ops = ProcessOps(self)
+        print("DEBUG: Initialized process operations module")
+        
         # Initialize library inliner AFTER hash_ops
         self.library_inliner = LibraryInliner(self)
         
@@ -117,7 +131,7 @@ class AILANGToX64Compiler:
         'Library': lambda n: self.compile_library(n),
         'SubRoutine': lambda n: self.compile_subroutine(n),
         'AcronymDefinitions': lambda n: self.memory.compile_acronym_definitions(n),
-        'Pool': lambda n: self.memory.compile_pool(n),
+        'Pool': lambda n: self.memory.compile_pool(n, pre_pass_only=False),
         'SubPool': lambda n: self.memory.compile_subpool(n),
         'RecordTypeDefinition': lambda n: self._compile_record_type(n),
         'Loop': lambda n: self._compile_loop_body(n),
@@ -130,7 +144,7 @@ class AILANGToX64Compiler:
         'LoopSend': lambda n: self.compile_loop_send(n),
         'LoopReceive': lambda n: self.compile_loop_receive(n),
         'LoopReply': lambda n: self.compile_loop_reply(n),
-        'LoopYield': lambda n: self.scheduler.compile_loop_yield(n),
+        'LoopYield': lambda n: self.scheduler.compile_loop_yield(n), # This is an AST node, not a function call
         'Fork': lambda n: self.control_flow.compile_fork(n),
         'Branch': lambda n: self.control_flow.compile_branch(n),
         'While': lambda n: self.control_flow.compile_while_loop(n),
@@ -157,6 +171,47 @@ class AILANGToX64Compiler:
         
         }
 
+    def track_push(self, context=""):
+        '''Track a PUSH operation'''
+        self.stack_depth += 1
+        position = len(self.asm.code) if hasattr(self, 'asm') else 0
+        self.stack_trace.append({
+            'op': 'PUSH',
+            'depth': self.stack_depth,
+            'position': position,
+            'context': context
+        })
+        print(f"STACK: PUSH at {position} | depth={self.stack_depth} | {context}")
+    
+    def track_pop(self, context=""):
+        '''Track a POP operation'''
+        self.stack_depth -= 1
+        position = len(self.asm.code) if hasattr(self, 'asm') else 0
+        self.stack_trace.append({
+            'op': 'POP',
+            'depth': self.stack_depth,
+            'position': position,
+            'context': context
+        })
+        print(f"STACK: POP  at {position} | depth={self.stack_depth} | {context}")
+        
+        if self.stack_depth < 0:
+            print(f"ERROR: Stack underflow! Depth={self.stack_depth}")
+            self.print_stack_trace()
+    
+    def print_stack_trace(self):
+        '''Print the stack operation trace'''
+        print("\n=== STACK TRACE ===")
+        for i, op in enumerate(self.stack_trace[-20:]):  # Last 20 operations
+            print(f"  {i}: {op['op']:4s} pos={op['position']:5d} depth={op['depth']:3d} | {op['context']}")
+        print("===================\n")
+    
+    def check_stack_balance(self, expected_depth, context=""):
+        '''Verify stack is at expected depth'''
+        if self.stack_depth != expected_depth:
+            print(f"WARNING: Stack imbalance at {context}")
+            print(f"  Expected depth: {expected_depth}, Actual depth: {self.stack_depth}")
+            self.print_stack_trace()
 
     # --- NEW: Function to handle library compilation ---
     def compile_library(self, library_node):
@@ -352,50 +407,45 @@ class AILANGToX64Compiler:
             # === END ALIAS RESOLUTION FIX ===
             
             if node.function == "SystemCall":
-                # This is a special built-in function that maps to the x86-64 syscall instruction.
-                
-                # The syscall calling convention on x86-64 is:
-                # Syscall number in RAX
-                # Arguments in: RDI, RSI, RDX, R10, R8, R9
                 syscall_arg_regs = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
-                
-                # Map registers to their POP opcodes
-                pop_opcodes = {
-                    'rax': [0x58], 'rcx': [0x59], 'rdx': [0x5a], 'rbx': [0x5b],
-                    'rsi': [0x5e], 'rdi': [0x5f],
-                    'r8': [0x41, 0x58], 'r9': [0x41, 0x59], 'r10': [0x41, 0x5a],
-                    'r11': [0x41, 0x5b], 'r12': [0x41, 0x5c], 'r13': [0x41, 0x5d],
-                    'r14': [0x41, 0x5e], 'r15': [0x41, 0x5f]
-                }
-                
-                # The first argument to our FunctionCall node is the syscall number.
-                # The rest are the arguments for the syscall itself.
                 num_syscall_args = len(node.arguments) - 1
+
                 if num_syscall_args > len(syscall_arg_regs):
-                    raise ValueError(f"SystemCall supports up to {len(syscall_arg_regs)} arguments, but {num_syscall_args} were given.")
+                    raise ValueError(f"SystemCall supports up to {len(syscall_arg_regs)} arguments, got {num_syscall_args}")
 
-                # We compile and pop arguments off the stack into registers in reverse order
-                # to ensure the stack is managed correctly.
+                # NEW: Compile all args and push to stack FIRST to prevent register clobbering.
+                # We compile in forward order (arg1, arg2, ...) so they are pushed onto the stack
+                # in the order they appear.
+                for i in range(num_syscall_args):
+                    arg_node = node.arguments[i + 1]
+                    self.compile_node(arg_node)  # Result of expression is in RAX
+                    self.asm.emit_push_rax()     # Save to stack
+
+                # NEW: Pop from stack into registers in REVERSE order.
+                # The last argument pushed (argN) needs to go into the Nth register.
                 for i in reversed(range(num_syscall_args)):
-                    arg_node = node.arguments[i + 1] # +1 to skip the syscall number
-                    self.compile_node(arg_node)
                     reg = syscall_arg_regs[i]
-                    if reg in pop_opcodes:
-                        self.asm.emit_bytes(*pop_opcodes[reg])
-                    else:
-                        raise ValueError(f"Unsupported register for POP in SystemCall: {reg}")
+                    if reg == 'rdi':
+                        self.asm.emit_pop_rdi()
+                    elif reg == 'rsi':
+                        self.asm.emit_pop_rsi()
+                    elif reg == 'rdx':
+                        self.asm.emit_pop_rdx()
+                    elif reg == 'r10':
+                        self.asm.emit_pop_r10()
+                    elif reg == 'r8':
+                        self.asm.emit_pop_r8()
+                    elif reg == 'r9':
+                        self.asm.emit_pop_r9()
 
-                # Compile the syscall number (the first argument) and pop it into RAX.
-                syscall_num_node = node.arguments[0]
-                self.compile_node(syscall_num_node)
-                self.asm.emit_bytes(*pop_opcodes['rax'])
+                # Syscall number last (into RAX)
+                self.compile_node(node.arguments[0])
 
-                # Emit the raw bytes for the 'syscall' instruction.
-                self.asm.emit_bytes(0x0f, 0x05)
+                # Execute syscall
+                self.asm.emit_syscall()
 
-                # The return value of a syscall is placed in RAX. We push it onto
-                # our program's stack to be used by the assignment expression.
-                self.asm.emit_bytes(0x50)  # PUSH RAX
+                # Return value is in RAX, push for caller
+                self.asm.emit_push_rax()
                 return
 
             # --- Context-aware library function resolution ---
@@ -493,12 +543,13 @@ class AILANGToX64Compiler:
 
             # Dispatch to modules (existing code)
             dispatch_modules = [
+                self.process_ops,        # ADD THIS FIRST - syscalls have priority
                 self.function_dispatch,  # Handle CallIndirect, AddressOf first
                 self.math_ops,          # Try math operations next
-                self.arithmetic,        # Then basic arithmetic
+                self.arithmetic,        # Then basic arithmetic.
                 self.fileio, self.strings,
                 self.lowlevel, self.hash_ops, self.network_ops,
-                self.virtual_memory, self.atomics
+                self.virtual_memory, self.atomics,
             ]
 
             print(f"DEBUG: Dispatching {node.function} to modules...")
@@ -558,11 +609,17 @@ class AILANGToX64Compiler:
                 return self._compile_scheduler_primitive(node)
 
             # Exit (existing code)
-            if base_name == 'Exit':
+            # Exit (existing code) - bare Exit with no arguments
+            # ProcessExit is handled by process_ops module and takes an argument
+            if base_name == 'Exit' and (not hasattr(node, 'arguments') or len(node.arguments) == 0):
+                # Legacy Exit() with no status code - exits with 0
                 self.asm.emit_mov_rax_imm64(60)
                 self.asm.emit_xor_edi_edi()
                 self.asm.emit_syscall()
                 return
+            
+            if base_name == 'ProcessFork':
+                return self.process_ops.compile_operation(node)
 
             # Unknown function
             raise ValueError(f"Unknown function: {node.function}")
@@ -577,6 +634,15 @@ class AILANGToX64Compiler:
         """Compile SubRoutine as callable code"""
         print(f"DEBUG: Compiling SubRoutine.{node.name}")
         
+        # Track entry stack state
+        entry_depth = self.stack_depth
+        print(f"STACK: SubRoutine.{node.name} entry, depth={entry_depth}")
+        
+        # Check if already compiled
+        if node.name in self.subroutines:
+            print(f"DEBUG: SubRoutine.{node.name} already compiled, skipping")
+            return True
+        
         # Create label for the subroutine
         label = self.asm.create_label()
         self.subroutines[node.name] = label
@@ -588,11 +654,22 @@ class AILANGToX64Compiler:
         # Mark subroutine start
         self.asm.mark_label(label)
         
-        # Save registers we might use
+        # === FIX: Save ALL callee-saved registers (AMD64 ABI: RBX, R12-R15) ===
         self.asm.emit_push_rbx()
+        self.track_push(f"SubRoutine.{node.name} save RBX")
+        self.asm.emit_push_r12()
+        self.track_push(f"SubRoutine.{node.name} save R12")
+        self.asm.emit_push_r13()
+        self.track_push(f"SubRoutine.{node.name} save R13")
+        self.asm.emit_push_r14()
+        self.track_push(f"SubRoutine.{node.name} save R14")
+        self.asm.emit_push_r15()
+        self.track_push(f"SubRoutine.{node.name} save R15")
+        # === END FIX ===
         
         # Create return label for this subroutine
         return_label = self.asm.create_label()
+        print(f"DEBUG: Created return label '{return_label}' for SubRoutine.{node.name}")
         
         # Set context for ReturnValue
         self.compiling_subroutine = True
@@ -605,13 +682,29 @@ class AILANGToX64Compiler:
         # Mark return point
         self.asm.mark_label(return_label)
         
+        # Check stack balance before return (now +5 for 5 saved registers)
+        self.check_stack_balance(entry_depth + 5, f"SubRoutine.{node.name} before return (should have +5 for saved registers)")
+        
         # Clear context
         self.compiling_subroutine = False
         self.subroutine_return_label = None
         
-        # Restore registers and return
+        # === FIX: Restore ALL callee-saved registers in REVERSE order ===
+        self.track_pop(f"SubRoutine.{node.name} restore R15")
+        self.asm.emit_pop_r15()
+        self.track_pop(f"SubRoutine.{node.name} restore R14")
+        self.asm.emit_pop_r14()
+        self.track_pop(f"SubRoutine.{node.name} restore R13")
+        self.asm.emit_pop_r13()
+        self.track_pop(f"SubRoutine.{node.name} restore R12")
+        self.asm.emit_pop_r12()
+        self.track_pop(f"SubRoutine.{node.name} restore RBX")
         self.asm.emit_pop_rbx()
+        # === END FIX ===
+        
         self.asm.emit_ret()
+        
+        print(f"STACK: SubRoutine.{node.name} exit, depth should be {entry_depth}")
         
         # Mark skip label (continue main execution)
         self.asm.mark_label(skip_label)
@@ -883,6 +976,15 @@ class AILANGToX64Compiler:
         print("\n=== COMPILATION STARTING ===")
         # Store the AST so other modules can reference it (e.g., for global lookups)
         self.ast = ast
+        
+        # Run semantic analysis to populate symbol table
+        print("Phase 1: Running semantic analysis...")
+        self.semantic_analyzer = SemanticAnalyzer(self, self.symbol_table)
+        if not self.semantic_analyzer.analyze(ast):
+            raise ValueError("Semantic analysis failed - check errors above")
+        
+        print(f"✓ Symbol table populated with {len(self.symbol_table.scopes)} scopes")
+        print(f"✓ Total symbols: {sum(len(s) for s in self.symbol_table.scopes.values())}\n")
 
         # PASS 1: Register ALL global symbols (functions, variables, pools)
         print("Phase 0: Registering all global symbols...")
@@ -901,9 +1003,20 @@ class AILANGToX64Compiler:
                 # Pre-pass to register global variables so they are known before function compilation.
                 # This allocates stack space for them in the main stack frame.
                 if decl.target not in self.variables:
-                    self.stack_size += 8
-                    self.variables[decl.target] = self.stack_size
-                    print(f"DEBUG: Pre-registered global variable '{decl.target}' at offset {self.stack_size}")
+                    # === FIX: Check if this already exists as a pool variable ===
+                    pool_prefixed = f"FixedPool.{decl.target}"
+                    is_pool_var = (pool_prefixed in self.variables and
+                                  (self.variables[pool_prefixed] & 0x80000000))
+
+                    if is_pool_var:
+                        # It's already a pool variable - don't allocate on stack!
+                        print(f"DEBUG: Skipping pre-registration of '{decl.target}' (already exists as pool variable {pool_prefixed})")
+                    else:
+                        # Not a pool variable - allocate on stack
+                        self.stack_size += 8
+                        self.variables[decl.target] = self.stack_size
+                        print(f"DEBUG: Pre-registered global variable '{decl.target}' at offset {self.stack_size}")
+                    # === END FIX ===
 
         # PASS 2: Compile everything
         print("Phase 1: Generating machine code...")
@@ -912,8 +1025,53 @@ class AILANGToX64Compiler:
         # Fix forward references
         self.fixup_forward_references()
         
+        # === DIAGNOSTIC: Check jump resolution before fixing ===
+        print("\n" + "="*60)
+        print("DIAGNOSTIC: Checking jump/label state before resolution")
+        print("="*60)
+        
+        print(f"\nGlobal jumps to resolve: {len(self.asm.jump_manager.global_jumps)}")
+        for jump in self.asm.jump_manager.global_jumps:
+            print(f"  Jump #{self.asm.jump_manager.global_jumps.index(jump)}:")
+            print(f"    Position: {jump.position}")
+            print(f"    Target label: '{jump.target_label}'")
+            print(f"    Type: {jump.instruction_type}")
+            print(f"    Size: {jump.size} bytes")
+            print(f"    Context: {jump.context}")
+            
+            # Check if target label exists
+            if jump.target_label in self.asm.jump_manager.global_labels:
+                target = self.asm.jump_manager.global_labels[jump.target_label]
+                print(f"    ✓ Target found at position {target.position}")
+                offset = target.position - (jump.position + jump.size)
+                print(f"    Calculated offset: {offset} (0x{offset & 0xFFFFFFFF:08x})")
+            elif jump.target_label in self.asm.jump_manager.labels:
+                target_pos = self.asm.jump_manager.labels[jump.target_label]
+                print(f"    ✓ Target found in unified labels at position {target_pos}")
+                offset = target_pos - (jump.position + jump.size)
+                print(f"    Calculated offset: {offset} (0x{offset & 0xFFFFFFFF:08x})")
+            else:
+                print(f"    ✗ TARGET LABEL NOT FOUND!")
+                
+        print(f"\nGlobal labels available: {len(self.asm.jump_manager.global_labels)}")
+        for label_name, label in list(self.asm.jump_manager.global_labels.items())[:20]:  # Show first 20
+            print(f"  '{label_name}' at position {label.position}")
+            
+        print(f"\nUnified labels count: {len(self.asm.jump_manager.labels)}")
+        print(f"Sample unified labels: {list(self.asm.jump_manager.labels.keys())[:10]}")
+        
+        print("\n" + "="*60)
+        print("END DIAGNOSTIC")
+        print("="*60 + "\n")
         print("Phase 2: Resolving internal jump offsets...")
         self.asm.resolve_jumps()
+        
+        # After resolve_jumps(), add this:
+        print("\n=== CHECKING CRITICAL POSITIONS ===")
+        print(f"Position 1008-1020 (SimpleTest ReturnValue area):")
+        for i in range(1008, min(1021, len(self.asm.code))):
+            print(f"  {i}: 0x{self.asm.code[i]:02x}")
+        print()
 
         print("Phase 3: Building executable...")
         code_bytes = bytes(self.asm.code)

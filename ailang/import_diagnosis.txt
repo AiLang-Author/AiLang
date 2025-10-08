@@ -1,9 +1,0 @@
-IMPORT SYSTEM DIAGNOSIS
-==================================================
-
-Problem: Alias mappings created but not passed through compilation pipeline
-
-Files to modify:
-1. import_resolver.py - make it return mappings
-2. main.py - capture and pass mappings
-3. ailang_compiler.py - use mappings to resolve aliases

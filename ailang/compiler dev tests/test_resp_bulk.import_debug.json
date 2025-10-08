@@ -1,0 +1,23 @@
+{
+  "main_file": "compiler dev tests/test_resp_bulk.ailang",
+  "loaded_modules": [
+    "RESP",
+    "XArrays"
+  ],
+  "conflicts": {},
+  "prefixes": {},
+  "resolution_log": [
+    {
+      "file": "compiler dev tests/test_resp_bulk.ailang",
+      "line": 4,
+      "import": "RESP",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.RESP.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

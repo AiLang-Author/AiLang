@@ -1,0 +1,28 @@
+// test_string_replace_simple.ailang
+// Ultra-minimal test - no pools at all
+
+LibraryImport.Cobol
+
+Function.Main {
+    Input: ()
+    Output: Integer
+    Body: {
+        PrintMessage("Testing StringReplaceAll...")
+        
+        // Test 1: Simple local variable
+        text = "Hello World"
+        PrintMessage(StringConcat("Before: ", text))
+        
+        result = StringReplaceAll(text, "o", "0")
+        PrintMessage(StringConcat("After: ", result))
+        
+        // Test 2: Multiple replacements
+        text2 = "foo bar foo"
+        PrintMessage(StringConcat("Before2: ", text2))
+        
+        result2 = StringReplaceAll(text2, "foo", "FOO")
+        PrintMessage(StringConcat("After2: ", result2))
+        
+        ReturnValue(0)
+    }
+}

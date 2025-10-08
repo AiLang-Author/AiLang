@@ -42,6 +42,7 @@ class StringOps:
             'StringIndexOf': self.compile_string_index_of,
             'StringTrim': self.compile_string_trim,
             'StringReplace': self.compile_string_replace,
+         #   'StringReplaceAll': self.compile_string_replace_all,  
             'StringSplit': self.compile_string_split,
             
         }
@@ -216,24 +217,21 @@ class StringOps:
                 self.asm.emit_load_data_address('rsi', newline_offset)
                 self.asm.emit_mov_rdx_imm64(1)
                 self.asm.emit_syscall()
-                
+
             elif isinstance(node.message, Identifier):
-                resolved_name = self.compiler.resolve_acronym_identifier(node.message.name)
-                if resolved_name in self.compiler.variables:
-                    offset = self.compiler.variables[resolved_name]
-                    self.asm.emit_bytes(0x48, 0x8b, 0x85)
-                    self.asm.emit_bytes(*struct.pack('<i', -offset))
-                    self.emit_smart_print_with_jumps()
-                    # Add newline after identifier value
-                    newline_offset = self.asm.add_string("\n")
-                    self.asm.emit_mov_rax_imm64(1)  # sys_write
-                    self.asm.emit_mov_rdi_imm64(1)  # stdout
-                    self.asm.emit_load_data_address('rsi', newline_offset)
-                    self.asm.emit_mov_rdx_imm64(1)
-                    self.asm.emit_syscall()
-                else:
-                    raise ValueError(f"Undefined variable: {node.message.name}")
-                    
+                # Just use compile_expression like FunctionCalls do
+                # This ensures consistent variable loading
+                self.compiler.compile_expression(node.message)
+                self.emit_smart_print_with_jumps()
+
+                # Add newline after identifier value
+                newline_offset = self.asm.add_string("\n")
+                self.asm.emit_mov_rax_imm64(1)  # sys_write
+                self.asm.emit_mov_rdi_imm64(1)  # stdout
+                self.asm.emit_load_data_address('rsi', newline_offset)
+                self.asm.emit_mov_rdx_imm64(1)
+                self.asm.emit_syscall()
+
             elif isinstance(node.message, FunctionCall):
                 self.compiler.compile_function_call(node.message)
                 self.emit_smart_print_with_jumps()
@@ -458,7 +456,7 @@ class StringOps:
         
         # --- FIX: Save callee-saved registers RBX and R12 ---
         self.asm.emit_push_rbx()
-        self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
+        self.asm.emit_push_r12()  # PUSH R12 (tracked)
 
         self.compiler.compile_expression(node.arguments[0])
         self.asm.emit_push_rax()
@@ -495,15 +493,19 @@ class StringOps:
         self.asm.emit_bytes(0xC6, 0x07, 0x00)
         self.asm.emit_bytes(0x48, 0xFF, 0xCF)
 
+        # CRITICAL FIX: Create done_label BEFORE branching
+        done_label = self.asm.create_label()
+        
         self.asm.emit_bytes(0x48, 0x85, 0xC0)
         zero_case = self.asm.create_label()
         not_zero = self.asm.create_label()
         self.asm.emit_jump_to_label(not_zero, "JNZ")
 
         self.asm.mark_label(zero_case)
-        self.asm.emit_bytes(0xC6, 0x07, 0x30)
+        self.asm.emit_bytes(0xC6, 0x07, 0x30)  # MOV BYTE [RDI], '0'
         self.asm.emit_mov_rax_rdi()
-        done_label = self.asm.create_label()
+        # FIX: Pop the pushed value to balance stack
+        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x08)  # ADD RSP, 8
         self.asm.emit_jump_to_label(done_label, "JMP")
 
         self.asm.mark_label(not_zero)
@@ -542,7 +544,7 @@ class StringOps:
         self.asm.mark_label(done_label)
 
         # --- FIX: Restore callee-saved registers ---
-        self.asm.emit_bytes(0x41, 0x5C)  # POP R12
+        self.asm.emit_pop_r12()
         self.asm.emit_pop_rbx()
 
         return True
@@ -563,9 +565,9 @@ class StringOps:
         
         # Save callee-saved registers that might be used
         self.asm.emit_push_rbx()
-        self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
-        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13  
-        self.asm.emit_bytes(0x41, 0x56)  # PUSH R14
+        self.asm.emit_push_r12()  # PUSH R12 (tracked)
+        self.asm.emit_push_r13()  # PUSH R13 (tracked)  
+        self.asm.emit_push_r14()  # PUSH R14 (tracked)
         
         # Evaluate arguments and save results
         # IMPORTANT: Each compile_expression can clobber RAX, RCX, RDX, RSI, RDI, R8-R11
@@ -690,9 +692,9 @@ class StringOps:
         self.asm.emit_bytes(0x4C, 0x89, 0xE0)  # MOV RAX, R12
         
         # Restore callee-saved registers in reverse order
-        self.asm.emit_bytes(0x41, 0x5E)  # POP R14
-        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
-        self.asm.emit_bytes(0x41, 0x5C)  # POP R12
+        self.asm.emit_pop_r14()  # POP R14 (tracked)
+        self.asm.emit_pop_r13()  # POP R13 (tracked)
+        self.asm.emit_pop_r12()  # POP R12 (tracked)
         self.asm.emit_pop_rbx()
         
         print("DEBUG: StringConcat completed (ABI compliant)")
@@ -815,7 +817,7 @@ class StringOps:
         self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
         self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
         self.asm.emit_jump_to_label(copy_loop, "JMP")
-
+        
         self.asm.mark_label(copy_done)
         self.asm.emit_mov_rax_imm64(1)
 
@@ -1900,7 +1902,7 @@ class StringOps:
     def compile_string_index_of(self, node):
         if len(node.arguments) < 2 or len(node.arguments) > 3:
             raise ValueError("StringIndexOf requires 2-3 arguments: haystack, needle, [start_pos]")
-    
+
         print("DEBUG: Compiling StringIndexOf")
 
         # Save registers
@@ -1921,6 +1923,13 @@ class StringOps:
         self.compiler.compile_expression(node.arguments[1])
         self.asm.emit_bytes(0x49, 0x89, 0xC1)  # MOV R9, RAX (Needle in R9)
 
+        # NEW: Handle optional start_pos argument
+        if len(node.arguments) == 3:
+            # Get start position
+            self.compiler.compile_expression(node.arguments[2])
+            # Add start_pos to haystack pointer
+            self.asm.emit_bytes(0x48, 0x01, 0xC7)  # ADD RDI, RAX (advance haystack by start_pos)
+
         # Labels
         outer_loop = self.asm.create_label()
         inner_loop = self.asm.create_label()
@@ -1934,19 +1943,19 @@ class StringOps:
         self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL (end of haystack?)
         self.asm.emit_jump_to_label(not_found, "JZ")
 
-        # Setup for inner loop - FIX: proper register moves
+        # Setup for inner loop
         self.asm.emit_bytes(0x49, 0x89, 0xF8)  # MOV R8, RDI (current haystack pos)
-        self.asm.emit_bytes(0x4C, 0x89, 0xCE)  # MOV RSI, R9 (needle start) - FIXED OPCODE
+        self.asm.emit_bytes(0x4C, 0x89, 0xCE)  # MOV RSI, R9 (needle start)
 
         self.asm.mark_label(inner_loop)
-        self.asm.emit_bytes(0x8A, 0x06)        # MOV AL, [RSI] - FIXED: load from RSI not R14
+        self.asm.emit_bytes(0x8A, 0x06)        # MOV AL, [RSI]
         self.asm.emit_bytes(0x41, 0x8A, 0x18)  # MOV BL, [R8]
         self.asm.emit_bytes(0x84, 0xC0)        # TEST AL, AL (end of needle?)
         self.asm.emit_jump_to_label(found, "JZ")
         self.asm.emit_bytes(0x38, 0xD8)        # CMP AL, BL
         self.asm.emit_jump_to_label(continue_outer, "JNE")
         self.asm.emit_bytes(0x49, 0xFF, 0xC0)  # INC R8
-        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI - FIXED: INC RSI not R14
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
         self.asm.emit_jump_to_label(inner_loop, "JMP")
 
         self.asm.mark_label(continue_outer)
@@ -1973,96 +1982,6 @@ class StringOps:
         self.asm.emit_pop_rbx()
 
         print("DEBUG: StringIndexOf completed")
-        return True
-
-    def compile_stringindexof(self, node):
-        """Find the index of a substring within a string - CORRECTED VERSION"""
-        if len(node.arguments) != 2:
-            raise ValueError("StringIndexOf requires 2 arguments: haystack, needle")
-            
-        print("DEBUG: Compiling StringIndexOf (FIXED)")
-        
-        # Save registers
-        self.asm.emit_push_rbx()
-        self.asm.emit_push_rcx()
-        self.asm.emit_push_rdx()
-        self.asm.emit_push_rsi()
-        self.asm.emit_push_rdi()
-        self.asm.emit_push_r8()
-        self.asm.emit_push_r9()
-        
-        # Get haystack (string to search in) first
-        self.compiler.compile_expression(node.arguments[0])
-        self.asm.emit_mov_rdi_rax()  # Haystack in RDI
-        self.asm.emit_push_rdi()     # Save original for index calculation
-        
-        # Get needle (substring to find)
-        self.compiler.compile_expression(node.arguments[1])
-        self.asm.emit_bytes(0x49, 0x89, 0xC1)  # MOV R9, RAX (needle in R9)
-        
-        # Labels
-        outer_loop = self.asm.create_label()
-        inner_loop = self.asm.create_label()
-        found = self.asm.create_label()
-        not_found = self.asm.create_label()
-        continue_outer = self.asm.create_label()
-        done = self.asm.create_label()
-        
-        # Outer loop - check each position in haystack
-        self.asm.mark_label(outer_loop)
-        self.asm.emit_bytes(0x8A, 0x07)  # MOV AL, [RDI]
-        self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL
-        self.asm.emit_jump_to_label(not_found, "JZ")  # End of haystack
-        
-        # Set up for inner loop
-        self.asm.emit_bytes(0x49, 0x89, 0xF8)  # MOV R8, RDI (current haystack pos)
-        self.asm.emit_bytes(0x4C, 0x89, 0xCE)  # MOV RSI, R9 (needle pointer)
-        
-        # Inner loop - compare strings
-        self.asm.mark_label(inner_loop)
-        self.asm.emit_bytes(0x8A, 0x06)        # MOV AL, [RSI] (needle char)
-        self.asm.emit_bytes(0x41, 0x8A, 0x18)  # MOV BL, [R8] (haystack char)
-        
-        self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL
-        self.asm.emit_jump_to_label(found, "JZ")  # End of needle = match!
-        
-        self.asm.emit_bytes(0x38, 0xD8)  # CMP AL, BL
-        self.asm.emit_jump_to_label(continue_outer, "JNE")  # Mismatch
-        
-        # Match so far, continue
-        self.asm.emit_bytes(0x49, 0xFF, 0xC0)  # INC R8
-        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
-        self.asm.emit_jump_to_label(inner_loop, "JMP")
-        
-        # No match at this position
-        self.asm.mark_label(continue_outer)
-        self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
-        self.asm.emit_jump_to_label(outer_loop, "JMP")
-        
-        # Found it!
-        self.asm.mark_label(found)
-        self.asm.emit_pop_rbx()  # Original haystack
-        self.asm.emit_mov_rax_rdi()
-        self.asm.emit_bytes(0x48, 0x29, 0xD8)  # SUB RAX, RBX
-        self.asm.emit_jump_to_label(done, "JMP")
-        
-        # Not found
-        self.asm.mark_label(not_found)
-        self.asm.emit_pop_rbx()  # Clean stack
-        self.asm.emit_mov_rax_imm64(-1)
-        
-        self.asm.mark_label(done)
-        
-        # Restore registers
-        self.asm.emit_pop_r9()
-        self.asm.emit_pop_r8()
-        self.asm.emit_pop_rdi()
-        self.asm.emit_pop_rsi()
-        self.asm.emit_pop_rdx()
-        self.asm.emit_pop_rcx()
-        self.asm.emit_pop_rbx()
-        
-        print("DEBUG: StringIndexOf completed (FIXED)")
         return True
 
 
@@ -2174,146 +2093,125 @@ class StringOps:
         return True
 
     def compile_string_replace(self, node):
-        """Replace all occurrences of a substring with another string."""
+        """Replace FIRST occurrence only - simple and reliable"""
         if len(node.arguments) != 3:
             raise ValueError("StringReplace requires 3 arguments: haystack, needle, replacement")
-
-        print("DEBUG: Compiling StringReplace (full implementation)")
-
-        # 1. Prologue: Save callee-saved registers
+        
+        print("DEBUG: Compiling StringReplace (SIMPLE implementation)")
+        
+        # Save registers
         self.asm.emit_push_rbx()
         self.asm.emit_push_r12()
         self.asm.emit_push_r13()
         self.asm.emit_push_r14()
-        self.asm.emit_push_r15()
-
-        # 2. Evaluate args and get pointers
-        self.compiler.compile_expression(node.arguments[0]) # haystack
-        self.asm.emit_bytes(0x49, 0x89, 0xC4) # MOV R12, RAX
-        self.compiler.compile_expression(node.arguments[1]) # needle
-        self.asm.emit_bytes(0x49, 0x89, 0xC5) # MOV R13, RAX
-        self.compiler.compile_expression(node.arguments[2]) # replacement
-        self.asm.emit_bytes(0x49, 0x89, 0xC6) # MOV R14, RAX
-
-        # 3. Get lengths and push them to the stack
-        self.asm.emit_bytes(0x4C, 0x89, 0xF7); self._emit_strlen(); self.asm.emit_push_rax() # len_r
-        self.asm.emit_bytes(0x4C, 0x89, 0xEF); self._emit_strlen(); self.asm.emit_push_rax() # len_n
-        self.asm.emit_bytes(0x4C, 0x89, 0xE7); self._emit_strlen(); self.asm.emit_push_rax() # len_h
-        # Stack: [len_h], [len_n], [len_r]
-
-        # 4. Edge cases
-        cleanup_and_return = self.asm.create_label()
-        strdup_haystack = self.asm.create_label()
-
-        # if haystack is NULL, return NULL
-        self.asm.emit_bytes(0x4C, 0x85, 0xE4) # TEST R12, R12
-        haystack_null = self.asm.create_label()
-        self.asm.emit_jump_to_label(haystack_null, "JZ")
-
-        # if needle is NULL or empty, strdup(haystack)
-        self.asm.emit_bytes(0x4C, 0x85, 0xED) # TEST R13, R13
-        self.asm.emit_jump_to_label(strdup_haystack, "JZ")
-        self.asm.emit_bytes(0x48, 0x8B, 0x44, 0x24, 0x08) # MOV RAX, [RSP+8] (len_n)
-        self.asm.emit_bytes(0x48, 0x85, 0xC0)             # TEST RAX, RAX
-        self.asm.emit_jump_to_label(strdup_haystack, "JZ")
-
-        # 5. Count occurrences
-        self.asm.emit_mov_rbx_imm64(0) # RBX = count
-        self.asm.emit_bytes(0x4C, 0x89, 0xE7)      # MOV RDI, R12 (current search pos)
-        count_loop = self.asm.create_label()
-        count_done = self.asm.create_label()
-        self.asm.mark_label(count_loop)
-        self.asm.emit_push_rdi(); self.asm.emit_push_r13(); self.asm.emit_bytes(0x4C, 0x89, 0xEE); self._emit_strstr(); self.asm.emit_pop_r13(); self.asm.emit_pop_rdi() # MOV RSI, R13
-        self.asm.emit_bytes(0x48, 0x85, 0xC0) # TEST RAX, RAX
-        self.asm.emit_jump_to_label(count_done, "JZ")
-        self.asm.emit_bytes(0x48, 0xFF, 0xC3) # INC RBX
-        self.asm.emit_bytes(0x48, 0x89, 0xC7) # MOV RDI, RAX
-        self.asm.emit_bytes(0x48, 0x8B, 0x44, 0x24, 0x08); self.asm.emit_bytes(0x48, 0x01, 0xC7) # MOV RAX, [RSP+8] (len_n); ADD RDI, RAX
-        self.asm.emit_jump_to_label(count_loop, "JMP")
-        self.asm.mark_label(count_done)
-
-        # if count is 0, strdup haystack
-        self.asm.emit_bytes(0x48, 0x85, 0xDB) # TEST RBX, RBX
-        self.asm.emit_jump_to_label(strdup_haystack, "JZ")
-
-        # 6. Allocate new buffer
-        self.asm.emit_bytes(0x48, 0x8B, 0x44, 0x24, 0x10) # MOV RAX, [RSP+16] (len_r)
-        self.asm.emit_bytes(0x48, 0x8B, 0x4C, 0x24, 0x08) # MOV RCX, [RSP+8] (len_n)
-        self.asm.emit_bytes(0x48, 0x29, 0xC8)            # SUB RAX, RCX (len_diff)
-        self.asm.emit_bytes(0x48, 0x0F, 0xAF, 0xC3)      # IMUL RAX, RBX (total_diff)
-        self.asm.emit_bytes(0x48, 0x03, 0x44, 0x24, 0x00) # ADD RAX, [RSP] (RAX += len_h)
-        self.asm.emit_bytes(0x48, 0xFF, 0xC0) # INC RAX (for null)
-        self.asm.emit_bytes(0x48, 0x89, 0xC6) # MOV RSI, RAX (size for mmap)
-        self.asm.emit_mov_rax_imm64(9); self.asm.emit_mov_rdi_imm64(0); self.asm.emit_mov_rdx_imm64(3); self.asm.emit_mov_r10_imm64(0x22); self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF); self.asm.emit_mov_r9_imm64(0); self.asm.emit_syscall() # MOV R8, -1
-        self.asm.emit_bytes(0x49, 0x89, 0xC7) # MOV R15, RAX (R15 = new_buffer)
-
-        # 7. Build new string
-        self.asm.emit_bytes(0x4C, 0x89, 0xFF)      # MOV RDI, R15 (dest)
-        self.asm.emit_bytes(0x4C, 0x89, 0xE6)      # MOV RSI, R12 (src)
-
-        build_loop = self.asm.create_label()
-        copy_tail = self.asm.create_label()
-        self.asm.mark_label(build_loop)
-        self.asm.emit_push_rdi(); self.asm.emit_push_rsi(); self.asm.emit_bytes(0x48, 0x89, 0xF7); self.asm.emit_bytes(0x4C, 0x89, 0xEE); self._emit_strstr(); self.asm.emit_pop_rsi(); self.asm.emit_pop_rdi() # MOV RDI,RSI; MOV RSI,R13
-        self.asm.emit_bytes(0x48, 0x85, 0xC0) # TEST RAX, RAX
-        self.asm.emit_jump_to_label(copy_tail, "JZ")
-
-        # Copy segment before match
-        self.asm.emit_bytes(0x48, 0x89, 0xC1); self.asm.emit_bytes(0x48, 0x29, 0xF1); # MOV RCX,RAX; SUB RCX,RSI
-        self.asm.emit_bytes(0xF3, 0xA4) # REP MOVSB
-
-        # Copy replacement
-        self.asm.emit_push_rsi
-        self.asm.emit_bytes(0x4C, 0x89, 0xF6) # MOV RSI, R14
-        self.asm.emit_bytes(0x48, 0x8B, 0x4C, 0x24, 0x10) # MOV RCX, [RSP+16] (len_r)
-        self.asm.emit_bytes(0xF3, 0xA4) # REP MOVSB
-        self.asm.emit_pop_rsi
-
-        # Advance RSI past the needle in original string
-        self.asm.emit_bytes(0x48, 0x8B, 0x44, 0x24, 0x08); self.asm.emit_bytes(0x48, 0x01, 0xC6) # MOV RAX, [RSP+8] (len_n); ADD RSI, RAX
-        self.asm.emit_jump_to_label(build_loop, "JMP")
-
-        self.asm.mark_label(copy_tail)
-        # Copy remaining part of haystack
-        self.asm.emit_bytes(0x48, 0x89, 0xF7); self._emit_strlen(); self.asm.emit_bytes(0x48, 0x89, 0xC1) # MOV RDI,RSI; MOV RCX,RAX
-        self.asm.emit_bytes(0x48, 0x85, 0xC9) # TEST RCX, RCX
-        skip_tail_copy = self.asm.create_label()
-        self.asm.emit_jump_to_label(skip_tail_copy, "JZ")
-        self.asm.emit_bytes(0xF3, 0xA4) # REP MOVSB
-        self.asm.mark_label(skip_tail_copy)
-
-        # Null terminate
-        self.asm.emit_bytes(0xC6, 0x07, 0x00) # MOV BYTE [RDI], 0
-
-        # Set return value
-        self.asm.emit_bytes(0x4C, 0x89, 0xF8) # MOV RAX, R15
-        self.asm.emit_jump_to_label(cleanup_and_return, "JMP")
-
-        # strdup_haystack block
-        self.asm.mark_label(strdup_haystack)
-        self.asm.emit_bytes(0x48, 0x8B, 0x34, 0x24) # MOV RSI, [RSP] (len_h)
-        self.asm.emit_bytes(0x48, 0xFF, 0xC6)      # INC RSI
-        self.asm.emit_mov_rax_imm64(9); self.asm.emit_mov_rdi_imm64(0); self.asm.emit_mov_rdx_imm64(3); self.asm.emit_mov_r10_imm64(0x22); self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF); self.asm.emit_mov_r9_imm64(0); self.asm.emit_syscall() # MOV R8, -1
-        self.asm.emit_bytes(0x48, 0x89, 0xC7) # MOV RDI, RAX
-        self.asm.emit_bytes(0x4C, 0x89, 0xE6) # MOV RSI, R12
-        self.asm.emit_bytes(0x48, 0x8B, 0x0C, 0x24) # MOV RCX, [RSP] (len_h)
-        self.asm.emit_bytes(0x48, 0xFF, 0xC1)      # INC RCX (for null terminator)
-        self.asm.emit_bytes(0xF3, 0xA4) # REP MOVSB
-        self.asm.emit_jump_to_label(cleanup_and_return, "JMP")
-
-        # haystack_null block
-        self.asm.mark_label(haystack_null)
-        self.asm.emit_mov_rax_imm64(0)
-
-        # 8. Cleanup and return
-        self.asm.mark_label(cleanup_and_return)
-        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x18) # ADD RSP, 24
-        self.asm.emit_bytes(0x41, 0x5F) # POP R15
-        self.asm.emit_bytes(0x41, 0x5E) # POP R14
-        self.asm.emit_bytes(0x41, 0x5D) # POP R13
-        self.asm.emit_bytes(0x41, 0x5C) # POP R12
-        self.asm.emit_bytes(0x5B)       # POP RBX
+        
+        # Get arguments
+        self.compiler.compile_expression(node.arguments[0])  # haystack
+        self.asm.emit_bytes(0x49, 0x89, 0xC4)  # MOV R12, RAX
+        
+        self.compiler.compile_expression(node.arguments[1])  # needle
+        self.asm.emit_bytes(0x49, 0x89, 0xC5)  # MOV R13, RAX
+        
+        self.compiler.compile_expression(node.arguments[2])  # replacement
+        self.asm.emit_bytes(0x49, 0x89, 0xC6)  # MOV R14, RAX
+        
+        # Find needle in haystack using strstr
+        self.asm.emit_bytes(0x4C, 0x89, 0xE7)  # MOV RDI, R12 (haystack)
+        self.asm.emit_bytes(0x4C, 0x89, 0xEE)  # MOV RSI, R13 (needle)
+        self._emit_strstr()
+        
+        # If not found, return original haystack
+        not_found = self.asm.create_label()
+        self.asm.emit_test_rax_rax()
+        self.asm.emit_jump_to_label(not_found, "JZ")
+        
+        # Found at RAX - save match position
+        self.asm.emit_mov_rbx_rax()  # RBX = match position
+        
+        # Calculate lengths
+        self.asm.emit_bytes(0x4C, 0x89, 0xE7); self._emit_strlen()  # strlen(haystack)
+        self.asm.emit_push_rax()  # Save haystack_len
+        
+        self.asm.emit_bytes(0x4C, 0x89, 0xEF); self._emit_strlen()  # strlen(needle)
+        self.asm.emit_push_rax()  # Save needle_len
+        
+        self.asm.emit_bytes(0x4C, 0x89, 0xF7); self._emit_strlen()  # strlen(replacement)
+        self.asm.emit_push_rax()  # Save replacement_len
+        # Stack: [replacement_len], [needle_len], [haystack_len]
+        
+        # Calculate new size = haystack_len - needle_len + replacement_len + 1
+        self.asm.emit_bytes(0x48, 0x8B, 0x04, 0x24)  # MOV RAX, [RSP] (replacement_len)
+        self.asm.emit_bytes(0x48, 0x2B, 0x44, 0x24, 0x08)  # SUB RAX, [RSP+8] (needle_len)
+        self.asm.emit_bytes(0x48, 0x03, 0x44, 0x24, 0x10)  # ADD RAX, [RSP+16] (haystack_len)
+        self.asm.emit_bytes(0x48, 0xFF, 0xC0)  # INC RAX (null terminator)
+        
+        # Allocate new buffer
+        self.asm.emit_bytes(0x48, 0x89, 0xC6)  # MOV RSI, RAX (size)
+        self.asm.emit_mov_rax_imm64(9)
+        self.asm.emit_mov_rdi_imm64(0)
+        self.asm.emit_mov_rdx_imm64(3)
+        self.asm.emit_mov_r10_imm64(0x22)
+        self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)
+        self.asm.emit_mov_r9_imm64(0)
+        self.asm.emit_syscall()
+        
+        # RAX = new buffer, save it
+        self.asm.emit_push_rax()  # Save result buffer
+        # Stack: [result], [replacement_len], [needle_len], [haystack_len]
+        
+        # Copy: before_match + replacement + after_match
+        
+        # 1. Copy before match
+        self.asm.emit_bytes(0x48, 0x8B, 0x3C, 0x24)  # MOV RDI, [RSP] (result)
+        self.asm.emit_bytes(0x4C, 0x89, 0xE6)  # MOV RSI, R12 (haystack start)
+        self.asm.emit_bytes(0x48, 0x89, 0xD9)  # MOV RCX, RBX (match pos)
+        self.asm.emit_bytes(0x48, 0x29, 0xF1)  # SUB RCX, RSI (bytes before match)
+        self.asm.emit_bytes(0xF3, 0xA4)  # REP MOVSB
+        
+        # 2. Copy replacement
+        self.asm.emit_bytes(0x4C, 0x89, 0xF6)  # MOV RSI, R14 (replacement)
+        self.asm.emit_bytes(0x48, 0x8B, 0x4C, 0x24, 0x08)  # MOV RCX, [RSP+8] (replacement_len)
+        self.asm.emit_bytes(0xF3, 0xA4)  # REP MOVSB
+        
+        # 3. Copy after match
+        self.asm.emit_bytes(0x48, 0x89, 0xDE)  # MOV RSI, RBX (match position)
+        self.asm.emit_bytes(0x48, 0x03, 0x74, 0x24, 0x10)  # ADD RSI, [RSP+16] (skip needle)
+        # Copy rest of string
+        copy_rest = self.asm.create_label()
+        self.asm.mark_label(copy_rest)
+        self.asm.emit_bytes(0x8A, 0x06)  # MOV AL, [RSI]
+        self.asm.emit_bytes(0x88, 0x07)  # MOV [RDI], AL
+        self.asm.emit_bytes(0x84, 0xC0)  # TEST AL, AL
+        done = self.asm.create_label()
+        self.asm.emit_jump_to_label(done, "JZ")
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
+        self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
+        self.asm.emit_jump_to_label(copy_rest, "JMP")
+        
+        self.asm.mark_label(done)
+        # Return result
+        self.asm.emit_bytes(0x48, 0x8B, 0x04, 0x24)  # MOV RAX, [RSP] (result)
+        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x20)  # ADD RSP, 32 (clean stack)
+        
+        end_label = self.asm.create_label()
+        self.asm.emit_jump_to_label(end_label, "JMP")
+        
+        # Not found path
+        self.asm.mark_label(not_found)
+        self.asm.emit_bytes(0x4C, 0x89, 0xE0)  # MOV RAX, R12 (return original)
+        
+        self.asm.mark_label(end_label)
+        # Restore registers
+        self.asm.emit_pop_r14()
+        self.asm.emit_pop_r13()
+        self.asm.emit_pop_r12()
+        self.asm.emit_pop_rbx()
+        
+        print("DEBUG: StringReplace done")
         return True
+
+    
+
 
     def _emit_strstr(self):
         """
@@ -2384,10 +2282,10 @@ class StringOps:
         
         # Save callee-saved registers
         self.asm.emit_push_rbx()
-        self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
-        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13
-        self.asm.emit_bytes(0x41, 0x56)  # PUSH R14
-        self.asm.emit_bytes(0x41, 0x57)  # PUSH R15
+        self.asm.emit_push_r12()  # PUSH R12 (tracked)
+        self.asm.emit_push_r13()  # PUSH R13 (tracked)
+        self.asm.emit_push_r14()  # PUSH R14 (tracked)
+        self.asm.emit_push_r15()  # PUSH R15 (tracked)
         
         # Get arguments
         self.compiler.compile_expression(node.arguments[0])  # haystack
@@ -2530,13 +2428,18 @@ class StringOps:
         self.asm.mark_label(done)
         
         # Return array
+        # CRITICAL FIX: Return R14+8 to skip capacity field
+        # StringSplit creates: [capacity, count, elem0, elem1, ...]
+        # ArrayGet expects:    [count, elem0, elem1, ...]
+        # So we return R14+8 to make ArrayGet see the correct format
         self.asm.emit_bytes(0x4C, 0x89, 0xF0)  # MOV RAX, R14
+        self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x08)  # ADD RAX, 8
         
         # Restore registers
-        self.asm.emit_bytes(0x41, 0x5F)  # POP R15
-        self.asm.emit_bytes(0x41, 0x5E)  # POP R14
-        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
-        self.asm.emit_bytes(0x41, 0x5C)  # POP R12
+        self.asm.emit_pop_r15()  # POP R15 (tracked)
+        self.asm.emit_pop_r14()  # POP R14 (tracked)
+        self.asm.emit_pop_r13()  # POP R13 (tracked)
+        self.asm.emit_pop_r12()  # POP R12 (tracked)
         self.asm.emit_pop_rbx()
         
         return True

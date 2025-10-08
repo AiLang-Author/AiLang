@@ -1,0 +1,37 @@
+// Quick test to verify StringLength accuracy
+
+test1 = "The quick brown fox jumps over the lazy dog!!!"
+len1 = StringLength(test1)
+
+PrintMessage("String: '")
+PrintMessage(test1)
+PrintMessage("'\nLength: ")
+PrintNumber(len1)
+PrintMessage("\n\nManual count:\n")
+PrintMessage("T-h-e- -q-u-i-c-k- -b-r-o-w-n- -f-o-x- -j-u-m-p-s- -o-v-e-r- -t-h-e- -l-a-z-y- -d-o-g-!-!-!\n")
+PrintMessage("Expected: 46 (actual character count)\n\n")
+
+// Test a few more strings to verify StringLength
+test2 = "Hello"
+len2 = StringLength(test2)
+PrintMessage("'Hello' length: ")
+PrintNumber(len2)
+PrintMessage(" (expected: 5)\n")
+
+test3 = "12345678901234567890"
+len3 = StringLength(test3)
+PrintMessage("'12345678901234567890' length: ")
+PrintNumber(len3)
+PrintMessage(" (expected: 20)\n")
+
+test4 = ""
+len4 = StringLength(test4)
+PrintMessage("'' (empty) length: ")
+PrintNumber(len4)
+PrintMessage(" (expected: 0)\n")
+
+test5 = "A"
+len5 = StringLength(test5)
+PrintMessage("'A' length: ")
+PrintNumber(len5)
+PrintMessage(" (expected: 1)\n")

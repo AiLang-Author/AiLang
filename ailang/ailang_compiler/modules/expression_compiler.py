@@ -40,6 +40,23 @@ class ExpressionCompiler:
                         self.asm.emit_bytes(0x48, 0x8b, 0x85)
                         self.asm.emit_bytes(*struct.pack('<i', -offset))
                         return
+                elif var_type == 'global':
+                    # === FIX: Handle global variables from ScopeManager ===
+                    # Check if it's a pool variable (high bit set)
+                    if offset & 0x80000000:
+                        pool_index = offset & 0x7FFFFFFF
+                        print(f"DEBUG: Loading pool var {resolved_name} from pool[{pool_index}] (via ScopeManager)")
+                        # MOV RAX, [R15 + pool_index*8]
+                        self.asm.emit_bytes(0x49, 0x8B, 0x87)
+                        self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
+                        return
+                    else:
+                        # Regular stack variable
+                        print(f"DEBUG: Loading stack var {resolved_name} from [RBP-{offset}] (via ScopeManager)")
+                        self.asm.emit_bytes(0x48, 0x8b, 0x85)
+                        self.asm.emit_bytes(*struct.pack('<i', -offset))
+                        return
+                    # === END FIX ===
                 
                 # CHECK: Is this a DynamicPool member?
                 parts = resolved_name.split('.')

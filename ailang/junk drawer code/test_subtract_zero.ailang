@@ -1,0 +1,16 @@
+SubRoutine.SimpleTest {
+    A = 0
+    B = 0
+    Result = Add(A, B)
+    PrintMessage("About to print result")
+    PrintMessage(NumberToString(Result))
+    PrintMessage("After printing result")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(SimpleTest)
+    ReturnValue(0)
+}
+
+RunTask(Main)

@@ -1,0 +1,36 @@
+// Test StringSplit - corrected syntax
+
+// FixedPool must be at top level, not inside SubRoutine
+FixedPool.TestData {
+    "source": Initialize="John Smith"
+}
+
+SubRoutine.Main {
+    PrintMessage("=== StringSplit Test ===")
+    PrintMessage("")
+    
+    PrintMessage("Source string:")
+    PrintMessage(TestData.source)
+    PrintMessage("")
+    
+    PrintMessage("Calling StringSplit...")
+    parts = StringSplit(TestData.source, " ")
+    PrintMessage("Split complete")
+    PrintMessage("")
+    
+    PrintMessage("Getting first element...")
+    first = ArrayGet(parts, 0)
+    PrintMessage("First: ")
+    PrintMessage(first)
+    PrintMessage("")
+    
+    PrintMessage("Getting second element...")
+    second = ArrayGet(parts, 1)
+    PrintMessage("Second: ")
+    PrintMessage(second)
+    PrintMessage("")
+    
+    PrintMessage("Expected: John, Smith")
+}
+
+RunTask(Main)

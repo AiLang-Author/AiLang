@@ -1,0 +1,305 @@
+// Library.SQLPool_Advanced.ailang
+// Enterprise-grade connection pooling with load balancing and failover
+
+LibraryImport.PostgreSQL
+LibraryImport.XArrays
+
+// Server structure: [host, port, priority, weight, active, failed_count, last_check]
+Function.SQLPool.CreateServer {
+    Input: host: Address
+    Input: port: Integer
+    Input: priority: Integer     // 1=primary, 2=replica
+    Input: weight: Integer       // Load balancing weight (1-100)
+    Output: Address
+    Body: {
+        server = Allocate(64)
+        
+        StoreValue(server, Helpers.StringCopy(host))
+        StoreValue(Add(server, 8), port)
+        StoreValue(Add(server, 16), priority)
+        StoreValue(Add(server, 24), weight)
+        StoreValue(Add(server, 32), 1)  // active = true
+        StoreValue(Add(server, 40), 0)  // failed_count
+        StoreValue(Add(server, 48), 0)  // last_check timestamp
+        
+        ReturnValue(server)
+    }
+}
+
+// Multi-server pool: [servers, pools, lb_strategy, current_index, health_check_interval]
+Function.SQLPool.CreateMultiServer {
+    Input: database: Address
+    Input: user: Address
+    Input: password: Address
+    Input: min_per_server: Integer
+    Input: max_per_server: Integer
+    Input: lb_strategy: Address   // "round_robin", "weighted", "least_connections"
+    Output: Address
+    Body: {
+        multi_pool = Allocate(128)
+        
+        // Array of servers
+        servers = XArray.XCreate()
+        StoreValue(multi_pool, servers)
+        
+        // Array of connection pools (one per server)
+        pools = XArray.XCreate()
+        StoreValue(Add(multi_pool, 8), pools)
+        
+        // Store credentials
+        StoreValue(Add(multi_pool, 16), Helpers.StringCopy(database))
+        StoreValue(Add(multi_pool, 24), Helpers.StringCopy(user))
+        StoreValue(Add(multi_pool, 32), Helpers.StringCopy(password))
+        
+        // Config
+        StoreValue(Add(multi_pool, 40), min_per_server)
+        StoreValue(Add(multi_pool, 48), max_per_server)
+        StoreValue(Add(multi_pool, 56), Helpers.StringCopy(lb_strategy))
+        StoreValue(Add(multi_pool, 64), 0)  // current_index for round-robin
+        StoreValue(Add(multi_pool, 72), 30)  // health_check_interval (seconds)
+        
+        PrintMessage("SQLPool: Multi-server pool created")
+        
+        ReturnValue(multi_pool)
+    }
+}
+
+Function.SQLPool_Advanced.AddServer {
+    Input: multi_pool: Address
+    Input: host: Address
+    Input: port: Integer
+    Input: priority: Integer
+    Input: weight: Integer
+    Output: Integer
+    Body: {
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Entered AddServer") }
+
+        servers = Dereference(multi_pool)
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Dereferenced servers array from multi_pool")
+            PrintNumber(servers)
+        }
+
+        server = SQLPool.CreateServer(host, port, priority, weight)
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: SQLPool.CreateServer returned")
+            PrintNumber(server)
+        }
+
+        XArray.XPush(servers, server)
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Pushed new server to servers array") }
+
+        database = Dereference(Add(multi_pool, 16))
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Dereferenced database name")
+            PrintString(database)
+        }
+
+        user = Dereference(Add(multi_pool, 24))
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: Dereferenced user name")
+            PrintString(user)
+        }
+
+        password = Dereference(Add(multi_pool, 32))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced password") }
+
+        min_conn = Dereference(Add(multi_pool, 40))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced min_conn") }
+
+        max_conn = Dereference(Add(multi_pool, 48))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced max_conn") }
+
+        pool = SQLPool_Advanced.Create(host, port, database, user, password, min_conn, max_conn)
+        Debug("add_server", level=1) {
+            PrintMessage("DEBUG: SQLPool_Advanced.Create returned")
+            PrintNumber(pool)
+        }
+
+        pools = Dereference(Add(multi_pool, 8))
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Dereferenced pools array") }
+
+        XArray.XPush(pools, pool)
+        Debug("add_server", level=1) { PrintMessage("DEBUG: Pushed new pool to pools array") }
+
+        PrintMessage("SQLPool: Added server ")
+        PrintString(host)
+        PrintMessage(":")
+        PrintNumber(port)
+        
+        Debug("add_server", level=1) { PrintMessage("DEBUG: AddServer complete, returning 1") }
+        ReturnValue(1)
+    }
+}
+
+Function.SQLPool.GetConnectionMulti {
+    Input: multi_pool: Address
+    Output: Address              // Connection or 0
+    Body: {
+        lb_strategy = Dereference(Add(multi_pool, 56))
+        
+        // Determine which strategy to use
+        is_rr = StringCompare(lb_strategy, "round_robin")
+        IfCondition EqualTo(is_rr, 0) ThenBlock: {
+            ReturnValue(SQLPool.GetConnectionRoundRobin(multi_pool))
+        }
+        
+        is_weighted = StringCompare(lb_strategy, "weighted")
+        IfCondition EqualTo(is_weighted, 0) ThenBlock: {
+            ReturnValue(SQLPool.GetConnectionWeighted(multi_pool))
+        }
+        
+        is_least = StringCompare(lb_strategy, "least_connections")
+        IfCondition EqualTo(is_least, 0) ThenBlock: {
+            ReturnValue(SQLPool.GetConnectionLeastConn(multi_pool))
+        }
+        
+        // Default to round-robin
+        ReturnValue(SQLPool.GetConnectionRoundRobin(multi_pool))
+    }
+}
+
+Function.SQLPool.GetConnectionRoundRobin {
+    Input: multi_pool: Address
+    Output: Address
+    Body: {
+        servers = Dereference(multi_pool)
+        pools = Dereference(Add(multi_pool, 8))
+        current_idx = Dereference(Add(multi_pool, 64))
+        
+        server_count = XArray.XSize(servers)
+        attempts = 0
+        
+        // Try servers in round-robin until we get a connection
+        WhileLoop LessThan(attempts, server_count) {
+            server = XArray.XGet(servers, current_idx)
+            is_active = Dereference(Add(server, 32))
+            
+            IfCondition EqualTo(is_active, 1) ThenBlock: {
+                pool = XArray.XGet(pools, current_idx)
+                conn = SQLPool.GetConnection(pool)
+                
+                IfCondition NotEqual(conn, 0) ThenBlock: {
+                    // Success - update index and return
+                    next_idx = Modulo(Add(current_idx, 1), server_count)
+                    StoreValue(Add(multi_pool, 64), next_idx)
+                    
+                    ReturnValue(conn)
+                } ElseBlock: {
+                    // Pool exhausted, mark server as degraded
+                    failed_count = Dereference(Add(server, 40))
+                    StoreValue(Add(server, 40), Add(failed_count, 1))
+                    
+                    IfCondition GreaterThan(failed_count, 5) ThenBlock: {
+                        StoreValue(Add(server, 32), 0)  // Mark inactive
+                        PrintMessage("SQLPool: Server marked inactive: ")
+                        PrintString(Dereference(server))
+                    }
+                }
+            }
+            
+            // Try next server
+            current_idx = Modulo(Add(current_idx, 1), server_count)
+            attempts = Add(attempts, 1)
+        }
+        
+        PrintMessage("SQLPool: ALL SERVERS EXHAUSTED!")
+        ReturnValue(0)
+    }
+}
+
+Function.SQLPool_Advanced.GetConnection {
+    Input: multi_pool: Address
+    Output: Address
+    Body: {
+        servers = Dereference(multi_pool)
+        pools = Dereference(Add(multi_pool, 8))
+        
+        server_count = XArray.XSize(servers)
+        
+        // Find server with least connections
+        min_connections = 999999
+        best_idx = 0
+        
+        i = 0
+        WhileLoop LessThan(i, server_count) {
+            server = XArray.XGet(servers, i)
+            is_active = Dereference(Add(server, 32))
+            
+            IfCondition EqualTo(is_active, 1) ThenBlock: {
+                pool = XArray.XGet(pools, i)
+                in_use = Dereference(Add(pool, 24))
+                
+                IfCondition LessThan(in_use, min_connections) ThenBlock: {
+                    min_connections = in_use
+                    best_idx = i
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Get connection from best server
+        pool = XArray.XGet(pools, best_idx)
+        conn = SQLPool.GetConnection(pool)
+        
+        ReturnValue(conn)
+    }
+}
+
+Function.SQLPool.HealthCheck {
+    Input: multi_pool: Address
+    Body: {
+        servers = Dereference(multi_pool)
+        pools = Dereference(Add(multi_pool, 8))
+        
+        server_count = XArray.XSize(servers)
+        
+        PrintMessage("SQLPool: Running health checks on ")
+        PrintNumber(server_count)
+        PrintMessage(" servers")
+        
+        i = 0
+        WhileLoop LessThan(i, server_count) {
+            server = XArray.XGet(servers, i)
+            pool = XArray.XGet(pools, i)
+            
+            // Try to get a connection and execute simple query
+            conn = SQLPool.GetConnection(pool)
+            
+            IfCondition NotEqual(conn, 0) ThenBlock: {
+                result = PostgreSQL.Query(conn, "SELECT 1")
+                
+                IfCondition NotEqual(result, 0) ThenBlock: {
+                    // Server is healthy
+                    XArray.XDestroy(result)
+                    StoreValue(Add(server, 32), 1)  // active
+                    StoreValue(Add(server, 40), 0)  // reset failed_count
+                    
+                    PrintMessage("  Server ")
+                    PrintString(Dereference(server))
+                    PrintMessage(" - HEALTHY")
+                } ElseBlock: {
+                    // Query failed
+                    failed_count = Dereference(Add(server, 40))
+                    StoreValue(Add(server, 40), Add(failed_count, 1))
+                    
+                    PrintMessage("  Server ")
+                    PrintString(Dereference(server))
+                    PrintMessage(" - DEGRADED")
+                }
+                
+                SQLPool.ReleaseConnection(pool, conn)
+            } ElseBlock: {
+                // Can't get connection
+                PrintMessage("  Server ")
+                PrintString(Dereference(server))
+                PrintMessage(" - UNREACHABLE")
+                
+                StoreValue(Add(server, 32), 0)  // Mark inactive
+            }
+            
+            i = Add(i, 1)
+        }
+    }
+}
