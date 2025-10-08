@@ -255,7 +255,7 @@ python3 main.py -D hello.ailang
 ```
 
 📝 License
-textOpen source for personal, academic, and research use.
+Free for personal, academic, and research use.
 Commercial licensing available for production.
 See LICENSE for details.
 Built for comprehension, performance, and quality control. Join the project or try AiLang today!
