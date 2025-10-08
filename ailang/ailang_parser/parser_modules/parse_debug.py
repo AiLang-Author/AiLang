@@ -1,3 +1,8 @@
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 #parse_debug.py
 """Parser methods for debug-related operations"""
 
@@ -108,7 +113,7 @@ class ParserDebugMixin:
             self.consume(TokenType.RBRACE)
         
         # Create a FunctionCall node that debug_ops can handle
-        from .ailang_ast import FunctionCall
+        
         return FunctionCall(
             function=f"DebugPerf_{operation}",
             arguments=[label_node] if label_node else [],

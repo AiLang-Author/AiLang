@@ -44,11 +44,11 @@ SubRoutine.TestResult {
     PrintMessage("    Actual: ")
     PrintNumber(test_actual)
     
-    IfCondition EqualTo(test_expected, test_actual) ThenBlock {
+    IfCondition EqualTo(test_expected, test_actual) ThenBlock: {
         PrintMessage("    PASS")
         passed_tests = Add(passed_tests, 1)
         section_passed = Add(section_passed, 1)
-    } ElseBlock {
+    } ElseBlock: {
         PrintMessage("    FAIL")
         failed_tests = Add(failed_tests, 1)
     }
@@ -251,13 +251,13 @@ LoopMain.Scheduler {
         PrintNumber(scheduler_cycles)
         
         // Try to execute actors based on current_actor
-        IfCondition EqualTo(current_actor, 0) ThenBlock {
+        IfCondition EqualTo(current_actor, 0) ThenBlock: {
             PrintMessage("  Would run Actor1 here")
             // Can we somehow jump to Actor1's code?
             // The actor code has a skip jump at the start...
         }
         
-        IfCondition EqualTo(current_actor, 1) ThenBlock {
+        IfCondition EqualTo(current_actor, 1) ThenBlock: {
             PrintMessage("  Would run Actor2 here")
         }
         
@@ -297,9 +297,9 @@ LoopMain.SubRoutineScheduler {
     cycle = 0
     WhileLoop LessThan(cycle, 3) {
         // Schedule SubRoutine "actors"
-        IfCondition EqualTo(Modulo(cycle, 2), 0) ThenBlock {
+        IfCondition EqualTo(Modulo(cycle, 2), 0) ThenBlock: {
             RunTask(ActorSim1)
-        } ElseBlock {
+        } ElseBlock: {
             RunTask(ActorSim2)
         }
         
@@ -315,9 +315,9 @@ PrintMessage("actor2_ran (expect 20 from SubRoutine):")
 PrintNumber(actor2_ran)
 PrintMessage("")
 
-IfCondition Or(EqualTo(actor1_ran, 1), EqualTo(actor2_ran, 1)) ThenBlock {
+IfCondition Or(EqualTo(actor1_ran, 1), EqualTo(actor2_ran, 1)) ThenBlock: {
     PrintMessage("SUCCESS: Real LoopActor blocks executed!")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("Result: LoopActor blocks don't execute")
     PrintMessage("But SubRoutine-based simulation works")
     PrintMessage("")
@@ -396,7 +396,7 @@ SubRoutine.InitializeSystem {
 }
 
 SubRoutine.MonitorSystem {
-    IfCondition GreaterThan(SystemResources.cpu_usage, 80) ThenBlock {
+    IfCondition GreaterThan(SystemResources.cpu_usage, 80) ThenBlock: {
         PrintMessage("WARNING: High CPU usage")
         SystemResources.system_status = 2
     }
@@ -486,7 +486,7 @@ SubRoutine.AtomicIncrement {
     wait_count = 0
     WhileLoop NotEqual(AtomicState.lock, 0) {
         wait_count = Add(wait_count, 1)
-        IfCondition GreaterThan(wait_count, 100) ThenBlock {
+        IfCondition GreaterThan(wait_count, 100) ThenBlock: {
             AtomicState.lock = 0
         }
     }
@@ -535,7 +535,7 @@ PrintMessage("Failed: ")
 PrintNumber(failed_tests)
 
 success_rate = 0
-IfCondition GreaterThan(totaltests, 0) ThenBlock {
+IfCondition GreaterThan(totaltests, 0) ThenBlock: {
     // Integer division for percentage
     success_rate = Divide(Multiply(passed_tests, 100), totaltests)
 }
@@ -544,11 +544,11 @@ PrintMessage("Success Rate: ")
 PrintNumber(success_rate)
 PrintMessage("%")
 
-IfCondition EqualTo(failed_tests, 0) ThenBlock {
+IfCondition EqualTo(failed_tests, 0) ThenBlock: {
     PrintMessage("")
     PrintMessage("=== ALL TESTS PASSED! ===")
     PrintMessage("AILANG Concurrency System: VERIFIED")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("")
     PrintMessage("=== SOME TESTS FAILED ===")
     PrintMessage("Review failed tests above")

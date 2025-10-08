@@ -1,0 +1,20 @@
+SubRoutine.Main {
+    PrintMessage("Step 1: Creating socket\n")
+    sock = SocketCreate()
+    PrintMessage("Socket: ")
+    PrintNumber(sock)
+    PrintMessage("\n")
+    
+    PrintMessage("Step 2: Binding socket\n")
+    result = SocketBind(sock, 0, 6379)
+    PrintMessage("Bind result: ")
+    PrintNumber(result)
+    PrintMessage("\n")
+    
+    IfCondition LessThan(result, 0) ThenBlock: {
+        PrintMessage("ERROR: Bind failed\n")
+    } ElseBlock: {
+        PrintMessage("SUCCESS: Bind worked\n")
+    }
+}
+RunTask(Main)

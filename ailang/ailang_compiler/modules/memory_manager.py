@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 """
 Memory Management Module for AILANG Compiler
 Handles stack allocation, variable management, and pool operations
@@ -28,9 +34,21 @@ class MemoryManager:  # <-- THIS WAS MISSING!
         
     def discover_pool_variables(self, node):
         """A pre-pass to find all pool variables and mark them before compilation."""
+        print("DEBUG: ===== DISCOVER_POOL_VARIABLES called =====")
+        
         if not hasattr(node, 'declarations'):
+            print("DEBUG: Node has NO declarations attribute!")
             return
+        
+        print(f"DEBUG: Node has {len(node.declarations)} declarations")
+        
+        # First pass: List ALL declarations
+        for i, decl in enumerate(node.declarations):
+            decl_type = type(decl).__name__
+            name = getattr(decl, 'name', '<no name>')
+            print(f"DEBUG: Declaration [{i}]: Type={decl_type}, Name={name}")
 
+        # Second pass: Process Pool declarations
         for decl in node.declarations:
             if isinstance(decl, Pool):
                 pool_name = f"{decl.pool_type}.{decl.name}"
@@ -45,6 +63,9 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                             self.pool_variables[var_name] = pool_index
                             self.compiler.variables[var_name] = pool_marker
                             print(f"DEBUG: Discovered pool var '{var_name}' at pool index {pool_index}")
+        
+        total = self.pool_index_counter
+        print(f"DEBUG: ===== DISCOVER_POOL_VARIABLES done - found {total} pool vars =====")
 
     def compile_program(self, node):
         """Compile Program with stack management and pool table setup"""
@@ -109,9 +130,13 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             
             # Save callee-saved registers (NOT R15!)
             self.asm.emit_push_rbx()
+            self.compiler.track_push("Program save RBX")
             self.asm.emit_push_r12()
+            self.compiler.track_push("Program save R12")
             self.asm.emit_push_r13()
+            self.compiler.track_push("Program save R13")
             self.asm.emit_push_r14()
+            self.compiler.track_push("Program save R14")
             
             # NOW compile all declarations (including pools)
             # Pool initialization code will now have R15 set correctly
@@ -119,9 +144,13 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                 self.compiler.compile_node(decl)
             
             # Restore callee-saved registers (NOT R15!)
+            self.compiler.track_pop("Program restore R14")
             self.asm.emit_pop_r14()
+            self.compiler.track_pop("Program restore R13")
             self.asm.emit_pop_r13()
+            self.compiler.track_pop("Program restore R12")
             self.asm.emit_pop_r12()
+            self.compiler.track_pop("Program restore RBX")
             self.asm.emit_pop_rbx()
             
             self.compiler.codegen.emit_stack_frame_epilogue()
@@ -178,10 +207,29 @@ class MemoryManager:  # <-- THIS WAS MISSING!
         # ==================== END ADDITION ====================
             
         elif node_type == 'Assignment' or (hasattr(node, 'target') and hasattr(node, 'value')):
-            if node.target not in self.compiler.variables:
+            # === FIX: Check with pool prefix before allocating ===
+            target_name = node.target
+            
+            # Try to find with FixedPool prefix
+            resolved_name = None
+            if target_name not in self.compiler.variables:
+                pool_types = ['FixedPool', 'DynamicPool']
+                for pool_type in pool_types:
+                    prefixed = f"{pool_type}.{target_name}"
+                    if prefixed in self.compiler.variables:
+                        resolved_name = prefixed
+                        break
+            else:
+                resolved_name = target_name
+            
+            # Only allocate if NOT found (including pool variables)
+            if resolved_name is None:
                 self.compiler.stack_size += 16
                 self.compiler.variables[node.target] = self.compiler.stack_size
                 print(f"DEBUG: Allocated {node.target} at stack offset {self.compiler.stack_size}")
+            else:
+                print(f"DEBUG: Skipping allocation for {target_name} (already exists as {resolved_name})")
+            # === END FIX ===
             
             if hasattr(node.value, '__class__'):
                 self.calculate_stack_size(node.value, depth + 1)
@@ -420,24 +468,29 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                 if hasattr(item.value, 'value'):
                     item_type = type(item.value).__name__
                     if item_type == 'String':
-                        string_value = item.value.value
-                        print(f"DEBUG: Initializing {var_name} = '{string_value}' (string)")
-                        string_offset = self.asm.add_string(string_value)
-                        value = 0x402000 + string_offset
-                        print(f"DEBUG: String stored at address {value}")
+                        # ✅ Use relocation system instead of hardcoded 0x402000
+                        string_offset = self.asm.add_string(item.value.value)
+                        self.asm.emit_load_data_address('rax', string_offset)
+                        
+                        offset = self.compiler.variables[var_name]
+                        if offset <= 127:
+                            self.asm.emit_bytes(0x48, 0x89, 0x45, 256 - offset)
+                        else:
+                            self.asm.emit_bytes(0x48, 0x89, 0x85)
+                            self.asm.emit_bytes(*struct.pack('<i', -offset))
+                        
+                        print(f"DEBUG: Initialized {var_name} with relocated string")
                     else:
                         value = int(item.value.value)
                         print(f"DEBUG: Initializing {var_name} = {value} (number)")
-                    
-                    self.asm.emit_mov_rax_imm64(value)
-                    offset = self.compiler.variables[var_name]
-                    if offset <= 127:
-                        self.asm.emit_bytes(0x48, 0x89, 0x45, 256 - offset)
-                    else:
-                        self.asm.emit_bytes(0x48, 0x89, 0x85)
-                        self.asm.emit_bytes(*struct.pack('<i', -offset))
-                    
-                    print(f"DEBUG: Initialized {var_name} with value {value}")
+                        
+                        self.asm.emit_mov_rax_imm64(value)
+                        offset = self.compiler.variables[var_name]
+                        if offset <= 127:
+                            self.asm.emit_bytes(0x48, 0x89, 0x45, 256 - offset)
+                        else:
+                            self.asm.emit_bytes(0x48, 0x89, 0x85)
+                            self.asm.emit_bytes(*struct.pack('<i', -offset))
             
         except Exception as e:
             print(f"ERROR: Resource item compilation failed: {str(e)}")
@@ -478,14 +531,20 @@ class MemoryManager:  # <-- THIS WAS MISSING!
                             if hasattr(item.value, 'value'):
                                 if type(item.value).__name__ == 'String':
                                     string_offset = self.asm.add_string(item.value.value)
-                                    init_value = 0x402000 + string_offset
+                                    
+                                    # ✅ Use relocation system for string addresses
+                                    self.asm.emit_load_data_address('rax', string_offset)
+                                    self.asm.emit_bytes(0x49, 0x89, 0x87)  # MOV [R15 + disp32], RAX
+                                    self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
+                                    
+                                    print(f"DEBUG: Initialized {var_name} with relocated string at offset {string_offset}")
                                 else:
+                                    # Integer initialization (unchanged)
                                     init_value = int(item.value.value)
-                                
-                                self.asm.emit_mov_rax_imm64(init_value)
-                                self.asm.emit_bytes(0x49, 0x89, 0x87) # MOV [R15 + disp32], RAX
-                                self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
-                                print(f"DEBUG: Initialized {var_name} = {init_value}")
+                                    self.asm.emit_mov_rax_imm64(init_value)
+                                    self.asm.emit_bytes(0x49, 0x89, 0x87)  # MOV [R15 + disp32], RAX
+                                    self.asm.emit_bytes(*struct.pack('<i', pool_index * 8))
+                                    print(f"DEBUG: Initialized {var_name} = {init_value}")
                 
                 print(f"DEBUG: Pool {pool_name} completed")
                 return True

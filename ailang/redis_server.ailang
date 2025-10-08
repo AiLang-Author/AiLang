@@ -1054,7 +1054,7 @@ Function.Transaction.ExecuteCommand {
                         XSHash.XDestroy(old_value)
                     }
                     IfCondition EqualTo(old_type, DataTypes.TYPE_HASH) ThenBlock: {
-                        HashMap.DestroySimple(old_value)
+                        HashMap.Destroy(old_value)
                     }
                     
                     Deallocate(old_wrapper, 0)
@@ -1575,9 +1575,20 @@ Function.Server.HandleClient {
     Input: client_socket: Integer
     Input: store_ptr: Integer
     Body: {
+        Debug("handler.flow", level=1) {
+            PrintMessage("[HANDLER] === ENTERED HandleClient ===\n")
+            PrintMessage("[HANDLER] client_socket=")
+            PrintNumber(client_socket)
+            PrintMessage(" store=")
+            PrintNumber(store_ptr)
+            PrintMessage("\n")
+        }
         // Use the passed store pointer for all operations in this function
         store = store_ptr
         
+        // This is a SubRoutine, so it needs an entry/exit point for the request.
+        Debug("function.flow", level=1) { PrintMessage("[FUNC] Entered Server.HandleClient\n") }
+
         Debug("client.connect", level=1) { PrintMessage("[DEBUG] New client connected.") }
 
         buffer = Allocate(4096)
@@ -1598,20 +1609,102 @@ Function.Server.HandleClient {
             // This loop handles pipelined commands sent in a single batch.
             WhileLoop And(client_connected, LessThan(buffer_offset, buffer_data_len)) {
                 // NOTE: This change assumes RESP.ParseArray is modified to take an offset and
-                // return an XArray: [command_array, bytes_consumed]. We now use our local helper.
+                // return an XArray: [command_array, bytes_consumed].
+                // --- OPTIMIZATION: Use the new zero-copy parser ---
+                // It returns [xarray_of_views, bytes_consumed]
                 parse_result = Helpers.ParsePipelinedArray(buffer, buffer_data_len, buffer_offset)
-                
-                command_array = XArray.XGet(parse_result, 0)
-                bytes_consumed = XArray.XGet(parse_result, 1)
-                XArray.XDestroy(parse_result) // Clean up the result container
 
-                // If no full command could be parsed, break to read more data
+                Debug("parse.trace", level=3) {
+                    PrintMessage("[DEBUG] parse_result=")
+                    PrintNumber(parse_result)
+                    PrintMessage("\n")
+                }
+
+                IfCondition EqualTo(parse_result, 0) ThenBlock: {
+                    Debug("parse.error", level=1) {
+                        PrintMessage("[ERROR] ParsePipelinedArray returned NULL\n")
+                        PrintMessage("[ERROR] buffer_data_len: ")
+                        PrintNumber(buffer_data_len)
+                        PrintMessage(" buffer_offset: ")
+                        PrintNumber(buffer_offset)
+                        PrintMessage("\n")
+                    }
+                    // Incomplete data, break inner loop to read more
+                    BreakLoop
+                }
+
+                Debug("parse.trace", level=3) {
+                    PrintMessage("[DEBUG] About to call XArray.XGet(parse_result, 0)\n")
+                }
+                command_views = XArray.XGet(parse_result, 0)
+                Debug("parse.trace", level=3) {
+                    PrintMessage("[DEBUG] command_views=")
+                    PrintNumber(command_views)
+                    PrintMessage("\n")
+                }
+
+                Debug("parse.trace", level=3) {
+                    PrintMessage("[DEBUG] About to call XArray.XGet(parse_result, 1)\n")
+                }
+                bytes_consumed = XArray.XGet(parse_result, 1)
+                Debug("parse.trace", level=3) {
+                    PrintMessage("[DEBUG] bytes_consumed=")
+                    PrintNumber(bytes_consumed)
+                    PrintMessage("\n")
+                }
+
+                Debug("parse.trace", level=3) {
+                    PrintMessage("[DEBUG] CHECKPOINT: About to check if command_views == 0\n")
+                }
+
+                // Check if XArray operations succeeded
+                IfCondition EqualTo(command_views, 0) ThenBlock: {
+                    Debug("parse.error", level=1) {
+                        PrintMessage("[ERROR] command_views is NULL\n")
+                    }
+                    XArray.XDestroy(parse_result)
+                    BreakLoop
+                }
+
                 IfCondition EqualTo(bytes_consumed, 0) ThenBlock: {
+                    Debug("parse.incomplete", level=2) {
+                        PrintMessage("[DEBUG] No complete command yet, need more data\n")
+                    }
+                    XArray.XDestroy(parse_result)
                     BreakLoop
                 }
 
                 // Advance the buffer offset
                 buffer_offset = Add(buffer_offset, bytes_consumed)
+
+                // Convert XArray to native Array for command processing
+                IfCondition NotEqual(command_views, 0) ThenBlock: {
+                    array_len = XArray.XSize(command_views)
+                    command_array = ArrayCreate(array_len)
+                    i = 0
+                    WhileLoop LessThan(i, array_len) {
+                        // --- FIX: Copy string views to prevent dangling pointers ---
+                        // The element from command_views is a pointer into the client buffer.
+                        // We must copy it to a new, stable memory location.
+                        elem_view = XArray.XGet(command_views, i)
+                        copied_elem = Helpers.StringCopy(elem_view)
+                        ArraySet(command_array, i, copied_elem)
+                        i = Add(i, 1)
+                    }
+                    // Now that we've copied the data out of command_views, we can destroy it.
+                    // We destroy the inner array (command_views) and then the outer container (parse_result).
+                    XArray.XDestroy(command_views)
+                    Debug("parse.trace", level=3) {
+                        PrintMessage("[DEBUG] About to destroy parse_result\n")
+                    }
+                    XArray.XDestroy(parse_result)
+                    Debug("parse.trace", level=3) {
+                        PrintMessage("[DEBUG] Successfully destroyed parse_result\n")
+                    }
+                } ElseBlock: {
+                    command_array = 0
+                }
+
 
                 IfCondition NotEqual(command_array, 0) ThenBlock: {
                     // --- Existing command processing logic starts here ---
@@ -1820,7 +1913,7 @@ Function.Server.HandleClient {
                                     IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
-                                        HashMap.DestroySimple(value_ptr)
+                                        HashMap.Destroy(value_ptr)
                                     }
                                     IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
                                         ZSet.Destroy(value_ptr)
@@ -1901,7 +1994,7 @@ Function.Server.HandleClient {
                                     IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
                                     IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
-                                        HashMap.DestroySimple(value_ptr)
+                                        HashMap.Destroy(value_ptr)
                                     }
                                     IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
                                         ZSet.Destroy(value_ptr)
@@ -1949,7 +2042,7 @@ Function.Server.HandleClient {
                                         IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                         IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
                                         IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
-                                            HashMap.DestroySimple(value_ptr)
+                                            HashMap.Destroy(value_ptr)
                                         }
                                         IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
                                             ZSet.Destroy(value_ptr)
@@ -2074,7 +2167,7 @@ Function.Server.HandleClient {
                                     XList.XDestroyDeep(value_ptr) // Free the list and its contents
                                 }
                                 IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
-                                    HashMap.DestroySimple(value_ptr)  // Changed from HashMap.Destroy
+                                    HashMap.Destroy(value_ptr)  // Changed from HashMap.Destroy
                                 }
                                 IfCondition EqualTo(type, DataTypes.TYPE_SET) ThenBlock: { XSHash.XDestroy(value_ptr) }
                                 IfCondition EqualTo(type, DataTypes.TYPE_STREAM) ThenBlock: { XStream.XDestroy(value_ptr) }
@@ -3180,7 +3273,7 @@ Function.Server.HandleClient {
                                             XSHash.XDestroy(value_ptr)
                                         }
                                         IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
-                                            HashMap.DestroySimple(value_ptr)
+                                            HashMap.Destroy(value_ptr)
                                         }
                                         IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
                                             ZSet.Destroy(value_ptr)
@@ -4286,7 +4379,7 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
                                                 }
                                                 IfCondition EqualTo(type, DataTypes.TYPE_HASH) ThenBlock: {
                                                     IfCondition NotEqual(value_ptr, 0) ThenBlock: {
-                                                        HashMap.DestroySimple(value_ptr)
+                                                        HashMap.Destroy(value_ptr)
                                                     }
                                                 }
                                                 IfCondition EqualTo(type, DataTypes.TYPE_ZSET) ThenBlock: {
@@ -4555,99 +4648,213 @@ IfCondition EqualTo(is_persist, 0) ThenBlock: {
             PrintMessage("[DEBUG] Client socket closed.")
         }
         Deallocate(buffer, 0)
+
+        Debug("handler.flow", level=1) {
+            PrintMessage("[HANDLER] === EXITING HandleClient (normal) ===\n")
+        }
+        Debug("function.flow", level=1) { PrintMessage("[FUNC] Exiting Server.HandleClient normally\n") }
     }
 }
 
 
 SubRoutine.Main {
+    Debug("main.flow", level=1) {
+        PrintMessage("[MAIN] === ENTERED SubRoutine.Main ===\n")
+    }
+    Debug("function.flow", level=1) { PrintMessage("[FUNC] Entered Main\n") }
+
     Debug("server.init", level=1) { PrintMessage("[MAIN] Starting Main subroutine") }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 1: Entered Main\n") }
     
     // Create and assign the hash table
     local_store = XSHash.XCreate(1024)
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 2: Created XSHash, result: ")
+        PrintNumber(local_store)
+        PrintMessage("\n")
+    }
     RedisData.store_ptr = local_store
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 3: Assigned to RedisData.store_ptr\n") }
     
     // Initialize signal handling to prevent crashes on client disconnect
     Signals.ServerDefaults()
-
-    Debug("server.init", level=1) {
-        PrintMessage("[DEBUG] Signal handlers configured (SIGPIPE ignored)\n")
-    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 4: Called Signals.ServerDefaults()\n") }
     
     // Initialize scheduler for transaction handling
     TransactionState.sched_mem = Scheduler.CreateMemory()
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 5: Created Scheduler memory, result: ")
+        PrintNumber(TransactionState.sched_mem)
+        PrintMessage("\n")
+    }
     Scheduler.Init(TransactionState.sched_mem)
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 6: Initialized Scheduler\n") }
     TransactionState.MAIN_ACTOR = 0
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 7: Set MAIN_ACTOR to 0\n") }
     Scheduler.RegisterActor(TransactionState.sched_mem, TransactionState.MAIN_ACTOR)
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 8: Registered MAIN_ACTOR\n") }
     
     TransactionState.tx_queue = MessageQueue.Create()
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 9: Created tx_queue, result: ")
+        PrintNumber(TransactionState.tx_queue)
+        PrintMessage("\n")
+    }
     TransactionState.tx_args_queue = MessageQueue.Create()
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 10: Created tx_args_queue, result: ")
+        PrintNumber(TransactionState.tx_args_queue)
+        PrintMessage("\n")
+    }
     
     // Seed the random number generator at startup with various memory addresses for entropy
     RNG.AutoSeed(local_store, TransactionState.sched_mem, 12345)
-    
-    Debug("server.init", level=1) {
-        PrintMessage("[MAIN] Store initialized at address: ")
-        PrintNumber(RedisData.store_ptr)
-    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 11: Auto-seeded RNG\n") }
     
     // After creating store, verify we can read it back
     temp_verify = RedisData.store_ptr
-    PrintMessage("[MAIN] Verification read: ")
-    PrintNumber(temp_verify)
-    PrintMessage("\n")
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 12: Verification read of RedisData.store_ptr: ")
+        PrintNumber(temp_verify)
+        PrintMessage("\n")
+    }
     
     // Verify it was created successfully
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 13: Checking if store pointer is 0\n") }
     IfCondition EqualTo(RedisData.store_ptr, 0) ThenBlock: {
+        Debug("main.trace", level=1) { PrintMessage("[ERROR] Store pointer is NULL! EXITING\n") }
+        Debug("exit.trace", level=1) {
+            PrintMessage("[EXIT] About to call Exit()! Location: after store pointer check\n")
+        }
         PrintMessage("[ERROR] Failed to create Redis data store!")
-        Exit(1)
+        Exit()
     }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 14: Store pointer check passed\n") }
     
     // Create server socket
     server_socket = SocketCreate()
-    IfCondition LessEqual(server_socket, 0) ThenBlock: {
-        Exit(1)
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 15: SocketCreate returned: ")
+        PrintNumber(server_socket)
+        PrintMessage("\n")
     }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 16: Checking if server_socket <= 0\n") }
+    IfCondition LessEqual(server_socket, 0) ThenBlock: {
+        Debug("exit.trace", level=1) {
+            PrintMessage("[EXIT] About to call Exit()! Location: after SocketCreate check\n")
+        }
+        Debug("main.trace", level=1) { PrintMessage("[ERROR] Socket creation failed! EXITING\n") }
+        Exit()
+    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 17: Socket check passed\n") }
     
     // Set options and bind
     SocketSetOption(server_socket, 1, 2, 1)
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 18: Called SocketSetOption\n") }
     result = SocketBind(server_socket, 0, 6379)
-    IfCondition LessThan(result, 0) ThenBlock: {
-        SocketClose(server_socket)
-        Exit(1)
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 19: SocketBind returned: ")
+        PrintNumber(result)
+        PrintMessage("\n")
     }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 20: Checking if bind result < 0\n") }
+    IfCondition LessThan(result, 0) ThenBlock: {
+        Debug("exit.trace", level=1) {
+            PrintMessage("[EXIT] About to call Exit()! Location: after SocketBind check\n")
+        }
+        Debug("main.trace", level=1) { PrintMessage("[ERROR] Socket bind failed! EXITING\n") }
+        SocketClose(server_socket)
+        Exit()
+    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 21: Bind check passed\n") }
     
     // Listen
     result = SocketListen(server_socket, 128)
-    IfCondition LessThan(result, 0) ThenBlock: {
-        SocketClose(server_socket)
-        Exit(1)
+    Debug("main.trace", level=2) {
+        PrintMessage("[MAIN] Step 22: SocketListen returned: ")
+        PrintNumber(result)
+        PrintMessage("\n")
     }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 23: Checking if listen result < 0\n") }
+    IfCondition LessThan(result, 0) ThenBlock: {
+        Debug("exit.trace", level=1) {
+            PrintMessage("[EXIT] About to call Exit()! Location: after SocketListen check\n")
+        }
+        Debug("main.trace", level=1) { PrintMessage("[ERROR] Socket listen failed! EXITING\n") }
+        SocketClose(server_socket)
+        Exit()
+    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 24: Listen check passed\n") }
 
     // Announce the port we are listening on for clarity
     PrintMessage("Server listening on port 6379")
-    Debug("server.listen", level=1) {
-        PrintMessage("[DEBUG] Socket setup complete. Entering main accept loop.")
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 25: Printed listening message\n") }
+    
+    Debug("main.checkpoint", level=1) {
+        PrintMessage("[CHECKPOINT] Socket setup complete\n")
+        PrintMessage("[CHECKPOINT] server_socket=")
+        PrintNumber(server_socket)
+        PrintMessage("\n[CHECKPOINT] About to set server_running=1\n")
     }
-
+    
     // Main server loop
     server_running = 1
+    Debug("main.checkpoint", level=1) {
+        PrintMessage("[CHECKPOINT 4] Set server_running=1\n")
+    }
+    Debug("main.checkpoint", level=1) {
+        PrintMessage("[CHECKPOINT] server_running set to: ")
+        PrintNumber(server_running)
+        PrintMessage("\n")
+    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 26: Set server_running = 1\n") }
+    
+    Debug("main.loop", level=1) {
+        PrintMessage("[MAIN] About to enter WhileLoop with condition: server_running=")
+        PrintNumber(server_running)
+        PrintMessage("\n")
+    }
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 27: Entering main accept loop...\n") }
     WhileLoop server_running {
+        Debug("main.loop", level=2) {
+            Debug("main.checkpoint", level=1) {
+                PrintMessage("[CHECKPOINT 5] Top of accept loop\n")
+            }
+            PrintMessage("[MAIN] === TOP OF LOOP ITERATION ===\n")
+        }
         client_socket = SocketAccept(server_socket)
 
-        Debug("server.accept", level=1) {
-            PrintMessage("[DEBUG] SocketAccept returned. Socket ID:")
+        Debug("main.flow", level=1) { PrintMessage("[MAIN] Returned from SocketAccept\n") }
+        Debug("main.trace", level=2) {
+            PrintMessage("[MAIN] Step 28 (Loop): SocketAccept returned. Socket ID: ")
             PrintNumber(client_socket)
+            PrintMessage("\n")
         }
 
+        Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 29 (Loop): Checking if client_socket > 0\n") }
         IfCondition GreaterThan(client_socket, 0) ThenBlock: {
+            Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 30 (Loop): Accepted new client. Calling HandleClient...\n") }
             // --- FIX: Revert from broken concurrent model to a stable iterative model ---
             // The previous use of RunTask with a global mailbox created a race condition.
             // This direct call handles one client completely before accepting the next.
             Server.HandleClient(client_socket, RedisData.store_ptr)
+            Debug("main.flow", level=1) {
+                PrintMessage("[MAIN] Returned from Server.HandleClient\n")
+            }
+            Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 31 (Loop): HandleClient returned. Waiting for next connection.\n") }
         }
     }
 
     SocketClose(server_socket)
+    Debug("main.trace", level=2) { PrintMessage("[MAIN] Step 32: Main loop exited. Closed server socket.\n") }
+    
+    Debug("main.flow", level=1) {
+        PrintMessage("[MAIN] === REACHED END OF SubRoutine.Main ===\n")
+        PrintMessage("[MAIN] This message should NEVER appear!\n")
+    }
+    Debug("function.flow", level=1) { PrintMessage("[FUNC] Exiting Main normally\n") }
 }
 
+// The RunTask directive is the entry point. We add a debug message at the very
+// start of Main to confirm execution has begun.
 RunTask(Main)

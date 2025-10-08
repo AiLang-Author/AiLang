@@ -1,0 +1,339 @@
+// ssa_claims_system.ailang
+// Social Security Administration Claims Processing
+// (Transpiled from COBOL mainframe code)
+
+LibraryImport.PostgreSQL
+LibraryImport.PostgreSQL_Extended
+LibraryImport.SQLPool_Advanced
+LibraryImport.SQLORM
+
+// ============================================================================
+// DATABASE SETUP
+// ============================================================================
+
+// Create multi-server pool with failover
+pool = SQLPool.CreateMultiServer(
+    "ssa_claims_db",
+    "claims_processor",
+    "secure_mainframe_password",
+    10,   // min connections per server
+    50,   // max connections per server
+    "least_connections"
+)
+
+// Add primary database server
+SQLPool.AddServer(pool, "db-primary.ssa.gov", 5432, 1, 100)
+
+// Add replica servers for read operations
+SQLPool.AddServer(pool, "db-replica1.ssa.gov", 5432, 2, 50)
+SQLPool.AddServer(pool, "db-replica2.ssa.gov", 5432, 2, 50)
+SQLPool.AddServer(pool, "db-replica3.ssa.gov", 5432, 2, 50)
+
+// Define entities (like COBOL record definitions)
+ClaimEntity = ORM.DefineEntity(
+    "claims",
+    CreateColumnList("claim_id", "ssn", "claim_type", "amount", "status", "filed_date", "processed_date", "processor_id"),
+    "claim_id"
+)
+
+BeneficiaryEntity = ORM.DefineEntity(
+    "beneficiaries",
+    CreateColumnList("ssn", "first_name", "last_name", "dob", "benefit_type", "monthly_amount", "status"),
+    "ssn"
+)
+
+Function.CreateColumnList {
+    Input: col1: Address
+    Input: col2: Address
+    Input: col3: Address
+    Input: col4: Address
+    Input: col5: Address
+    Input: col6: Address
+    Input: col7: Address
+    Input: col8: Address
+    Output: Address
+    Body: {
+        cols = XArray.XCreate()
+        XArray.XPush(cols, col1)
+        XArray.XPush(cols, col2)
+        XArray.XPush(cols, col3)
+        XArray.XPush(cols, col4)
+        XArray.XPush(cols, col5)
+        XArray.XPush(cols, col6)
+        XArray.XPush(cols, col7)
+        IfCondition NotEqual(col8, 0) ThenBlock: {
+            XArray.XPush(cols, col8)
+        }
+        ReturnValue(cols)
+    }
+}
+
+// ============================================================================
+// BUSINESS LOGIC FUNCTIONS (Transpiled from COBOL)
+// ============================================================================
+
+Function.ProcessNewClaim {
+    Input: claim_id: Address
+    Output: Integer
+    Body: {
+        PrintMessage("=== Processing Claim: ")
+        PrintString(claim_id)
+        PrintMessage(" ===")
+        
+        // Get database connection
+        conn = SQLPool.GetConnectionMulti(pool)
+        
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            PrintMessage("ERROR: Unable to obtain database connection")
+            ReturnValue(-1)
+        }
+        
+        // Start transaction (COBOL: EXEC SQL BEGIN WORK END-EXEC)
+        PostgreSQL.Begin(conn)
+        
+        // Retrieve claim record
+        claim = ORM.FindByPK(conn, ClaimEntity, claim_id)
+        
+        IfCondition EqualTo(claim, 0) ThenBlock: {
+            PrintMessage("ERROR: Claim not found")
+            PostgreSQL.Rollback(conn)
+            SQLPool.ReleaseConnection(pool, conn)
+            ReturnValue(-1)
+        }
+        
+        // Get beneficiary SSN from claim
+        ssn = HashMap.HGetSimple(claim, "ssn")
+        
+        // Retrieve beneficiary record
+        beneficiary = ORM.FindByPK(conn, BeneficiaryEntity, ssn)
+        
+        IfCondition EqualTo(beneficiary, 0) ThenBlock: {
+            PrintMessage("ERROR: Beneficiary not found")
+            PostgreSQL.Rollback(conn)
+            SQLPool.ReleaseConnection(pool, conn)
+            ReturnValue(-2)
+        }
+        
+        // Validate claim (business rules)
+        validation_result = ValidateClaim(claim, beneficiary)
+        
+        IfCondition EqualTo(validation_result, 0) ThenBlock: {
+            PrintMessage("ERROR: Claim validation failed")
+            
+            // Update claim status to REJECTED
+            HashMap.HSetSimple(claim, "status", "REJECTED")
+            ORM.Update(conn, ClaimEntity, claim)
+            
+            PostgreSQL.Commit(conn)
+            SQLPool.ReleaseConnection(pool, conn)
+            ReturnValue(-3)
+        }
+        
+        // Calculate benefit amount (complex business logic)
+        calculated_amount = CalculateBenefitAmount(claim, beneficiary)
+        
+        // Update claim with calculated amount
+        amount_str = NumberToString(calculated_amount)
+        HashMap.HSetSimple(claim, "amount", amount_str)
+        HashMap.HSetSimple(claim, "status", "APPROVED")
+        HashMap.HSetSimple(claim, "processed_date", GetCurrentDate())
+        HashMap.HSetSimple(claim, "processor_id", "AILANG_SYSTEM")
+        
+        // Save updated claim
+        update_result = ORM.Update(conn, ClaimEntity, claim)
+        
+        IfCondition EqualTo(update_result, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to update claim")
+            PostgreSQL.Rollback(conn)
+            SQLPool.ReleaseConnection(pool, conn)
+            ReturnValue(-4)
+        }
+        
+        // Create payment record (insert into payments table)
+        CreatePaymentRecord(conn, claim_id, ssn, calculated_amount)
+        
+        // Commit transaction
+        PostgreSQL.Commit(conn)
+        
+        PrintMessage("SUCCESS: Claim processed, amount: $")
+        PrintNumber(calculated_amount)
+        
+        // Release connection back to pool
+        SQLPool.ReleaseConnection(pool, conn)
+        
+        ReturnValue(1)
+    }
+}
+
+Function.ValidateClaim {
+    Input: claim: Address
+    Input: beneficiary: Address
+    Output: Integer
+    Body: {
+        // Business rule 1: Beneficiary must be active
+        status = HashMap.HGetSimple(beneficiary, "status")
+        is_active = StringCompare(status, "ACTIVE")
+        
+        IfCondition NotEqual(is_active, 0) ThenBlock: {
+            PrintMessage("Validation failed: Beneficiary not active")
+            ReturnValue(0)
+        }
+        
+        // Business rule 2: Claim type must match benefit type
+        claim_type = HashMap.HGetSimple(claim, "claim_type")
+        benefit_type = HashMap.HGetSimple(beneficiary, "benefit_type")
+        
+        types_match = StringCompare(claim_type, benefit_type)
+        IfCondition NotEqual(types_match, 0) ThenBlock: {
+            PrintMessage("Validation failed: Claim type mismatch")
+            ReturnValue(0)
+        }
+        
+        // Business rule 3: Amount must be reasonable
+        amount_str = HashMap.HGetSimple(claim, "amount")
+        amount = StringToNumber(amount_str)
+        
+        IfCondition GreaterThan(amount, 10000) ThenBlock: {
+            PrintMessage("Validation failed: Amount exceeds maximum")
+            ReturnValue(0)
+        }
+        
+        // All validations passed
+        ReturnValue(1)
+    }
+}
+
+Function.CalculateBenefitAmount {
+    Input: claim: Address
+    Input: beneficiary: Address
+    Output: Integer
+    Body: {
+        // Get monthly benefit amount
+        monthly_str = HashMap.HGetSimple(beneficiary, "monthly_amount")
+        monthly_amount = StringToNumber(monthly_str)
+        
+        // Apply cost of living adjustment (COLA) - 3.2%
+        cola_factor = 1032  // 103.2% as integer (divide by 1000 later)
+        adjusted_amount = Divide(Multiply(monthly_amount, cola_factor), 1000)
+        
+        // Round to nearest dollar
+        ReturnValue(adjusted_amount)
+    }
+}
+
+Function.CreatePaymentRecord {
+    Input: conn: Address
+    Input: claim_id: Address
+    Input: ssn: Address
+    Input: amount: Integer
+    Body: {
+        sql = "INSERT INTO payments (claim_id, ssn, amount, payment_date, status) VALUES ('"
+        sql = StringConcat(sql, claim_id)
+        sql = StringConcat(sql, "', '")
+        sql = StringConcat(sql, ssn)
+        sql = StringConcat(sql, "', ")
+        sql = StringConcat(sql, NumberToString(amount))
+        sql = StringConcat(sql, ", CURRENT_DATE, 'PENDING')")
+        
+        result = PostgreSQL.Query(conn, sql)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            PrintMessage("Payment record created")
+        }
+    }
+}
+
+Function.GetCurrentDate {
+    Output: Address
+    Body: {
+        // Simplified - would use actual date/time syscalls
+        ReturnValue("2025-10-05")
+    }
+}
+
+// ============================================================================
+// BATCH PROCESSING (Overnight Jobs)
+// ============================================================================
+
+Function.ProcessDailyClaimsBatch {
+    Output: Integer
+    Body: {
+        PrintMessage("=== Starting Daily Claims Batch ===")
+        
+        conn = SQLPool.GetConnectionMulti(pool)
+        
+        // Find all unprocessed claims
+        pending_claims = ORM.FindWhere(conn, ClaimEntity, "status = 'PENDING'")
+        
+        claim_count = XArray.XSize(pending_claims)
+        PrintMessage("Processing ")
+        PrintNumber(claim_count)
+        PrintMessage(" pending claims")
+        
+        processed = 0
+        failed = 0
+        
+        i = 0
+        WhileLoop LessThan(i, claim_count) {
+            claim = XArray.XGet(pending_claims, i)
+            claim_id = HashMap.HGetSimple(claim, "claim_id")
+            
+            result = ProcessNewClaim(claim_id)
+            
+            IfCondition GreaterThan(result, 0) ThenBlock: {
+                processed = Add(processed, 1)
+            } ElseBlock: {
+                failed = Add(failed, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        SQLPool.ReleaseConnection(pool, conn)
+        
+        PrintMessage("=== Batch Complete ===")
+        PrintMessage("Processed: ")
+        PrintNumber(processed)
+        PrintMessage(" Failed: ")
+        PrintNumber(failed)
+        
+        ReturnValue(processed)
+    }
+}
+
+// ============================================================================
+// HEALTH MONITORING
+// ============================================================================
+
+Function.RunHealthChecks {
+    Body: {
+        PrintMessage("=== Running System Health Checks ===")
+        
+        // Check database connectivity
+        SQLPool.HealthCheck(pool)
+        
+        // Additional health checks...
+        PrintMessage("=== Health Checks Complete ===")
+    }
+}
+
+// ============================================================================
+// MAIN PROGRAM
+// ============================================================================
+
+PrintMessage("SSA Claims Processing System")
+PrintMessage("============================")
+
+// Run health checks
+RunHealthChecks()
+
+// Process some claims
+ProcessNewClaim("CLM-2025-001234")
+ProcessNewClaim("CLM-2025-001235")
+ProcessNewClaim("CLM-2025-001236")
+
+// Run batch processing (would be scheduled job)
+// ProcessDailyClaimsBatch()
+
+PrintMessage("System operations complete")

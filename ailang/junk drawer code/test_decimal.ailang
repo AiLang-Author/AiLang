@@ -1,0 +1,34 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_TEST_DECIMAL_VARS {
+    "PRICE": Initialize=1234500
+    "TAX_RATE": Initialize=800
+    "TAX_AMT": Initialize=0
+    "TOTAL": Initialize=0
+}
+
+SubRoutine.TEST_DECIMAL {
+    RunTask(TEST_DECIMAL_MAIN_LOGIC)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_DECIMAL_MAIN_LOGIC {
+    PrintMessage("Testing COBOL Decimal Arithmetic")
+    PrintMessage(StringConcat("Price: ", FormatDecimal(COBOL_TEST_DECIMAL_VARS.PRICE, 2)))
+    PrintMessage(StringConcat("Tax Rate: ", FormatDecimal(COBOL_TEST_DECIMAL_VARS.TAX_RATE, 2)))
+    COBOL_TEST_DECIMAL_VARS.TAX_AMT = FixedPoint.Multiply(COBOL_TEST_DECIMAL_VARS.PRICE, COBOL_TEST_DECIMAL_VARS.TAX_RATE)
+    PrintMessage(StringConcat("Tax Amount: ", FormatDecimal(COBOL_TEST_DECIMAL_VARS.TAX_AMT, 2)))
+    COBOL_TEST_DECIMAL_VARS.TOTAL = FixedPoint.Add(COBOL_TEST_DECIMAL_VARS.PRICE, COBOL_TEST_DECIMAL_VARS.TAX_AMT)
+    PrintMessage(StringConcat("Total: ", FormatDecimal(COBOL_TEST_DECIMAL_VARS.TOTAL, 2)))
+    COBOL_TEST_DECIMAL_VARS.TOTAL = FixedPoint.Subtract(COBOL_TEST_DECIMAL_VARS.TOTAL, COBOL_TEST_DECIMAL_VARS.TAX_AMT)
+    PrintMessage(StringConcat("Total minus tax: ", FormatDecimal(COBOL_TEST_DECIMAL_VARS.TOTAL, 2)))
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(TEST_DECIMAL)
+}
+
+RunTask(Main)

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 """
 User-Defined Functions Module for AILANG Compiler
 Implements support for Function.Category.Name definitions
@@ -145,7 +151,7 @@ class UserFunctions:
                 print(f"DEBUG: Allocated {stack_space} bytes for function locals")
             
             # Register parameters in LOCAL scope
-            for i, param_name in enumerate(func_info['params'][:6]):
+            for i, param_name in enumerate(func_info['params']):
                 self.compiler.stack_size += 8
                 offset = self.compiler.stack_size
                 self.compiler.variables[param_name] = offset

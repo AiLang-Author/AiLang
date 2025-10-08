@@ -1,0 +1,22 @@
+// Test to confirm PrintMessage variable handling issue
+
+FixedPool.TestData {
+    "source": Initialize="John Smith"
+}
+
+SubRoutine.Main {
+    parts = StringSplit(TestData.source, " ")
+    first = ArrayGet(parts, 0)
+    
+    PrintMessage("=== Test 1: PrintString ===")
+    PrintString(first)
+    PrintMessage("")
+    
+    PrintMessage("=== Test 2: PrintMessage ===")
+    PrintMessage(first)
+    
+    PrintMessage("=== Test 3: StringConcat with PrintMessage ===")
+    PrintMessage(StringConcat("Value: ", first))
+}
+
+RunTask(Main)

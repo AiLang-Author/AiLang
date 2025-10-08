@@ -1,3 +1,8 @@
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 # ailang_compiler/assembler/modules/registers.py
 """Register-to-register move operations and immediate loads"""
 
@@ -346,47 +351,58 @@ class RegisterOperations:
         """DEC RDI - Decrement RDI"""
         self.emit_bytes(0x48, 0xFF, 0xCF)
         
-    # Add these methods to the X64Assembler class in assembler.py
+        
+    def emit_inc_rax(self):
+        """INC RAX - Increment RAX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC0)
+        print("DEBUG: INC RAX")
 
-    def emit_pop_rbx(self):
-        """POP RBX"""
-        self.emit_bytes([0x5B])
+    def emit_dec_rax(self):
+        """DEC RAX - Decrement RAX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC8)
+        print("DEBUG: DEC RAX")
+
+    def emit_inc_rbx(self):
+        """INC RBX - Increment RBX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC3)
+        print("DEBUG: INC RBX")
+
+    def emit_dec_rbx(self):
+        """DEC RBX - Decrement RBX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xCB)
+        print("DEBUG: DEC RBX")
+
+    def emit_inc_rcx(self):
+        """INC RCX - Increment RCX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC1)
+        print("DEBUG: INC RCX")
+
+    def emit_dec_rcx(self):
+        """DEC RCX - Decrement RCX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC9)
+        print("DEBUG: DEC RCX")
+
+    def emit_inc_rdx(self):
+        """INC RDX - Increment RDX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC2)
+        print("DEBUG: INC RDX")
+
+    def emit_dec_rdx(self):
+        """DEC RDX - Decrement RDX by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xCA)
+        print("DEBUG: DEC RDX")
+
+    def emit_inc_rsi(self):
+        """INC RSI - Increment RSI by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xC6)
+        print("DEBUG: INC RSI")
+
+    def emit_dec_rsi(self):
+        """DEC RSI - Decrement RSI by 1"""
+        self.emit_bytes(0x48, 0xFF, 0xCE)
+        print("DEBUG: DEC RSI")
         
-    def emit_pop_rcx(self):
-        """POP RCX"""
-        self.emit_bytes([0x59])
-        
-    def emit_pop_rdx(self):
-        """POP RDX"""
-        self.emit_bytes([0x5A])
-        
-    def emit_pop_rsi(self):
-        """POP RSI"""
-        self.emit_bytes([0x5E])
-        
-    def emit_pop_rdi(self):
-        """POP RDI"""
-        self.emit_bytes([0x5F])
-        
-    def emit_push_rbx(self):
-        """PUSH RBX"""
-        self.emit_bytes([0x53])
-        
-    def emit_push_rcx(self):
-        """PUSH RCX"""
-        self.emit_bytes([0x51])
-        
-    def emit_push_rdx(self):
-        """PUSH RDX"""
-        self.emit_bytes([0x52])
-        
-    def emit_push_rsi(self):
-        """PUSH RSI"""
-        self.emit_bytes([0x56])
-        
-    def emit_push_rdi(self):
-        """PUSH RDI"""
-        self.emit_bytes([0x57])
+    # Add these methods to the X64Assembler class in assembler.py
 
     def emit_test_r64_r64(self, reg1, reg2):
         """TEST reg1, reg2"""
@@ -401,8 +417,120 @@ class RegisterOperations:
         self.emit_bytes([0x78, 0x00])  # JS rel8 placeholder
         self.add_jump_fixup(label, offset_placeholder - 1, 1)  # 1-byte offset
 
-    def emit_jmp(self, label):
-        """Unconditional jump"""
-        offset_placeholder = len(self.code) + 2
-        self.emit_bytes([0xEB, 0x00])  # JMP rel8 placeholder
-        self.add_jump_fixup(label, offset_placeholder - 1, 1)
+    # === XOR OPERATIONS ===
+    def emit_xor_rdx_rdx(self):
+        """XOR RDX, RDX - Zero RDX"""
+        self.emit_bytes(0x48, 0x31, 0xD2)
+        print("DEBUG: XOR RDX, RDX")
+
+    def emit_xor_rsi_rsi(self):
+        """XOR RSI, RSI - Zero RSI"""
+        self.emit_bytes(0x48, 0x31, 0xF6)
+        print("DEBUG: XOR RSI, RSI")
+
+    # === REGISTER TO RSP ===
+    def emit_mov_rsi_rsp(self):
+        """MOV RSI, RSP"""
+        self.emit_bytes(0x48, 0x89, 0xE6)
+        print("DEBUG: MOV RSI, RSP")
+
+    def emit_mov_rdi_rsp(self):
+        """MOV RDI, RSP"""
+        self.emit_bytes(0x48, 0x89, 0xE7)
+        print("DEBUG: MOV RDI, RSP")
+
+    # === MEMORY OPERATIONS ===
+    def emit_mov_rdi_deref_rax(self):
+        """MOV RDI, [RAX]"""
+        self.emit_bytes(0x48, 0x8B, 0x38)
+        print("DEBUG: MOV RDI, [RAX]")
+
+    def emit_mov_rdi_deref_rax_offset(self, offset):
+        """MOV RDI, [RAX + offset]"""
+        if offset == 0:
+            self.emit_mov_rdi_deref_rax()
+        elif offset <= 127:
+            self.emit_bytes(0x48, 0x8B, 0x78, offset & 0xFF)
+        else:
+            self.emit_bytes(0x48, 0x8B, 0xB8)
+            self.emit_bytes(*struct.pack('<i', offset))
+        print(f"DEBUG: MOV RDI, [RAX + {offset}]")
+
+    def emit_mov_qword_ptr_rsp_rax(self):
+        """MOV [RSP], RAX"""
+        self.emit_bytes(0x48, 0x89, 0x04, 0x24)
+        print("DEBUG: MOV [RSP], RAX")
+
+    def emit_mov_qword_ptr_rsp_offset_imm64(self, offset, value):
+        """MOV QWORD [RSP + offset], imm64"""
+        self.emit_push_rax()
+        self.emit_mov_rax_imm64(value)
+        if offset == 0:
+            self.emit_bytes(0x48, 0x89, 0x44, 0x24, 0x08)
+        else:
+            self.emit_bytes(0x48, 0x89, 0x44, 0x24, (offset + 8) & 0xFF)
+        self.emit_pop_rax()
+
+    # === XOR OPERATIONS ===
+    def emit_xor_rdx_rdx(self):
+        """XOR RDX, RDX - Zero RDX"""
+        self.emit_bytes(0x48, 0x31, 0xD2)
+        print("DEBUG: XOR RDX, RDX")
+
+    def emit_xor_rsi_rsi(self):
+        """XOR RSI, RSI - Zero RSI"""
+        self.emit_bytes(0x48, 0x31, 0xF6)
+        print("DEBUG: XOR RSI, RSI")
+
+    # === REGISTER TO RSP ===
+    def emit_mov_rsi_rsp(self):
+        """MOV RSI, RSP"""
+        self.emit_bytes(0x48, 0x89, 0xE6)
+        print("DEBUG: MOV RSI, RSP")
+
+    # === MEMORY OPERATIONS ===
+    def emit_mov_rdi_deref_rax(self):
+        """MOV RDI, [RAX]"""
+        self.emit_bytes(0x48, 0x8B, 0x38)
+        print("DEBUG: MOV RDI, [RAX]")
+
+    def emit_mov_rdi_deref_rax_offset(self, offset):
+        """MOV RDI, [RAX + offset]"""
+        if offset == 0:
+            self.emit_mov_rdi_deref_rax()
+        elif offset <= 127:
+            self.emit_bytes(0x48, 0x8B, 0x78, offset & 0xFF)
+        else:
+            self.emit_bytes(0x48, 0x8B, 0xB8)
+            self.emit_bytes(*struct.pack('<i', offset))
+        print(f"DEBUG: MOV RDI, [RAX + {offset}]")
+
+    def emit_mov_qword_ptr_rsp_rax(self):
+        """MOV [RSP], RAX"""
+        self.emit_bytes(0x48, 0x89, 0x04, 0x24)
+        print("DEBUG: MOV [RSP], RAX")
+
+    def emit_mov_qword_ptr_rsp_offset_imm64(self, offset, value):
+        """MOV QWORD [RSP + offset], imm64"""
+        self.emit_push_rax()
+        self.emit_mov_rax_imm64(value)
+        if offset == 0:
+            self.emit_bytes(0x48, 0x89, 0x44, 0x24, 0x08)
+        else:
+            self.emit_bytes(0x48, 0x89, 0x44, 0x24, (offset + 8) & 0xFF)
+        self.emit_pop_rax()
+
+    def emit_xchg_ah_al(self):
+        """XCHG AH, AL - Swap high and low bytes of AX (for network byte order)"""
+        self.emit_bytes(0x86, 0xC4)
+        print("DEBUG: XCHG AH, AL")
+
+    def emit_bswap_eax(self):
+        """BSWAP EAX - Reverse all 4 bytes in EAX (for network byte order)"""
+        self.emit_bytes(0x0F, 0xC8)
+        print("DEBUG: BSWAP EAX")
+
+    def emit_mov_r10_rsp(self):
+        """MOV R10, RSP"""
+        self.emit_bytes(0x4C, 0x89, 0xE2)
+        print("DEBUG: MOV R10, RSP")

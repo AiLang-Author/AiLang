@@ -1,0 +1,218 @@
+// Library.Socket.ailang
+// Low-level socket operations for network communication
+
+FixedPool.SocketConstants {
+    "AF_INET": Initialize=2           // IPv4
+    "AF_INET6": Initialize=10         // IPv6
+    "SOCK_STREAM": Initialize=1       // TCP
+    "SOCK_DGRAM": Initialize=2        // UDP
+    "IPPROTO_TCP": Initialize=6
+    "SOL_SOCKET": Initialize=1
+    "SO_REUSEADDR": Initialize=2
+    "SO_KEEPALIVE": Initialize=9
+    "MSG_NOSIGNAL": Initialize=16384  // Don't raise SIGPIPE
+}
+
+// Socket address structure for IPv4
+Function.Socket.CreateAddr {
+    Input: host: Address      // "192.168.1.100" or "localhost"
+    Input: port: Integer      // 5432
+    Output: Address           // sockaddr_in structure
+    Body: {
+        // sockaddr_in: [family:2][port:2][addr:4][zero:8] = 16 bytes
+        addr = Allocate(16)
+        
+        // Set family to AF_INET
+        StoreValue(addr, SocketConstants.AF_INET)
+        
+        // Convert port to network byte order (big-endian)
+        port_be = BitwiseOr(
+            BitwiseShiftLeft(BitwiseAnd(port, 255), 8),
+            BitwiseShiftRight(port, 8)
+        )
+        StoreValue(Add(addr, 2), port_be)
+        
+        // Parse IP address
+        is_localhost = StringCompare(host, "localhost")
+        IfCondition EqualTo(is_localhost, 0) ThenBlock: {
+            // 127.0.0.1 in network byte order
+            StoreValue(Add(addr, 4), 127)
+            StoreValue(Add(addr, 5), 0)
+            StoreValue(Add(addr, 6), 0)
+            StoreValue(Add(addr, 7), 1)
+        } ElseBlock: {
+            // Parse dotted decimal (simplified)
+            ip_parts = Socket.ParseIPAddress(host)
+            StoreValue(Add(addr, 4), ArrayGet(ip_parts, 0))
+            StoreValue(Add(addr, 5), ArrayGet(ip_parts, 1))
+            StoreValue(Add(addr, 6), ArrayGet(ip_parts, 2))
+            StoreValue(Add(addr, 7), ArrayGet(ip_parts, 3))
+            ArrayDestroy(ip_parts)
+        }
+        
+        // Zero padding
+        i = 8
+        WhileLoop LessThan(i, 16) {
+            StoreValue(Add(addr, i), 0)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(addr)
+    }
+}
+
+Function.Socket.Create {
+    Input: family: Integer    // AF_INET
+    Input: type: Integer      // SOCK_STREAM
+    Output: Integer           // Socket FD
+    Body: {
+        // syscall: socket(family, type, protocol)
+        // Linux x86_64: syscall number 41
+        sock = Syscall3(41, family, type, 0)
+        
+        IfCondition LessThan(sock, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to create socket")
+            ReturnValue(-1)
+        }
+        
+        // Set SO_REUSEADDR
+        optval = 1
+        Syscall5(54, sock, SocketConstants.SOL_SOCKET, 
+                 SocketConstants.SO_REUSEADDR, 
+                 AddressOf(optval), 4)
+        
+        // Set SO_KEEPALIVE for long-lived connections
+        Syscall5(54, sock, SocketConstants.SOL_SOCKET,
+                 SocketConstants.SO_KEEPALIVE,
+                 AddressOf(optval), 4)
+        
+        ReturnValue(sock)
+    }
+}
+
+Function.Socket.Connect {
+    Input: sock: Integer
+    Input: addr: Address      // sockaddr_in structure
+    Output: Integer           // 0 = success, -1 = error
+    Body: {
+        // syscall: connect(sockfd, addr, addrlen)
+        // Linux x86_64: syscall number 42
+        result = Syscall3(42, sock, addr, 16)
+        
+        IfCondition LessThan(result, 0) ThenBlock: {
+            PrintMessage("ERROR: Connection failed")
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.Socket.Send {
+    Input: sock: Integer
+    Input: buffer: Address
+    Input: length: Integer
+    Output: Integer           // Bytes sent, -1 on error
+    Body: {
+        // syscall: send(sockfd, buf, len, flags)
+        // Linux x86_64: syscall number 44
+        sent = Syscall4(44, sock, buffer, length, SocketConstants.MSG_NOSIGNAL)
+        
+        IfCondition LessThan(sent, 0) ThenBlock: {
+            PrintMessage("ERROR: Send failed")
+        }
+        
+        ReturnValue(sent)
+    }
+}
+
+Function.Socket.Recv {
+    Input: sock: Integer
+    Input: max_length: Integer
+    Output: Address           // Received data (caller must free)
+    Body: {
+        buffer = Allocate(max_length)
+        
+        // syscall: recv(sockfd, buf, len, flags)
+        // Linux x86_64: syscall number 45
+        received = Syscall4(45, sock, buffer, max_length, 0)
+        
+        IfCondition LessEqual(received, 0) ThenBlock: {
+            Deallocate(buffer, max_length)
+            ReturnValue(0)  // Connection closed or error
+        }
+        
+        // Null-terminate for safety
+        IfCondition LessThan(received, max_length) ThenBlock: {
+            StoreValue(Add(buffer, received), 0)
+        }
+        
+        ReturnValue(buffer)
+    }
+}
+
+Function.Socket.RecvExact {
+    Input: sock: Integer
+    Input: length: Integer    // Exact bytes to receive
+    Output: Address
+    Body: {
+        buffer = Allocate(length)
+        total_received = 0
+        
+        // Keep receiving until we have all bytes
+        WhileLoop LessThan(total_received, length) {
+            remaining = Subtract(length, total_received)
+            chunk = Syscall4(45, sock, Add(buffer, total_received), remaining, 0)
+            
+            IfCondition LessEqual(chunk, 0) ThenBlock: {
+                Deallocate(buffer, length)
+                ReturnValue(0)  // Error or connection closed
+            }
+            
+            total_received = Add(total_received, chunk)
+        }
+        
+        ReturnValue(buffer)
+    }
+}
+
+Function.Socket.Close {
+    Input: sock: Integer
+    Body: {
+        // syscall: close(fd)
+        // Linux x86_64: syscall number 3
+        Syscall1(3, sock)
+    }
+}
+
+Function.Socket.ParseIPAddress {
+    Input: ip_str: Address    // "192.168.1.100"
+    Output: Address           // Array of 4 bytes
+    Body: {
+        parts = ArrayCreate(4)
+        part_idx = 0
+        current_num = 0
+        i = 0
+        ip_len = StringLength(ip_str)
+        
+        WhileLoop LessThan(i, ip_len) {
+            ch = GetByte(ip_str, i)
+            
+            IfCondition EqualTo(ch, 46) ThenBlock: {  // '.' = 46
+                ArraySet(parts, part_idx, current_num)
+                part_idx = Add(part_idx, 1)
+                current_num = 0
+            } ElseBlock: {
+                // ch - '0' to get digit
+                digit = Subtract(ch, 48)
+                current_num = Add(Multiply(current_num, 10), digit)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Last part
+        ArraySet(parts, part_idx, current_num)
+        
+        ReturnValue(parts)
+    }
+}

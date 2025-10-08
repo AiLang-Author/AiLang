@@ -1,0 +1,159 @@
+{
+  "main_file": "cobol_support/cobol-daemon.ailang",
+  "loaded_modules": [
+    "HashMap",
+    "XArrays",
+    "PostgreSQL",
+    "Socket",
+    "SQLPool_Advanced"
+  ],
+  "conflicts": {
+    "XArray.XDestroy": [
+      "HashMap",
+      "XArrays",
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ],
+    "XArray.XPush": [
+      "HashMap",
+      "XArrays",
+      "SQLPool_Advanced"
+    ],
+    "XArray.XSize": [
+      "HashMap",
+      "XArrays",
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ],
+    "XArrays.XNULL": [
+      "HashMap",
+      "XArrays"
+    ],
+    "XArray.XCreate": [
+      "HashMap",
+      "XArrays",
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ],
+    "XArray.XGet": [
+      "HashMap",
+      "XArrays",
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ],
+    "HashMap.HSetSimple": [
+      "HashMap",
+      "PostgreSQL"
+    ],
+    "XSHash.XLookup": [
+      "HashMap",
+      "XArrays"
+    ],
+    "LibraryImport.XArrays": [
+      "HashMap",
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ],
+    "PostgreSQL.Query": [
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ],
+    "SocketConstants.AF_INET": [
+      "PostgreSQL",
+      "Socket"
+    ],
+    "Socket.CreateAddr": [
+      "PostgreSQL",
+      "Socket"
+    ],
+    "Socket.Create": [
+      "PostgreSQL",
+      "Socket"
+    ],
+    "PostgreSQL.Connect": [
+      "PostgreSQL",
+      "SQLPool_Advanced"
+    ]
+  },
+  "prefixes": {
+    "XArrays": "NSFNGO1Z",
+    "SQLPool_Advanced": "NS7ITPOE",
+    "PostgreSQL": "NSAPEYVB",
+    "HashMap": "NSTBOVZG",
+    "Socket": "NSXA93IR"
+  },
+  "resolution_log": [
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 5,
+      "import": "HashMap",
+      "type": "library"
+    },
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 6,
+      "import": "PostgreSQL",
+      "type": "library"
+    },
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 7,
+      "import": "SQLPool_Advanced",
+      "type": "library"
+    },
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 8,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 594,
+      "import": "PostgreSQL",
+      "type": "library"
+    },
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 595,
+      "import": "SQLPool_Advanced",
+      "type": "library"
+    },
+    {
+      "file": "cobol_support/cobol-daemon.ailang",
+      "line": 596,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.HashMap.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.PostgreSQL.ailang",
+      "line": 4,
+      "import": "Socket",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.PostgreSQL.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.SQLPool_Advanced.ailang",
+      "line": 4,
+      "import": "PostgreSQL",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.SQLPool_Advanced.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

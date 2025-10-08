@@ -1,0 +1,56 @@
+// claims_processor.ailang
+// SSA-style claims processing (transpiled from COBOL)
+
+LibraryImport.PostgreSQL
+LibraryImport.SQLPool
+
+// Initialize connection pool
+pool = SQLPool.Create(
+    "db-primary.ssa.gov",
+    5432,
+    "benefits_db",
+    "claims_app",
+    "secure_password",
+    20,  // min connections
+    200  // max connections (for high load)
+)
+
+Function.ProcessClaim {
+    Input: claim_id: Address
+    Output: Integer
+    Body: {
+        // Get connection from pool
+        conn = SQLPool.GetConnection(pool)
+        
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            PrintMessage("ERROR: No database connection available")
+            ReturnValue(-1)
+        }
+        
+        // Query claim data
+        sql = StringConcat("SELECT * FROM claims WHERE claim_id = '", claim_id)
+        sql = StringConcat(sql, "'")
+        
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            // Process claim...
+            row = XArray.XGet(result, 0)
+            
+            // Update claim status
+            update_sql = StringConcat("UPDATE claims SET status = 'PROCESSED' WHERE claim_id = '", claim_id)
+            update_sql = StringConcat(update_sql, "'")
+            
+            PostgreSQL.Query(conn, update_sql)
+            Deallocate(update_sql, 0)
+            
+            XArray.XDestroy(result)
+        }
+        
+        // Release connection back to pool
+        SQLPool.ReleaseConnection(pool, conn)
+        
+        ReturnValue(1)
+    }
+}

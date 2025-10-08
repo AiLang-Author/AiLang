@@ -1,3 +1,8 @@
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 """
 Hash Table Operations Module for AILANG Compiler - FIXED VERSION
 Uses string comparison instead of pointer comparison
@@ -144,8 +149,8 @@ class HashOps:
         self.asm.emit_push_rdx()
         self.asm.emit_push_rsi()
         self.asm.emit_push_rdi()
-        self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
-        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13
+        self.asm.emit_push_r12()  # PUSH R12 (tracked)
+        self.asm.emit_push_r13()  # PUSH R13 (tracked)
 
         # Get value first
         self.compiler.compile_expression(node.arguments[2])
@@ -264,8 +269,8 @@ class HashOps:
         self.asm.emit_mov_rax_imm64(1)
         
         # Restore registers
-        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
-        self.asm.emit_bytes(0x41, 0x5C)  # POP R12
+        self.asm.emit_pop_r13()  # POP R13 (tracked)
+        self.asm.emit_pop_r12()  # POP R12 (tracked)
         self.asm.emit_pop_rdi()
         self.asm.emit_pop_rsi()
         self.asm.emit_pop_rdx()
@@ -284,7 +289,7 @@ class HashOps:
         self.asm.emit_push_rdx()
         self.asm.emit_push_rsi()
         self.asm.emit_push_rdi()
-        self.asm.emit_bytes(0x41, 0x55)  # PUSH R13
+        self.asm.emit_push_r13()  # PUSH R13 (tracked)
 
         # Get key
         self.compiler.compile_expression(node.arguments[1])
@@ -393,7 +398,7 @@ class HashOps:
         self.asm.mark_label(done)
         
         # Restore registers
-        self.asm.emit_bytes(0x41, 0x5D)  # POP R13
+        self.asm.emit_pop_r13()  # POP R13 (tracked)
         self.asm.emit_pop_rdi()
         self.asm.emit_pop_rsi()
         self.asm.emit_pop_rdx()

@@ -1,0 +1,30 @@
+// test_fixedpool_strings.ailang
+FixedPool.TestData {
+    "string_field": Initialize="Hello"
+    "number_field": Initialize=42
+}
+
+SubRoutine.Main {
+    PrintMessage("Test 1: Reading number field")
+    PrintNumber(TestData.number_field)
+    PrintMessage("Expected: 42\n\n")
+    
+    PrintMessage("Test 2: Reading string field")
+    PrintMessage(TestData.string_field)
+    PrintMessage("Expected: Hello\n\n")
+    
+    PrintMessage("If you see this, the bug is FIXED!\n")
+}
+
+RunTask(Main) 
+
+
+PrintMessage("Test 1: Reading number field")
+PrintNumber(TestData.number_field)
+PrintMessage("Expected: 42\n\n")
+
+PrintMessage("Test 2: Reading string field")  
+PrintMessage(TestData.string_field)
+PrintMessage("Expected: Hello\n\n")
+
+PrintMessage("Bug is FIXED!\n")

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 """
 Low-Level Operations Module for AILANG Compiler
 Handles systems programming operations: pointers, hardware access, atomic operations
@@ -157,32 +163,36 @@ class LowLevelOps:
         
     
     def compile_dereference(self, node):
-        """Compile pointer dereference operation (FunctionCall syntax)"""
+       
         try:
-            print(f"DEBUG: Compiling Dereference operation")
-            
+            print("DEBUG: Compiling Dereference")
             if len(node.arguments) < 1:
-                raise ValueError("Dereference requires at least 1 argument (pointer)")
+                raise ValueError("Dereference requires at least 1 argument (address)")
             
             # Compile pointer expression to get address in RAX
             self.compiler.compile_expression(node.arguments[0])
             
             # Get size hint from second argument if present
-            size_hint = "byte"  # default
+            size_hint = "qword"  # DEFAULT TO QWORD (not byte!)
             if len(node.arguments) > 1:
                 if hasattr(node.arguments[1], 'value'):
                     size_hint = str(node.arguments[1].value).lower().strip('"').strip("'")
             
             # Perform dereference based on size
             if size_hint == "byte":
-                # MOVZX RAX, BYTE [RAX] - proper zero-extend
-                self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, QWORD [RAX]
+                # CRITICAL FIX: Was using 0x48, 0x8B, 0x00 (MOV RAX, QWORD [RAX])
+                # Now using MOVZX RAX, BYTE [RAX] - proper zero-extend
+                self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0x00)  
+                print("DEBUG: MOVZX RAX, BYTE [RAX]")
             elif size_hint == "word":
-                self.asm.emit_dereference_word()
+                self.asm.emit_bytes(0x48, 0x0F, 0xB7, 0x00)  # MOVZX RAX, WORD [RAX]
+                print("DEBUG: MOVZX RAX, WORD [RAX]")
             elif size_hint == "dword":
-                self.asm.emit_dereference_dword()
-            else:
-                self.asm.emit_dereference_qword()
+                self.asm.emit_bytes(0x8B, 0x00)  # MOV EAX, DWORD [RAX]
+                print("DEBUG: MOV EAX, DWORD [RAX]")
+            else:  # qword
+                self.asm.emit_bytes(0x48, 0x8B, 0x00)  # MOV RAX, QWORD [RAX]
+                print("DEBUG: MOV RAX, QWORD [RAX]")
             
             print(f"DEBUG: Dereferenced as {size_hint}")
             return True
@@ -192,363 +202,241 @@ class LowLevelOps:
             raise
     
     def compile_address_of(self, node):
-        """Compile address-of operation (&variable)"""
-        try:
-            print(f"DEBUG: Compiling AddressOf operation")
+        """AddressOf(variable) - Get address of variable"""
+        if len(node.arguments) < 1:
+            raise ValueError("AddressOf requires variable argument")
+        
+        print("DEBUG: Compiling AddressOf")
+        
+        if isinstance(node.arguments[0], Identifier):
+            var_name = node.arguments[0].name
+            resolved_name = self.compiler.resolve_acronym_identifier(var_name)
             
-            if len(node.arguments) < 1:
-                raise ValueError("AddressOf requires 1 argument (variable)")
-            
-            # Get variable name
-            if isinstance(node.arguments[0], Identifier):
-                var_name = node.arguments[0].name
-                resolved_name = self.compiler.resolve_acronym_identifier(var_name)
-                
-                if resolved_name in self.compiler.variables:
-                    # Get stack offset for variable
-                    offset = self.compiler.variables[resolved_name]
-                    
-                    # Load effective address: LEA RAX, [RBP - offset]
-                    self.asm.emit_lea_rax("RBP", -offset)
-                    print(f"DEBUG: Got address of variable {resolved_name} at [RBP - {offset}]")
-                else:
-                    raise ValueError(f"Undefined variable: {var_name} (resolved: {resolved_name})")
+            if resolved_name in self.compiler.variables:
+                offset = self.compiler.variables[resolved_name]
+                self.asm.emit_lea_rax("RBP", -offset)
+                print(f"DEBUG: Got address of {resolved_name} at [RBP - {offset}]")
             else:
-                raise ValueError("AddressOf requires an identifier argument")
-            
-            print("DEBUG: AddressOf operation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: AddressOf compilation failed: {str(e)}")
-            raise
+                raise ValueError(f"Undefined variable: {var_name}")
+        else:
+            raise ValueError("AddressOf requires identifier")
+        
+        return True
     
     def compile_sizeof(self, node):
-        """Compile sizeof operation"""
-        try:
-            print(f"DEBUG: Compiling SizeOf operation")
-            
-            if len(node.arguments) < 1:
-                raise ValueError("SizeOf requires 1 argument")
-            
-            # Simple type size mapping
-            type_sizes = {
-                'Integer': 8, 'Int64': 8, 'QWord': 8,
-                'Int32': 4, 'DWord': 4,
-                'Int16': 2, 'Word': 2,
-                'Int8': 1, 'Byte': 1,
-                'UInt64': 8, 'UInt32': 4, 'UInt16': 2, 'UInt8': 1,
-                'FloatingPoint': 8,
-                'Text': 8,  # Pointer to string
-                'Boolean': 1,
-                'Address': 8,  # 64-bit pointer
-                'Pointer': 8   # 64-bit pointer
-            }
-            
-            size = 8  # Default size
-            
-            if isinstance(node.arguments[0], Identifier):
-                type_name = node.arguments[0].name
-                size = type_sizes.get(type_name, 8)
-                print(f"DEBUG: Size of type {type_name} is {size} bytes")
-            elif hasattr(node.arguments[0], 'type_name'):
-                type_name = node.arguments[0].type_name
-                size = type_sizes.get(type_name, 8)
-                print(f"DEBUG: Size of type {type_name} is {size} bytes")
-            else:
-                # For variables, assume 8 bytes (qword)
-                size = 8
-                print(f"DEBUG: Default size assumption: {size} bytes")
-            
-            # Load size into RAX
-            self.asm.emit_mov_rax_imm64(size)
-            
-            print("DEBUG: SizeOf operation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: SizeOf compilation failed: {str(e)}")
-            raise
+        """SizeOf(type) - Get size of type"""
+        if len(node.arguments) < 1:
+            raise ValueError("SizeOf requires type argument")
+        
+        print("DEBUG: Compiling SizeOf")
+        
+        type_sizes = {
+            'Integer': 8, 'QWord': 8, 'Int64': 8,
+            'DWord': 4, 'Int32': 4,
+            'Word': 2, 'Int16': 2,
+            'Byte': 1, 'Int8': 1,
+            'Address': 8, 'Pointer': 8,
+            'FloatingPoint': 8,
+            'Text': 8,  # Pointer
+            'Boolean': 1,
+        }
+        
+        size = 8  # Default
+        if isinstance(node.arguments[0], Identifier):
+            type_name = node.arguments[0].name
+            size = type_sizes.get(type_name, 8)
+        
+        self.asm.emit_mov_rax_imm64(size)
+        print(f"DEBUG: SizeOf = {size}")
+        return True
     
     def compile_allocate(self, node):
-        """Compile memory allocation using mmap (heap allocation)
+        """Allocate(size) - Allocate memory using mmap"""
+        if len(node.arguments) < 1:
+            raise ValueError("Allocate requires size argument")
         
-        This function properly preserves callee-saved registers that might
-        be used by the compiler for special purposes (pools, frame pointers, etc.)
-        """
-        try:
-            print(f"DEBUG: Compiling Allocate operation (heap-based)")
-
-            if len(node.arguments) < 1:
-                raise ValueError("Allocate requires 1 argument (size)")
-
-            # Save callee-saved registers that we might clobber
-            # We need to save:
-            # - RBX (often used for local state)
-            # - R12-R15 (often used for compiler-specific purposes like pools)
-            # We don't save RBP/RSP as they're handled by the function frame
-            self.asm.emit_push_rbx()
-            self.asm.emit_bytes(0x41, 0x54)  # PUSH R12
-            self.asm.emit_bytes(0x41, 0x55)  # PUSH R13  
-            self.asm.emit_bytes(0x41, 0x56)  # PUSH R14
-            self.asm.emit_bytes(0x41, 0x57)  # PUSH R15
-            
-            # Evaluate size argument -> RAX
-            self.compiler.compile_expression(node.arguments[0])
-            
-            # Setup mmap parameters
-            # mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
-            self.asm.emit_mov_rsi_rax()                       # RSI = size
-            self.asm.emit_mov_rax_imm64(9)                    # RAX = sys_mmap
-            self.asm.emit_mov_rdi_imm64(0)                    # RDI = NULL (let kernel choose address)
-            self.asm.emit_mov_rdx_imm64(3)                    # RDX = PROT_READ|PROT_WRITE
-            self.asm.emit_mov_r10_imm64(0x22)                 # R10 = MAP_PRIVATE|MAP_ANONYMOUS
-            self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)  # MOV R8, -1 (no fd)
-            self.asm.emit_mov_r9_imm64(0)                     # R9 = 0 (offset)
-
-            # Make the syscall
-            self.asm.emit_syscall()
-            
-            # RAX now contains allocated address (or -1 on error)
-            # For production code, you'd want to check for errors here:
-            # cmp rax, -1
-            # je allocation_failed
-            
-            # Save result before restoring registers
-            self.asm.emit_mov_rcx_rax()  # Save result in RCX temporarily
-            
-            # Restore callee-saved registers in reverse order
-            self.asm.emit_bytes(0x41, 0x5F)  # POP R15
-            self.asm.emit_bytes(0x41, 0x5E)  # POP R14
-            self.asm.emit_bytes(0x41, 0x5D)  # POP R13
-            self.asm.emit_bytes(0x41, 0x5C)  # POP R12
-            self.asm.emit_pop_rbx()
-            
-            # Move result back to RAX for return
-            self.asm.emit_mov_rax_rcx()
-            
-            print("DEBUG: Heap allocation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: Allocate compilation failed: {str(e)}")
-            raise
+        print("DEBUG: Compiling Allocate")
+        
+        # Compile size expression
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_mov_rsi_rax()  # Size in RSI
+        
+        # mmap syscall
+        self.asm.emit_mov_rax_imm64(9)  # sys_mmap
+        self.asm.emit_mov_rdi_imm64(0)  # addr = NULL
+        self.asm.emit_mov_rdx_imm64(3)  # PROT_READ | PROT_WRITE
+        self.asm.emit_mov_r10_imm64(0x22)  # MAP_PRIVATE | MAP_ANONYMOUS
+        self.asm.emit_bytes(0x49, 0xC7, 0xC0, 0xFF, 0xFF, 0xFF, 0xFF)  # MOV R8, -1
+        self.asm.emit_mov_r9_imm64(0)  # offset = 0
+        self.asm.emit_syscall()
+        
+        print("DEBUG: Allocate completed")
+        return True
     
     
     def compile_deallocate(self, node):
-        """Compile memory deallocation - handles both Free and Deallocate"""
-        try:
-            print(f"DEBUG: Compiling {node.function} operation")
-            
-            # Free(ptr) only needs the pointer, size is tracked elsewhere
-            # For now, we'll use munmap with a default size or skip it
-            if node.function == 'Free':
-                # Simple free - just mark as successful
-                # In a real implementation, you'd track allocations
-                self.compiler.compile_expression(node.arguments[0])
-                # For now, just return success
-                self.asm.emit_mov_rax_imm64(0)  # Success
-                print("DEBUG: Free completed (simplified)")
-                return True
-            
-            # Deallocate(address, size) - full munmap
-            if len(node.arguments) < 2:
-                raise ValueError("Deallocate requires 2 arguments (address, size)")
-            
-            # Get address in RAX
-            self.compiler.compile_expression(node.arguments[0])
-            self.asm.emit_push_rax()  # Save address
-            
-            # Get size in RAX
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_bytes(0x48, 0x89, 0xC6)  # MOV RSI, RAX (size)
-            
-            # Get address back
-            self.asm.emit_pop_rdi()  # POP RDI (address)
-            
-            # RAX = 11 (munmap syscall)
-            self.asm.emit_mov_rax_imm64(11)
-            
-            # Make syscall
-            self.asm.emit_syscall()
-            
-            # Return result (0 on success)
-            print("DEBUG: Heap deallocation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: Deallocate compilation failed: {str(e)}")
-            raise
+        """Deallocate(address, size) - Free memory using munmap"""
+        if len(node.arguments) < 2:
+            raise ValueError("Deallocate requires address and size")
+        
+        print("DEBUG: Compiling Deallocate")
+        
+        # Get address
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_mov_rdi_rax()
+        
+        # Get size
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rsi_rax()
+        
+        # munmap syscall
+        self.asm.emit_mov_rax_imm64(11)  # sys_munmap
+        self.asm.emit_syscall()
+        
+        print("DEBUG: Deallocate completed")
+        return True
 
     def compile_memory_copy(self, node):
-        """Compile memory copy operation"""
-        try:
-            print(f"DEBUG: Compiling MemoryCopy operation")
-            
-            if len(node.arguments) < 3:
-                raise ValueError("MemoryCopy requires 3 arguments (dest, src, size)")
-            
-            # Evaluate arguments
-            # Destination address
-            self.compiler.compile_expression(node.arguments[0])
-            self.asm.emit_push_rax()  # Save dest
-            
-            # Source address
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_push_rax()  # Save src
-            
-            # Size
-            self.compiler.compile_expression(node.arguments[2])
-            self.asm.emit_mov_rcx_rax()  # Size to RCX
-            
-            # Pop addresses
-            self.asm.emit_pop_rsi()   # Source to RSI
-            self.asm.emit_pop_rdi()   # Dest to RDI
-            
-            # Simple byte-by-byte copy loop
-            copy_loop = self.asm.create_label()
-            copy_end = self.asm.create_label()
-            
-            # Check if size is zero
-            self.asm.emit_bytes(0x48, 0x83, 0xF9, 0x00)  # CMP RCX, 0
-            self.asm.emit_jump_to_label(copy_end, "JE")
-            
-            # Copy loop
-            self.asm.mark_label(copy_loop)
-            self.asm.emit_bytes(0x8A, 0x06)              # MOV AL, [RSI]
-            self.asm.emit_bytes(0x88, 0x07)              # MOV [RDI], AL
-            self.asm.emit_bytes(0x48, 0xFF, 0xC6)        # INC RSI
-            self.asm.emit_bytes(0x48, 0xFF, 0xC7)        # INC RDI
-            self.asm.emit_bytes(0x48, 0xFF, 0xC9)        # DEC RCX
-            self.asm.emit_jump_to_label(copy_loop, "JNE")
-            
-            self.asm.mark_label(copy_end)
-            
-            # Return success
-            self.asm.emit_mov_rax_imm64(1)
-            
-            print("DEBUG: MemoryCopy operation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: MemoryCopy compilation failed: {str(e)}")
-            raise
+        """MemoryCopy(dest, src, size) - Copy memory block"""
+        if len(node.arguments) < 3:
+            raise ValueError("MemoryCopy requires 3 arguments")
+        
+        print("DEBUG: Compiling MemoryCopy")
+        
+        # Get destination
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Get source
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_push_rax()
+        
+        # Get size
+        self.compiler.compile_expression(node.arguments[2])
+        self.asm.emit_mov_rcx_rax()  # Size in RCX
+        
+        # Get source and dest from stack
+        self.asm.emit_pop_rsi()  # Source in RSI
+        self.asm.emit_pop_rdi()  # Dest in RDI
+        
+        # Use REP MOVSB for byte-by-byte copy
+        self.asm.emit_bytes(0xF3, 0xA4)  # REP MOVSB
+        
+        print("DEBUG: MemoryCopy completed")
+        return True
     
     def compile_memory_set(self, node):
-        """Compile memory set operation"""
-        try:
-            print(f"DEBUG: Compiling MemorySet operation")
-            
-            if len(node.arguments) < 3:
-                raise ValueError("MemorySet requires 3 arguments (address, value, size)")
-            
-            # Evaluate arguments
-            # Address
-            self.compiler.compile_expression(node.arguments[0])
-            self.asm.emit_mov_rdi_rax()  # Address to RDI
-            
-            # Value
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_push_rax()  # Save value
-            
-            # Size
-            self.compiler.compile_expression(node.arguments[2])
-            self.asm.emit_mov_rcx_rax()  # Size to RCX
-            
-            # Get value
-            self.asm.emit_pop_rax()  # Value to AL
-            
-            # Simple set loop
-            set_loop = self.asm.create_label()
-            set_end = self.asm.create_label()
-            
-            # Check if size is zero
-            self.asm.emit_bytes(0x48, 0x83, 0xF9, 0x00)  # CMP RCX, 0
-            self.asm.emit_jump_to_label(set_end, "JE")
-            
-            # Set loop
-            self.asm.mark_label(set_loop)
-            self.asm.emit_bytes(0x88, 0x07)              # MOV [RDI], AL
-            self.asm.emit_bytes(0x48, 0xFF, 0xC7)        # INC RDI
-            self.asm.emit_bytes(0x48, 0xFF, 0xC9)        # DEC RCX
-            self.asm.emit_jump_to_label(set_loop, "JNE")
-            
-            self.asm.mark_label(set_end)
-            
-            # Return success
-            self.asm.emit_mov_rax_imm64(1)
-            
-            print("DEBUG: MemorySet operation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: MemorySet compilation failed: {str(e)}")
-            raise
+        """MemorySet(dest, value, size) - Set memory to value"""
+        if len(node.arguments) < 3:
+            raise ValueError("MemorySet requires 3 arguments")
+        
+        print("DEBUG: Compiling MemorySet")
+        
+        # Get destination
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()
+        
+        # Get value
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_push_rax()
+        
+        # Get size
+        self.compiler.compile_expression(node.arguments[2])
+        self.asm.emit_mov_rcx_rax()  # Size in RCX
+        
+        # Get value and dest from stack
+        self.asm.emit_pop_rax()  # Value in AL
+        self.asm.emit_pop_rdi()  # Dest in RDI
+        
+        # Use REP STOSB to set memory
+        self.asm.emit_bytes(0xF3, 0xAA)  # REP STOSB
+        
+        print("DEBUG: MemorySet completed")
+        return True
     
     def compile_memory_compare(self, node):
-        """Compile memory compare operation"""
-        try:
-            print(f"DEBUG: Compiling MemoryCompare operation")
-            
-            if len(node.arguments) < 3:
-                raise ValueError("MemoryCompare requires 3 arguments (addr1, addr2, size)")
-            
-            # Evaluate arguments
-            # Address 1
-            self.compiler.compile_expression(node.arguments[0])
-            self.asm.emit_push_rax()  # Save addr1
-            
-            # Address 2
-            self.compiler.compile_expression(node.arguments[1])
-            self.asm.emit_push_rax()  # Save addr2
-            
-            # Size
-            self.compiler.compile_expression(node.arguments[2])
-            self.asm.emit_mov_rcx_rax()  # Size to RCX
-            
-            # Pop addresses
-            self.asm.emit_pop_rsi()   # addr2 to RSI
-            self.asm.emit_pop_rdi()   # addr1 to RDI
-            
-            # Compare loop
-            cmp_loop = self.asm.create_label()
-            cmp_end = self.asm.create_label()
-            cmp_not_equal = self.asm.create_label()
-            
-            # Check if size is zero
-            self.asm.emit_bytes(0x48, 0x83, 0xF9, 0x00)  # CMP RCX, 0
-            self.asm.emit_jump_to_label(cmp_end, "JE")
-            
-            # Compare loop
-            self.asm.mark_label(cmp_loop)
-            self.asm.emit_bytes(0x8A, 0x07)              # MOV AL, [RDI]
-            self.asm.emit_bytes(0x8A, 0x1E)              # MOV BL, [RSI]
-            self.asm.emit_bytes(0x38, 0xD8)              # CMP AL, BL
-            self.asm.emit_jump_to_label(cmp_not_equal, "JNE")
-            self.asm.emit_bytes(0x48, 0xFF, 0xC7)        # INC RDI
-            self.asm.emit_bytes(0x48, 0xFF, 0xC6)        # INC RSI
-            self.asm.emit_bytes(0x48, 0xFF, 0xC9)        # DEC RCX
-            self.asm.emit_jump_to_label(cmp_loop, "JNE")
-            
-            # Equal - return 0
-            self.asm.mark_label(cmp_end)
-            self.asm.emit_mov_rax_imm64(0)
-            self.asm.emit_jump_to_label(cmp_not_equal + 1, "JMP")  # Skip to end
-            
-            # Not equal - return 1
-            self.asm.mark_label(cmp_not_equal)
-            self.asm.emit_mov_rax_imm64(1)
-            
-            print("DEBUG: MemoryCompare operation completed")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR: MemoryCompare compilation failed: {str(e)}")
-            raise
+        """MemoryCompare(addr1, addr2, size) - Compare memory blocks"""
+        if len(node.arguments) < 3:
+            raise ValueError("MemoryCompare requires 3 arguments")
+        
+        print("DEBUG: Compiling MemoryCompare")
+        
+        # Get first address
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_mov_rdi_rax()
+        
+        # Get second address
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_mov_rsi_rax()
+        
+        # Get size
+        self.compiler.compile_expression(node.arguments[2])
+        self.asm.emit_mov_rcx_rax()
+        
+        # Create labels
+        cmp_loop = self.asm.create_label()
+        cmp_not_equal = self.asm.create_label()
+        cmp_end = self.asm.create_label()
+        
+        # Check if size is zero
+        self.asm.emit_bytes(0x48, 0x85, 0xC9)  # TEST RCX, RCX
+        self.asm.emit_jump_to_label(cmp_end, "JE")
+        
+        # Compare loop
+        self.asm.mark_label(cmp_loop)
+        self.asm.emit_bytes(0x8A, 0x07)  # MOV AL, [RDI]
+        self.asm.emit_bytes(0x8A, 0x1E)  # MOV BL, [RSI]
+        self.asm.emit_bytes(0x38, 0xD8)  # CMP AL, BL
+        self.asm.emit_jump_to_label(cmp_not_equal, "JNE")
+        self.asm.emit_bytes(0x48, 0xFF, 0xC7)  # INC RDI
+        self.asm.emit_bytes(0x48, 0xFF, 0xC6)  # INC RSI
+        self.asm.emit_bytes(0x48, 0xFF, 0xC9)  # DEC RCX
+        self.asm.emit_jump_to_label(cmp_loop, "JNE")
+        
+        # Equal - return 0
+        self.asm.mark_label(cmp_end)
+        self.asm.emit_mov_rax_imm64(0)
+        done = self.asm.create_label()
+        self.asm.emit_jump_to_label(done, "JMP")
+        
+        # Not equal - return 1
+        self.asm.mark_label(cmp_not_equal)
+        self.asm.emit_mov_rax_imm64(1)
+        
+        self.asm.mark_label(done)
+        print("DEBUG: MemoryCompare completed")
+        return True
+    
+    
+    def compile_get_byte(self, node):
+        """
+        GetByte(string_addr, index) - Get byte at index in string
+        Properly returns zero-extended byte value
+        """
+        if len(node.arguments) < 2:
+            raise ValueError("GetByte requires 2 arguments: address and index")
+        
+        print("DEBUG: Compiling GetByte")
+        
+        # Get string address
+        self.compiler.compile_expression(node.arguments[0])
+        self.asm.emit_push_rax()  # Save string address
+        
+        # Get index
+        self.compiler.compile_expression(node.arguments[1])
+        self.asm.emit_pop_rbx()  # Restore string address to RBX
+        
+        # Calculate address: RBX + RAX
+        self.asm.emit_bytes(0x48, 0x01, 0xD8)  # ADD RAX, RBX
+        
+        # Read byte with zero-extension
+        self.asm.emit_bytes(0x48, 0x0F, 0xB6, 0x00)  # MOVZX RAX, BYTE [RAX]
+        
+        print("DEBUG: GetByte completed")
+        return True
 
     def compile_storevalue(self, node):
-        """Compile StoreValue operation - write value to memory address"""
-        # --- REWRITE to be byte-aware by default ---
+        """Compile StoreValue(address, value) - store value at address"""
         print("DEBUG: Compiling StoreValue")
         if len(node.arguments) < 2:
             raise ValueError("StoreValue requires address and value")
@@ -559,6 +447,7 @@ class LowLevelOps:
             val = int(node.arguments[1].value)
             if 0 <= val <= 255:
                 is_byte_value = True
+                print(f"DEBUG: Detected byte value: {val}")
         
         # Compile address
         self.compiler.compile_expression(node.arguments[0])
@@ -569,15 +458,18 @@ class LowLevelOps:
         self.asm.emit_mov_rbx_rax()  # Value in RBX
         
         # Restore address
-        self.asm.emit_pop_rax()
+        self.asm.emit_pop_rax()  # Address in RAX
         
         # Store based on value size
         if is_byte_value:
-            self.asm.emit_bytes(0x88, 0x18)  # MOV [RAX], BL (byte)
+            # MOV [RAX], BL - store low byte of RBX to address in RAX
+            self.asm.emit_bytes(0x88, 0x18)  
+            print("DEBUG: MOV [RAX], BL (stored as byte)")
         else:
-            self.asm.emit_bytes(0x48, 0x89, 0x18)  # MOV [RAX], RBX (qword)
+            # MOV [RAX], RBX - store full qword
+            self.asm.emit_bytes(0x48, 0x89, 0x18)  
+            print("DEBUG: MOV [RAX], RBX (stored as qword)")
         
-        print(f"DEBUG: StoreValue completed ({'byte' if is_byte_value else 'qword'})")
         return True
     
        

@@ -1,0 +1,69 @@
+// Minimal test mimicking COBOL transpiler output
+// Tests if the issue is in COBOL code generation or compiler
+
+// Exact same FixedPool syntax as COBOL generates
+FixedPool.TEST_POOL {
+    "FIRST_NAME": Initialize="John"
+    "LAST_NAME": Initialize="Smith"
+    "FULL_NAME": Initialize=""
+}
+
+SubRoutine.Main {
+    PrintMessage("=== Direct Pool Variable Tests ===")
+    PrintMessage("")
+    
+    // Test 1: Direct read from pool
+    PrintMessage("Test 1 - Direct read:")
+    PrintMessage("  FIRST_NAME = ")
+    PrintMessage(TEST_POOL.FIRST_NAME)
+    PrintMessage("")
+    
+    // Test 2: Another direct read
+    PrintMessage("Test 2 - Another read:")
+    PrintMessage("  LAST_NAME = ")
+    PrintMessage(TEST_POOL.LAST_NAME)
+    PrintMessage("")
+    
+    // Test 3: Empty string
+    PrintMessage("Test 3 - Empty string:")
+    PrintMessage("  FULL_NAME = ")
+    PrintMessage(TEST_POOL.FULL_NAME)
+    PrintMessage("")
+    
+    // Test 4: Write to pool variable
+    PrintMessage("Test 4 - Write to pool:")
+    TEST_POOL.FULL_NAME = "TestValue"
+    PrintMessage("  After write, FULL_NAME = ")
+    PrintMessage(TEST_POOL.FULL_NAME)
+    PrintMessage("")
+    
+    // Test 5: StringConcat with pool variables (what COBOL does)
+    PrintMessage("Test 5 - StringConcat with pool vars:")
+    TEST_POOL.FULL_NAME = StringConcat(TEST_POOL.FIRST_NAME, " ")
+    PrintMessage("  After concat with space: ")
+    PrintMessage(TEST_POOL.FULL_NAME)
+    PrintMessage("")
+    
+    // Test 6: Nested StringConcat (exactly like COBOL generates)
+    PrintMessage("Test 6 - Nested StringConcat:")
+    TEST_POOL.FULL_NAME = StringConcat(StringConcat(TEST_POOL.FIRST_NAME, " "), TEST_POOL.LAST_NAME)
+    PrintMessage("  Result: ")
+    PrintMessage(TEST_POOL.FULL_NAME)
+    PrintMessage("")
+    
+    // Test 7: StringConcat with result (like COBOL DISPLAY)
+    PrintMessage("Test 7 - StringConcat in PrintMessage:")
+    PrintMessage(StringConcat("Full name: ", TEST_POOL.FULL_NAME))
+    PrintMessage("")
+    
+    PrintMessage("=== Expected Results ===")
+    PrintMessage("Test 1: John")
+    PrintMessage("Test 2: Smith")
+    PrintMessage("Test 3: (empty)")
+    PrintMessage("Test 4: TestValue")
+    PrintMessage("Test 5: John ")
+    PrintMessage("Test 6: John Smith")
+    PrintMessage("Test 7: Full name: John Smith")
+}
+
+RunTask(Main)

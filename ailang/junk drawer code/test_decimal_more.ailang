@@ -1,0 +1,165 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_PIC_FORMATS_TEST_VARS {
+    "BASIC_UNSIGNED": Initialize=0
+    "UNSIGNED_INT": Initialize=1234
+    "UNSIGNED_DECIMAL": Initialize=12345
+    "STRING_DATA": Initialize="HELLO WORLD"
+    "SIGNED_NUMBERS": Initialize=0
+    "SIGNED_INT": Initialize=-100
+    "SIGNED_DECIMAL": Initialize=-1234
+    "SIGNED_LARGE": Initialize=12345678
+    "COMP_NUMBERS": Initialize=0
+    "COMP_INT": Initialize=500
+    "COMP_SIGNED": Initialize=-12345
+    "COMP_DECIMAL": Initialize=999
+    "COMP_SMALL": Initialize=42
+    "COMP3_NUMBERS": Initialize=0
+    "PACKED_INT": Initialize=12345
+    "PACKED_SIGNED": Initialize=-123456
+    "PACKED_DECIMAL": Initialize=1234567
+    "DISPLAY_NUMBERS": Initialize=0
+    "DISPLAY_INT": Initialize=123456
+    "DISPLAY_SIGNED": Initialize=-9999
+    "DISPLAY_DECIMAL": Initialize=12
+    "EDITED_FORMATS": Initialize=0
+    "ZERO_SUPPRESS": Initialize=""
+    "CURRENCY_SIMPLE": Initialize=0
+    "WITH_COMMAS": Initialize=""
+    "FULL_CURRENCY": Initialize=""
+    "WITH_CR": Initialize=""
+    "WITH_DB": Initialize=""
+    "ASTERISK_FILL": Initialize=""
+    "WITH_SIGN": Initialize=""
+    "TRAILING_SIGN": Initialize=""
+    "CALCULATION_VARS": Initialize=0
+    "PRICE": Initialize=123
+    "QUANTITY": Initialize=10
+    "TAX_RATE": Initialize=0
+    "SUBTOTAL": Initialize=0
+    "TAX_AMOUNT": Initialize=0
+    "TOTAL": Initialize=0
+    "TOTAL_DISPLAY": Initialize=""
+}
+
+SubRoutine.PIC_FORMATS_TEST {
+    RunTask(PIC_FORMATS_TEST_MAIN_PARA)
+    RunTask(PIC_FORMATS_TEST_TEST_BASIC_UNSIGNED)
+    RunTask(PIC_FORMATS_TEST_TEST_SIGNED_NUMBERS)
+    RunTask(PIC_FORMATS_TEST_TEST_COMP_STORAGE)
+    RunTask(PIC_FORMATS_TEST_TEST_COMP3_STORAGE)
+    RunTask(PIC_FORMATS_TEST_TEST_DISPLAY_STORAGE)
+    RunTask(PIC_FORMATS_TEST_TEST_EDITED_FORMATS)
+    RunTask(PIC_FORMATS_TEST_TEST_CALCULATIONS)
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_MAIN_PARA {
+    PrintMessage("=== PIC FORMAT TEST SUITE ===")
+    PrintMessage(" ")
+    RunTask(PIC_FORMATS_TEST_TEST_BASIC_UNSIGNED)
+    RunTask(PIC_FORMATS_TEST_TEST_SIGNED_NUMBERS)
+    RunTask(PIC_FORMATS_TEST_TEST_COMP_STORAGE)
+    RunTask(PIC_FORMATS_TEST_TEST_COMP3_STORAGE)
+    RunTask(PIC_FORMATS_TEST_TEST_DISPLAY_STORAGE)
+    RunTask(PIC_FORMATS_TEST_TEST_EDITED_FORMATS)
+    RunTask(PIC_FORMATS_TEST_TEST_CALCULATIONS)
+    PrintMessage(" ")
+    PrintMessage("=== ALL TESTS COMPLETE ===")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_BASIC_UNSIGNED {
+    PrintMessage("Test 1: Basic Unsigned Formats")
+    PrintMessage(StringConcat("  Unsigned Int: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.UNSIGNED_INT)))
+    PrintMessage(StringConcat("  Unsigned Decimal: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.UNSIGNED_DECIMAL)))
+    PrintMessage(StringConcat("  String: ", COBOL_PIC_FORMATS_TEST_VARS.STRING_DATA))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_SIGNED_NUMBERS {
+    PrintMessage("Test 2: Signed Formats")
+    PrintMessage(StringConcat("  Signed Int: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.SIGNED_INT)))
+    PrintMessage(StringConcat("  Signed Decimal: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.SIGNED_DECIMAL)))
+    PrintMessage(StringConcat("  Signed Large: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.SIGNED_LARGE)))
+    COBOL_PIC_FORMATS_TEST_VARS.SIGNED_INT = Multiply(COBOL_PIC_FORMATS_TEST_VARS.SIGNED_INT, Subtract(0, 1))
+    PrintMessage(StringConcat("  After multiply by -1: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.SIGNED_INT)))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_COMP_STORAGE {
+    PrintMessage("Test 3: COMP (Binary) Storage")
+    PrintMessage(StringConcat("  COMP Int: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.COMP_INT)))
+    PrintMessage(StringConcat("  COMP Signed: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.COMP_SIGNED)))
+    PrintMessage(StringConcat("  COMP Decimal: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.COMP_DECIMAL)))
+    PrintMessage(StringConcat("  COMP Small: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.COMP_SMALL)))
+    COBOL_PIC_FORMATS_TEST_VARS.COMP_INT = Add(COBOL_PIC_FORMATS_TEST_VARS.COMP_INT, COBOL_PIC_FORMATS_TEST_VARS.COMP_SMALL)
+    PrintMessage(StringConcat("  After addition: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.COMP_INT)))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_COMP3_STORAGE {
+    PrintMessage("Test 4: COMP-3 (Packed) Storage")
+    PrintMessage(StringConcat("  Packed Int: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.PACKED_INT)))
+    PrintMessage(StringConcat("  Packed Signed: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.PACKED_SIGNED)))
+    PrintMessage(StringConcat("  Packed Decimal: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.PACKED_DECIMAL)))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_DISPLAY_STORAGE {
+    PrintMessage("Test 5: DISPLAY (Character) Storage")
+    PrintMessage(StringConcat("  Display Int: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.DISPLAY_INT)))
+    PrintMessage(StringConcat("  Display Signed: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.DISPLAY_SIGNED)))
+    PrintMessage(StringConcat("  Display Decimal: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.DISPLAY_DECIMAL)))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_EDITED_FORMATS {
+    PrintMessage("Test 6: Display-Edited Formats")
+    COBOL_PIC_FORMATS_TEST_VARS.ZERO_SUPPRESS = FormatZeroSuppress(7, 4, 0)
+    COBOL_PIC_FORMATS_TEST_VARS.CURRENCY_SIMPLE = 123
+    COBOL_PIC_FORMATS_TEST_VARS.WITH_COMMAS = FormatWithCommas(1234567, 7, 0)
+    COBOL_PIC_FORMATS_TEST_VARS.FULL_CURRENCY = FormatCurrency(9876, 9, 2, "$", 1, 1)
+    COBOL_PIC_FORMATS_TEST_VARS.WITH_CR = FormatWithIndicator(Subtract(0, 1234), "CR", 4, 0)
+    COBOL_PIC_FORMATS_TEST_VARS.WITH_DB = FormatWithIndicator(5678, "DB", 4, 0)
+    COBOL_PIC_FORMATS_TEST_VARS.ASTERISK_FILL = FormatAsteriskFill(99, 6, 2)
+    COBOL_PIC_FORMATS_TEST_VARS.WITH_SIGN = FormatSigned(123, 5, 2, "leading")
+    COBOL_PIC_FORMATS_TEST_VARS.TRAILING_SIGN = FormatSigned(Subtract(0, 67), 5, 2, "trailing")
+    PrintMessage(StringConcat("  Zero Suppress: ", COBOL_PIC_FORMATS_TEST_VARS.ZERO_SUPPRESS))
+    PrintMessage(StringConcat("  Currency: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.CURRENCY_SIMPLE)))
+    PrintMessage(StringConcat("  With Commas: ", COBOL_PIC_FORMATS_TEST_VARS.WITH_COMMAS))
+    PrintMessage(StringConcat("  Full Currency: ", COBOL_PIC_FORMATS_TEST_VARS.FULL_CURRENCY))
+    PrintMessage(StringConcat("  Credit (CR): ", COBOL_PIC_FORMATS_TEST_VARS.WITH_CR))
+    PrintMessage(StringConcat("  Debit (DB): ", COBOL_PIC_FORMATS_TEST_VARS.WITH_DB))
+    PrintMessage(StringConcat("  Asterisk Fill: ", COBOL_PIC_FORMATS_TEST_VARS.ASTERISK_FILL))
+    PrintMessage(StringConcat("  With Sign: ", COBOL_PIC_FORMATS_TEST_VARS.WITH_SIGN))
+    PrintMessage(StringConcat("  Trailing Sign: ", COBOL_PIC_FORMATS_TEST_VARS.TRAILING_SIGN))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.PIC_FORMATS_TEST_TEST_CALCULATIONS {
+    PrintMessage("Test 7: Calculations with Mixed Types")
+    COBOL_PIC_FORMATS_TEST_VARS.SUBTOTAL = Multiply(COBOL_PIC_FORMATS_TEST_VARS.PRICE, COBOL_PIC_FORMATS_TEST_VARS.QUANTITY)
+    PrintMessage(StringConcat("  Subtotal: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.SUBTOTAL)))
+    COBOL_PIC_FORMATS_TEST_VARS.TAX_AMOUNT = Multiply(COBOL_PIC_FORMATS_TEST_VARS.SUBTOTAL, COBOL_PIC_FORMATS_TEST_VARS.TAX_RATE)
+    PrintMessage(StringConcat("  Tax: ", NumberToString(COBOL_PIC_FORMATS_TEST_VARS.TAX_AMOUNT)))
+    COBOL_PIC_FORMATS_TEST_VARS.TOTAL = Add(COBOL_PIC_FORMATS_TEST_VARS.SUBTOTAL, COBOL_PIC_FORMATS_TEST_VARS.TAX_AMOUNT)
+    COBOL_PIC_FORMATS_TEST_VARS.TOTAL_DISPLAY = FormatCurrency(COBOL_PIC_FORMATS_TEST_VARS.TOTAL, 11, 2, "$", 1, 1)
+    PrintMessage(StringConcat("  Total (formatted): ", COBOL_PIC_FORMATS_TEST_VARS.TOTAL_DISPLAY))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(PIC_FORMATS_TEST)
+}
+
+RunTask(Main)

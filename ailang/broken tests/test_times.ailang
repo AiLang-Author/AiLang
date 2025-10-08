@@ -1,0 +1,33 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+SubRoutine.TEST_PERFORM_TIMES {
+    COUNTER = 0
+    I = 0
+    PrintMessage("Test 1: Inline PERFORM TIMES")
+    TEMP_TIMES_CTR_126745459062880 = 0
+    WhileLoop LessThan(TEMP_TIMES_CTR_126745459062880, 3) {
+            COUNTER = Add(COUNTER, 1)
+            PrintMessage(StringConcat("Counter: ", NumberToString(COUNTER)))
+            TEMP_TIMES_CTR_126745459062880 = Add(TEMP_TIMES_CTR_126745459062880, 1)
+        }
+    PrintMessage("Test 2: Paragraph PERFORM TIMES")
+    PrintMessage("All tests complete")
+    ReturnValue(0)
+    RunTask(TEST_PERFORM_TIMES_SHOW_MESSAGE)
+    ReturnValue(0)
+}
+
+SubRoutine.TEST_PERFORM_TIMES_SHOW_MESSAGE {
+    COUNTER = 0
+    I = 0
+    PrintMessage("Hello from paragraph")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(TEST_PERFORM_TIMES)
+}
+
+RunTask(Main)

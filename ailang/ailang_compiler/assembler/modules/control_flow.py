@@ -1,3 +1,8 @@
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 # ailang_compiler/assembler/modules/control_flow.py
 """Control flow operations - jumps, labels, calls"""
 
@@ -44,10 +49,14 @@ class ControlFlowOperations:
             self.emit_bytes(0x0F, 0x8D, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JG":
             self.emit_bytes(0x0F, 0x8F, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JS":  # Jump if sign (negative)
+            self.emit_bytes(0x0F, 0x88, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JLE":
             self.emit_bytes(0x0F, 0x8E, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JNS":
             self.emit_bytes(0x0F, 0x89, 0x00, 0x00, 0x00, 0x00)
+        elif jump_type == "JS":  # Jump if sign (negative)
+            self.emit_bytes(0x0F, 0x88, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JB":
             self.emit_bytes(0x0F, 0x82, 0x00, 0x00, 0x00, 0x00)
         elif jump_type == "JA":

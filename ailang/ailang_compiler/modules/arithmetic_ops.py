@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 """
 Arithmetic Operations Module
 Handles all arithmetic and comparison operations for AILANG compiler
@@ -23,30 +29,41 @@ class ArithmeticOps:
         """
         try:
             if node.function == 'Add' and len(node.arguments) == 2:
+                before_depth = self.compiler.stack_depth
                 print(f"DEBUG: Compiling Add({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
                 self.compiler.compile_expression(node.arguments[0])
+                self.compiler.track_push("Add arg 1")
                 self.asm.emit_push_rax()
-                print("DEBUG: Pushed first argument")
                 self.compiler.compile_expression(node.arguments[1])
                 self.asm.emit_mov_rbx_rax()
+                self.compiler.track_pop("Add arg 1")
                 self.asm.emit_pop_rax()
                 self.asm.emit_add_rax_rbx()
                 print("DEBUG: Add operation completed")
+                if self.compiler.stack_depth != before_depth:
+                    print(f"WARNING: Stack imbalance in Add! Start: {before_depth}, End: {self.compiler.stack_depth}")
+                    self.compiler.print_stack_trace()
                 return True
             
             elif node.function == 'Subtract' and len(node.arguments) == 2:
+                before_depth = self.compiler.stack_depth
                 print(f"DEBUG: Compiling Subtract({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
                 self.compiler.compile_expression(node.arguments[0])
+                self.compiler.track_push("Subtract arg 1")
                 self.asm.emit_push_rax()
-                print("DEBUG: Pushed first argument")
                 self.compiler.compile_expression(node.arguments[1])
                 self.asm.emit_mov_rbx_rax()
+                self.compiler.track_pop("Subtract arg 1")
                 self.asm.emit_pop_rax()
                 self.asm.emit_sub_rax_rbx()
                 print("DEBUG: Subtract operation completed")
+                if self.compiler.stack_depth != before_depth:
+                    print(f"WARNING: Stack imbalance in Subtract! Start: {before_depth}, End: {self.compiler.stack_depth}")
+                    self.compiler.print_stack_trace()
                 return True
             
             elif node.function == 'Multiply' and len(node.arguments) == 2:
+                before_depth = self.compiler.stack_depth
                 print(f"DEBUG: Compiling Multiply({self._get_arg_name(node.arguments[0])}, {self._get_arg_name(node.arguments[1])})")
                 self.compiler.compile_expression(node.arguments[0])
                 self.asm.emit_push_rax()
@@ -56,6 +73,9 @@ class ArithmeticOps:
                 self.asm.emit_pop_rax()
                 self.asm.emit_imul_rax_rbx()
                 print("DEBUG: Multiply operation completed")
+                if self.compiler.stack_depth != before_depth:
+                    print(f"WARNING: Stack imbalance in Multiply! Start: {before_depth}, End: {self.compiler.stack_depth}")
+                    self.compiler.print_stack_trace()
                 return True
             
             elif node.function == 'Divide' and len(node.arguments) == 2:

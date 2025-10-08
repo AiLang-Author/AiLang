@@ -89,29 +89,6 @@ Function.HashMap.IntToString {
 
 // --- END: Added Helper Functions ---
 
-Function.HashMap.StringCopy {
-    Input: source: Address
-    Output: Address
-    Body: {
-        IfCondition EqualTo(source, 0) ThenBlock: {
-            ReturnValue(0)
-        }
-        
-        len = StringLength(source)
-        copy = Allocate(Add(len, 1))
-        
-        i = 0
-        WhileLoop LessThan(i, len) {
-            byte = GetByte(source, i)
-            SetByte(copy, i, byte)
-            i = Add(i, 1)
-        }
-        SetByte(copy, len, 0)  // Null terminator
-        
-        ReturnValue(copy)
-    }
-}
-
 // ============================================================================
 // Original Nested Hash Table (for hash-of-hashes)
 // ============================================================================
@@ -144,9 +121,6 @@ Function.HashMap.HSet {
             XSHash.XInsert(hashmap, key, inner_hash)
         }
         
-        // Make a copy of the value
-        value_copy = HashMap.StringCopy(value)
-        
         // Check if field exists before inserting
         existing_value = XSHash.XLookup(inner_hash, field)
         
@@ -156,7 +130,7 @@ Function.HashMap.HSet {
         }
         
         // XSHash.XInsert now returns 1 for new, 0 for update
-        is_new_field = XSHash.XInsert(inner_hash, field, value_copy)
+        is_new_field = XSHash.XInsert(inner_hash, field, value)
         
         ReturnValue(is_new_field)
     }
@@ -351,8 +325,7 @@ Function.HashMap.HVals {
             value = XSHash.XLookup(inner_hash, field)
             
             // Add copy of value to result
-            value_copy = HashMap.StringCopy(value)
-            XArray.XPush(result, value_copy)
+            XArray.XPush(result, value)
             
             // Clean up field copy
             Deallocate(field, 0)
@@ -472,7 +445,7 @@ Function.HashMap.HIncrBy {
         new_val = Add(current_val, increment)
         
         // Store new value
-        new_str = HashMap.IntToString(new_val)
+        new_str = NumberToString(new_val)
         HashMap.HSet(hashmap, key, field, new_str)
         Deallocate(new_str, 0)
         
@@ -572,6 +545,82 @@ Function.HashMap.CreateOpen {
     }
 }
 
+Function.HashMap.ResizeOpen {
+    Input: table: Address
+    Body: {
+        old_capacity = Dereference(table)
+        new_capacity = Multiply(old_capacity, 2)
+        
+        old_keys = Dereference(Add(table, 16))
+        old_values = Dereference(Add(table, 24))
+        old_deleted = Dereference(Add(table, 32))
+        
+        // Create new larger arrays
+        new_keys = ArrayCreate(new_capacity)
+        new_values = ArrayCreate(new_capacity)
+        new_deleted = ArrayCreate(new_capacity)
+        
+        // Initialize new arrays
+        i = 0
+        WhileLoop LessThan(i, new_capacity) {
+            ArraySet(new_keys, i, 0)
+            ArraySet(new_values, i, 0)
+            ArraySet(new_deleted, i, 0)
+            i = Add(i, 1)
+        }
+        
+        // Rehash all existing entries
+        i = 0
+        WhileLoop LessThan(i, old_capacity) {
+            key = ArrayGet(old_keys, i)
+            is_deleted = ArrayGet(old_deleted, i)
+            
+            // Only rehash valid entries
+            IfCondition And(NotEqual(key, 0), EqualTo(is_deleted, 0)) ThenBlock: {
+                value = ArrayGet(old_values, i)
+                
+                // Find new position
+                hash = HashMap.HashString(key)
+                pos = Modulo(hash, new_capacity)
+                
+                // Linear probe to find empty slot
+                WhileLoop True {
+                    existing = ArrayGet(new_keys, pos)
+                    IfCondition EqualTo(existing, 0) ThenBlock: {
+                        ArraySet(new_keys, pos, key)
+                        ArraySet(new_values, pos, value)
+                        BreakLoop
+                    }
+                    pos = Modulo(Add(pos, 1), new_capacity)
+                }
+            } ElseBlock: {
+                // Free deleted entries
+                IfCondition NotEqual(key, 0) ThenBlock: {
+                    Deallocate(key, 0)
+                    value = ArrayGet(old_values, i)
+                    IfCondition NotEqual(value, 0) ThenBlock: {
+                        Deallocate(value, 0)
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Free old arrays
+        ArrayDestroy(old_keys)
+        ArrayDestroy(old_values)
+        ArrayDestroy(old_deleted)
+        
+        // Update table with new arrays and capacity
+        StoreValue(table, new_capacity)
+        StoreValue(Add(table, 16), new_keys)
+        StoreValue(Add(table, 24), new_values)
+        StoreValue(Add(table, 32), new_deleted)
+    }
+}
+
+
 // Robin Hood hashing for better cache performance
 Function.HashMap.InsertRobinHood {
     Input: table: Address
@@ -595,8 +644,8 @@ Function.HashMap.InsertRobinHood {
         values_array = Dereference(Add(table, 24))
         deleted_array = Dereference(Add(table, 32))
         
-        current_key = HashMap.StringCopy(key)
-        current_value = HashMap.StringCopy(value)
+        current_key = key
+        current_value = value
         current_distance = 0
         pos = ideal_pos
         
@@ -626,7 +675,7 @@ Function.HashMap.InsertRobinHood {
             // Calculate existing item's distance from ideal position
             existing_hash = HashMap.HashString(existing_key)
             existing_ideal = Modulo(existing_hash, capacity)
-            existing_distance = Modulo(Add(pos, capacity, Subtract(0, existing_ideal)), capacity)
+           existing_distance = Modulo(Add(Add(pos, capacity), Subtract(0, existing_ideal)), capacity)
             
             // Robin Hood: swap if current has traveled further
             IfCondition GreaterThan(current_distance, existing_distance) ThenBlock: {
@@ -812,9 +861,9 @@ Function.HashMap.LRUPut {
         IfCondition NotEqual(existing, 0) ThenBlock: {
             // Update existing node
             old_value = Dereference(Add(existing, 8))
-            Deallocate(old_value, 0)
-            
-            new_value = HashMap.StringCopy(value)
+            Deallocate(old_value, 0) // TODO: Check if this is correct, StringCopy makes a new allocation
+
+            new_value = value
             StoreValue(Add(existing, 8), new_value)
             
             HashMap.LRUMoveToFront(lru, existing)
@@ -823,8 +872,8 @@ Function.HashMap.LRUPut {
         
         // Create new node
         node = Allocate(32)  // [key, value, prev, next]
-        key_copy = HashMap.StringCopy(key)
-        value_copy = HashMap.StringCopy(value)
+        key_copy = key
+        value_copy = value
         
         StoreValue(node, key_copy)
         StoreValue(Add(node, 8), value_copy)
@@ -879,12 +928,12 @@ Function.HashMap.LRUEvictLast {
     Input: lru: Address
     Body: {
         tail = Dereference(Add(lru, 32))
-        last = Dereference(Add(tail, 16))  // tail.prev
+        last = Dereference(Add(tail, 16))
         
         // Skip if it's the head sentinel
         head = Dereference(Add(lru, 24))
         IfCondition EqualTo(last, head) ThenBlock: {
-            ReturnValue()
+            ReturnValue(0)
         }
         
         // Remove from list
@@ -906,9 +955,10 @@ Function.HashMap.LRUEvictLast {
         // Update size
         size = Dereference(Add(lru, 8))
         StoreValue(Add(lru, 8), Subtract(size, 1))
+        
+        ReturnValue(0)
     }
 }
-
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -952,3 +1002,302 @@ Function.HashMap.ReleaseLock {
         StoreValue(lock, 0)
     }
 }
+
+// ============================================================================
+// HashMap "Simple" API - Add these functions to Library.HashMap.ailang
+// ============================================================================
+// These provide a direct hash-pointer interface for single hash operations
+// Used by redis_server.ailang which manages its own hash instances
+
+// Create a standalone hash table (not managed by multi-hash system)
+Function.HashMap.CreateSimple {
+    Output: Address
+    Body: {
+        // Call the low-level HashCreate primitive
+        // Default capacity of 16 buckets
+        hash_ptr = HashCreate(16)
+        ReturnValue(hash_ptr)
+    }
+}
+
+// Set a field-value pair in a hash (2-arg "Simple" interface)
+// Returns 1 if new field, 0 if updated existing
+Function.HashMap.HSetSimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Input: value: Address
+    Output: Integer
+    Body: {
+        // HashSet returns 1 for new, 0 for update
+        result = HashSet(hash_ptr, field, value)
+        ReturnValue(result)
+    }
+}
+
+// Get a field value from a hash (returns string copy or 0 if not found)
+Function.HashMap.HGetSimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Output: Address
+    Body: {
+        // HashGet returns the value or 0 if not found
+        value = HashGet(hash_ptr, field)
+        ReturnValue(value)
+    }
+}
+
+// Delete a field from a hash (returns 1 if deleted, 0 if not found)
+Function.HashMap.HDelSimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Output: Integer
+    Body: {
+        // HashDelete returns 1 if deleted, 0 if not found
+        result = HashDelete(hash_ptr, field)
+        ReturnValue(result)
+    }
+}
+
+// Check if a field exists in a hash
+Function.HashMap.HExistsSimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Output: Integer
+    Body: {
+        // HashExists returns 1 if exists, 0 otherwise
+        result = HashExists(hash_ptr, field)
+        ReturnValue(result)
+    }
+}
+
+// Get the number of fields in a hash
+Function.HashMap.HLenSimple {
+    Input: hash_ptr: Address
+    Output: Integer
+    Body: {
+        // Hash structure: [capacity:8][size:8][entries...]
+        // Size is at offset 8
+        size = Dereference(Add(hash_ptr, 8))
+        ReturnValue(size)
+    }
+}
+
+// Increment a numeric field by a value (returns new value)
+Function.HashMap.HIncrBySimple {
+    Input: hash_ptr: Address
+    Input: field: Address
+    Input: increment: Integer
+    Output: Integer
+    Body: {
+        // Get current value (as string)
+        current_str = HashGet(hash_ptr, field)
+        current_val = 0
+        
+        // If field exists, parse its value
+        IfCondition NotEqual(current_str, 0) ThenBlock: {
+            current_val = StringToNumber(current_str)
+            Deallocate(current_str, 0)
+        }
+        
+        // Calculate new value
+        new_val = Add(current_val, increment)
+        
+        // Convert back to string
+        new_str = NumberToString(new_val)
+        
+        // Store updated value
+        HashSet(hash_ptr, field, new_str)
+        
+        // Clean up the string we created
+        Deallocate(new_str, 0)
+        
+        ReturnValue(new_val)
+    }
+}
+
+// Get all field names from a hash (returns XArray of string copies)
+Function.HashMap.HKeysSimple {
+    Input: hash_ptr: Address
+    Output: Address
+    Body: {
+        // Get capacity and size from hash structure
+        capacity = Dereference(hash_ptr)
+        size = Dereference(Add(hash_ptr, 8))
+        
+        // Create result array
+        result = XArray.XCreate(size)
+        
+        // Iterate through hash table buckets
+        // Entries start at offset 16, each entry is 24 bytes
+        // Entry structure: [hash:8][key_addr:8][value:8]
+        entry_offset = 16
+        result_index = 0
+        
+        i = 0
+        WhileLoop LessThan(i, capacity) {
+            // Get entry hash (0 means empty)
+            entry_hash = Dereference(Add(hash_ptr, entry_offset))
+            
+            IfCondition NotEqual(entry_hash, 0) ThenBlock: {
+                // Get key address
+                key_addr = Dereference(Add(hash_ptr, Add(entry_offset, 8)))
+                
+                // Make a copy of the key string
+                key_copy = key_addr
+
+                // Add to result
+                XArray.XPush(result, key_copy)
+                result_index = Add(result_index, 1)
+            }
+            
+            entry_offset = Add(entry_offset, 24)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Get all values from a hash (returns XArray of string copies)
+Function.HashMap.HValsSimple {
+    Input: hash_ptr: Address
+    Output: Address
+    Body: {
+        // Get capacity and size from hash structure
+        capacity = Dereference(hash_ptr)
+        size = Dereference(Add(hash_ptr, 8))
+        
+        // Create result array
+        result = XArray.XCreate(size)
+        
+        // Iterate through hash table buckets
+        entry_offset = 16
+        result_index = 0
+        
+        i = 0
+        WhileLoop LessThan(i, capacity) {
+            // Get entry hash (0 means empty)
+            entry_hash = Dereference(Add(hash_ptr, entry_offset))
+            
+            IfCondition NotEqual(entry_hash, 0) ThenBlock: {
+                // Get value address (at offset +16 from entry start)
+                value_addr = Dereference(Add(hash_ptr, Add(entry_offset, 16)))
+                
+                // Make a copy of the value string
+                value_copy = value_addr
+
+                // Add to result
+                XArray.XPush(result, value_copy)
+                result_index = Add(result_index, 1)
+            }
+            
+            entry_offset = Add(entry_offset, 24)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Get all field-value pairs from a hash (returns XArray of alternating keys and values)
+Function.HashMap.HGetAllSimple {
+    Input: hash_ptr: Address
+    Output: Address
+    Body: {
+        // Get capacity and size
+        capacity = Dereference(hash_ptr)
+        size = Dereference(Add(hash_ptr, 8))
+        
+        // Create result array (size * 2 for key-value pairs)
+        result = XArray.XCreate(Multiply(size, 2))
+        
+        // Iterate through hash table
+        entry_offset = 16
+        
+        i = 0
+        WhileLoop LessThan(i, capacity) {
+            entry_hash = Dereference(Add(hash_ptr, entry_offset))
+            
+            IfCondition NotEqual(entry_hash, 0) ThenBlock: {
+                // Get key and value
+                key_addr = Dereference(Add(hash_ptr, Add(entry_offset, 8)))
+                value_addr = Dereference(Add(hash_ptr, Add(entry_offset, 16)))
+                
+                // Make copies
+                key_copy = key_addr
+                value_copy = value_addr
+
+                // Add both to result array
+                XArray.XPush(result, key_copy)
+                XArray.XPush(result, value_copy)
+            }
+            
+            entry_offset = Add(entry_offset, 24)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Destroy a hash table
+Function.HashMap.DestroySimple {
+    Input: hash_ptr: Address
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(hash_ptr, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Get capacity
+        capacity = Dereference(hash_ptr)
+        
+        // Free all keys and values
+        entry_offset = 16
+        i = 0
+        
+        WhileLoop LessThan(i, capacity) {
+            entry_hash = Dereference(Add(hash_ptr, entry_offset))
+            
+            IfCondition NotEqual(entry_hash, 0) ThenBlock: {
+                // Free key
+                key_addr = Dereference(Add(hash_ptr, Add(entry_offset, 8)))
+                Deallocate(key_addr, 0)
+                
+                // Free value
+                value_addr = Dereference(Add(hash_ptr, Add(entry_offset, 16)))
+                Deallocate(value_addr, 0)
+            }
+            
+            entry_offset = Add(entry_offset, 24)
+            i = Add(i, 1)
+        }
+        
+        // Free the hash table itself
+        Deallocate(hash_ptr, 0)
+        
+        ReturnValue(1)
+    }
+}
+
+// ============================================================================
+// USAGE NOTES
+// ============================================================================
+// Add these functions to your existing Library.HashMap.ailang file
+//
+// IMPORTANT: Make sure Library.HashMap.ailang has this import at the top:
+//   LibraryImport.XArrays
+//
+// These "Simple" functions provide a direct hash pointer interface (2-3 args)
+// The existing HashMap.Create(), HashMap.HSet(), etc. remain unchanged (3-4 args)
+//
+// Simple API - for managing individual hash instances yourself:
+//   hash_ptr = HashMap.CreateSimple()
+//   HashMap.HSetSimple(hash_ptr, field, value)
+//   value = HashMap.HGetSimple(hash_ptr, field)
+//
+// Managed API - for managing multiple named hashes:
+//   manager = HashMap.Create()
+//   HashMap.HSet(manager, "user:1000", field, value)
+//   value = HashMap.HGet(manager, "user:1000", field)
+// ============================================================================

@@ -1,0 +1,295 @@
+// Library.SQLORM.ailang
+// Simple ORM for business logic - perfect for transpiled COBOL
+
+LibraryImport.PostgreSQL
+LibraryImport.XArrays
+
+// Entity definition: [table_name, columns, primary_key]
+Function.ORM.DefineEntity {
+    Input: table_name: Address
+    Input: columns: Address      // XArray of column names
+    Input: primary_key: Address
+    Output: Address
+    Body: {
+        entity = Allocate(32)
+        
+        StoreValue(entity, Helpers.StringCopy(table_name))
+        StoreValue(Add(entity, 8), XArray.XCopy(columns))
+        StoreValue(Add(entity, 16), Helpers.StringCopy(primary_key))
+        
+        ReturnValue(entity)
+    }
+}
+
+// Find by primary key
+Function.ORM.FindByPK {
+    Input: conn: Address
+    Input: entity: Address
+    Input: pk_value: Address
+    Output: Address              // Record (hash map) or 0
+    Body: {
+        table_name = Dereference(entity)
+        pk_col = Dereference(Add(entity, 16))
+        
+        // Build query: SELECT * FROM table WHERE pk = 'value'
+        sql = StringConcat("SELECT * FROM ", table_name)
+        sql = StringConcat(sql, " WHERE ")
+        sql = StringConcat(sql, pk_col)
+        sql = StringConcat(sql, " = '")
+        sql = StringConcat(sql, pk_value)
+        sql = StringConcat(sql, "'")
+        
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        row_count = XArray.XSize(result)
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue(0)
+        }
+        
+        // Convert first row to hash map
+        row = XArray.XGet(result, 0)
+        columns = Dereference(Add(entity, 8))
+        
+        record = HashMap.CreateSimple()
+        
+        col_count = XArray.XSize(columns)
+        i = 0
+        WhileLoop LessThan(i, col_count) {
+            col_name = XArray.XGet(columns, i)
+            col_value = XArray.XGet(row, i)
+            
+            HashMap.HSetSimple(record, col_name, col_value)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(result)
+        
+        ReturnValue(record)
+    }
+}
+
+// Insert record
+Function.ORM.Insert {
+    Input: conn: Address
+    Input: entity: Address
+    Input: record: Address       // Hash map of column->value
+    Output: Integer
+    Body: {
+        table_name = Dereference(entity)
+        columns = Dereference(Add(entity, 8))
+        
+        col_count = XArray.XSize(columns)
+        
+        // Build INSERT statement
+        sql = StringConcat("INSERT INTO ", table_name)
+        sql = StringConcat(sql, " (")
+        
+        // Column names
+        i = 0
+        WhileLoop LessThan(i, col_count) {
+            col_name = XArray.XGet(columns, i)
+            sql = StringConcat(sql, col_name)
+            
+            IfCondition LessThan(i, Subtract(col_count, 1)) ThenBlock: {
+                sql = StringConcat(sql, ", ")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        sql = StringConcat(sql, ") VALUES (")
+        
+        // Values
+        i = 0
+        WhileLoop LessThan(i, col_count) {
+            col_name = XArray.XGet(columns, i)
+            value = HashMap.HGetSimple(record, col_name)
+            
+            sql = StringConcat(sql, "'")
+            
+            IfCondition NotEqual(value, 0) ThenBlock: {
+                sql = StringConcat(sql, value)
+            }
+            
+            sql = StringConcat(sql, "'")
+            
+            IfCondition LessThan(i, Subtract(col_count, 1)) ThenBlock: {
+                sql = StringConcat(sql, ", ")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        sql = StringConcat(sql, ")")
+        
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+// Update record
+Function.ORM.Update {
+    Input: conn: Address
+    Input: entity: Address
+    Input: record: Address
+    Output: Integer
+    Body: {
+        table_name = Dereference(entity)
+        columns = Dereference(Add(entity, 8))
+        pk_col = Dereference(Add(entity, 16))
+        
+        pk_value = HashMap.HGetSimple(record, pk_col)
+        
+        IfCondition EqualTo(pk_value, 0) ThenBlock: {
+            PrintMessage("ORM: No primary key value in record")
+            ReturnValue(0)
+        }
+        
+        // Build UPDATE statement
+        sql = StringConcat("UPDATE ", table_name)
+        sql = StringConcat(sql, " SET ")
+        
+        col_count = XArray.XSize(columns)
+        set_count = 0
+        
+        i = 0
+        WhileLoop LessThan(i, col_count) {
+            col_name = XArray.XGet(columns, i)
+            
+            // Skip primary key in SET clause
+            is_pk = StringCompare(col_name, pk_col)
+            IfCondition NotEqual(is_pk, 0) ThenBlock: {
+                value = HashMap.HGetSimple(record, col_name)
+                
+                IfCondition GreaterThan(set_count, 0) ThenBlock: {
+                    sql = StringConcat(sql, ", ")
+                }
+                
+                sql = StringConcat(sql, col_name)
+                sql = StringConcat(sql, " = '")
+                
+                IfCondition NotEqual(value, 0) ThenBlock: {
+                    sql = StringConcat(sql, value)
+                }
+                
+                sql = StringConcat(sql, "'")
+                
+                set_count = Add(set_count, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        sql = StringConcat(sql, " WHERE ")
+        sql = StringConcat(sql, pk_col)
+        sql = StringConcat(sql, " = '")
+        sql = StringConcat(sql, pk_value)
+        sql = StringConcat(sql, "'")
+        
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+// Delete record
+Function.ORM.Delete {
+    Input: conn: Address
+    Input: entity: Address
+    Input: pk_value: Address
+    Output: Integer
+    Body: {
+        table_name = Dereference(entity)
+        pk_col = Dereference(Add(entity, 16))
+        
+        sql = StringConcat("DELETE FROM ", table_name)
+        sql = StringConcat(sql, " WHERE ")
+        sql = StringConcat(sql, pk_col)
+        sql = StringConcat(sql, " = '")
+        sql = StringConcat(sql, pk_value)
+        sql = StringConcat(sql, "'")
+        
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+// Find all with WHERE clause
+Function.ORM.FindWhere {
+    Input: conn: Address
+    Input: entity: Address
+    Input: where_clause: Address  // e.g., "status = 'ACTIVE' AND amount > 1000"
+    Output: Address               // XArray of records (hash maps)
+    Body: {
+        table_name = Dereference(entity)
+        columns = Dereference(Add(entity, 8))
+        
+        sql = StringConcat("SELECT * FROM ", table_name)
+        sql = StringConcat(sql, " WHERE ")
+        sql = StringConcat(sql, where_clause)
+        
+        result = PostgreSQL.Query(conn, sql)
+        Deallocate(sql, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Convert rows to hash maps
+        records = XArray.XCreate()
+        row_count = XArray.XSize(result)
+        col_count = XArray.XSize(columns)
+        
+        i = 0
+        WhileLoop LessThan(i, row_count) {
+            row = XArray.XGet(result, i)
+            record = HashMap.CreateSimple()
+            
+            j = 0
+            WhileLoop LessThan(j, col_count) {
+                col_name = XArray.XGet(columns, j)
+                col_value = XArray.XGet(row, j)
+                
+                HashMap.HSetSimple(record, col_name, col_value)
+                
+                j = Add(j, 1)
+            }
+            
+            XArray.XPush(records, record)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(result)
+        
+        ReturnValue(records)
+    }
+}

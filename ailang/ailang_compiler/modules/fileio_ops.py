@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering. All rights reserved.
+#
+# Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+# for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
 """
 File I/O Operations Module for AILANG Compiler - CLEAN VERSION
 Uses label-based jumps instead of hardcoded offsets
@@ -562,7 +568,28 @@ class FileIOOps:
         self.compiler.asm.emit_mov_r10_imm64(0x22)             # MAP_PRIVATE|MAP_ANONYMOUS
         self.compiler.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)# fd=-1
         self.compiler.asm.emit_xor_r9_r9()                     # off=0
-        self.compiler.memory._bump_allocate()                  # RAX=buffer
+        # TODO: FUTURE OPTIMIZATION - Implement bump/arena allocator
+        # Currently using mmap for each allocation which is slower but works
+        # The arena allocator in runtime_memory.py should be integrated here
+        # for better performance with file I/O operations
+        # 
+        # Arena allocator benefits:
+        # - Faster allocation (no syscall per allocation)
+        # - Better cache locality
+        # - Batch deallocation
+        #
+        # See: ailang_compiler/modules/runtime_memory.py for partial implementation
+        # Blocked by: MemoryManager refactoring to support multiple allocation strategies
+        # Use standard heap allocation instead of bump allocator
+        # Size for buffer is already calculated and in RBX from earlier lseek
+        self.asm.emit_mov_rax_rbx()                           # RAX = size
+        self.asm.emit_bytes(0x48, 0x83, 0xC0, 0x01)          # ADD RAX, 1 (for null terminator)
+        # Use mmap for allocation
+        self.asm.emit_push_rbx()                              # Save size
+        self.asm.emit_mov_rsi_rax()                           # RSI = size
+        self.asm.emit_mov_rax_imm64(9)                        # sys_mmap
+        self.asm.emit_syscall()                                # RAX = buffer
+        self.asm.emit_pop_rbx()                               # Restore size
 
         # Stack for read(): [dummy][buffer][fd] so buf at [RSP+8], fd at [RSP+16]
         self.compiler.asm.emit_mov_rcx_rax()                   # RCX=buffer
@@ -611,7 +638,18 @@ class FileIOOps:
 
         # ===== Common empty-string return (mmap(1), never NULL) =====
         self.compiler.asm.emit_mov_rax_imm64(1)                # RAX=1
-        self.compiler.memory._bump_allocate()                  # RAX=buf ("")
+        # Use mmap for allocation
+        self.asm.emit_push_rbx()                              # Save RBX
+        self.asm.emit_mov_rsi_rax()                           # RSI = size (1)
+        self.asm.emit_mov_rdi_imm64(0)                        # addr = NULL
+        self.asm.emit_mov_rdx_imm64(3)                        # PROT_READ|PROT_WRITE
+        self.asm.emit_mov_r10_imm64(0x22)                     # MAP_PRIVATE|MAP_ANONYMOUS
+        self.asm.emit_mov_r8_imm64(-1)                        # fd = -1
+        self.asm.emit_xor_r9_r9()                             # offset = 0
+        self.asm.emit_mov_rax_imm64(9)                        # sys_mmap
+        self.asm.emit_syscall()                               # RAX = buffer
+        self.asm.emit_pop_rbx()                               # Restore RBX
+
         self.compiler.asm.emit_pop_rbx()                       # restore RBX
         self.compiler.asm.emit_push_rax()                      # return buf
         self.compiler.asm.emit_jump_to_label(end_lbl, "JMP")
@@ -640,8 +678,19 @@ class FileIOOps:
 
         # -------------------- open() error --------------------
         self.compiler.asm.mark_label(err_open)
-        self.compiler.asm.emit_mov_rax_imm64(1)
-        self.compiler.memory._bump_allocate()
+        self.asm.emit_mov_rax_imm64(1) # size = 1
+        # Use mmap for allocation
+        self.asm.emit_push_rbx()                              # Save RBX
+        self.asm.emit_mov_rsi_rax()                           # RSI = size (1)
+        self.asm.emit_mov_rdi_imm64(0)                        # addr = NULL
+        self.asm.emit_mov_rdx_imm64(3)                        # PROT_READ|PROT_WRITE
+        self.asm.emit_mov_r10_imm64(0x22)                     # MAP_PRIVATE|MAP_ANONYMOUS
+        self.asm.emit_mov_r8_imm64(-1)                        # fd = -1
+        self.asm.emit_xor_r9_r9()                             # offset = 0
+        self.asm.emit_mov_rax_imm64(9)                        # sys_mmap
+        self.asm.emit_syscall()                               # RAX = buffer
+        self.asm.emit_pop_rbx()                               # Restore RBX
+
         self.compiler.asm.emit_pop_rbx()
         self.compiler.asm.emit_push_rax()
 

@@ -1,6 +1,8 @@
 // Library.RESP.ailang
-// Redis Serialization Protocol (RESP) Library - FIXED SYNTAX
+// Redis Serialization Protocol (RESP) Library
 // Provides parsing and building functions for RESP protocol
+
+LibraryImport.XArrays
 
 // ============================================================================
 // RESP Parser Functions
@@ -835,7 +837,7 @@ Function.RESP.IntToString {
         IfCondition is_negative ThenBlock: {
             absolute_value = Subtract(0, num)  // Make positive
         }
-        
+
         // Count digits using absolute value
         temp = absolute_value
         digit_count = 0
@@ -915,3 +917,250 @@ Function.RESP.Integer {
         ReturnValue(response)
     }
 }
+
+// ============================================================================
+// Add this function to Library.RESP.ailang
+// ============================================================================
+
+// Parse RESP array without copying strings (returns pointers into original buffer)
+// WARNING: Caller must ensure buffer lifetime exceeds parsed array lifetime
+// Returns array of string pointers directly into the buffer
+Function.RESP.ParseArrayZeroCopy {
+    Input: buffer: Address
+    Input: size: Integer
+    Output: Array
+    Body: {
+        Debug("resp.parse", level=2) {
+            PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: Parsing buffer at ")
+            PrintNumber(buffer)
+            PrintMessage(" with size ")
+            PrintNumber(size)
+            PrintMessage("\n")
+        }
+        
+        // Check for array marker '*'
+        IfCondition NotEqual(GetByte(buffer, 0), 42) ThenBlock: {
+            Debug("resp.parse", level=1) {
+                PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: Not an array (first byte: ")
+                PrintNumber(GetByte(buffer, 0))
+                PrintMessage(")\n")
+            }
+            ReturnValue(0)  // Not an array
+        }
+        
+        // Parse array count
+        offset = 1
+        count = RESP.ParseInteger(buffer, offset)
+        
+        Debug("resp.parse", level=2) {
+            PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: Array count: ")
+            PrintNumber(count)
+            PrintMessage("\n")
+        }
+        
+        // Handle empty or invalid array
+        IfCondition LessEqual(count, 0) ThenBlock: {
+            ReturnValue(ArrayCreate(0))
+        }
+        
+        // Create array to hold results
+        result = ArrayCreate(count)
+        
+        // Find start of first element (skip past count and \r\n)
+        WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+            offset = Add(offset, 1)
+        }
+        offset = Add(offset, 1)  // Skip LF
+        
+        Debug("resp.parse", level=3) {
+            PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: First element starts at offset ")
+            PrintNumber(offset)
+            PrintMessage("\n")
+        }
+        
+        // Parse each element (zero-copy)
+        i = 0
+        WhileLoop LessThan(i, count) {
+            Debug("resp.parse", level=3) {
+                PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: Parsing element ")
+                PrintNumber(i)
+                PrintMessage(" at offset ")
+                PrintNumber(offset)
+                PrintMessage("\n")
+            }
+            
+            element = RESP.ParseElementZeroCopy(buffer, offset, size)
+            ArraySet(result, i, element)
+            
+            Debug("resp.parse", level=3) {
+                PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: Element ")
+                PrintNumber(i)
+                PrintMessage(" = ")
+                IfCondition NotEqual(element, 0) ThenBlock: {
+                    PrintMessage(element)
+                } ElseBlock: {
+                    PrintMessage("(null)")
+                }
+                PrintMessage("\n")
+            }
+            
+            // Move offset past this element
+            offset = RESP.SkipElement(buffer, offset, size)
+            
+            i = Add(i, 1)
+        }
+        
+        Debug("resp.parse", level=2) {
+            PrintMessage("[DEBUG] RESP.ParseArrayZeroCopy: Complete, returning array\n")
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// Parse a single RESP element without copying (returns pointer into buffer)
+Function.RESP.ParseElementZeroCopy {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Address
+    Body: {
+        type_byte = GetByte(buffer, offset)
+        
+        Debug("resp.parse", level=4) {
+            PrintMessage("[DEBUG] RESP.ParseElementZeroCopy: Type byte: ")
+            PrintNumber(type_byte)
+            PrintMessage(" (offset: ")
+            PrintNumber(offset)
+            PrintMessage(")\n")
+        }
+        
+        // Bulk string ($)
+        IfCondition EqualTo(type_byte, 36) ThenBlock: {
+            ReturnValue(RESP.ParseBulkStringZeroCopy(buffer, offset, size))
+        }
+        
+        // Simple string (+)
+        IfCondition EqualTo(type_byte, 43) ThenBlock: {
+            ReturnValue(RESP.ParseSimpleStringZeroCopy(buffer, offset, size))
+        }
+        
+        // Integer (:) - must allocate for this since we convert to string
+        IfCondition EqualTo(type_byte, 58) ThenBlock: {
+            num = RESP.ParseInteger(buffer, Add(offset, 1))
+            ReturnValue(NumberToString(num))  // This allocates - can't be zero-copy
+        }
+        
+        // Error (-)
+        IfCondition EqualTo(type_byte, 45) ThenBlock: {
+            ReturnValue(RESP.ParseSimpleStringZeroCopy(buffer, offset, size))
+        }
+        
+        ReturnValue(0)  // Unknown type
+    }
+}
+
+// Parse bulk string zero-copy (returns pointer into buffer, modifies buffer for null terminator)
+Function.RESP.ParseBulkStringZeroCopy {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Address
+    Body: {
+        // Skip '$'
+        offset = Add(offset, 1)
+        
+        // Parse length
+        length = RESP.ParseInteger(buffer, offset)
+        
+        Debug("resp.parse", level=4) {
+            PrintMessage("[DEBUG] RESP.ParseBulkStringZeroCopy: Length: ")
+            PrintNumber(length)
+            PrintMessage("\n")
+        }
+        
+        // Check for null bulk string
+        IfCondition LessThan(length, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Handle empty string
+        IfCondition EqualTo(length, 0) ThenBlock: {
+            // Return pointer to a null terminator somewhere safe
+            // We'll just allocate a single byte for empty strings
+            empty = Allocate(1)
+            SetByte(empty, 0, 0)
+            ReturnValue(empty)
+        }
+        
+        // Find start of actual string (after \r\n)
+        WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 10)) {
+            offset = Add(offset, 1)
+        }
+        offset = Add(offset, 1)  // Skip LF
+        
+        // Return pointer directly into buffer
+        // CRITICAL: Replace the \r at end with null terminator for C-string compatibility
+        str_start = Add(buffer, offset)
+        null_pos = Add(offset, length)  // Position where \r should be
+        
+        Debug("resp.parse", level=4) {
+            PrintMessage("[DEBUG] RESP.ParseBulkStringZeroCopy: String starts at buffer+")
+            PrintNumber(offset)
+            PrintMessage(", null terminator at buffer+")
+            PrintNumber(null_pos)
+            PrintMessage("\n")
+        }
+        
+        // Null-terminate by overwriting the \r (this modifies the buffer!)
+        SetByte(buffer, null_pos, 0)
+        
+        ReturnValue(str_start)
+    }
+}
+
+// Parse simple string zero-copy (returns pointer into buffer, modifies buffer)
+Function.RESP.ParseSimpleStringZeroCopy {
+    Input: buffer: Address
+    Input: offset: Integer
+    Input: size: Integer
+    Output: Address
+    Body: {
+        // Skip type marker
+        offset = Add(offset, 1)
+        
+        // Find end of string (\r)
+        start = offset
+        WhileLoop And(LessThan(offset, size), NotEqual(GetByte(buffer, offset), 13)) {
+            offset = Add(offset, 1)
+        }
+        
+        // Null-terminate by overwriting the \r
+        SetByte(buffer, offset, 0)
+        
+        // Return pointer into buffer
+        ReturnValue(Add(buffer, start))
+    }
+}
+
+// ============================================================================
+// USAGE NOTES
+// ============================================================================
+// Add these functions to Library.RESP.ailang after the existing RESP.ParseArray
+//
+// CRITICAL WARNING: Zero-copy parsing modifies the original buffer by replacing
+// \r characters with null terminators. This means:
+//   1. The buffer CANNOT be reused or re-parsed
+//   2. The buffer must remain allocated while any parsed strings are in use
+//   3. This is only safe when you control the buffer lifetime
+//
+// Use RESP.ParseArrayZeroCopy when:
+//   - Performance is critical (avoid allocations)
+//   - Buffer can be destroyed after parsing
+//   - Parsed strings are short-lived
+//
+// Use RESP.ParseArray when:
+//   - Buffer needs to be reused
+//   - Parsed strings need to outlive the buffer
+//   - Safety is more important than speed
+// ============================================================================

@@ -1,0 +1,60 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+SubRoutine.OUTER_PROG {
+    OUTER_VAR = 10
+    PrintMessage("OUTER: Start")
+    PrintMessage(StringConcat("OUTER-VAR: ", NumberToString(OUTER_VAR)))
+    PrintMessage("OUTER: After nested program")
+    ReturnValue(0)
+}
+
+SubRoutine.INNER_PROG {
+    INNER_VAR = 20
+    PrintMessage("INNER: Start")
+    PrintMessage(StringConcat("INNER-VAR: ", NumberToString(INNER_VAR)))
+    ReturnValue(0)
+}
+
+SubRoutine.MULTI_NESTED {
+    MAIN_VAR = 5
+    PrintMessage("MULTI: Main start")
+    PrintMessage("MULTI: Main end")
+    ReturnValue(0)
+}
+
+SubRoutine.CHILD1 {
+    PrintMessage("CHILD1: Executing")
+    ReturnValue(0)
+}
+
+SubRoutine.CHILD2 {
+    PrintMessage("CHILD2: Executing")
+    ReturnValue(0)
+}
+
+SubRoutine.LEVEL1 {
+    PrintMessage("LEVEL1: Start")
+    PrintMessage("LEVEL1: After level 2")
+    ReturnValue(0)
+}
+
+SubRoutine.LEVEL2 {
+    PrintMessage("LEVEL2: Start")
+    PrintMessage("LEVEL2: After level 3")
+    ReturnValue(0)
+}
+
+SubRoutine.LEVEL3 {
+    PrintMessage("LEVEL3: Deepest level")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(OUTER_PROG)
+    RunTask(MULTI_NESTED)
+    RunTask(LEVEL1)
+}
+
+RunTask(Main)
