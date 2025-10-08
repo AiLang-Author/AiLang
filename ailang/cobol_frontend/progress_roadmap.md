@@ -1,8 +1,8 @@
 # COBOL to Ailang Transpiler - Capability Document
 
 **Version:** 2.0  
-**Date:** January 2025  
-**Status:** Production Ready - 13 Test Programs Passing + CALL with USING  
+**Date:** October 2025  
+**Status:** Beta  v1 Ready - 13 Test Programs Passing + CALL with USING  
 **Binary Size:** 58KB (with COBOL runtime + XArrays library + FixedPool linkage)
 
 ---
