@@ -2,7 +2,7 @@
 
 A self-hosted SPIR-V compiler backend for AILANG, enabling GPU acceleration through JIT compilation.
 
-## 🚀 Overview
+##  Overview
 
 This system transforms AILANG code into SPIR-V (Standard Portable Intermediate Representation - Vulkan) for execution on GPUs. It includes:
 
