@@ -50,7 +50,16 @@ FixedPool.COBOLState {
 Function.GetUserInput {
     Output: Address
     Body: {
+        Debug("GetUserInput.entry", level=2) {
+            PrintMessage(">>> ENTER: GetUserInput")
+        }
+        Debug("GetUserInput.call", level=3) {
+            PrintMessage("  Calling: ReadInput")
+        }
         COBOLState.input_buffer = ReadInput()
+        Debug("GetUserInput.exit", level=2) {
+            PrintMessage("<<< EXIT: GetUserInput")
+        }
         ReturnValue(COBOLState.input_buffer)
     }
 }
@@ -64,13 +73,30 @@ Function.StringCount {
     Input: pattern
     Output: Integer
     Body: {
+        Debug("StringCount.entry", level=2) {
+            PrintMessage(">>> ENTER: StringCount")
+            PrintMessage(StringConcat("  text: '", StringConcat(text, "'")))
+            PrintMessage(StringConcat("  pattern: '", StringConcat(pattern, "'")))
+        }
         COBOLState.sc_count = 0
+        Debug("StringCount.call", level=3) {
+            PrintMessage("  Calling: StringLength")
+        }
         COBOLState.sc_text_len = StringLength(text)
+        Debug("StringCount.call", level=3) {
+            PrintMessage("  Calling: StringLength")
+        }
         COBOLState.sc_pattern_len = StringLength(pattern)
         COBOLState.sc_pos = 0
         COBOLState.sc_should_continue = 1
         
+        Debug("StringCount.loop", level=3) {
+            PrintMessage("  Starting loop iteration")
+        }
         WhileLoop And(LessThan(COBOLState.sc_pos, COBOLState.sc_text_len), EqualTo(COBOLState.sc_should_continue, 1)) {
+            Debug("StringCount.call", level=3) {
+                PrintMessage("  Calling: StringIndexOf")
+            }
             COBOLState.sc_found_pos = StringIndexOf(text, pattern, COBOLState.sc_pos)
             
             IfCondition EqualTo(COBOLState.sc_found_pos, -1) ThenBlock: {
@@ -81,6 +107,9 @@ Function.StringCount {
             }
         }
         
+        Debug("StringCount.exit", level=2) {
+            PrintMessage(StringConcat("<<< EXIT: StringCount with count: ", NumberToString(COBOLState.sc_count)))
+        }
         ReturnValue(COBOLState.sc_count)
     }
 }
@@ -91,20 +120,111 @@ Function.StringReplaceAll {
     Input: replacement
     Output: Address
     Body: {
+        Debug("StringReplaceAll.entry", level=2) {
+            PrintMessage(">>> ENTER: StringReplaceAll")
+            PrintMessage(StringConcat("  haystack: '", StringConcat(haystack, "'")))
+            PrintMessage(StringConcat("  needle: '", StringConcat(needle, "'")))
+            PrintMessage(StringConcat("  replacement: '", StringConcat(replacement, "'")))
+        }
         result = haystack
         COBOLState.sra_iteration = 0
         
+        Debug("StringReplaceAll.loop", level=3) {
+            PrintMessage("  Starting loop iteration")
+        }
         WhileLoop LessThan(COBOLState.sra_iteration, COBOLState.sra_max_iterations) {
+            Debug("StringReplaceAll.call", level=3) {
+                PrintMessage("  Calling: StringIndexOf")
+            }
             COBOLState.sra_pos = StringIndexOf(result, needle, 0)
             
             IfCondition LessThan(COBOLState.sra_pos, 0) ThenBlock: {
                 ReturnValue(result)
             }
-            
+            Debug("StringReplaceAll.call", level=3) {
+                PrintMessage("  Calling: StringReplace")
+            }
             result = StringReplace(result, needle, replacement)
             COBOLState.sra_iteration = Add(COBOLState.sra_iteration, 1)
         }
         
+        Debug("StringReplaceAll.exit", level=2) {
+            PrintMessage(StringConcat("<<< EXIT: StringReplaceAll with result: '", StringConcat(result, "'")))
+        }
+        ReturnValue(result)
+    }
+}
+
+
+// =============================================================================
+// COBOL-SPECIFIC STRING SPLIT (supports ALL flag)
+// =============================================================================
+
+Function.CStringSplit {
+    Input: haystack      // String to split
+    Input: delimiter     // Delimiter to split on
+    Input: use_all       // 1 = treat consecutive delimiters as one, 0 = each delimiter creates entry
+    Output: Address      // Returns array of strings
+    Body: {
+        Debug("CStringSplit.entry", level=2) {
+            PrintMessage(">>> ENTER: CStringSplit")
+            PrintMessage(StringConcat("  haystack: '", StringConcat(haystack, "'")))
+            PrintMessage(StringConcat("  delimiter: '", StringConcat(delimiter, "'")))
+            PrintMessage(StringConcat("  use_all: ", NumberToString(use_all)))
+        }
+        Debug("CStringSplit", level=3) {
+            PrintMessage("--- DEBUG: CStringSplit ---")
+            PrintMessage(StringConcat("  haystack: ", haystack))
+            PrintMessage(StringConcat("  delimiter: ", delimiter))
+            PrintMessage(StringConcat("  use_all: ", NumberToString(use_all)))
+        }
+        
+        // If use_all=1, replace consecutive delimiters with single delimiter
+        processed_haystack = haystack
+        IfCondition EqualTo(use_all, 1) ThenBlock: {
+            // Replace consecutive delimiters: "a  b" with delimiter=" " becomes "a b"
+            Debug("CStringSplit.call", level=3) {
+                PrintMessage("  Calling: StringConcat")
+            }
+            double_delim = StringConcat(delimiter, delimiter)
+            COBOLState.sra_iteration = 0
+            
+            Debug("CStringSplit.loop", level=3) {
+                PrintMessage("  Starting loop to collapse delimiters")
+            }
+            WhileLoop LessThan(COBOLState.sra_iteration, 100) {
+                Debug("CStringSplit.call", level=3) {
+                    PrintMessage("  Calling: StringIndexOf")
+                }
+                COBOLState.sra_pos = StringIndexOf(processed_haystack, double_delim, 0)
+                
+                IfCondition LessThan(COBOLState.sra_pos, 0) ThenBlock: {
+                    COBOLState.sra_iteration = 100  // Break loop
+                } ElseBlock: {
+                    Debug("CStringSplit.call", level=3) {
+                        PrintMessage("  Calling: StringReplace")
+                    }
+                    processed_haystack = StringReplace(processed_haystack, double_delim, delimiter)
+                    COBOLState.sra_iteration = Add(COBOLState.sra_iteration, 1)
+                }
+            }
+        }
+        
+        // Now do the regular split
+        Debug("CStringSplit.call", level=3) {
+            PrintMessage("  Calling: StringSplit")
+            PrintMessage(StringConcat("    processed_haystack: '", StringConcat(processed_haystack, "'")))
+            PrintMessage(StringConcat("    delimiter: '", StringConcat(delimiter, "'")))
+        }
+        result = StringSplit(processed_haystack, delimiter)
+        
+        Debug("CStringSplit", level=3) {
+            PrintMessage(StringConcat("  Result array length: ", NumberToString(ArrayLength(result))))
+        }
+        
+        Debug("CStringSplit.exit", level=2) {
+            PrintMessage(StringConcat("<<< EXIT: CStringSplit with array length: ", NumberToString(ArrayLength(result))))
+        }
         ReturnValue(result)
     }
 }
@@ -118,6 +238,11 @@ Function.FormatDecimal {
     Input: decimal_places
     Output: Address
     Body: {
+        Debug("FormatDecimal.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatDecimal")
+            PrintMessage(StringConcat("  value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  decimal_places: ", NumberToString(decimal_places)))
+        }
         Debug("FormatDecimal.trace", level=3) {
             PrintMessage("--- TRACE: FormatDecimal ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
@@ -179,6 +304,9 @@ Function.FormatDecimal {
             result = StringConcat(result, frac_str)
         }
         
+        Debug("FormatDecimal.exit", level=2) {
+            PrintMessage(StringConcat("<<< EXIT: FormatDecimal with result: '", StringConcat(result, "'")))
+        }
         Debug("FormatDecimal.trace", level=4) {
             PrintMessage(StringConcat("    - Final string: ", result))
         }
@@ -200,12 +328,24 @@ Function.FormatCurrency {
     Input: float_symbol
     Output: Address
     Body: {
+        Debug("FormatCurrency.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatCurrency")
+        }
+        Debug("FormatCurrency.call", level=3) {
+            PrintMessage("  Calling: FormatDecimal")
+        }
         formatted = FormatDecimal(value, decimals)
         
         IfCondition EqualTo(has_commas, 1) ThenBlock:{
+            Debug("FormatCurrency.call", level=3) {
+                PrintMessage("  Calling: AddCommasToNumber")
+            }
             formatted = AddCommasToNumber(formatted)
         }
         
+        Debug("FormatCurrency.call", level=3) {
+            PrintMessage("  Calling: StringConcat")
+        }
         result = StringConcat(symbol, formatted)
         
         COBOLState.loop_len = StringLength(result)
@@ -214,6 +354,9 @@ Function.FormatCurrency {
             COBOLState.loop_len = Add(COBOLState.loop_len, 1)
         }
         
+        Debug("FormatCurrency.exit", level=2) {
+            PrintMessage("<<< EXIT: FormatCurrency")
+        }
         ReturnValue(result)
     }
 }
@@ -224,7 +367,16 @@ Function.FormatWithCommas {
     Input: decimals
     Output: Address
     Body: {
+        Debug("FormatWithCommas.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatWithCommas")
+        }
+        Debug("FormatWithCommas.call", level=3) {
+            PrintMessage("  Calling: FormatDecimal")
+        }
         formatted = FormatDecimal(value, decimals)
+        Debug("FormatWithCommas.call", level=3) {
+            PrintMessage("  Calling: AddCommasToNumber")
+        }
         result = AddCommasToNumber(formatted)
         
         COBOLState.loop_len = StringLength(result)
@@ -233,6 +385,9 @@ Function.FormatWithCommas {
             COBOLState.loop_len = Add(COBOLState.loop_len, 1)
         }
         
+        Debug("FormatWithCommas.exit", level=2) {
+            PrintMessage("<<< EXIT: FormatWithCommas")
+        }
         ReturnValue(result)
     }
 }
@@ -243,6 +398,9 @@ Function.FormatZeroSuppress {
     Input: decimals
     Output: Address
     Body: {
+        Debug("FormatZeroSuppress.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatZeroSuppress")
+        }
         Debug("FormatZeroSuppress", level=3) {
             PrintMessage("--- DEBUG: FormatZeroSuppress ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
@@ -250,6 +408,9 @@ Function.FormatZeroSuppress {
             PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
         }
         
+        Debug("FormatZeroSuppress.call", level=3) {
+            PrintMessage("  Calling: FormatDecimal")
+        }
         formatted = FormatDecimal(value, decimals)
         
         COBOLState.loop_len = StringLength(formatted)
@@ -260,6 +421,9 @@ Function.FormatZeroSuppress {
             COBOLState.loop_len = Add(COBOLState.loop_len, 1)
         }
         
+        Debug("FormatZeroSuppress.exit", level=2) {
+            PrintMessage("<<< EXIT: FormatZeroSuppress")
+        }
         ReturnValue(result)
     }
 }
@@ -270,6 +434,9 @@ Function.FormatAsteriskFill {
     Input: decimals
     Output: Address
     Body: {
+        Debug("FormatAsteriskFill.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatAsteriskFill")
+        }
         Debug("FormatAsteriskFill", level=3) {
             PrintMessage("--- DEBUG: FormatAsteriskFill ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
@@ -277,6 +444,9 @@ Function.FormatAsteriskFill {
             PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
         }
         
+        Debug("FormatAsteriskFill.call", level=3) {
+            PrintMessage("  Calling: FormatDecimal")
+        }
         formatted = FormatDecimal(value, decimals)
         
         COBOLState.loop_len = StringLength(formatted)
@@ -284,6 +454,9 @@ Function.FormatAsteriskFill {
         COBOLState.faf_found_nonzero = 0
         
         WhileLoop And(LessThan(COBOLState.loop_i, COBOLState.loop_len), EqualTo(COBOLState.faf_found_nonzero, 0)) {
+            Debug("FormatAsteriskFill.call", level=3) {
+                PrintMessage("  Calling: StringSubstring")
+            }
             char = StringSubstring(formatted, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
             
             IfCondition EqualTo(EqualTo(char, "0"), 0) ThenBlock:{
@@ -300,6 +473,9 @@ Function.FormatAsteriskFill {
             IfCondition LessThan(COBOLState.loop_j, COBOLState.loop_i) ThenBlock:{
                 result = StringConcat(result, "*")
             } ElseBlock: {
+                Debug("FormatAsteriskFill.call", level=3) {
+                    PrintMessage("  Calling: StringSubstring")
+                }
                 char = StringSubstring(formatted, COBOLState.loop_j, Add(COBOLState.loop_j, 1))
                 result = StringConcat(result, char)
             }
@@ -313,6 +489,9 @@ Function.FormatAsteriskFill {
             COBOLState.loop_i = Add(COBOLState.loop_i, 1)
         }
         
+        Debug("FormatAsteriskFill.exit", level=2) {
+            PrintMessage("<<< EXIT: FormatAsteriskFill")
+        }
         ReturnValue(result)
     }
 }
@@ -324,6 +503,9 @@ Function.FormatWithIndicator {
     Input: decimals
     Output: Address
     Body: {
+        Debug("FormatWithIndicator.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatWithIndicator")
+        }
         Debug("FormatWithIndicator", level=3) {
             PrintMessage("--- DEBUG: FormatWithIndicator ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
@@ -339,6 +521,9 @@ Function.FormatWithIndicator {
             COBOLState.fwi_abs_value = Subtract(0, value)
         }
         
+        Debug("FormatWithIndicator.call", level=3) {
+            PrintMessage("  Calling: FormatDecimal")
+        }
         formatted = FormatDecimal(COBOLState.fwi_abs_value, decimals)
         
         IfCondition COBOLState.fwi_is_negative ThenBlock:{
@@ -362,6 +547,9 @@ Function.FormatWithIndicator {
             COBOLState.loop_len = Add(COBOLState.loop_len, 1)
         }
         
+        Debug("FormatWithIndicator.exit", level=2) {
+            PrintMessage("<<< EXIT: FormatWithIndicator")
+        }
         ReturnValue(result)
     }
 }
@@ -373,6 +561,9 @@ Function.FormatSigned {
     Input: position
     Output: Address
     Body: {
+        Debug("FormatSigned.entry", level=2) {
+            PrintMessage(">>> ENTER: FormatSigned")
+        }
         Debug("FormatSigned", level=3) {
             PrintMessage("--- DEBUG: FormatSigned ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
@@ -381,6 +572,9 @@ Function.FormatSigned {
             PrintMessage(StringConcat("  Input position: ", position))
         }
         
+        Debug("FormatSigned.call", level=3) {
+            PrintMessage("  Calling: FormatDecimal")
+        }
         formatted = FormatDecimal(value, decimals)
         
         sign = " "
@@ -393,6 +587,9 @@ Function.FormatSigned {
             }
         }
         
+        Debug("FormatSigned.call", level=3) {
+            PrintMessage("  Calling: StringEquals")
+        }
         COBOLState.fs_is_leading = StringEquals(position, "leading")
         
         IfCondition COBOLState.fs_is_leading ThenBlock: {
@@ -407,6 +604,9 @@ Function.FormatSigned {
             COBOLState.loop_len = Add(COBOLState.loop_len, 1)
         }
         
+        Debug("FormatSigned.exit", level=2) {
+            PrintMessage("<<< EXIT: FormatSigned")
+        }
         ReturnValue(result)
     }
 }
@@ -415,6 +615,9 @@ Function.AddCommasToNumber {
     Input: number_str
     Output: Address
     Body: {
+        Debug("AddCommasToNumber.entry", level=2) {
+            PrintMessage(">>> ENTER: AddCommasToNumber")
+        }
         Debug("AddCommasToNumber", level=3) {
             PrintMessage("--- DEBUG: AddCommasToNumber ---")
             PrintMessage(StringConcat("  Input number_str: ", number_str))
@@ -426,6 +629,9 @@ Function.AddCommasToNumber {
         COBOLState.acn_found_decimal = 0
         
         WhileLoop And(LessThan(COBOLState.loop_i, COBOLState.loop_len), EqualTo(COBOLState.acn_found_decimal, 0)) {
+            Debug("AddCommasToNumber.call", level=3) {
+                PrintMessage("  Calling: StringSubstring")
+            }
             char = StringSubstring(number_str, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
             
             IfCondition EqualTo(char, ".") ThenBlock:{
@@ -445,6 +651,9 @@ Function.AddCommasToNumber {
             COBOLState.loop_i = 0
             
             WhileLoop LessThan(COBOLState.loop_i, COBOLState.acn_decimal_pos) {
+                Debug("AddCommasToNumber.call", level=3) {
+                    PrintMessage("  Calling: StringSubstring")
+                }
                 char = StringSubstring(number_str, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
                 integer_part = StringConcat(integer_part, char)
                 COBOLState.loop_i = Add(COBOLState.loop_i, 1)
@@ -453,6 +662,9 @@ Function.AddCommasToNumber {
             COBOLState.loop_i = COBOLState.acn_decimal_pos
             
             WhileLoop LessThan(COBOLState.loop_i, COBOLState.loop_len) {
+                Debug("AddCommasToNumber.call", level=3) {
+                    PrintMessage("  Calling: StringSubstring")
+                }
                 char = StringSubstring(number_str, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
                 decimal_part = StringConcat(decimal_part, char)
                 COBOLState.loop_i = Add(COBOLState.loop_i, 1)
@@ -465,6 +677,9 @@ Function.AddCommasToNumber {
         COBOLState.loop_i = Subtract(COBOLState.acn_int_len, 1)
         
         WhileLoop GreaterEqual(COBOLState.loop_i, 0) {
+            Debug("AddCommasToNumber.call", level=3) {
+                PrintMessage("  Calling: StringSubstring")
+            }
             char = StringSubstring(integer_part, COBOLState.loop_i, Add(COBOLState.loop_i, 1))
             result = StringConcat(char, result)
             COBOLState.acn_counter = Add(COBOLState.acn_counter, 1)
@@ -472,6 +687,9 @@ Function.AddCommasToNumber {
             COBOLState.acn_remainder = Modulo(COBOLState.acn_counter, 3)
             
             IfCondition And(EqualTo(COBOLState.acn_remainder, 0), GreaterThan(COBOLState.loop_i, 0)) ThenBlock:{
+                Debug("AddCommasToNumber.call", level=3) {
+                    PrintMessage("  Calling: StringSubstring")
+                }
                 prev_char = StringSubstring(integer_part, Subtract(COBOLState.loop_i, 1), COBOLState.loop_i)
                 
                 IfCondition EqualTo(EqualTo(prev_char, "-"), 0) ThenBlock:{
@@ -484,6 +702,47 @@ Function.AddCommasToNumber {
         
         result = StringConcat(result, decimal_part)
         
+        Debug("AddCommasToNumber.exit", level=2) {
+            PrintMessage("<<< EXIT: AddCommasToNumber")
+        }
         ReturnValue(result)
+    }
+}
+
+
+// =============================================================================
+// COBOL File IO stub functions
+// =============================================================================    
+Function.FileOpen {
+    Input: filename
+    Input: mode
+    Output: Integer
+    Body: {
+        ReturnValue(1)  // Always succeed
+    }
+}
+
+Function.FileRead {
+    Input: handle
+    Output: Address
+    Body: {
+        ReturnValue("")  // Return empty string
+    }
+}
+
+Function.FileWrite {
+    Input: handle
+    Input: data
+    Output: Integer
+    Body: {
+        ReturnValue(1)  // Always succeed
+    }
+}
+
+Function.FileClose {
+    Input: handle
+    Output: Integer
+    Body: {
+        ReturnValue(1)  // Always succeed
     }
 }

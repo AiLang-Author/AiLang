@@ -10,6 +10,7 @@ from __future__ import annotations
 """
 COBOL to Ailang AST Converter - Complete with EVALUATE
 """
+import re
 
 import sys
 import os
@@ -72,6 +73,101 @@ class COBOLToAilangMultiProgramConverter:
             'NOT >': lambda l, r: FunctionCall(1, 1, 'Not', [FunctionCall(1, 1, 'GreaterThan', [l, r])]),
             'NOT <': lambda l, r: FunctionCall(1, 1, 'Not', [FunctionCall(1, 1, 'LessThan', [l, r])]),
         }
+    
+    def calculate_pic_size(self, pic_clause: str) -> int:
+        """Calculate the storage size of a PIC clause for DISPLAY usage."""
+        if not pic_clause:
+            return 0
+        
+        pic_upper = pic_clause.upper()
+        
+        # Remove non-storage characters
+        pic_upper = pic_upper.replace('S', '').replace('V', '')
+        
+        size = 0
+        # Find all instances of X(n) or 9(n)
+        for match in re.finditer(r'([X9Z])\((\d+)\)', pic_upper):
+            size += int(match.group(2))
+        
+        # Remove the handled parts to count remaining characters
+        pic_upper = re.sub(r'[X9Z]\(\d+\)', '', pic_upper)
+        
+        # Count remaining characters like X, 9, Z, $, etc.
+        size += len(pic_upper)
+        
+        return size
+
+    def get_redefines_values(self, redefines_target: str, original_declarations: List[COBOLVariableDecl], 
+                        redefines_decl: COBOLVariableDecl) -> List[str]:
+        """
+        Extract values from REDEFINES target. Handles two cases:
+        1. Target has children with values (extract child values)
+        2. Target is single field (split value based on array element size)
+        """
+        target_name = self.normalize_name(redefines_target)
+        
+        def search_for_target(decls):
+            for decl in decls:
+                if self.normalize_name(decl.name) == target_name:
+                    # Case 1: Target has children with values
+                    if decl.children:
+                        values = []
+                        for child in decl.children:
+                            if child.value:
+                                values.append(child.value)
+                        if values:
+                            return values
+                    
+                    # Case 2: Target is single field - split the value
+                    if decl.value and redefines_decl.occurs_count:  # ✅ Check decl.value is not None
+                        element_size = self.calculate_pic_size(redefines_decl.pic_clause)
+                        value = decl.value.strip('"\'')
+                        
+                        # Split the value into chunks
+                        values = []
+                        for i in range(redefines_decl.occurs_count):
+                            start = i * element_size
+                            end = start + element_size
+                            if start < len(value):
+                                values.append(value[start:end])
+                        return values
+                    
+                    return []  # ✅ Return empty list if no value
+                # Search in children recursively
+                if decl.children:
+                    result = search_for_target(decl.children)
+                    if result:
+                        return result
+            return None
+        
+        result = search_for_target(original_declarations)
+        return result if result is not None else []  # ✅ Safe return
+
+    def flatten_variable_declarations(self, declarations: List[COBOLVariableDecl]) -> List[COBOLVariableDecl]:
+        """
+        Flatten hierarchical COBOL variable declarations to get all elementary items.
+        
+        COBOL uses hierarchical structures:
+            01  PARM-1.                    <- Group item (no PIC)
+                05  CALL-FEEDBACK PIC XX.  <- Elementary item (has PIC)
+        
+        We need to collect only the elementary items (ones with PIC clauses)
+        because group items are just containers.
+        """
+        result = []
+        
+        def visit(decl: COBOLVariableDecl):
+            """Recursively visit variable declarations"""
+            if decl.pic_clause:
+                result.append(decl)
+            if decl.children:
+                for child in decl.children:
+                    visit(child)
+        
+        for decl in declarations:
+            visit(decl)
+        
+        return result
 
     def normalize_name(self, cobol_name: str) -> str:
         return cobol_name.replace('-', '_')
@@ -441,9 +537,29 @@ class COBOLToAilangMultiProgramConverter:
         elif isinstance(ast_node, COBOLProgram):
             # Backward compatible: wrap single program in compilation unit
             compilation_unit = COBOLCompilationUnit(programs=[ast_node])
-            return self.convert_compilation_unit(compilation_unit)
+            ailang_ast = self.convert_compilation_unit(compilation_unit)
         else:
             raise ValueError(f"Expected COBOLCompilationUnit or COBOLProgram, got {type(ast_node)}")
+        
+        # ✅ NEW: Prepend metadata comments
+        header = []
+        
+        for program in ast_node.programs:
+            if program.metadata_lines:
+                header.append(f"// ========================================")
+                header.append(f"// COBOL Program: {program.program_id}")
+                header.append(f"// ========================================")
+                for line in program.metadata_lines:
+                    header.append(f"// {line}")
+                header.append(f"// ========================================")
+                header.append("")  # Blank line
+        
+        # Add the header to the Ailang Program AST as a special comment node
+        # This is a conceptual step. For now, we'll handle it during serialization.
+        # We'll store it on the converter instance to be used by the serializer.
+        self._metadata_header = "\n".join(header) if header else ""
+        
+        return ailang_ast
     
     def convert_compilation_unit(self, unit: COBOLCompilationUnit) -> Program:
         """
@@ -463,8 +579,17 @@ class COBOLToAilangMultiProgramConverter:
                 linkage_params = []
                 for var_decl in cobol_program.data_division.linkage_section:
                     if isinstance(var_decl, COBOLVariableDecl):
-                        var_name = self.normalize_name(var_decl.name)
-                        linkage_params.append(var_name)
+                        # If it's a group with children (like 01 PARM-1), extract child field names
+                        if hasattr(var_decl, 'children') and var_decl.children:
+                            for child in var_decl.children:
+                                child_name = self.normalize_name(child.name)
+                                linkage_params.append(child_name)
+                                if self.debug:
+                                    print(f"    Linkage field from {var_decl.name}: {child_name}")
+                        else:
+                            # No children, use the variable itself
+                            var_name = self.normalize_name(var_decl.name)
+                            linkage_params.append(var_name)
                 
                 if linkage_params:
                     self.program_linkage_params[prog_name] = linkage_params
@@ -488,13 +613,21 @@ class COBOLToAilangMultiProgramConverter:
             program_subroutines = self.convert_cobol_program(cobol_program)
             self.all_subroutines.extend(program_subroutines)
 
-        # Create Main() that calls ALL programs in sequence for testing
+        # Create Main() that calls all entry programs
+        # Programs with LINKAGE SECTION are subroutines (called via CALL)
+        # Programs without LINKAGE SECTION are entry programs (called from Main)
         main_body = []
         for program in unit.programs:
-            # Only call top-level programs that are not meant to be just subroutines
-            if not program.is_nested and program.program_id != "ADD-NUMS":
+            if not program.is_nested:
                 program_name = self.normalize_name(program.program_id)
-                main_body.append(RunTask(1, 1, program_name, []))
+                # Check if this program has linkage parameters (making it a subroutine)
+                has_linkage = program_name in self.program_linkage_params
+                
+                if not has_linkage:
+                    # No linkage = entry program, call it from Main
+                    main_body.append(RunTask(1, 1, program_name, []))
+                elif self.debug:
+                    print(f"  Skipping {program_name} in Main (has LINKAGE SECTION)")
         
         main_subroutine = SubRoutine(1, 1, 'Main', main_body)
         
@@ -503,11 +636,29 @@ class COBOLToAilangMultiProgramConverter:
         for prog_name, params in self.program_linkage_params.items():
             pool_fields = []
             for param in params:
+                # Look up the variable type from self.variables
+                # (It was populated during linkage section parsing)
+                var_info = None
+                # This is a bit inefficient, but self.variables is reset per program.
+                # A better approach might be to store types with linkage params.
+                # For now, this works because the last program's vars are available.
+                if param in self.variables and self.variables[param].get('is_linkage'):
+                    var_info = self.variables[param]
+                
+                # Determine correct initializer based on type
+                if var_info:
+                    if var_info['type'] == 'Integer':
+                        init_value = Number(1, 1, 0)
+                    else:  # String or Address
+                        init_value = String(1, 1, "")
+                else:
+                    # Fallback: assume Integer if not found
+                    init_value = Number(1, 1, 0)
+                
                 # Create ResourceItem: line, column, key, value, attributes
-                attributes = {"Initialize": Number(1, 1, 0)}
+                attributes = {"Initialize": init_value}
                 item = ResourceItem(1, 1, key=param, value=None, attributes=attributes)
                 pool_fields.append(item)
-            
             # Create FixedPool AST node
             pool_name = f"COBOL_{prog_name}_LINKAGE"
             pool = Pool(1, 1, pool_type="FixedPool", name=pool_name, body=pool_fields)
@@ -565,52 +716,74 @@ class COBOLToAilangMultiProgramConverter:
             if self.debug:
                 print(f"\n  WORKING-STORAGE SECTION:")
 
-            for decl in program.data_division.working_storage:
-                if isinstance(decl, COBOLVariableDecl):
-                    var_name = self.normalize_name(decl.name)
-                    # Get complete storage information
-                    storage_info = self.get_storage_info(
-                        decl.pic_clause, 
-                        decl.usage_type,
-                        decl.is_signed,
-                        decl.decimal_places
-                    )
-                    var_value = decl.value if decl.value else ('""' if storage_info['ailang_type'] == 'String' else '0')
+            # Flatten hierarchical structure to get all elementary items
+            original_ws = program.data_division.working_storage  # Keep original!
+            elementary_items = self.flatten_variable_declarations(original_ws)
 
-                    # Check if this is a display-edited format
-                    is_edited = self.is_edited_format(decl.pic_clause) if decl.pic_clause else False
-                    edit_format = None
-                    if is_edited:
-                        edit_format = self.parse_edit_format(decl.pic_clause)
+            if self.debug:
+                print(f"    Found {len(elementary_items)} elementary items (flattened from hierarchy)")
 
-                    self.variables[var_name] = {
-                        'type': storage_info['ailang_type'],
-                        'value': var_value,
-                        'occurs': decl.occurs_count,
-                        'decimal_places': decl.decimal_places,
-                        'storage': storage_info['storage'],      # NEW
-                        'is_signed': storage_info['is_signed'],  # NEW
-                        'precision': storage_info['precision'],   # NEW
-                        'is_edited': is_edited,                   
-                        'edit_format': edit_format,              
-                        'pic_clause': decl.pic_clause             
-                    }
+            for decl in elementary_items:
+                var_name = self.normalize_name(decl.name)
+                
+                # Get complete storage information
+                storage_info = self.get_storage_info(
+                    decl.pic_clause, 
+                    decl.usage_type,
+                    decl.is_signed,
+                    decl.decimal_places
+                )
+                var_value = decl.value if decl.value else ('""' if storage_info['ailang_type'] == 'String' else '0')
 
-                    if self.debug:
-                        occurs_str = f" OCCURS {decl.occurs_count}" if decl.occurs_count else ""
-                        decimal_str = f" (V{decl.decimal_places})" if decl.decimal_places else ""
-                        usage_str = f" {decl.usage_type}" if decl.usage_type else ""
-                        sign_str = " SIGNED" if decl.is_signed else ""
-                        edit_str = f" EDITED({edit_format['type']})" if is_edited else ""
-                        print(f"    {var_name}: {storage_info['ailang_type']}{sign_str}{decimal_str}{usage_str}{edit_str}{occurs_str} = {var_value}")
+                # Check if this is a display-edited format
+                is_edited = self.is_edited_format(decl.pic_clause) if decl.pic_clause else False
+                edit_format = None
+                if is_edited:
+                    edit_format = self.parse_edit_format(decl.pic_clause)
+
+                # Store in variables dict
+                self.variables[var_name] = {
+                    'type': storage_info['ailang_type'],
+                    'value': var_value,
+                    'occurs': decl.occurs_count,
+                    'decimal_places': decl.decimal_places,
+                    'storage': storage_info['storage'],
+                    'is_signed': storage_info['is_signed'],
+                    'precision': storage_info['precision'],
+                    'is_edited': is_edited,
+                    'edit_format': edit_format,
+                    'pic_clause': decl.pic_clause
+                }
+
+                # Handle REDEFINES with OCCURS
+                if decl.redefines_target and decl.occurs_count:
+                    # Get values from the target
+                    redefines_values = self.get_redefines_values(decl.redefines_target, original_ws, decl)
+                    if redefines_values:
+                        # Store for initialization
+                        self.variables[var_name]['redefines_values'] = redefines_values
+                        if self.debug:
+                            print(f"    {var_name} REDEFINES {decl.redefines_target} with values: {redefines_values}")
+
+                if self.debug:
+                    occurs_str = f" OCCURS {decl.occurs_count}" if decl.occurs_count else ""
+                    decimal_str = f" (V{decl.decimal_places})" if decl.decimal_places else ""
+                    usage_str = f" {decl.usage_type}" if decl.usage_type else ""
+                    sign_str = " SIGNED" if decl.is_signed else ""
+                    edit_str = f" EDITED({edit_format['type']})" if is_edited else ""
+                    print(f"    {var_name}: {storage_info['ailang_type']}{sign_str}{decimal_str}{usage_str}{edit_str}{occurs_str} = {var_value}")
 
         # NEW: Create FixedPool for ALL programs with WORKING-STORAGE to avoid zero-init bug
         pool_name = None
         if self.variables:  # Create a pool for any program with variables
-            pool_name = f"COBOL_{program_name}_VARS"
-            self.program_ws_pools[program_name] = {'name': pool_name, 'variables': self.variables}
-            if self.debug:
-                print(f"\n  Program has paragraphs - creating FixedPool: {pool_name}")
+            # CRITICAL FIX: Filter out linkage variables from the working-storage pool
+            ws_vars_only = {k: v for k, v in self.variables.items() if not v.get('is_linkage')}
+            
+            if ws_vars_only:  # Only create pool if there are WS variables
+                pool_name = f"COBOL_{program_name}_VARS"
+                self.program_ws_pools[program_name] = {'name': pool_name, 'variables': ws_vars_only}
+                if self.debug:
+                    print(f"  Created WS pool: {pool_name} with {len(ws_vars_only)} variables")
         
         # NEW: Store pool name for variable reference conversion
         self.current_pool_name = pool_name
@@ -618,23 +791,52 @@ class COBOLToAilangMultiProgramConverter:
         # NEW: Extract linkage section parameters (don't initialize them)
         linkage_params = []
         if program.data_division and hasattr(program.data_division, 'linkage_section') and program.data_division.linkage_section:
-            # linkage_section is now a list, not an object with .variables
-            for var_decl in program.data_division.linkage_section:
-                var_name = self.normalize_name(var_decl.name)
-                linkage_params.append(var_name)
-                # Track but don't initialize - these are parameters
-                self.variables[var_name] = {
-                    'type': self.infer_type(var_decl.pic_clause, var_decl.decimal_places),
-                    'is_linkage': True  # Mark as linkage parameter
-                }
-                if self.debug:
-                    print(f"    Linkage param: {var_name} ({self.variables[var_name]['type']})")
+            for decl in program.data_division.linkage_section:
+                if not isinstance(decl, COBOLVariableDecl):
+                    continue
+                
+                # If it's a group with children (like 01 PARM-1), process child fields
+                if hasattr(decl, 'children') and decl.children:
+                    for child in decl.children:
+                        child_name = self.normalize_name(child.name)
+                        storage_info = self.get_storage_info(child.pic_clause, child.usage_type, child.is_signed, child.decimal_places)
+                        # Add child to variables dict
+                        self.variables[child_name] = {
+                            'type': storage_info['ailang_type'],
+                            'value': None,
+                            'occurs': child.occurs_count if hasattr(child, 'occurs_count') else None,
+                            'is_linkage': True
+                        }
+                        # Track child field name for pool generation
+                        linkage_params.append(child_name)
+                        if self.debug:
+                            print(f"    Linkage param (from {decl.name}): {child_name} ({storage_info['ailang_type']})")
+                else:
+                    # No children - process the variable itself
+                    var_name = self.normalize_name(decl.name)
+                    storage_info = self.get_storage_info(decl.pic_clause, decl.usage_type, decl.is_signed, decl.decimal_places)
+                    # Add to variables dict (don't initialize - these are parameters)
+                    self.variables[var_name] = {
+                        'type': storage_info['ailang_type'],
+                        'value': None,
+                        'occurs': decl.occurs_count,
+                        'is_linkage': True
+                    }
+                    # Track parent name for pool generation
+                    linkage_params.append(var_name)
         
         # Store linkage params for this program (for later CALL mapping)
         if linkage_params:
             self.program_linkage_params[program_name] = linkage_params
             if self.debug:
                 print(f"  Registered linkage params for {program_name}: {linkage_params}")
+        
+        # ✅ Handle programs with no PROCEDURE DIVISION (copybooks)
+        if program.procedure_division is None:
+            if self.debug:
+                print(f"  No PROCEDURE DIVISION found for {program_name}. Treating as data-only (copybook).")
+            # No subroutines to generate, but variables and pools are now registered.
+            return []
         
         # Get procedure division using params if present
         procedure_using_params = []
@@ -733,6 +935,17 @@ class COBOLToAilangMultiProgramConverter:
         
         # Convert inline (unnamed) paragraphs
         # Convert inline code (unnamed paragraphs = direct PROCEDURE DIVISION code)
+        # Debug: Show what paragraphs we have
+        if self.debug:
+            print(f"\n  === COBCALC: Processing {len(paragraphs)} paragraphs ===")
+            for i, para in enumerate(paragraphs):
+                if para.name:
+                    print(f"    [{i}] Named: '{para.name}' with {len(para.statements)} statements")
+                else:
+                    print(f"    [{i}] INLINE (unnamed) with {len(para.statements)} statements:")
+                    for j, stmt in enumerate(para.statements):
+                        print(f"        - {type(stmt).__name__}")
+
         for para in paragraphs:
             if not para.name:  # Unnamed = inline code
             
@@ -743,12 +956,19 @@ class COBOLToAilangMultiProgramConverter:
                     elif converted is not None:
                         statements.append(converted)
         
-        # âœ… ADD: Call all named paragraphs in sequence
-        for para in paragraphs:
-            if para.name:  # Named paragraph
-                para_name = self.normalize_name(para.name)
+        # If no inline code was found, call the first named paragraph as the entry point
+        if not statements and any(p.name for p in paragraphs):
+            first_para = next((p for p in paragraphs if p.name), None)
+            if first_para:
+                para_name = self.normalize_name(first_para.name)
                 full_name = f"{name}_{para_name}"
                 statements.append(RunTask(1, 1, full_name, []))
+        # âœ… ADD: Call all named paragraphs in sequence
+       # for para in paragraphs:
+        #    if para.name:  # Named paragraph
+         #       para_name = self.normalize_name(para.name)
+          #      full_name = f"{name}_{para_name}"
+           #     statements.append(RunTask(1, 1, full_name, []))
         
         # Add return
         # Add return if missing
@@ -803,6 +1023,8 @@ class COBOLToAilangMultiProgramConverter:
         
         # SET CURRENT PROGRAM NAME
         self.current_program_name = parent_program
+        # SET CURRENT POOL NAME
+        self.current_pool_name = pool_name
         
         # Convert paragraph statements
         # Convert paragraph's statements
@@ -829,20 +1051,32 @@ class COBOLToAilangMultiProgramConverter:
             if var_info.get('is_linkage'):
                 continue
             
-            # Arrays still need local initialization
-            if var_info.get('occurs'):
-                occurs_count = var_info['occurs']
-                if pool_name:
-                    # Use pool reference for array
-                    initializations.append(
-                        Assignment(1, 1, f"{pool_name}.{var_name}", 
-                                  FunctionCall(1, 1, 'ArrayCreate', [Number(1, 1, occurs_count)]))
-                    )
-                else:
-                    initializations.append(
-                        Assignment(1, 1, var_name, 
-                                  FunctionCall(1, 1, 'ArrayCreate', [Number(1, 1, occurs_count)]))
-                    )
+            # Handle arrays (OCCURS clause)
+            occurs_count = var_info.get('occurs')
+            if occurs_count and occurs_count > 0:
+                # Simplified target determination
+                array_target = f"{pool_name}.{var_name}" if pool_name else var_name
+
+                # Create the array
+                initializations.append(
+                    Assignment(1, 1, array_target,
+                                FunctionCall(1, 1, 'ArrayCreate', [Number(1, 1, occurs_count)]))
+                )
+
+                # ✅ NEW: Populate array if it redefines another variable
+                if 'redefines_values' in var_info:
+                    if self.debug:
+                        print(f"    Populating redefined array: {var_name} with {len(var_info['redefines_values'])} values")
+                    
+                    for i, value in enumerate(var_info['redefines_values']):
+                        # ArraySet(array, index, value)
+                        initializations.append(
+                            FunctionCall(1, 1, 'ArraySet', [
+                                Identifier(1, 1, array_target),
+                                Number(1, 1, i),
+                                String(1, 1, value.strip('"'))
+                            ])
+                        )
                 continue
             
             # If using pool, variables are already initialized in the pool
@@ -996,7 +1230,11 @@ class COBOLToAilangMultiProgramConverter:
                     print(f"    DEBUG: convert_call returned: {result_type}")
                 return result  # May be a list of statements for parameter mapping
             elif isinstance(stmt, COBOLExit):
-                print(f"    DEBUG: Converting COBOLExit (returns None)...")
+                if self.debug:
+                    exit_type = "EXIT PROGRAM" if stmt.is_program else "EXIT"
+                    print(f"    DEBUG: Converting {exit_type} (returns None)...")
+                # Both EXIT and EXIT PROGRAM just end the current paragraph/section
+                # In Ailang, we don't need explicit handling
                 return None
             elif isinstance(stmt, COBOLStringConcat):
                 if self.debug:
@@ -1095,6 +1333,18 @@ class COBOLToAilangMultiProgramConverter:
             elif isinstance(expr, COBOLStringLiteral):
                 # String literal - use as-is
                 string_parts.append(converted_expr)
+    
+            elif isinstance(expr, COBOLArraySubscript):
+                # Check the array's type to determine Print function
+                array_name = self.normalize_name(expr.array_name)
+                if array_name in variables:
+                    if variables[array_name]['type'] == 'String':
+                        string_parts.append(converted_expr)
+                    else:
+                        string_parts.append(FunctionCall(1, 1, 'NumberToString', [converted_expr]))
+                else:
+                    # Default to number if type is unknown
+                    string_parts.append(FunctionCall(1, 1, 'NumberToString', [converted_expr]))
 
             else:
                 # Other expression types (e.g. function calls, arithmetic)
@@ -1160,63 +1410,73 @@ class COBOLToAilangMultiProgramConverter:
         
         return statements
     
-    def convert_move(self, stmt: COBOLMove, variables: Dict) -> Assignment:
+    def convert_move(self, stmt: COBOLMove, variables: Dict):
         """Convert MOVE statement
         
-        Returns Assignment for scalar variables
-        Returns FunctionCall for array element assignments
+        MOVE source TO target1 target2 ...
+        
+        Returns a list of Assignment statements (one per target)
         """
         source = self.convert_expression(stmt.source, variables)
         
-        # Check if target is an array element
-        if isinstance(stmt.target, COBOLArraySubscript):
-            # MOVE value TO ARRAY(index)
-            # Becomes: ArraySet(ARRAY, index-1, value)
-            array_name = self.normalize_name(stmt.target.array_name)
+        assignments = []
+        
+        # ✅ Handle multiple targets (targets is a list)
+        for target in stmt.targets:
+            # Check if target is an array element
+            if isinstance(target, COBOLArraySubscript):
+                # MOVE value TO ARRAY(index)
+                # Becomes: ArraySet(ARRAY, index-1, value)
+                array_name = self.normalize_name(target.array_name)
 
-            # NEW: Use pool prefix for arrays
-            if self.current_pool_name and array_name in self.variables and self.variables[array_name].get('occurs'):
-                array_ref = f"{self.current_pool_name}.{array_name}"
+                # Use pool prefix for arrays
+                if self.current_pool_name and array_name in variables and variables[array_name].get('occurs'):
+                    array_ref = f"{self.current_pool_name}.{array_name}"
+                else:
+                    array_ref = array_name
+
+                index_expr = self.convert_expression(target.indices[0], variables)
+
+                # Convert to 0-based indexing
+                zero_based_index = FunctionCall(1, 1, 'Subtract', [
+                    index_expr,
+                    Number(1, 1, 1)
+                ])
+                assignments.append(FunctionCall(1, 1, 'ArraySet', [
+                    Identifier(1, 1, array_ref),
+                    zero_based_index,
+                    source
+                ]))
+                continue
+
+            # Regular scalar assignment - get target name
+            if isinstance(target, COBOLIdentifier):
+                target_name = self.normalize_name(target.name)
             else:
-                array_ref = array_name
+                # This case should be rare for MOVE targets
+                target_name = str(self.convert_expression(target, variables))
 
-            index_expr = self.convert_expression(stmt.target.index, variables)
+            # Check if target is an edited format field
+            target_source = source  # May be modified for formatting
+            if isinstance(target, COBOLIdentifier):
+                if target_name in variables:
+                    var_info = variables[target_name]
 
-            # Convert to 0-based indexing
-            zero_based_index = FunctionCall(1, 1, 'Subtract', [
-                index_expr,
-                Number(1, 1, 1)
-            ])
-            return FunctionCall(1, 1, 'ArraySet', [
-                Identifier(1, 1, array_ref),
-                zero_based_index,
-                source
-            ])
+                    # If target is edited format, apply formatting
+                    if var_info.get('is_edited') and var_info.get('edit_format'):
+                        if self.debug:
+                            print(f"    Applying {var_info['edit_format']['type']} format to {target_name}")
 
-        # Regular scalar assignment - get target name
-        if isinstance(stmt.target, COBOLIdentifier):
-            target_name = self.normalize_name(stmt.target.name)
-        else:
-            # This case should be rare for MOVE targets
-            target_name = str(self.convert_expression(stmt.target, variables))
+                        # Wrap source in format function
+                        target_source = self.create_format_function(
+                            source, 
+                            var_info['edit_format']
+                        )
 
-        # Check if target is an edited format field
-        if isinstance(stmt.target, COBOLIdentifier):
-            if target_name in variables:
-                var_info = variables[target_name]
-
-                # If target is edited format, apply formatting
-                if var_info.get('is_edited') and var_info.get('edit_format'):
-                    if self.debug:
-                        print(f"    Applying {var_info['edit_format']['type']} format to {target_name}")
-
-                    # Wrap source in format function
-                    source = self.create_format_function(
-                        source, 
-                        var_info['edit_format']
-                    )
-
-        return Assignment(1, 1, self.make_assignment_target(target_name, variables), source)
+            assignments.append(Assignment(1, 1, self.make_assignment_target(target_name, variables), target_source))
+        
+        # Return single assignment if only one target, otherwise return list
+        return assignments[0] if len(assignments) == 1 else assignments
     
     def convert_compute(self, stmt: COBOLCompute, variables: Dict) -> Assignment:
         expression = self.convert_expression(stmt.expression, variables)
@@ -1228,12 +1488,12 @@ class COBOLToAilangMultiProgramConverter:
             array_name = self.normalize_name(stmt.target.array_name)
             
             # NEW: Use pool prefix for arrays
-            if self.current_pool_name and array_name in self.variables and self.variables[array_name].get('occurs'):
+            if self.current_pool_name and array_name in variables and variables[array_name].get('occurs'):
                 array_ref = f"{self.current_pool_name}.{array_name}"
             else:
                 array_ref = array_name
             
-            index_expr = self.convert_expression(stmt.target.index, variables)
+            index_expr = self.convert_expression(stmt.target.indices[0], variables)
             # Convert to 0-based indexing
             zero_based_index = FunctionCall(1, 1, 'Subtract', [
                 index_expr,
@@ -1328,7 +1588,7 @@ class COBOLToAilangMultiProgramConverter:
             print(f"  DEBUG registry={self.program_linkage_params.get(full_name)}")
         
         # If USING clause, map via FixedPool
-        if stmt.using_params and full_name in self.program_linkage_params:
+        if stmt.parameters and full_name in self.program_linkage_params:
             caller_params = [self.normalize_name(p) for p in stmt.using_params]
             callee_params = self.program_linkage_params[full_name]
             pool_name = f"COBOL_{full_name}_LINKAGE"
@@ -1461,34 +1721,42 @@ class COBOLToAilangMultiProgramConverter:
         return While(1, 1, ailang_condition, loop_body)
 
     def convert_perform_varying(self, stmt: COBOLPerformVarying, variables: Dict) -> Any:
-        # âœ… FIX: Add pool prefix to loop variable
         var_name = self.normalize_name(stmt.variable)
-        target_var = self.make_assignment_target(var_name, variables)
-
+        var_target = self.make_assignment_target(var_name, variables)
+        
         from_value = self.convert_expression(stmt.from_expr, variables)
         by_value = self.convert_expression(stmt.by_expr, variables)
         condition = self.convert_expression(stmt.until_condition, variables)
-
+        
         negated_condition = FunctionCall(1, 1, 'Not', [condition])
-
+        
         loop_body = []
-        for loop_stmt in stmt.statements:
-            converted = self.convert_statement(loop_stmt, variables)
-            if isinstance(converted, list):
-                loop_body.extend(converted)
-            elif converted:
-                loop_body.append(converted)
-
+        
+        # Check if statements is not None
+        if stmt.statements is not None:
+            # Inline PERFORM VARYING ... END-PERFORM
+            for loop_stmt in stmt.statements:
+                converted = self.convert_statement(loop_stmt, variables)
+                if isinstance(converted, list):
+                    loop_body.extend(converted)
+                elif converted:
+                    loop_body.append(converted)
+        elif stmt.paragraph_name:
+            # PERFORM paragraph VARYING
+            para_name = self.normalize_name(stmt.paragraph_name)
+            full_name = f"{self.current_program_name}_{para_name}"
+            loop_body.append(FunctionCall(1, 1, 'RunTask', [Identifier(1, 1, full_name)]))
+        
         loop_body.append(
-            Assignment(1, 1, target_var,
-                      FunctionCall(1, 1, 'Add', [
-                          Identifier(1, 1, target_var),  # âœ… Also fix the read
-                          by_value
-                      ]))
+            Assignment(1, 1, var_target,
+                    FunctionCall(1, 1, 'Add', [
+                        Identifier(1, 1, var_target),
+                        by_value
+                    ]))
         )
-
+        
         return [
-            Assignment(1, 1, target_var, from_value),
+            Assignment(1, 1, var_target, from_value),
             While(1, 1, negated_condition, loop_body)
         ]
     
@@ -1616,15 +1884,29 @@ class COBOLToAilangMultiProgramConverter:
                 return operand
         
         elif isinstance(expr, COBOLIdentifier):
+            name_upper = expr.name.upper()
+    
+            # Handle COBOL figurative constants
+            if name_upper in ['SPACES', 'SPACE']:
+                return String(1, 1, " ")
+            elif name_upper in ['ZEROS', 'ZEROES', 'ZERO']:
+                return Number(1, 1, 0)
+            elif name_upper in ['QUOTES', 'QUOTE']:
+                return String(1, 1, '"')
+            elif name_upper in ['HIGH-VALUES', 'HIGH-VALUE']:
+                return String(1, 1, "\xFF")
+            elif name_upper in ['LOW-VALUES', 'LOW-VALUE']:
+                return String(1, 1, "\x00")
+    
             name = self.normalize_name(expr.name)
-
+    
             # Check if this is a linkage parameter (uses its own pool)
-            if name in self.variables and self.variables[name].get('is_linkage'):
+            if name in variables and variables[name].get('is_linkage'):
                 pool_name = f"COBOL_{self.current_program_name}_LINKAGE"
                 return Identifier(expr.line, expr.column, f"{pool_name}.{name}")
             
-            # Check if we're using a variable pool (for all non-array variables)
-            if self.current_pool_name and name in self.variables and not self.variables[name].get('occurs'):
+            # Check if we're using a variable pool
+            if self.current_pool_name and name in variables:
                 return Identifier(expr.line, expr.column, f"{self.current_pool_name}.{name}")
             
             return Identifier(expr.line, expr.column, name)
@@ -1647,12 +1929,23 @@ class COBOLToAilangMultiProgramConverter:
             return Number(1, 1, 0)
 
     def convert_function_call(self, expr: COBOLFunctionCall, variables: Dict) -> FunctionCall:
-            if expr.function_name == 'UPPER-CASE':
-                arg = self.convert_expression(expr.arguments[0], variables)
-                return FunctionCall(1, 1, 'StringToUpper', [arg])
-            # Add more functions here later << sorry claude updated the patches on me last minute. 
-            else:
-                raise ValueError(f"Unsupported FUNCTION: {expr.function_name}")
+        func_name = expr.function_name
+        if func_name == 'UPPER-CASE':
+            arg = self.convert_expression(expr.arguments[0], variables)
+            return FunctionCall(1, 1, 'StringToUpper', [arg])
+        
+        elif func_name == 'NUMVAL':
+            # String to number conversion
+            arg = self.convert_expression(expr.arguments[0], variables)
+            return FunctionCall(1, 1, 'StringToNumber', [arg])
+        
+        elif func_name == 'ANNUITY' or func_name == 'PRESENT-VALUE':
+            # Financial functions - stub them for now (return 0)
+            # TODO: Implement proper financial calculations
+            return Number(1, 1, 0)
+        
+        else:
+            raise ValueError(f"Unsupported FUNCTION: {expr.function_name}")
         
     def _is_string_expr(self, left, right, variables: Dict):
         """Check if either operand is a string"""
@@ -1686,12 +1979,12 @@ class COBOLToAilangMultiProgramConverter:
         array_name = self.normalize_name(node.array_name)
         
         # NEW: Check if array is in a pool
-        if self.current_pool_name and array_name in self.variables and self.variables[array_name].get('occurs'):
+        if self.current_pool_name and array_name in variables and variables[array_name].get('occurs'):
             array_ref = f"{self.current_pool_name}.{array_name}"
         else:
             array_ref = array_name
         
-        index_expr = self.convert_expression(node.index, variables)
+        index_expr = self.convert_expression(node.indices[0], variables)
         
         # Convert 1-based to 0-based indexing
         zero_based_index = FunctionCall(1, 1, 'Subtract', [
@@ -1704,56 +1997,69 @@ class COBOLToAilangMultiProgramConverter:
         ])
 
 
-    def convert_unstring(self, stmt: COBOLUnstring, variables: Dict) -> List[Assignment]:
-        """Convert COBOL UNSTRING to Ailang StringSplit + array access
+    def convert_unstring(self, stmt: COBOLUnstring, variables: Dict) -> List:
+        """Convert UNSTRING with multiple delimiters to Ailang"""
+        statements = []
         
-        UNSTRING source DELIMITED BY "," INTO field1 field2
-        becomes:
-        TEMP_PARTS = StringSplit(source, ",")
-        field1 = Get(TEMP_PARTS, 0)
-        field2 = Get(TEMP_PARTS, 1)
-        """
-        # Convert source and delimiter
         source_expr = self.convert_expression(stmt.source, variables)
-        delimiter_expr = self.convert_expression(stmt.delimiter, variables)
         
-        # Generate temporary variable for split result
+        # Handle multiple delimiters
+        if len(stmt.delimiters) == 1:
+            # Single delimiter - simple case
+            delimiter_expr = self.convert_expression(stmt.delimiters[0], variables)
+        else:
+            # Multiple delimiters - normalize all to the first one
+            normalized_source = source_expr
+            first_delimiter = self.convert_expression(stmt.delimiters[0], variables)
+            
+            # Replace all other delimiters with the first one
+            for i in range(1, len(stmt.delimiters)):
+                other_delimiter = self.convert_expression(stmt.delimiters[i], variables)
+                normalized_source = FunctionCall(1, 1, "StringReplaceAll", [
+                    normalized_source,
+                    other_delimiter,
+                    first_delimiter
+                ])
+            
+            source_expr = normalized_source
+            delimiter_expr = first_delimiter
+        
+        # Split string into array
+        use_all = stmt.delimiter_all_flags[0] if stmt.delimiter_all_flags else False
+        # Use COBOL library's CStringSplit which supports the ALL flag
+        split_result = FunctionCall(1, 1, "CStringSplit", [
+            source_expr, 
+            delimiter_expr, 
+            Number(1, 1, 1 if use_all else 0)
+        ])
+        
+        # Generate temp variable
         temp_var = f"TEMP_UNSTRING_PARTS_{id(stmt)}"
+        statements.append(Assignment(1, 1, temp_var, split_result))
         
-        # Split the string
-        split_call = FunctionCall(1, 1, 'StringSplit', [source_expr, delimiter_expr])
-        split_assign = Assignment(1, 1, temp_var, split_call)
-        
-        # Create assignments for each target field
-        result = [split_assign]
-        
+        # Assign each target from the split array
         for i, target in enumerate(stmt.targets):
             normalized_target = self.normalize_name(target)
-            # âœ… FIX: Add pool prefix to target field assignment
             target_with_prefix = self.make_assignment_target(normalized_target, variables)
             
             # Get the i-th element from the split result
-            # Use AIMacro.Get if available, otherwise XArray.XGet
-            get_call = FunctionCall(
-                1, 1, 
-                'ArrayGet',  # âœ… Built-in array accessor
-                [Identifier(1, 1, temp_var), Number(1, 1, i)]
-            )
+            get_call = FunctionCall(1, 1, 'ArrayGet', [Identifier(1, 1, temp_var), Number(1, 1, i)])
             
             # Check if target is numeric and needs conversion
             if normalized_target in variables and variables[normalized_target]['type'] == 'Integer':
                 get_call = FunctionCall(1, 1, 'StringToNumber', [get_call])
             
-            result.append(Assignment(1, 1, target_with_prefix, get_call))
+            statements.append(Assignment(1, 1, target_with_prefix, get_call))
         
-        # If TALLYING IN was specified, add count assignment
+        # Handle TALLYING IN counter
         if stmt.count:
-            count_var = self.normalize_name(stmt.count)
-            # Count = length of parts array
-            count_call = FunctionCall(1, 1, 'ArrayLength', [Identifier(1, 1, temp_var)])
-            result.append(Assignment(1, 1, self.make_assignment_target(count_var, variables), count_call)) # This was already correct
+            counter_name = self.normalize_name(stmt.count)
+            counter_ref = self.make_assignment_target(counter_name, variables)
+            
+            length_call = FunctionCall(1, 1, "ArrayLength", [Identifier(1, 1, temp_var)])
+            statements.append(Assignment(1, 1, counter_ref, length_call))
         
-        return result
+        return statements
 
     
 
@@ -1800,454 +2106,6 @@ class AILangASTSerializer:
     def serialize(self, ast: Program) -> str:
         lines = []
         
-        # Always add FixedPoint library for now (can optimize later)
-        lines.append("LibraryImport.Cobol")
-        lines.append("LibraryImport.Library.FixedPoint") # NEW
-        lines.append("")
-        lines.append("// Generated from COBOL source")
-        lines.append("")
-        
-        for func in ast.declarations:
-            lines.extend(self.serialize_function(func))
-            lines.append("")
-        
-        lines.append("RunTask(Main)")
-        lines.append("")
-        
-        return '\n'.join(lines)
-    
-    def serialize_function(self, func) -> List[str]:
-        lines = []
-        
-        if func.__class__.__name__ == 'SubRoutine':
-            param_str = ""
-            if hasattr(func, 'input_params') and func.input_params:
-                params = ', '.join(func.input_params)
-                param_str = f"({params})"
-            lines.append(f"SubRoutine.{func.name}{param_str} {{")
-            self.indent_level += 1
-            for stmt in func.body:
-                stmt_lines = self.serialize_statement(stmt)
-                for line in stmt_lines:
-                    lines.append(self.indent() + line)
-            self.indent_level -= 1
-            lines.append("}")
-        elif func.name == 'Main' and not func.input_params and not func.output_type:
-            lines.append(f"SubRoutine.Main {{")
-            self.indent_level += 1
-            for stmt in func.body:
-                stmt_lines = self.serialize_statement(stmt)
-                for line in stmt_lines:
-                    lines.append(self.indent() + line)
-            self.indent_level -= 1
-            lines.append("}")
-        else:
-            lines.append(f"Function.{func.name} {{")
-            if func.input_params:
-                for param in func.input_params:
-                    lines.append(f"{self.indent_str}Input: {param}")
-            if func.output_type:
-                lines.append(f"{self.indent_str}Output: {func.output_type}")
-            lines.append(f"{self.indent_str}Body: {{")
-            self.indent_level += 1
-            for stmt in func.body:
-                stmt_lines = self.serialize_statement(stmt)
-                for line in stmt_lines:
-                    lines.append(self.indent() + line)
-            self.indent_level -= 1
-            lines.append(f"{self.indent_str}}}")
-            lines.append("}")
-        
-        return lines
-    
-    def serialize_statement(self, stmt: Any) -> List[str]:
-        if isinstance(stmt, Assignment):
-            if isinstance(stmt.target, str):
-                target_str = stmt.target
-            else:
-                target_str = self.serialize_expr(stmt.target)
-            return [f"{target_str} = {self.serialize_expr(stmt.value)}"]
-        elif isinstance(stmt, RunTask):
-            if stmt.arguments:
-                args = ', '.join(f"{k} => {self.serialize_expr(v)}" for k, v in stmt.arguments)
-                return [f"RunTask({stmt.task_name}, {args})"]
-            else:
-                return [f"RunTask({stmt.task_name})"]
-        elif isinstance(stmt, FunctionCall):
-            func_name = stmt.function if isinstance(stmt.function, str) else self.serialize_expr(stmt.function)
-            args = ', '.join(self.serialize_expr(arg) for arg in stmt.arguments)
-            return [f"{func_name}({args})"]
-        
-        elif isinstance(stmt, PrintMessage):
-            msg = self.serialize_expr(stmt.message)
-            return [f"PrintMessage({msg})"]
-        
-        elif isinstance(stmt, If):
-            lines = [f"IfCondition {self.serialize_expr(stmt.condition)} ThenBlock: {{"]
-            self.indent_level += 1
-            for then_stmt in stmt.then_body:
-                for line in self.serialize_statement(then_stmt):
-                    lines.append(self.indent() + line)
-            self.indent_level -= 1
-            
-            if stmt.else_body:
-                lines.append(self.indent() + "} ElseBlock: {")
-                self.indent_level += 1
-                for else_stmt in stmt.else_body:
-                    for line in self.serialize_statement(else_stmt):
-                        lines.append(self.indent() + line)
-                self.indent_level -= 1
-            
-            lines.append(self.indent() + "}")
-            return lines
-        
-        elif isinstance(stmt, While):
-            lines = [f"WhileLoop {self.serialize_expr(stmt.condition)} {{"]
-            self.indent_level += 1
-            for body_stmt in stmt.body:
-                for line in self.serialize_statement(body_stmt):
-                    lines.append(self.indent() + line)
-            self.indent_level -= 1
-            lines.append(self.indent() + "}")
-            return lines
-        
-        elif isinstance(stmt, ReturnValue):
-            return [f"ReturnValue({self.serialize_expr(stmt.value)})"]
-        
-        else:
-            print(f"WARNING: Unknown statement type: {type(stmt).__name__}")
-            return [f"// Unknown statement type: {type(stmt).__name__}"]
-    
-    def serialize_expr(self, expr: Any) -> str:
-        if isinstance(expr, Identifier):
-            return expr.name
-        elif isinstance(expr, Number):
-            return str(expr.value)
-        elif isinstance(expr, String):
-            return f'"{expr.value}"'
-        elif isinstance(expr, FunctionCall):
-            func_name = expr.function if isinstance(expr.function, str) else self.serialize_expr(expr.function)
-            args = ', '.join(self.serialize_expr(arg) for arg in expr.arguments)
-            return f"{func_name}({args})"
-        else:
-            print(f"WARNING: Unknown expression type: {type(expr).__name__}, expr={expr}")
-            return f"/* UNKNOWN: {type(expr).__name__} */"
-        
-        loop_body = [
-            FunctionCall(1, 1, 'RunTask', [Identifier(1, 1, para_name)]),
-            Assignment(1, 1, counter_name, 
-                      FunctionCall(1, 1, 'Add', [
-                          Identifier(1, 1, counter_name),
-                          Number(1, 1, 1)
-                      ]))
-        ]
-        
-        condition = FunctionCall(1, 1, 'LessThan', [
-            Identifier(1, 1, counter_name),
-            times_value
-        ])
-        
-        return [
-            Assignment(1, 1, counter_name, Number(1, 1, 0)),
-            While(1, 1, condition, loop_body)
-        ]
-    
-    def convert_perform_varying(self, stmt: COBOLPerformVarying, variables: Dict) -> Any:
-        var_name = self.normalize_name(stmt.variable)
-        from_value = self.convert_expression(stmt.from_expr, variables)
-        by_value = self.convert_expression(stmt.by_expr, variables)
-        condition = self.convert_expression(stmt.until_condition, variables)
-        
-        negated_condition = FunctionCall(1, 1, 'Not', [condition])
-        
-        loop_body = []
-        for loop_stmt in stmt.statements:
-            converted = self.convert_statement(loop_stmt, variables)
-            if isinstance(converted, list):
-                loop_body.extend(converted)
-            elif converted:
-                loop_body.append(converted)
-        
-        loop_body.append(
-            Assignment(1, 1, var_name,
-                      FunctionCall(1, 1, 'Add', [
-                          Identifier(1, 1, var_name),
-                          by_value
-                      ]))
-        )
-        
-        return [
-            Assignment(1, 1, var_name, from_value),
-            While(1, 1, negated_condition, loop_body)
-        ]
-    
-    def convert_evaluate(self, stmt: COBOLEvaluate, variables: Dict) -> If:
-        """Convert EVALUATE to nested If/ElseIf chain"""
-        subject = self.convert_expression(stmt.subject, variables)
-        
-        # Determine comparison function based on subject type
-        comparison_func = 'EqualTo'
-        
-        # Check if subject is a string
-        if isinstance(stmt.subject, COBOLIdentifier):
-            var_name = self.normalize_name(stmt.subject.name)
-            if var_name in variables and variables[var_name]['type'] == 'String':
-                comparison_func = 'StringEquals'
-        elif isinstance(stmt.subject, COBOLStringLiteral):
-            comparison_func = 'StringEquals'
-        elif isinstance(stmt.subject, COBOLFunctionCall):
-            # String functions return strings
-            if stmt.subject.function_name in ['UPPER-CASE', 'LOWER-CASE']:
-                comparison_func = 'StringEquals'
-        
-        result = None
-        
-        for i in range(len(stmt.when_clauses) - 1, -1, -1):
-            when_clause = stmt.when_clauses[i]
-            
-            then_body = []
-            for when_stmt in when_clause.statements:
-                converted = self.convert_statement(when_stmt, variables)
-                if isinstance(converted, list):
-                    then_body.extend(converted)
-                elif converted:
-                    then_body.append(converted)
-            
-            if when_clause.value is None:
-                # WHEN OTHER
-                if result is None:
-                    result = then_body[0] if len(then_body) == 1 else then_body
-                else:
-                    result = [If(1, 1, FunctionCall(1, 1, 'EqualTo', [Number(1, 1, 1), Number(1, 1, 1)]), then_body, [result] if not isinstance(result, list) else result)]
-            else:
-                value = self.convert_expression(when_clause.value, variables)
-                condition = FunctionCall(1, 1, comparison_func, [subject, value])
-                
-                if result is None:
-                    result = If(1, 1, condition, then_body, None)
-                else:
-                    result = If(1, 1, condition, then_body, [result] if not isinstance(result, list) else result)
-        
-        return result
-    
-    def convert_accept(self, stmt: COBOLAccept, variables: Dict) -> Assignment:
-        """Convert ACCEPT to GetUserInput assignment
-        
-        ACCEPT USER-NAME becomes:
-        USER_NAME = GetUserInput()
-        
-        Note: For numeric variables, we need to convert the string input
-        ACCEPT USER-AGE becomes:
-        USER_AGE = StringToNumber(GetUserInput())
-        """
-        var_name = self.normalize_name(stmt.variable)
-        
-        # Get user input
-        input_call = FunctionCall(1, 1, 'GetUserInput', [])
-        
-        # Check if variable is numeric - if so, convert the input
-        if var_name in variables and variables[var_name]['type'] == 'Integer':
-            input_value = FunctionCall(1, 1, 'StringToNumber', [input_call])
-        else:
-            input_value = input_call
-        
-        return Assignment(1, 1, var_name, input_value)
-    
-   
-
-    def convert_expression(self, expr: COBOLASTNode, variables: Dict) -> Any:
-        if isinstance(expr, COBOLBinaryOp):
-            left = self.convert_expression(expr.left, variables)
-            right = self.convert_expression(expr.right, variables)
-            
-            func_name = self.operator_mappings.get(expr.operator, 'Add')
-            
-            # Special case: string comparison needs StringEquals, not EqualTo
-            if expr.operator == '=' and self._is_string_expr(expr.left, expr.right, variables):
-                func_name = 'StringEquals'
-            
-            # Check if it's a callable (lambda)
-            if callable(func_name):
-                return func_name(left, right)  # Call the lambda
-            else:
-                return FunctionCall(1, 1, func_name, [left, right])
-        elif isinstance(expr, COBOLUnaryOp):
-            operand = self.convert_expression(expr.operand, variables)
-            if expr.operator == '-':
-                return FunctionCall(1, 1, 'Subtract', [Number(1, 1, 0), operand])
-            else:
-                return operand
-        
-        elif isinstance(expr, COBOLIdentifier):
-            return Identifier(1, 1, self.normalize_name(expr.name))
-        
-        elif isinstance(expr, COBOLNumberLiteral):
-            if '.' in expr.value:
-                return Number(1, 1, int(float(expr.value)))
-            else:
-                return Number(1, 1, int(expr.value))
-        
-        elif isinstance(expr, COBOLStringLiteral):
-            # âœ“ Returns direct string literal
-            return String(1, 1, expr.value)
-        elif isinstance(expr, COBOLArraySubscript):
-            return self.convert_array_subscript(expr, variables)
-        elif isinstance(expr, COBOLFunctionCall):
-            return self.convert_function_call(expr, variables)
-        
-        else:
-            return Number(1, 1, 0)
-
-    def convert_function_call(self, expr: COBOLFunctionCall, variables: Dict) -> FunctionCall:
-            if expr.function_name == 'UPPER-CASE':
-                arg = self.convert_expression(expr.arguments[0], variables)
-                return FunctionCall(1, 1, 'StringToUpper', [arg])
-            # Add more functions here later << sorry claude updated the patches on me last minute. 
-            else:
-                raise ValueError(f"Unsupported FUNCTION: {expr.function_name}")
-        
-    def _is_string_expr(self, left, right, variables: Dict):
-        """Check if either operand is a string"""
-        # Check if either is a string literal
-        if isinstance(left, COBOLStringLiteral) or isinstance(right, COBOLStringLiteral):
-            return True
-        # Check if either is a string function call
-        if isinstance(left, COBOLFunctionCall) and left.function_name in ['UPPER-CASE', 'LOWER-CASE']:
-            return True
-        if isinstance(right, COBOLFunctionCall) and right.function_name in ['UPPER-CASE', 'LOWER-CASE']:
-            return True
-        # Check if either is a string variable
-        if isinstance(left, COBOLIdentifier):
-            var_name = self.normalize_name(left.name)
-            if var_name in variables and variables[var_name]['type'] == 'String':
-                return True
-        if isinstance(right, COBOLIdentifier):
-            var_name = self.normalize_name(right.name)
-            if var_name in variables and variables[var_name]['type'] == 'String':
-                return True
-        return False
-
-    def convert_array_subscript(self, node: COBOLArraySubscript, variables: Dict) -> FunctionCall:
-        """Convert array subscript to Ailang ArrayGet
-        
-        COBOL: ARRAY-NAME(5) or ARRAY-NAME(INDEX)
-        Ailang: ArrayGet(ARRAY_NAME, Subtract(index, 1))
-        
-        Note: COBOL uses 1-based indexing, Ailang uses 0-based
-        """
-        array_name = self.normalize_name(node.array_name)
-        index_expr = self.convert_expression(node.index, variables)
-        
-        # Convert 1-based to 0-based indexing
-        zero_based_index = FunctionCall(1, 1, 'Subtract', [
-            index_expr,
-            Number(1, 1, 1)
-        ])
-        
-        return FunctionCall(1, 1, 'ArrayGet', [
-            Identifier(1, 1, array_name),
-            zero_based_index
-        ])
-
-    def convert_unstring(self, stmt: COBOLUnstring, variables: Dict) -> List[Assignment]:
-        """Convert COBOL UNSTRING to Ailang StringSplit + array access
-        
-        UNSTRING source DELIMITED BY "," INTO field1 field2
-        becomes:
-        TEMP_PARTS = StringSplit(source, ",")
-        field1 = Get(TEMP_PARTS, 0)
-        field2 = Get(TEMP_PARTS, 1)
-        """
-        # Convert source and delimiter
-        source_expr = self.convert_expression(stmt.source, variables)
-        delimiter_expr = self.convert_expression(stmt.delimiter, variables)
-        
-        # Generate temporary variable for split result
-        temp_var = f"TEMP_UNSTRING_PARTS_{id(stmt)}"
-        
-        # Split the string
-        split_call = FunctionCall(1, 1, 'StringSplit', [source_expr, delimiter_expr])
-        split_assign = Assignment(1, 1, temp_var, split_call)
-        
-        # Create assignments for each target field
-        result = [split_assign]
-        
-        for i, target in enumerate(stmt.targets):
-            normalized_target = self.normalize_name(target)
-            
-            # Get the i-th element from the split result
-            # Use AIMacro.Get if available, otherwise XArray.XGet
-            get_call = FunctionCall(
-                1, 1, 
-                'XArray.XGet',  # Could also be 'AIMacro.Get'
-                [Identifier(1, 1, temp_var), Number(1, 1, i)]
-            )
-            
-            # Check if target is numeric and needs conversion
-            if normalized_target in variables and variables[normalized_target]['type'] == 'Integer':
-                get_call = FunctionCall(1, 1, 'StringToNumber', [get_call])
-            
-            result.append(Assignment(1, 1, normalized_target, get_call))
-        
-        # If TALLYING IN was specified, add count assignment
-        if stmt.count:
-            count_var = self.normalize_name(stmt.count)
-            # Count = length of parts array
-            count_call = FunctionCall(1, 1, 'XArray.XSize', [Identifier(1, 1, temp_var)])
-            result.append(Assignment(1, 1, count_var, count_call))
-        
-        return result
-
-    def convert_string_concat(self, stmt: COBOLStringConcat, variables: Dict) -> Assignment:
-        """
-        Convert COBOL STRING statement to Ailang
-        STRING field1 field2 DELIMITED BY SIZE INTO target
-        becomes: target = StringConcat(field1, field2)
-        """
-        # Build a series of StringConcat calls
-        # Start with first field
-        if not stmt.source_fields:
-            # If no source, assign empty string
-            target_name = self.normalize_name(stmt.target)
-            return Assignment(1, 1, target_name, String(1, 1, ""))
-        
-        # Convert first source field
-        result = self.convert_expression(stmt.source_fields[0], variables)
-        
-        # Chain concatenations for remaining fields
-        for i in range(1, len(stmt.source_fields)):
-            field_expr = self.convert_expression(stmt.source_fields[i], variables)
-            # Create StringConcat function call
-            result = FunctionCall(
-                1, 1,
-                "StringConcat",
-                [result, field_expr]
-            )
-        
-        # Assign result to target
-        target_name = self.normalize_name(stmt.target)
-        assign = Assignment(
-            1, 1,
-            target_name,
-            result
-        )
-        
-        return assign
-
-
-
-class AILangASTSerializer:
-    
-    def __init__(self):
-        self.indent_level = 0
-        self.indent_str = "    "
-    
-    def indent(self):
-        return self.indent_str * self.indent_level
-    
-    def serialize(self, ast: Program) -> str:
-        lines = []
-        
         lines.append("LibraryImport.Cobol")
         lines.append("")
         lines.append("// Generated from COBOL source")
@@ -2255,7 +2113,6 @@ class AILangASTSerializer:
         
         # Serialize all declarations (Pools and Functions)
         for decl in ast.declarations:
-            
             if isinstance(decl, Pool):
                 lines.extend(self.serialize_pool(decl))
             else:
@@ -2267,14 +2124,17 @@ class AILangASTSerializer:
         
         return '\n'.join(lines)
     
+    def serialize_with_header(self, ast: Program, header: str) -> str:
+        """Serializes the AST and prepends a header string."""
+        serialized_program = self.serialize(ast)
+        return header + serialized_program if header else serialized_program
+
     def serialize_pool(self, pool) -> List[str]:
         """Serializes a Pool (e.g., FixedPool) AST node."""
         lines = [f"{pool.pool_type}.{pool.name} {{"]
         self.indent_level += 1
         for item in pool.body:
-            # item is a ResourceItem
             key = item.key
-            # Assuming 'Initialize' is the only attribute for now
             init_attr = item.attributes.get("Initialize")
             if init_attr:
                 value_str = self.serialize_expr(init_attr)
@@ -2325,20 +2185,21 @@ class AILangASTSerializer:
     
     def serialize_statement(self, stmt: Any) -> List[str]:
         if isinstance(stmt, Assignment):
-            # Handle both string targets and Identifier targets with dot notation
             if isinstance(stmt.target, str):
                 target_str = stmt.target
             elif isinstance(stmt.target, Identifier):
-                target_str = stmt.target.name  # This includes pool.field notation
+                target_str = stmt.target.name
             else:
                 target_str = self.serialize_expr(stmt.target)
             return [f"{target_str} = {self.serialize_expr(stmt.value)}"]
+        
         elif isinstance(stmt, RunTask):
             if stmt.arguments:
                 args = ', '.join(f"{k} => {self.serialize_expr(v)}" for k, v in stmt.arguments)
                 return [f"RunTask({stmt.task_name}, {args})"]
             else:
                 return [f"RunTask({stmt.task_name})"]
+        
         elif isinstance(stmt, FunctionCall):
             func_name = stmt.function if isinstance(stmt.function, str) else self.serialize_expr(stmt.function)
             args = ', '.join(self.serialize_expr(arg) for arg in stmt.arguments)

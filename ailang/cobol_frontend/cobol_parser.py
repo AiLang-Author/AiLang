@@ -9,7 +9,7 @@
 COBOL Parser - Complete Version with ACCEPT
 """
 
-from typing import List, Optional, Union
+from typing import List, Optional, Dict
 from dataclasses import dataclass, field 
 from enum import Enum
 import re
@@ -58,11 +58,50 @@ class COBOLProgram(COBOLASTNode):
     procedure_division: Optional['COBOLProcedureDivision'] = None
     contained_programs: List['COBOLProgram'] = field(default_factory=list)
     is_nested: bool = False
+    metadata_lines: List[str] = field(default_factory=list)  # ✅ NEW: Just store as strings
+
 
 @dataclass
 class COBOLDataDivision(COBOLASTNode):
     working_storage: List['COBOLVariableDecl']
+    file_section: Optional[List['COBOLFileDescriptor']] = None      # ✅ NEW
+    select_statements: Optional[List['COBOLSelectStatement']] = None # ✅ NEW
     linkage_section: Optional[List['COBOLVariableDecl']] = None
+
+@dataclass
+class COBOLSelectStatement(COBOLASTNode):
+    """SELECT statement from FILE-CONTROL - captures ALL clauses"""
+    file_name: str
+    assign_to: str
+    is_optional: bool = False
+    organization: Optional[str] = None      # SEQUENTIAL, INDEXED, RELATIVE, LINE SEQUENTIAL
+    access_mode: Optional[str] = None       # SEQUENTIAL, RANDOM, DYNAMIC
+    record_key: Optional[str] = None        # For INDEXED files
+    alternate_keys: List[str] = field(default_factory=list)
+    file_status: Optional[str] = None       # Status variable
+    reserve_areas: Optional[int] = None     # RESERVE n AREAS
+    padding_character: Optional[str] = None # PADDING CHARACTER
+
+
+@dataclass
+class COBOLFileDescriptor(COBOLASTNode):
+    """FD entry - Complete file descriptor with ALL clauses"""
+    file_name: str
+    
+    # Record description
+    records: List['COBOLVariableDecl'] = field(default_factory=list)
+    
+    # FD clauses (all optional)
+    block_contains: Optional[int] = None
+    block_contains_to: Optional[int] = None  # BLOCK CONTAINS min TO max
+    record_contains: Optional[int] = None
+    record_contains_to: Optional[int] = None # RECORD CONTAINS min TO max
+    record_varying: Optional[dict] = None    # RECORD IS VARYING details
+    label_records: Optional[str] = None      # STANDARD, OMITTED
+    value_of: dict[str, str] = field(default_factory=dict)  # VALUE OF clauses
+    data_records: List[str] = field(default_factory=list)
+    linage: Optional[dict] = None            # LINAGE clause for printed reports
+    code_set: Optional[str] = None           # CODE-SET clause
 
 @dataclass
 class COBOLLinkageSection(COBOLASTNode):
@@ -79,6 +118,14 @@ class COBOLVariableDecl(COBOLASTNode):
     decimal_places: Optional[int] = None
     usage_type: Optional[str] = None  # NEW: COMP, COMP-3, DISPLAY, etc.
     is_signed: bool = False           # NEW: True if PIC starts with S
+    children: List['COBOLVariableDecl'] = field(default_factory=list)  # NEW!
+    redefines_target: Optional[str] = None  # NEW: Name of variable being redefined
+    # NEW: Variable-length table fields
+    occurs_min: Optional[int] = None
+    occurs_max: Optional[int] = None
+    depending_on: Optional[str] = None
+    is_external: bool = False  # NEW: EXTERNAL clause for shared data
+    is_global: bool = False    # NEW: GLOBAL clause for nested programs
 
 @dataclass
 class COBOLProcedureDivision(COBOLASTNode):
@@ -99,9 +146,18 @@ class COBOLAccept(COBOLASTNode):
     variable: str
 
 @dataclass
+class COBOLRead(COBOLASTNode):
+    """READ statement"""
+    filename: str
+    into_variable: Optional[str] = None
+    at_end_statements: Optional[List[COBOLASTNode]] = None
+    not_at_end_statements: Optional[List[COBOLASTNode]] = None
+
+@dataclass
 class COBOLMove(COBOLASTNode):
     source: COBOLASTNode
-    target: COBOLASTNode
+    targets: List[COBOLASTNode]
+    is_corresponding: bool = False
 
 @dataclass
 class COBOLCompute(COBOLASTNode):
@@ -146,14 +202,14 @@ class COBOLPerformVarying(COBOLASTNode):
     from_expr: COBOLASTNode
     by_expr: COBOLASTNode
     until_condition: COBOLASTNode
-    statements: List[COBOLASTNode]
+    paragraph_name: Optional[str] = None
+    statements: Optional[List[COBOLASTNode]] = None
 
 @dataclass
 class COBOLCall(COBOLASTNode):
     program_name: str  # "NESTED-CHILD" or identifier
-    parameters: List[COBOLASTNode] = field(default_factory=list)
-    using_params: Optional[List[str]] = None  # NEW: Parameter names for USING clause
-
+    parameters: List[str] = field(default_factory=list) # For USING clause
+    overflow_statements: Optional[List[COBOLASTNode]] = None
 
 @dataclass
 class COBOLWhenClause(COBOLASTNode):
@@ -175,7 +231,7 @@ class COBOLGoback(COBOLASTNode):
 
 @dataclass
 class COBOLExit(COBOLASTNode):
-    pass
+    is_program: bool = False  # True for EXIT PROGRAM, False for EXIT
 
 @dataclass
 class COBOLBinaryOp(COBOLASTNode):
@@ -196,7 +252,7 @@ class COBOLIdentifier(COBOLASTNode):
 class COBOLArraySubscript(COBOLASTNode):
     """Array element access: ARRAY-NAME(index)"""
     array_name: str
-    index: COBOLASTNode  # Can be literal or variable
+    indices: List[COBOLASTNode]  # Can be literal or variable
 
 @dataclass
 class COBOLNumberLiteral(COBOLASTNode):
@@ -224,10 +280,12 @@ class COBOLStringConcat(COBOLASTNode):
 @dataclass
 class COBOLUnstring(COBOLASTNode):
     """UNSTRING statement for splitting
-    UNSTRING source DELIMITED BY delimiter INTO field1 field2
+    UNSTRING source DELIMITED BY [ALL] delimiter [OR [ALL] delimiter...] 
+             INTO field1 field2 [TALLYING IN counter]
     """
     source: COBOLASTNode
-    delimiter: COBOLASTNode
+    delimiters: List[COBOLASTNode]  # ✅ CHANGED: Single → List
+    delimiter_all_flags: List[bool]  # ✅ NEW: ALL flag for each delimiter
     targets: List[str]
     count: Optional[str] = None  # TALLYING IN clause
 
@@ -246,9 +304,11 @@ class COBOLInspect(COBOLASTNode):
 
 
 class COBOLMultiProgramParser:
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens: List[Token], debug: bool = False):
         self.tokens = tokens
         self.pos = 0
+        self.debug = debug
+        self._current_metadata = []
         self.context_stack = [ParseContext.TOP_LEVEL]
     
     def push_context(self, context: ParseContext):
@@ -298,8 +358,13 @@ class COBOLMultiProgramParser:
         if self.match(COBOLTokenType.PERIOD):
             self.advance()
 
+    def skip_insignificant_tokens(self):
+        """Skip newlines and comments"""
+        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+            self.advance()
+
     def parse_all_programs(self) -> COBOLCompilationUnit:
-        """Parse ALL programs from the token stream"""
+        """Parse ALL programs from the token stream - handle EOF gracefully"""
         programs = []
         
         while not self.match(COBOLTokenType.EOF):
@@ -310,80 +375,91 @@ class COBOLMultiProgramParser:
             
             # Look for IDENTIFICATION DIVISION (start of a program)
             if self.match(COBOLTokenType.IDENTIFICATION):
-                program = self.parse_single_program()
-                programs.append(program)
+                try:
+                    program = self.parse_single_program()
+                    programs.append(program)
+                except Exception as e:
+                    # If parsing fails partway through, that's OK for truncated files
+                    print(f"Warning: Failed to complete parsing program: {e}")
+                    break
             else:
-                # Unexpected token - might be legacy format
-                self.advance()
+                # Unexpected token - might be legacy format or truncated
+                # Try to skip to next IDENTIFICATION or EOF
+                if not self.match(COBOLTokenType.EOF):
+                    self.advance()
         
         if not programs:
             raise ParserError("No COBOL programs found in source file", 1, 1)
         
         return COBOLCompilationUnit(programs=programs, line=1, column=1)
+    
+    def is_data_only_program(program: COBOLProgram) -> bool:
+        """Check if this is a data-only program (copybook)"""
+        return (program.data_division is not None and 
+                program.procedure_division is None)
+
+
+    def validate_program(program: COBOLProgram) -> list[str]:
+        """Validate program structure and return warnings"""
+        warnings = []
+        
+        if is_data_only_program(program):
+            warnings.append(f"Program {program.program_id} has no PROCEDURE DIVISION (copybook/data definition)")
+        
+        if program.data_division is None and program.procedure_division is None:
+            warnings.append(f"Program {program.program_id} has no DATA or PROCEDURE divisions")
+        
+        return warnings    
 
     def parse_single_program(self) -> COBOLProgram:
-        """Parse ONE COBOL program (from IDENTIFICATION to STOP RUN or END PROGRAM)"""
+        """Parse ONE COBOL program - all divisions now optional except IDENTIFICATION"""
         token = self.current_token()
+        
+        # Clear metadata for the new program
+        self._current_metadata = []
+
         # Parse IDENTIFICATION DIVISION
         program_id = self.parse_identification_division()
-
-        # Parse ENVIRONMENT DIVISION (optional, skip it for now)
-        environment_division = None
-        if self.current_token and self.current_token().type == COBOLTokenType.ENVIRONMENT:
-            environment_division = self.parse_environment_division()
-
+        
+        # Parse ENVIRONMENT DIVISION (optional)
+        select_statements = []
+        if self.current_token() and self.match(COBOLTokenType.ENVIRONMENT):
+            select_statements = self.parse_environment_division()
+        
         # Parse DATA DIVISION (optional)
         data_division = None
-        if self.current_token and self.match(COBOLTokenType.DATA):
+        if self.current_token() and self.match(COBOLTokenType.DATA):
             data_division = self.parse_data_division()
-        # Parse PROCEDURE DIVISION
-        procedure_division = self.parse_procedure_division()
-        # Parse nested programs ONLY if we haven't hit STOP/GOBACK yet
-        # If the program ended with STOP RUN, next IDENTIFICATION is a sibling, not nested
+            # Attach SELECT statements to data division
+            if data_division and select_statements:
+                data_division.select_statements = select_statements
+    
+        # ✅ Parse PROCEDURE DIVISION (NOW OPTIONAL)
+        procedure_division = None
+        if self.current_token() and self.match(COBOLTokenType.PROCEDURE):
+            procedure_division = self.parse_procedure_division()
+        elif self.match(COBOLTokenType.EOF):
+            # EOF reached before PROCEDURE - that's OK for copybooks/truncated files
+            procedure_division = None
+    
+        # Parse nested programs (only if we haven't hit EOF)
         contained_programs = []
-
-        # Check if the last statement was STOP RUN or GOBACK
-        program_ended = False
-        if procedure_division and procedure_division.paragraphs:
-            for para in procedure_division.paragraphs:
-                if para.statements:
-                    last_stmt = para.statements[-1]
-                    if isinstance(last_stmt, (COBOLStopRun, COBOLGoback)):
-                        program_ended = True
-                        break
-
-        # Only parse nested if program hasn't ended naturally
-        if not program_ended:
-            while self.match(COBOLTokenType.IDENTIFICATION):
-                print(f"  DEBUG: Found nested IDENTIFICATION at position {self.pos}")
-                nested = self.parse_single_program()
-                nested.is_nested = True
-                contained_programs.append(nested)
-                print(f"  DEBUG: Finished parsing nested program {nested.program_id}")
-                
-                # Continue parsing parent's statements after nested program
-                while not self.match(COBOLTokenType.EOF, COBOLTokenType.IDENTIFICATION, 
-                                    COBOLTokenType.END_PROGRAM, COBOLTokenType.END):
-                    if self.match(COBOLTokenType.END):
-                        next_tok = self.peek_token(1)
-                        if next_tok and next_tok.type == COBOLTokenType.PROGRAM:
-                            break
-                    
-                    stmt = self.parse_statement()
-                    if stmt:
-                        for para in procedure_division.paragraphs:
-                            if not para.name:
-                                para.statements.append(stmt)
-                                break
-        # Parse END PROGRAM if present
-        self.parse_end_program(program_id)
-        
+# DISABLED:         while not self.match(COBOLTokenType.EOF) and self.match(COBOLTokenType.IDENTIFICATION):
+# DISABLED:             nested = self.parse_single_program()
+# DISABLED:             nested.is_nested = True
+# DISABLED:             contained_programs.append(nested)
+# DISABLED:     
+        # ✅ Parse END PROGRAM if present (also optional now)
+        if not self.match(COBOLTokenType.EOF):
+            self.parse_end_program(program_id)
+    
         return COBOLProgram(
             program_id=program_id,
             data_division=data_division,
-            procedure_division=procedure_division,
+            procedure_division=procedure_division,  # Can be None now
             contained_programs=contained_programs,
-            is_nested=False,  # Will be set to True by parent if nested
+            is_nested=False,
+            metadata_lines=self._current_metadata,  # ✅ Attach captured metadata
             line=token.line,
             column=token.column
         )
@@ -398,20 +474,215 @@ class COBOLMultiProgramParser:
         program_id = self.consume(COBOLTokenType.IDENTIFIER).value
         self.consume(COBOLTokenType.PERIOD)
         
+        metadata = []
+        metadata_paragraphs = {
+            'AUTHOR': COBOLTokenType.AUTHOR,
+            'INSTALLATION': COBOLTokenType.INSTALLATION,
+            'DATE-WRITTEN': COBOLTokenType.DATE_WRITTEN,
+            'DATE-COMPILED': COBOLTokenType.DATE_COMPILED,
+            'SECURITY': COBOLTokenType.SECURITY,
+            'REMARKS': COBOLTokenType.REMARKS
+        }
+        
+        while self.match(*metadata_paragraphs.values()):
+            token = self.current_token()
+            self.advance()  # consume the paragraph keyword
+            if self.match(COBOLTokenType.PERIOD):
+                self.advance()
+            
+            metadata_line = []
+            while True:
+                if self.match(COBOLTokenType.ENVIRONMENT, COBOLTokenType.DATA, 
+                            COBOLTokenType.PROCEDURE, COBOLTokenType.IDENTIFICATION, 
+                            COBOLTokenType.EOF):
+                    break
+                if self.match(*metadata_paragraphs.values()):
+                    break
+                metadata_line.append(self.current_token().value)
+                self.advance()
+            
+            if metadata_line:
+                metadata.append(" ".join(metadata_line))
+        
+        self._current_metadata = metadata
         return program_id
     
     def parse_environment_division(self):
-        """Parse and skip ENVIRONMENT DIVISION - not needed for transpilation"""
+        """Parse ENVIRONMENT DIVISION - don't skip, capture SELECT statements"""
         self.consume(COBOLTokenType.ENVIRONMENT)
         self.consume(COBOLTokenType.DIVISION)
         self.consume(COBOLTokenType.PERIOD)
         
-        # Skip everything until we hit DATA or PROCEDURE
-        while self.current_token and \
-              self.current_token().type not in [COBOLTokenType.DATA, COBOLTokenType.PROCEDURE]:
+        select_statements = []
+        
+        # Skip to INPUT-OUTPUT SECTION
+        while not self.match(COBOLTokenType.EOF):
+            # CONFIGURATION SECTION - skip for now but recognize it
+            if self.current_token() and self.current_token().value == 'CONFIGURATION':
+                self.advance()
+                if self.match(COBOLTokenType.SECTION):
+                    self.advance()
+                if self.match(COBOLTokenType.PERIOD):
+                    self.advance()
+                # Skip to next section
+                while not self.match(COBOLTokenType.DATA, COBOLTokenType.PROCEDURE):
+                    if self.current_token() and self.current_token().value in ['INPUT-OUTPUT', 'FILE-CONTROL']:
+                        break
+                    self.advance()
+            
+            # INPUT-OUTPUT SECTION
+            if self.current_token() and self.current_token().value == 'INPUT-OUTPUT':
+                self.advance()
+                if self.match(COBOLTokenType.SECTION):
+                    self.advance()
+                if self.match(COBOLTokenType.PERIOD):
+                    self.advance()
+            
+            # FILE-CONTROL paragraph
+            if self.current_token() and self.current_token().value == 'FILE-CONTROL':
+                self.advance()
+                if self.match(COBOLTokenType.PERIOD):
+                    self.advance()
+                
+                # Parse SELECT statements
+                while self.current_token() and self.current_token().value == 'SELECT':
+                    select = self.parse_select_statement()
+                    if select:
+                        select_statements.append(select)
+            
+            # Stop if we hit DATA or PROCEDURE
+            if self.match(COBOLTokenType.DATA, COBOLTokenType.PROCEDURE):
+                break
+            
+            if self.match(COBOLTokenType.EOF):
+                break
+            
             self.advance()
         
-        return None  # We don't need this for transpilation
+        return select_statements
+
+
+    def parse_select_statement(self) -> COBOLSelectStatement:
+        """Parse SELECT statement with ALL clauses"""
+        token = self.current_token()
+        self.advance()  # SELECT
+        
+        # Check for OPTIONAL
+        is_optional = False
+        if self.current_token() and self.current_token().value == 'OPTIONAL':
+            is_optional = True
+            self.advance()
+        
+        # File name
+        file_name = self.consume(COBOLTokenType.IDENTIFIER).value
+        
+        # ASSIGN TO clause
+        assign_to = None
+        if self.current_token() and self.current_token().value == 'ASSIGN':
+            self.advance()
+            if self.match(COBOLTokenType.TO):
+                self.advance()
+            if self.match(COBOLTokenType.IDENTIFIER):
+                assign_to = self.current_token().value
+                self.advance()
+        
+        # Optional clauses
+        organization = None
+        access_mode = None
+        record_key = None
+        file_status = None
+        
+        # Parse until we hit another SELECT or end of section
+        while not self.match(COBOLTokenType.PERIOD):
+            if self.match(COBOLTokenType.EOF):
+                break
+            
+            token_val = self.current_token().value if self.current_token() else None
+            
+            # ORGANIZATION clause
+            if token_val == 'ORGANIZATION':
+                self.advance()
+                if self.current_token() and self.current_token().value == 'IS':
+                    self.advance()
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    organization = self.current_token().value
+                    self.advance()
+            
+            # ACCESS MODE clause
+            elif token_val == 'ACCESS':
+                self.advance()
+                if self.current_token() and self.current_token().value == 'MODE':
+                    self.advance()
+                if self.current_token() and self.current_token().value == 'IS':
+                    self.advance()
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    access_mode = self.current_token().value
+                    self.advance()
+            
+            # RECORD KEY clause
+            elif token_val == 'RECORD':
+                self.advance()
+                if self.current_token() and self.current_token().value == 'KEY':
+                    self.advance()
+                if self.current_token() and self.current_token().value == 'IS':
+                    self.advance()
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    record_key = self.current_token().value
+                    self.advance()
+            
+            # FILE STATUS clause
+            elif token_val == 'FILE':
+                self.advance()
+                if self.current_token() and self.current_token().value == 'STATUS':
+                    self.advance()
+                if self.current_token() and self.current_token().value == 'IS':
+                    self.advance()
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    file_status = self.current_token().value
+                    self.advance()
+            
+            else:
+                self.advance()
+        
+        # Consume the period
+        if self.match(COBOLTokenType.PERIOD):
+            self.advance()
+        
+        return COBOLSelectStatement(
+            file_name=file_name,
+            assign_to=assign_to,
+            is_optional=is_optional,
+            organization=organization,
+            access_mode=access_mode,
+            record_key=record_key,
+            file_status=file_status,
+            line=token.line,
+            column=token.column
+        )
+
+
+    def parse_file_section(self) -> List[COBOLFileDescriptor]:
+        """Parse FILE SECTION completely - capture ALL FD clauses"""
+        self.consume(COBOLTokenType.FILE_SECTION)
+        self.consume(COBOLTokenType.SECTION)
+        self.consume(COBOLTokenType.PERIOD)
+        
+        file_descriptors = []
+        
+        while not self.match(COBOLTokenType.WORKING_STORAGE, 
+                            COBOLTokenType.LINKAGE,
+                            COBOLTokenType.PROCEDURE,
+                            COBOLTokenType.EOF):
+            
+            # Look for FD keyword
+            if self.current_token() and self.current_token().value == 'FD':
+                fd = self.parse_fd_entry()
+                if fd:
+                    file_descriptors.append(fd)
+            else:
+                self.advance()
+        
+        return file_descriptors
     
     def parse_data_division(self) -> COBOLDataDivision:
         token = self.current_token()
@@ -420,6 +691,10 @@ class COBOLMultiProgramParser:
         if self.requires_period():
             self.consume(COBOLTokenType.PERIOD)
         
+        file_section_descriptors = []
+        if self.match(COBOLTokenType.FILE_SECTION):
+            file_section_descriptors = self.parse_file_section()
+
         working_storage_vars = []
         if self.match(COBOLTokenType.WORKING_STORAGE):
             ws_section = self.parse_working_storage()
@@ -432,6 +707,8 @@ class COBOLMultiProgramParser:
         
         return COBOLDataDivision(
             working_storage=working_storage_vars,
+            file_section=file_section_descriptors,
+            select_statements=None, # Will be populated from ENVIRONMENT DIVISION
             linkage_section=linkage_section_vars if linkage_section_vars else None,
             line=token.line,
             column=token.column
@@ -462,19 +739,606 @@ class COBOLMultiProgramParser:
         
         return COBOLLinkageSection(variables=variables, line=token.line, column=token.column)
     
-    def parse_variable_decl(self) -> COBOLVariableDecl:
+    def parse_fd_entry(self) -> COBOLFileDescriptor:
+        """Parse FD entry with ALL clauses - production quality"""
         token = self.current_token()
+        self.advance()  # FD
+        
+        # File name
+        file_name = self.consume(COBOLTokenType.IDENTIFIER).value
+        
+        # Optional period after file name
+        if self.match(COBOLTokenType.PERIOD):
+            self.advance()
+        
+        # Initialize FD clause storage
+        fd_data = {
+            'block_contains': None,
+            'block_contains_to': None,
+            'record_contains': None,
+            'record_contains_to': None,
+            'label_records': None,
+            'data_records': [],
+        }
+        
+        # Parse FD clauses until we hit a level number (record description)
+        while not self.match(COBOLTokenType.LEVEL_NUMBER):
+            if self.match(COBOLTokenType.EOF):
+                break
+            
+            token_val = self.current_token().value if self.current_token() else None
+            
+            # BLOCK CONTAINS clause
+            if token_val == 'BLOCK':
+                self.advance()
+                if self.current_token() and self.current_token().value == 'CONTAINS':
+                    self.advance()
+                
+                # Get first number
+                if self.match(COBOLTokenType.NUMBER_LITERAL):
+                    fd_data['block_contains'] = int(self.current_token().value)
+                    self.advance()
+                
+                # Check for TO (range)
+                if self.current_token() and self.current_token().value == 'TO':
+                    self.advance()
+                    if self.match(COBOLTokenType.NUMBER_LITERAL):
+                        fd_data['block_contains_to'] = int(self.current_token().value)
+                        self.advance()
+                
+                # Skip RECORDS/CHARACTERS keyword
+                while not self.match(COBOLTokenType.PERIOD):
+                    if self.match(COBOLTokenType.LEVEL_NUMBER):
+                        break
+                    self.advance()
+            
+            # RECORD CONTAINS clause
+            elif token_val == 'RECORD':
+                self.advance()
+                if self.current_token() and self.current_token().value == 'CONTAINS':
+                    self.advance()
+                
+                # Get number
+                if self.match(COBOLTokenType.NUMBER_LITERAL):
+                    fd_data['record_contains'] = int(self.current_token().value)
+                    self.advance()
+                
+                # Check for TO (range)
+                if self.current_token() and self.current_token().value == 'TO':
+                    self.advance()
+                    if self.match(COBOLTokenType.NUMBER_LITERAL):
+                        fd_data['record_contains_to'] = int(self.current_token().value)
+                        self.advance()
+                
+                # Skip rest
+                while not self.match(COBOLTokenType.PERIOD):
+                    if self.match(COBOLTokenType.LEVEL_NUMBER):
+                        break
+                    self.advance()
+            
+            else:
+                self.advance()
+            
+            # Consume period
+            if self.match(COBOLTokenType.PERIOD):
+                self.advance()
+        
+        # Parse record descriptions (01-level entries)
+        records = []
+        while self.match(COBOLTokenType.LEVEL_NUMBER):
+            level_token = self.current_token()
+            if level_token.value == '01':
+                record = self.parse_variable_decl()
+                if record:
+                    records.append(record)
+            else:
+                # Sub-level under previous 01 - shouldn't happen at this point
+                break
+        
+        return COBOLFileDescriptor(
+            file_name=file_name,
+            records=records,
+            block_contains=fd_data['block_contains'],
+            block_contains_to=fd_data['block_contains_to'],
+            record_contains=fd_data['record_contains'],
+            record_contains_to=fd_data['record_contains_to'],
+            label_records=fd_data['label_records'],
+            data_records=fd_data['data_records'],
+            line=token.line,
+            column=token.column
+        )
+
+    def parse_variable_decl(self) -> COBOLVariableDecl:
+        """
+        Parse COBOL variable declaration - FINAL DEBUGGED VERSION
+        """
+        token = self.current_token()
+        
+        if self.debug:
+            print(f"[PARSE_VAR] Starting at line {token.line}, token: {token.type.name} = '{token.value}'")
+        
+        # Parse level
         level_token = self.consume(COBOLTokenType.LEVEL_NUMBER)
         level = int(level_token.value)
-
-        # Parse variable name (keywords can be variable names in COBOL!)
-        name_token = self.current_token()
         
+        # Parse name
+        name_token = self.current_token()
         if self.match(COBOLTokenType.IDENTIFIER):
             name = self.consume(COBOLTokenType.IDENTIFIER).value
-        
-        # COBOL allows keywords as variable names (e.g., "01 USAGE PIC X(10).")
         elif self.match(
+            COBOLTokenType.USAGE, COBOLTokenType.COMP, COBOLTokenType.COMP_1,
+            COBOLTokenType.COMP_2, COBOLTokenType.COMP_3, COBOLTokenType.COMPUTATIONAL,
+            COBOLTokenType.COMPUTATIONAL_3, COBOLTokenType.BINARY,
+            COBOLTokenType.PACKED_DECIMAL, COBOLTokenType.DISPLAY
+        ):
+            name = name_token.value
+            self.advance()
+        else:
+            self.error("Expected variable name")
+        
+        # 🔧 NEW: Handle level 88 condition names
+        # Level 88 is special: no PIC, just VALUE clause
+        # Example: 88  CN1 VALUE 'A'.
+        if level == 88:
+            if self.debug:
+                print(f"[PARSE_VAR] Level 88 condition name: {name}")
+            
+            # Skip whitespace
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            
+            # Expect VALUE clause
+            value = None
+            if self.match(COBOLTokenType.VALUE):
+                self.advance()
+                # Optional IS keyword
+                if self.current_token() and self.current_token().value and \
+                   self.current_token().value.upper() == 'IS':
+                    self.advance()
+                
+                # Get the value (could be string, number, or identifier)
+                if self.match(COBOLTokenType.STRING_LITERAL, COBOLTokenType.NUMBER_LITERAL):
+                    value = self.current_token().value
+                    self.advance()
+            
+            self.consume(COBOLTokenType.PERIOD)
+            
+            return COBOLVariableDecl(
+                level=level, name=name, pic_clause=None, value=value,
+                line=token.line, column=token.column
+            )
+        
+        if self.debug:
+            print(f"[PARSE_VAR] Level {level}, name '{name}', next token: {self.current_token().type.name}")
+        
+        # Skip whitespace
+        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+            self.advance()
+        
+        # REDEFINES
+        redefines_target = None
+        if self.match(COBOLTokenType.REDEFINES):
+            self.advance()
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            redefines_target = self.consume(COBOLTokenType.IDENTIFIER).value
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+        
+        # 🔧 NEW: Handle EXTERNAL and GLOBAL clauses
+        # These can appear on group items (01 level) before children
+        # Example: 01  DATA-NAME IS EXTERNAL.
+        #          01  DATA-NAME IS GLOBAL.
+        is_external = False
+        is_global = False
+        
+        if self.match(COBOLTokenType.IDENTIFIER):
+            peek_val = self.current_token().value.upper()
+            
+            # Check for IS EXTERNAL or just EXTERNAL
+            if peek_val == 'IS':
+                self.advance()  # consume IS
+                while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                    self.advance()
+                
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    next_val = self.current_token().value.upper()
+                    if next_val == 'EXTERNAL':
+                        is_external = True
+                        self.advance()
+                    elif next_val == 'GLOBAL':
+                        is_global = True
+                        self.advance()
+            
+            # Check for EXTERNAL or GLOBAL without IS
+            elif peek_val == 'EXTERNAL':
+                is_external = True
+                self.advance()
+            elif peek_val == 'GLOBAL':
+                is_global = True
+                self.advance()
+        
+        # Skip whitespace after EXTERNAL/GLOBAL
+        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+            self.advance()
+        
+        if self.debug and (is_external or is_global):
+            print(f"[PARSE_VAR] {name} is {'EXTERNAL' if is_external else ''}{'GLOBAL' if is_global else ''}")
+        
+        # USAGE IS INDEX special case
+        if self.match(COBOLTokenType.USAGE):
+            self.advance()
+            if self.current_token() and self.current_token().value and \
+            self.current_token().value.upper() in ['IS', 'INDEX']:
+                if self.current_token().value.upper() == 'IS':
+                    self.advance()
+                if self.current_token() and self.current_token().value and \
+                self.current_token().value.upper() == 'INDEX':
+                    self.advance()
+                    self.consume(COBOLTokenType.PERIOD)
+                    return COBOLVariableDecl(
+                        level=level, name=name, pic_clause=None, value=None,
+                        occurs_count=None, decimal_places=None, usage_type='INDEX',
+                        is_signed=False, children=[], redefines_target=redefines_target, 
+                        is_external=is_external,
+                        is_global=is_global,
+                        line=token.line, column=token.column
+                    )
+        
+        # Skip whitespace
+        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+            self.advance()
+        
+        # OCCURS - Handle both fixed and variable-length tables
+        occurs_count = None
+        occurs_min = None
+        occurs_max = None
+        depending_on = None
+        
+        if self.match(COBOLTokenType.OCCURS):
+            self.advance()
+            
+            # 🔍 DEBUG: Show current state
+            print(f"DEBUG: After consuming OCCURS, pos={self.pos}")
+            print(f"DEBUG: Current token = {self.current_token().type.name} '{self.current_token().value}'")
+            
+            # Get first number (could be fixed size or minimum)
+            print(f"DEBUG: About to consume NUMBER_LITERAL")
+            first_num = int(self.consume(COBOLTokenType.NUMBER_LITERAL).value)
+            print(f"DEBUG: Consumed number {first_num}, pos now={self.pos}")
+            print(f"DEBUG: Current token = {self.current_token().type.name} '{self.current_token().value}'")
+            
+            # 🔧 NEW: Check for TO keyword (variable-length table)
+            # Example: OCCURS 1 TO 15 TIMES DEPENDING ON DN3
+            print(f"DEBUG: Checking if current token is TO...")
+            print(f"DEBUG: self.match(COBOLTokenType.TO) = {self.match(COBOLTokenType.TO)}")
+            
+            if self.match(COBOLTokenType.TO):
+                print(f"DEBUG: YES! Found TO keyword")
+                self.advance()
+                # This is OCCURS min TO max
+                occurs_min = first_num
+                occurs_max = int(self.consume(COBOLTokenType.NUMBER_LITERAL).value)
+                occurs_count = occurs_max  # Use max for allocation
+                print(f"DEBUG: Variable-length table: {occurs_min} TO {occurs_max}")
+            else:
+                print(f"DEBUG: NO TO found, treating as fixed-size table")
+                # This is OCCURS count (fixed size)
+                # Example: OCCURS 15 TIMES
+                occurs_count = first_num
+            
+            # Skip whitespace/comments
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            
+            # Optional TIMES keyword
+            if self.match(COBOLTokenType.TIMES):
+                self.advance()
+            
+            # Skip whitespace/comments after TIMES
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            
+            # 🔧 NEW: Check for DEPENDING ON clause (on new line or same line)
+            # Example: DEPENDING ON DN3
+            # This can appear on a continuation line, so check as IDENTIFIER
+            if self.match(COBOLTokenType.IDENTIFIER):
+                peek_val = self.current_token().value.upper()
+                if peek_val == 'DEPENDING':
+                    self.advance()  # consume DEPENDING
+                    
+                    # Skip whitespace/comments
+                    while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                        self.advance()
+                    
+                    # Optional ON keyword
+                    if self.match(COBOLTokenType.IDENTIFIER):
+                        if self.current_token().value.upper() == 'ON':
+                            self.advance()
+                            # Skip whitespace/comments
+                            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                                self.advance()
+                    
+                    # Get the variable name
+                    if self.match(COBOLTokenType.IDENTIFIER):
+                        depending_on = self.current_token().value
+                        self.advance()
+            
+            # Skip more whitespace/comments
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            
+            # 🔧 Check for INDEXED BY clause (can be on new line)
+            # Example: INDEXED BY IN1
+            if self.match(COBOLTokenType.IDENTIFIER):
+                peek_val = self.current_token().value.upper()
+                if peek_val == 'INDEXED':
+                    self.advance()  # consume INDEXED
+                    
+                    # Skip whitespace/comments
+                    while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                        self.advance()
+                    
+                    # Optional BY keyword
+                    if self.match(COBOLTokenType.BY):
+                        self.advance()
+                        # Skip whitespace/comments
+                        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                            self.advance()
+                    
+                    # Skip all index names (we don't use them in transpilation yet)
+                    while self.match(COBOLTokenType.IDENTIFIER):
+                        self.advance()
+                        # Skip whitespace/comments between index names
+                        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                            self.advance()
+        
+        # Skip any remaining whitespace/comments before checking for PIC or PERIOD
+        while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+            self.advance()
+        
+        # *** CRITICAL DECISION POINT ***
+        # Check what comes next: PIC or PERIOD?
+        next_is_pic = self.match(COBOLTokenType.PIC, COBOLTokenType.PICTURE)
+        next_is_period = self.match(COBOLTokenType.PERIOD)
+        
+        if self.debug:
+            print(f"[PARSE_VAR] After name/OCCURS, next_is_pic={next_is_pic}, next_is_period={next_is_period}")
+        
+        # GROUP ITEM: No PIC, just PERIOD
+        if not next_is_pic and next_is_period:
+            if self.debug:
+                print(f"[PARSE_VAR] Detected GROUP ITEM")
+            self.consume(COBOLTokenType.PERIOD)
+            
+            children = []
+            while self.match(COBOLTokenType.LEVEL_NUMBER):
+                child_level = int(self.current_token().value)
+                if child_level <= level:
+                    break
+                child = self.parse_variable_decl()
+                children.append(child)
+            
+            return COBOLVariableDecl(
+                level=level, name=name, pic_clause=None, value=None,
+                occurs_count=occurs_count, decimal_places=None, usage_type=None,
+                is_signed=False, children=children, redefines_target=redefines_target, 
+                occurs_min=occurs_min,
+                occurs_max=occurs_max,
+                depending_on=depending_on,
+                is_external=is_external,
+                is_global=is_global,
+                line=token.line, column=token.column
+            )
+        
+        # ELEMENTARY ITEM: Must have PIC
+        if not next_is_pic:
+            self.error(f"Expected PIC clause or PERIOD for '{name}' at level {level}")
+        
+        if self.debug:
+            print(f"[PARSE_VAR] Detected ELEMENTARY ITEM, parsing PIC")
+        
+        # Parse PIC
+        self.advance()  # consume PIC/PICTURE
+        if self.current_token() and self.current_token().value and \
+        self.current_token().value.upper() == 'IS':
+            self.advance()
+        pic_clause = self.parse_pic_clause()
+        
+        if self.debug:
+            print(f"[PARSE_VAR] PIC = '{pic_clause}'")
+        
+        # Extract decimal places
+        decimal_places = None
+        if pic_clause:
+            import re
+            match = re.search(r'9\((\d+)\)[V\.]9\((\d+)\)', pic_clause, re.IGNORECASE)
+            if match:
+                decimal_places = int(match.group(2))
+            else:
+                match = re.search(r'[V\.]9+', pic_clause, re.IGNORECASE)
+                if match:
+                    decimal_places = len([c for c in match.group(0)[1:] if c == '9'])
+        
+        # Check signed
+        is_signed = False
+        if pic_clause:
+            pic_upper = pic_clause.upper()
+            if pic_upper.startswith('S') or 'S9' in pic_upper:
+                is_signed = True
+        
+        # USAGE
+        usage_type = None
+        if self.match(COBOLTokenType.USAGE):
+            self.advance()
+            usage_type = self.parse_usage_type()
+            
+            # 🔧 FIX: Skip optional comma after USAGE type
+            # Allows: USAGE COMPUTATIONAL, VALUE ZERO
+            if self.match(COBOLTokenType.COMMA):
+                self.advance()
+                
+        elif self.match(
+            COBOLTokenType.COMP, COBOLTokenType.COMP_1, COBOLTokenType.COMP_2,
+            COBOLTokenType.COMP_3, COBOLTokenType.COMPUTATIONAL,
+            COBOLTokenType.COMPUTATIONAL_3, COBOLTokenType.BINARY,
+            COBOLTokenType.PACKED_DECIMAL, COBOLTokenType.DISPLAY
+        ):
+            usage_map = {
+                COBOLTokenType.COMP: 'COMP', COBOLTokenType.COMP_1: 'COMP-1',
+                COBOLTokenType.COMP_2: 'COMP-2', COBOLTokenType.COMP_3: 'COMP-3',
+                COBOLTokenType.COMPUTATIONAL: 'COMP', COBOLTokenType.COMPUTATIONAL_3: 'COMP-3',
+                COBOLTokenType.BINARY: 'BINARY', COBOLTokenType.PACKED_DECIMAL: 'PACKED-DECIMAL',
+                COBOLTokenType.DISPLAY: 'DISPLAY'
+            }
+            usage_type = usage_map.get(self.current_token().type, 'COMP')
+            self.advance()
+            
+            # 🔧 FIX: Skip optional comma after direct USAGE keyword
+            if self.match(COBOLTokenType.COMMA):
+                self.advance()
+                
+        elif self.match(COBOLTokenType.IDENTIFIER):
+            val = self.current_token().value.upper()
+            if 'BINARY' in val or 'PACKED' in val:
+                usage_type = val
+                self.advance()
+                
+                # 🔧 FIX: Skip optional comma here too
+                if self.match(COBOLTokenType.COMMA):
+                    self.advance()
+        
+        # OCCURS after PIC (alternate syntax)
+        if occurs_count is None and self.match(COBOLTokenType.OCCURS):
+            self.advance()
+            
+            # Get first number (could be fixed size or minimum)
+            first_num = int(self.consume(COBOLTokenType.NUMBER_LITERAL).value)
+            
+            # 🔧 CRITICAL: Check for TO keyword (variable-length table)
+            # Example: PIC X OCCURS 1 TO 15 TIMES
+            if self.match(COBOLTokenType.TO):
+                self.advance()
+                # This is OCCURS min TO max
+                occurs_min = first_num
+                occurs_max = int(self.consume(COBOLTokenType.NUMBER_LITERAL).value)
+                occurs_count = occurs_max  # Use max for allocation
+            else:
+                # This is OCCURS count (fixed size)
+                occurs_count = first_num
+            
+            # Optional TIMES keyword
+            if self.match(COBOLTokenType.TIMES):
+                self.advance()
+            
+            # Skip whitespace/comments
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            
+            # Check for DEPENDING ON clause
+            if self.match(COBOLTokenType.IDENTIFIER):
+                if self.current_token().value.upper() == 'DEPENDING':
+                    self.advance()
+                    # Optional ON keyword
+                    if self.match(COBOLTokenType.IDENTIFIER):
+                        if self.current_token().value.upper() == 'ON':
+                            self.advance()
+                    # Get the variable name
+                    if self.match(COBOLTokenType.IDENTIFIER):
+                        depending_on = self.current_token().value
+                        self.advance()
+            
+            # Skip whitespace/comments
+            while self.match(COBOLTokenType.NEWLINE, COBOLTokenType.COMMENT):
+                self.advance()
+            
+            # Check for INDEXED BY clause
+            if self.current_token() and self.current_token().value and \
+               self.current_token().value.upper() == 'INDEXED':
+                self.advance()
+                if self.match(COBOLTokenType.BY):
+                    self.advance()
+                # Skip all index names
+                while self.match(COBOLTokenType.IDENTIFIER):
+                    self.advance()
+        
+        # VALUE
+        value = None
+        if self.match(COBOLTokenType.VALUE):
+            self.advance()
+            if self.current_token() and self.current_token().value and \
+            self.current_token().value.upper() == 'IS':
+                self.advance()
+            
+            if self.match(COBOLTokenType.STRING_LITERAL):
+                value = self.current_token().value
+                self.advance()
+            elif self.match(COBOLTokenType.PLUS, COBOLTokenType.MINUS):
+                sign = self.current_token().value
+                self.advance()
+                if self.match(COBOLTokenType.NUMBER_LITERAL):
+                    value = sign + self.current_token().value
+                    self.advance()
+            elif self.match(COBOLTokenType.NUMBER_LITERAL):
+                value = self.current_token().value
+                self.advance()
+            elif self.match(COBOLTokenType.IDENTIFIER):
+                val = self.current_token().value.upper()
+                if val in ['SPACES', 'SPACE', 'ZEROS', 'ZEROES', 'ZERO']:
+                    value = val
+                    self.advance()
+        
+        # Terminating PERIOD
+        self.consume(COBOLTokenType.PERIOD)
+        
+        if self.debug:
+            print(f"[PARSE_VAR] Complete: {name}, PIC={pic_clause}, VALUE={value}")
+        
+        return COBOLVariableDecl(
+            level=level, name=name, pic_clause=pic_clause, value=value,
+            occurs_count=occurs_count, decimal_places=decimal_places,
+            usage_type=usage_type, is_signed=is_signed, children=[], 
+            occurs_min=occurs_min,
+            occurs_max=occurs_max,
+            depending_on=depending_on,
+            is_external=is_external,
+            is_global=is_global,
+            redefines_target=redefines_target, line=token.line, column=token.column
+        )
+
+    def parse_pic_clause(self) -> str:
+        """
+        Parse a PIC clause, collecting all tokens until we hit a terminator.
+        
+        Handles:
+        - Basic formats: 9(4), X(20), S9(5)V99
+        - Decimal formats: -9(9).9(9), -.9(18) (period as decimal point)
+        - Display-edited: $$$$,$$9.99, ZZZ9, ***9.99, +999.99-, etc.
+        - All punctuation and special characters in PIC context
+        
+        CRITICAL FIX: The PERIOD character can be:
+        1. A decimal point inside the PIC: PIC 9.99
+        2. The terminating period: PIC 9(4).
+        
+        We look ahead to determine which case we're in!
+        
+        CRITICAL FIX #2: LEVEL_NUMBER on a new line is NEVER part of PIC!
+        PIC X(5).
+        07 NEXT-VAR  <- This 07 is NOT part of the PIC!
+        
+        Returns the complete PIC string (e.g., "-9(9).9(9)")
+        """
+        pic_str = ""
+        
+        # Remember what line we started on
+        start_line = self.current_token().line if self.current_token() else 0
+        
+        # Terminators: things that end a PIC clause
+        # NOTE: PERIOD is NOT a terminator because it can be the decimal point!
+        terminators = [
+            COBOLTokenType.VALUE,
+            COBOLTokenType.OCCURS,
+            COBOLTokenType.REDEFINES,
             COBOLTokenType.USAGE,
             COBOLTokenType.COMP,
             COBOLTokenType.COMP_1,
@@ -484,165 +1348,89 @@ class COBOLMultiProgramParser:
             COBOLTokenType.COMPUTATIONAL_3,
             COBOLTokenType.BINARY,
             COBOLTokenType.PACKED_DECIMAL,
-            COBOLTokenType.DISPLAY
-        ):
-            name = name_token.value
-            self.advance()
-        else:
-            self.error("Expected variable name (identifier or keyword)")
-
-        # NEW: Parse OCCURS clause (comes before PIC)
-        occurs_count = None
-        if self.match(COBOLTokenType.OCCURS):
-            self.advance()  # consume OCCURS
-            count_token = self.consume(COBOLTokenType.NUMBER_LITERAL)
-            occurs_count = int(count_token.value)
-            # Optional TIMES keyword
-            if self.match(COBOLTokenType.TIMES):
-                self.advance()
-
-        # Parse PIC clause
-        pic_clause = None
-        if self.match(COBOLTokenType.PIC, COBOLTokenType.PICTURE):
-            self.advance()
-            pic_clause = self.parse_pic_clause()
-
-        # NEW: Parse decimal places from PIC clause
-        decimal_places = None
-        if pic_clause:
-            # Check for PIC 9(n)V9(n) format (e.g., PIC 9(5)V9(2))
-            decimal_match = re.search(r'9\((\d+)\)V9\((\d+)\)', pic_clause, re.IGNORECASE)
-            if decimal_match:
-                # Extract decimal places (the digits after V)
-                decimal_places = int(decimal_match.group(2))
-
-        # NEW: Extract sign from PIC clause
-        is_signed = False
-        if pic_clause:
-            pic_upper = pic_clause.upper()
-            if pic_upper.startswith('S') or 'S9' in pic_upper:
-                is_signed = True
-
-        # NEW: Parse USAGE clause (comes after PIC, before VALUE)
-        usage_type = None
-        if self.match(COBOLTokenType.USAGE):
-            self.advance()  # consume USAGE
-            usage_type = self.parse_usage_type()
-        # Storage types can appear without USAGE keyword
-        elif self.match(
-            COBOLTokenType.COMP,
-            COBOLTokenType.COMP_1,
-            COBOLTokenType.COMP_2,
-            COBOLTokenType.COMP_3,
-            COBOLTokenType.COMPUTATIONAL,      # NEW
-            COBOLTokenType.COMPUTATIONAL_3,    # NEW
-            COBOLTokenType.BINARY,             # NEW
-            COBOLTokenType.PACKED_DECIMAL,     # NEW
-            COBOLTokenType.DISPLAY             # NEW - FIXES THE BUG!
-        ):
-            token = self.current_token()
-            
-            # Map token type to usage string
-            if token.type == COBOLTokenType.COMP:
-                usage_type = 'COMP'
-            elif token.type == COBOLTokenType.COMP_1:
-                usage_type = 'COMP-1'
-            elif token.type == COBOLTokenType.COMP_2:
-                usage_type = 'COMP-2'
-            elif token.type == COBOLTokenType.COMP_3:
-                usage_type = 'COMP-3'
-            elif token.type == COBOLTokenType.COMPUTATIONAL:    # NEW
-                usage_type = 'COMP'
-            elif token.type == COBOLTokenType.COMPUTATIONAL_3:  # NEW
-                usage_type = 'COMP-3'
-            elif token.type == COBOLTokenType.BINARY:           # NEW
-                usage_type = 'BINARY'
-            elif token.type == COBOLTokenType.PACKED_DECIMAL:   # NEW
-                usage_type = 'PACKED-DECIMAL'
-            elif token.type == COBOLTokenType.DISPLAY:          # NEW - THE FIX!
-                usage_type = 'DISPLAY'
-            
-            self.advance()
-
-        # Parse VALUE clause
-        value = None
-        if self.match(COBOLTokenType.VALUE):
-            self.advance()
-            
-            # String literals
-            if self.match(COBOLTokenType.STRING_LITERAL):
-                value = self.current_token().value
-                self.advance()
-            
-            # Signed numbers: VALUE -123.45 or VALUE +123.45
-            elif self.match(COBOLTokenType.PLUS, COBOLTokenType.MINUS):
-                sign = self.current_token().value
-                self.advance()
-                if self.match(COBOLTokenType.NUMBER_LITERAL):
-                    value = sign + self.current_token().value
-                    self.advance()
-                else:
-                    self.error("Expected number after sign in VALUE clause")
-            
-            # Unsigned numbers: VALUE 123.45
-            elif self.match(COBOLTokenType.NUMBER_LITERAL):
-                value = self.current_token().value
-                self.advance()
-            
-            # Special constants: SPACES, ZEROS, etc.
-            elif self.match(COBOLTokenType.IDENTIFIER):
-                id_value = self.current_token().value.upper()
-                if id_value in ['SPACES', 'SPACE', 'ZEROS', 'ZEROES', 'ZERO']:
-                    value = id_value
-                    self.advance()
-
-        self.consume(COBOLTokenType.PERIOD)
-
-        return COBOLVariableDecl(
-            level=level,
-            name=name,
-            pic_clause=pic_clause,
-            value=value,
-            occurs_count=occurs_count,
-            decimal_places=decimal_places,
-            usage_type=usage_type,      # NEW
-            is_signed=is_signed,        # NEW
-            line=token.line,
-            column=token.column
-        )
-
-    def parse_pic_clause(self) -> str:
-        """
-        Parse a PIC clause, collecting all tokens until we hit a terminator.
-        
-        Handles:
-        - Basic formats: 9(4), X(20), S9(5)V99
-        - Display-edited: $$$$,$$9.99, ZZZ9, ***9.99, +999.99-, etc.
-        - All punctuation and special characters in PIC context
-        
-        Returns the complete PIC string (e.g., "$$$$,$$9.99")
-        """
-        pic_str = ""
-        
-        # Terminators: things that end a PIC clause
-        terminators = [
-            COBOLTokenType.PERIOD,
-            COBOLTokenType.VALUE,
-            COBOLTokenType.OCCURS,
-            COBOLTokenType.REDEFINES,
-            COBOLTokenType.USAGE,
-            COBOLTokenType.COMP,
-            COBOLTokenType.COMP_1,
-            COBOLTokenType.COMP_2,
-            COBOLTokenType.COMP_3,
-            COBOLTokenType.LEVEL_NUMBER,
-            COBOLTokenType.PROCEDURE
+            COBOLTokenType.DISPLAY,
+            COBOLTokenType.PROCEDURE,
+            COBOLTokenType.EOF
         ]
+        
+        seen_content = False
+        last_was_closing_paren = False
         
         while not self.match(*terminators):
             token = self.current_token()
             
-            # Collect various token types that can appear in PIC
+            if token is None:
+                break
+            
+            # Check for real LEVEL_NUMBER (columns 7-12 in fixed format COBOL)
+            # These mark the start of a new variable declaration
+            if self.match(COBOLTokenType.LEVEL_NUMBER):
+                # CRITICAL FIX: Level numbers on a NEW LINE are NEVER part of PIC
+                if token.line != start_line:
+                    # This is a new variable declaration on the next line
+                    break
+                
+                # Real level numbers are in area A (columns 7-12)
+                # PIC digits that got tokenized as LEVEL_NUMBER are in area B (after column 12)
+                if token.column <= 12:
+                    # This is a real level number - stop parsing PIC
+                    break
+                # Otherwise, treat it as a digit in the PIC clause (fall through to handling below)
+            
+            # Special handling for PERIOD - could be decimal point or terminator
+            if self.match(COBOLTokenType.PERIOD):
+                next_pos = self.pos + 1
+                if next_pos < len(self.tokens):
+                    next_token = self.tokens[next_pos]
+                    # Check if followed by digit (as NUMBER_LITERAL or LEVEL_NUMBER in area B)
+                    is_decimal = False
+                    
+                    if next_token.type == COBOLTokenType.NUMBER_LITERAL:
+                        is_decimal = True
+                    elif next_token.type == COBOLTokenType.LPAREN:
+                        is_decimal = True
+                    elif next_token.type == COBOLTokenType.LEVEL_NUMBER:
+                        # CRITICAL FIX: Only treat as decimal if:
+                        # 1. On the SAME line (not a new variable declaration)
+                        # 2. AND in area B (after column 12)
+                        if next_token.line == token.line and next_token.column > 12:
+                            # LEVEL_NUMBER in area B on same line - part of PIC
+                            is_decimal = True
+                        else:
+                            # LEVEL_NUMBER on new line or in area A - NOT part of PIC
+                            is_decimal = False
+                    elif next_token.type == COBOLTokenType.IDENTIFIER:
+                        # Check if identifier looks like a digit pattern
+                        next_val = next_token.value.upper()
+                        if next_val in ['9', 'X', 'A', 'Z']:
+                            is_decimal = True
+                    
+                    if is_decimal:
+                        pic_str += token.value
+                        self.advance()
+                        seen_content = True
+                        last_was_closing_paren = False
+                        continue
+                    else:
+                        # Terminating period
+                        break
+                else:
+                    break
+            
+            # Handle LEVEL_NUMBER in area B ON SAME LINE as part of PIC
+            if self.match(COBOLTokenType.LEVEL_NUMBER):
+                if token.line == start_line and token.column > 12:
+                    # Digit in area B on same line - part of PIC clause
+                    pic_str += token.value
+                    seen_content = True
+                    last_was_closing_paren = False
+                    self.advance()
+                    continue
+                else:
+                    # Level number on new line or in area A - stop
+                    break
+            
+            # Collect other PIC tokens
             if self.match(
                 COBOLTokenType.IDENTIFIER,       # S, V, X, A, Z, CR, DB, etc.
                 COBOLTokenType.NUMBER_LITERAL,   # 9, 99, etc.
@@ -656,25 +1444,35 @@ class COBOLMultiProgramParser:
                 COBOLTokenType.DOLLAR_SIGN       # $ (currency)
             ):
                 pic_str += token.value
+                seen_content = True
+                last_was_closing_paren = (token.type == COBOLTokenType.RPAREN)
                 self.advance()
             else:
                 # Unknown token type - stop parsing
                 break
         
         return pic_str.strip()
+
+
     
     def parse_usage_type(self) -> str:
         """
         Parse USAGE clause value.
         
         Examples:
-          USAGE COMP
-          USAGE COMP-3
-          USAGE DISPLAY
-          USAGE BINARY
+        USAGE COMP          -> "COMP"
+        USAGE COMP-3        -> "COMP-3" 
+        USAGE DISPLAY       -> "DISPLAY"
+        USAGE BINARY        -> "BINARY"
+        USAGE IS COMP       -> "COMP" (with optional IS)
         
         Returns the usage type as a string.
         """
+        # Handle optional IS keyword: USAGE IS COMP
+        if self.current_token() and self.current_token().value and \
+        self.current_token().value.upper() == 'IS':
+            self.advance()
+        
         if self.match(COBOLTokenType.COMP):
             self.advance()
             return 'COMP'
@@ -702,6 +1500,11 @@ class COBOLMultiProgramParser:
         elif self.match(COBOLTokenType.DISPLAY):
             self.advance()
             return 'DISPLAY'
+        elif self.match(COBOLTokenType.IDENTIFIER):
+            # Handle compound type names: BINARY-LONG, PACKED-DECIMAL, etc.
+            ident_value = self.current_token().value.upper()
+            self.advance()
+            return ident_value
         else:
             # Default to DISPLAY if nothing matches
             return 'DISPLAY'
@@ -719,7 +1522,12 @@ class COBOLMultiProgramParser:
             while self.match(COBOLTokenType.IDENTIFIER):
                 param_name = self.consume(COBOLTokenType.IDENTIFIER).value
                 using_params.append(param_name)
-                # Stop if we hit a period
+                
+                # 🔧 FIX: Skip comma between parameters
+                if self.match(COBOLTokenType.COMMA):
+                    self.advance()
+                
+                # Stop if we hit a period or something that isn't an identifier
                 if self.match(COBOLTokenType.PERIOD):
                     break
         
@@ -730,6 +1538,12 @@ class COBOLMultiProgramParser:
         paragraphs = []
         
         while not self.match(COBOLTokenType.EOF):
+            
+             # 🔧 FIX: Check for division markers FIRST
+            if self.match(COBOLTokenType.PROCEDURE, COBOLTokenType.DATA,
+                        COBOLTokenType.ENVIRONMENT, COBOLTokenType.DIVISION):
+                break            
+            
             # Stop if we hit IDENTIFICATION DIVISION (sibling or nested)
             if self.match(COBOLTokenType.IDENTIFICATION):
                 break
@@ -775,25 +1589,69 @@ class COBOLMultiProgramParser:
     
     def parse_end_program(self, expected_program_id: str) -> None:
         """
-        Parse END PROGRAM program-id.
-        Can be END-PROGRAM or END PROGRAM (two tokens)
+        Parse END PROGRAM program-id. (optional)
+        Some programs don't have END PROGRAM, especially copybooks.
         """
-        if self.match(COBOLTokenType.END_PROGRAM):
-            self.consume(COBOLTokenType.END_PROGRAM)
-        elif self.match(COBOLTokenType.END):
-            self.consume(COBOLTokenType.END)
-            self.consume(COBOLTokenType.PROGRAM)
-        else:
-            return  # END PROGRAM is optional for top-level programs
+        # Only try to parse if we see END token
+        if not self.match(COBOLTokenType.END):
+            return  # No END PROGRAM, that's OK
         
-        # Optional: verify program-id matches
+        self.consume(COBOLTokenType.END)
+        
+        # Check for PROGRAM keyword
+        if not self.match(COBOLTokenType.PROGRAM):
+            # Might be END. for something else, back out
+            return
+        
+        self.consume(COBOLTokenType.PROGRAM)
+        
+        # Optional program-id check
         if self.match(COBOLTokenType.IDENTIFIER):
-            end_program_id = self.consume(COBOLTokenType.IDENTIFIER).value
-            if end_program_id != expected_program_id:
-                self.error(f"END PROGRAM {end_program_id} doesn't match PROGRAM-ID {expected_program_id}")
+            actual_program_id = self.consume(COBOLTokenType.IDENTIFIER).value
+            if actual_program_id != expected_program_id:
+                # Warn but don't fail
+                print(f"Warning: END PROGRAM {actual_program_id} doesn't match PROGRAM-ID {expected_program_id}")
         
-        if self.requires_period():
+        # Optional period
+        if self.match(COBOLTokenType.PERIOD):
             self.consume(COBOLTokenType.PERIOD)
+
+    def parse_go_to(self, token: Token) -> COBOLASTNode:
+        """
+        Parse GO TO statement
+        Syntax: GO TO paragraph-name
+            GO TO paragraph-name DEPENDING ON variable
+        """
+        # Consume GO (and optional TO)
+        self.advance()  # GO
+        if self.match(COBOLTokenType.TO):
+            self.advance()  # TO (optional in some COBOL dialects)
+        
+        # Parse target paragraph name
+        if not self.match(COBOLTokenType.IDENTIFIER):
+            self.error("Expected paragraph name after GO TO")
+        
+        paragraph_name = self.consume(COBOLTokenType.IDENTIFIER).value
+        
+        # Optional DEPENDING ON clause
+        depending_on = None
+        if self.match(COBOLTokenType.IDENTIFIER):
+            if self.current_token().value.upper() == 'DEPENDING':
+                self.advance()
+                if self.match(COBOLTokenType.IDENTIFIER) and self.current_token().value.upper() == 'ON':
+                    self.advance()
+                    depending_on = self.consume(COBOLTokenType.IDENTIFIER).value
+        
+        self.consume_optional_period()
+        
+        # For now, treat GO TO as a PERFORM (jump to paragraph)
+        # In a real compiler, this would be a proper goto
+        return COBOLPerformParagraph(
+            paragraph_name=paragraph_name,
+            line=token.line,
+            column=token.column
+        )
+
 
     def parse_paragraph(self) -> COBOLParagraph:
         token = self.current_token()
@@ -804,19 +1662,39 @@ class COBOLMultiProgramParser:
         
         statements = []
         while not self.match(COBOLTokenType.EOF):
-            # ✅ ADD THIS CRITICAL CHECK:
-            # Stop if we hit another IDENTIFICATION DIVISION
-            if self.match(COBOLTokenType.IDENTIFICATION):
+            # Skip comments and newlines first
+            while self.match(COBOLTokenType.COMMENT, COBOLTokenType.NEWLINE):
+                self.advance()
+                if self.match(COBOLTokenType.EOF):
+                    break
+            
+            # 🔧 FIX: Check for division markers (PROCEDURE, DATA, etc.)
+            # These mark the start of a new division/program
+            if self.match(COBOLTokenType.PROCEDURE, COBOLTokenType.DATA,
+                         COBOLTokenType.ENVIRONMENT, COBOLTokenType.DIVISION):
                 break
             
+            # Check for the start of the next program or the end of the current one
+            if self.match(COBOLTokenType.IDENTIFICATION):
+                break
+            if self.match(COBOLTokenType.END) and self.peek_token() and self.peek_token().type == COBOLTokenType.PROGRAM:
+                break
+
+            # Check for SECTION keyword
+            if self.match(COBOLTokenType.SECTION):
+                break
+            
+            # Check for next paragraph (IDENTIFIER followed by PERIOD, not a statement keyword)
             if self.match(COBOLTokenType.IDENTIFIER):
                 next_token = self.peek_token()
                 if next_token and next_token.type == COBOLTokenType.PERIOD:
                     identifier_value = self.current_token().value
+                    # List of statement keywords that can be followed by PERIOD
                     if identifier_value.upper() not in ['STOP', 'GOBACK', 'EXIT', 'DISPLAY', 
                                                         'MOVE', 'ADD', 'SUBTRACT', 'COMPUTE',
                                                         'MULTIPLY', 'DIVIDE', 'IF', 'PERFORM', 
                                                         'EVALUATE', 'ACCEPT']:
+                        # This is a new paragraph name
                         break
             
             stmt = self.parse_statement()
@@ -833,18 +1711,28 @@ class COBOLMultiProgramParser:
         )
     
     def parse_statement(self) -> Optional[COBOLASTNode]:
+        """Parse a single COBOL statement"""
         token = self.current_token()
         
         print(f"DEBUG parse_statement: token={token.type.name} value={token.value} context={self.current_context()}")
         
-        # ✅ ADD THIS: Skip comment tokens
+        # Skip comment tokens
         while self.match(COBOLTokenType.COMMENT):
             self.advance()
             if self.match(COBOLTokenType.EOF):
                 return None
             token = self.current_token()
 
+        # ✅ Don't parse division markers as statements - return without advancing
+        if self.match(COBOLTokenType.IDENTIFICATION, COBOLTokenType.ENVIRONMENT, 
+                    COBOLTokenType.DATA, COBOLTokenType.PROCEDURE, COBOLTokenType.DIVISION):
+            return None  # Don't advance! Let the caller (IF/paragraph loop) see it and break
         
+        # Handle READ statement (special case - not a token type)
+        if self.current_token().value and self.current_token().value.upper() == 'READ':
+            return self.parse_read_statement()
+
+        # Main statement dispatch
         if self.match(COBOLTokenType.DISPLAY):
             return self.parse_display(token)
         elif self.match(COBOLTokenType.ACCEPT):
@@ -862,14 +1750,16 @@ class COBOLMultiProgramParser:
         elif self.match(COBOLTokenType.DIVIDE):
             return self.parse_divide(token)
         elif self.match(COBOLTokenType.IF):
-            return self.parse_if(token)  # ✅ Pass the token
+            return self.parse_if(token)
         elif self.match(COBOLTokenType.PERFORM):
             return self.parse_perform(token)
+        elif self.match(COBOLTokenType.GO, COBOLTokenType.GOTO):
+            return self.parse_go_to(token)
         elif self.match(COBOLTokenType.CALL):
             return self.parse_call(token)
         elif self.match(COBOLTokenType.EVALUATE):
             return self.parse_evaluate(token)
-        elif self.match(COBOLTokenType.STRING): # MODIFIED
+        elif self.match(COBOLTokenType.STRING):
             return self.parse_string_statement(token)
         elif self.match(COBOLTokenType.UNSTRING):
             return self.parse_unstring_statement(token)
@@ -883,16 +1773,115 @@ class COBOLMultiProgramParser:
                 self.consume(COBOLTokenType.PERIOD)
             return COBOLGoback(line=token.line, column=token.column)
         elif self.match(COBOLTokenType.EXIT):
-            self.advance()
+            # ✅ Handle both EXIT and EXIT PROGRAM
+            exit_token = self.current_token()
+            self.advance()  # consume EXIT
+            
+            # Check if PROGRAM follows
+            is_program = False
+            if self.match(COBOLTokenType.PROGRAM):
+                is_program = True
+                self.advance()  # consume PROGRAM
+            
+            # Now consume the period
             if self.requires_period():
                 self.consume(COBOLTokenType.PERIOD)
-            return COBOLExit(line=token.line, column=token.column)
+            
+            return COBOLExit(is_program=is_program, line=exit_token.line, column=exit_token.column)
         elif self.match(COBOLTokenType.EOF):
             return None
         else:
+            # Unknown token - advance past it and return None
             self.advance()
             return None
     
+    # ✅ ADD THIS NEW METHOD
+    def parse_read_statement(self) -> 'COBOLRead':
+        """
+        Parse READ statement with AT END clause
+        READ filename [INTO variable] [AT END statements...] [NOT AT END statements...]
+        """
+        token = self.current_token()
+        self.advance()  # consume READ
+        
+        # File name
+        filename = self.consume(COBOLTokenType.IDENTIFIER).value
+        
+        # Optional INTO clause
+        into_variable = None
+        if self.match(COBOLTokenType.INTO):
+            self.advance()
+            into_variable = self.consume(COBOLTokenType.IDENTIFIER).value
+        
+        # Optional AT END clause (can have multiple statements!)
+        at_end_statements = []
+        not_at_end_statements = []
+        
+        if self.current_token() and self.current_token().value and self.current_token().value.upper() == 'AT':
+            self.advance()
+            # Consume END keyword
+            if self.current_token() and self.current_token().value and self.current_token().value.upper() == 'END':
+                self.advance()
+                
+                # Parse multiple statements until NOT AT END, period, or major keyword
+                while not self.match(COBOLTokenType.PERIOD, COBOLTokenType.EOF):
+                    # Get current token value for checks
+                    current_val = self.current_token().value.upper() if self.current_token().value else ""
+
+                    # Check for NOT AT END
+                    if current_val == 'NOT':
+                        break
+
+                    # Check for next major statement
+                    # This is the critical fix: check if the current token starts a new statement
+                    # before attempting to parse it.
+                    STATEMENT_KEYWORDS = [
+                        'MOVE', 'DISPLAY', 'PERFORM', 'IF', 'ELSE', 'STOP', 'ADD', 'SUBTRACT', 
+                        'MULTIPLY', 'DIVIDE', 'COMPUTE', 'ACCEPT', 'READ', 'WRITE', 'OPEN', 'CLOSE'
+                    ]
+                    if current_val in STATEMENT_KEYWORDS and len(at_end_statements) > 0:
+                        break
+                    
+                    stmt = self.parse_statement()
+                    if stmt:
+                        at_end_statements.append(stmt)
+        
+        # Optional NOT AT END clause
+        if self.current_token() and self.current_token().value and self.current_token().value.upper() == 'NOT':
+            self.advance()
+            if self.current_token() and self.current_token().value and self.current_token().value.upper() == 'AT':
+                self.advance()
+            if self.current_token() and self.current_token().value and self.current_token().value.upper() == 'END':
+                self.advance()
+                
+                while not self.match(COBOLTokenType.PERIOD, COBOLTokenType.EOF):
+                    # Get current token value for checks
+                    current_val = self.current_token().value.upper() if self.current_token().value else ""
+
+                    # Check if we've hit the end of the block
+                    STATEMENT_KEYWORDS = [
+                        'MOVE', 'DISPLAY', 'PERFORM', 'IF', 'ELSE', 'STOP', 'ADD', 'SUBTRACT',
+                        'MULTIPLY', 'DIVIDE', 'COMPUTE', 'ACCEPT', 'READ', 'WRITE', 'OPEN', 'CLOSE'
+                    ]
+                    if current_val in STATEMENT_KEYWORDS and len(not_at_end_statements) > 0:
+                        break
+                    
+                    stmt = self.parse_statement()
+                    if stmt:
+                        not_at_end_statements.append(stmt)
+        
+        # Optional NOT AT END clause
+        if self.match(COBOLTokenType.PERIOD):
+            self.consume(COBOLTokenType.PERIOD)
+        
+        return COBOLRead(
+            filename=filename,
+            into_variable=into_variable,
+            at_end_statements=at_end_statements if at_end_statements else None,
+            not_at_end_statements=not_at_end_statements if not_at_end_statements else None,
+            line=token.line,
+            column=token.column
+        )
     def parse_display(self, token: Token) -> COBOLDisplay:
         self.consume(COBOLTokenType.DISPLAY)
         
@@ -905,8 +1894,19 @@ class COBOLMultiProgramParser:
                             COBOLTokenType.STOP, COBOLTokenType.COMPUTE,
                             COBOLTokenType.EVALUATE, COBOLTokenType.WHEN,
                             COBOLTokenType.END_EVALUATE, COBOLTokenType.ACCEPT):
+            # Stop parsing expressions if we hit the UPON clause
+            if self.current_token().value.upper() == 'UPON':
+                break
+
             expressions.append(self.parse_expression())
         
+        # After parsing the expression(s), check for UPON clause
+        if self.current_token().value.upper() == 'UPON':
+            self.advance()  # consume UPON
+            if self.match(COBOLTokenType.IDENTIFIER):
+                # This is the device name (CONSOLE, SYSERR, etc.)
+                self.advance()  # consume the device name
+
         if self.requires_period() and self.match(COBOLTokenType.PERIOD):
             self.consume(COBOLTokenType.PERIOD)
         
@@ -917,9 +1917,7 @@ class COBOLMultiProgramParser:
         
         variable = self.consume(COBOLTokenType.IDENTIFIER).value
         
-        if self.requires_period():
-            self.consume(COBOLTokenType.PERIOD)
-        
+        self.consume_optional_period()
         return COBOLAccept(
             variable=variable,
             line=token.line,
@@ -927,16 +1925,93 @@ class COBOLMultiProgramParser:
         )
     
     def parse_move(self, token: Token) -> COBOLMove:
+        """Parse MOVE statement
+        MOVE source TO target
+        MOVE CORRESPONDING source TO target
+        """
         self.consume(COBOLTokenType.MOVE)
         
+        # Check for CORRESPONDING/CORR
+        is_corresponding = False
+        if self.match(COBOLTokenType.IDENTIFIER):
+            peek = self.current_token().value.upper()
+            if peek in ['CORRESPONDING', 'CORR']:
+                is_corresponding = True
+                self.advance()
+        
+        # Parse source
         source = self.parse_expression()
+        
+        # Expect TO
         self.consume(COBOLTokenType.TO)
-        target = self.parse_expression()
         
-        if self.requires_period():
-            self.consume(COBOLTokenType.PERIOD)
+        # Parse one or more targets, stopping at the next statement keyword
+        targets = []
+        while not self.match(COBOLTokenType.PERIOD, COBOLTokenType.EOF, COBOLTokenType.END_IF):
+            # 🔧 FIX: Check for statement keyword TOKEN TYPES first
+            # GO, CALL, PERFORM, etc. are lexed as their own token types, not IDENTIFIER
+            if self.match(COBOLTokenType.GO, COBOLTokenType.GOTO, COBOLTokenType.CALL,
+                          COBOLTokenType.PERFORM, COBOLTokenType.IF, COBOLTokenType.STOP,
+                          COBOLTokenType.ADD, COBOLTokenType.SUBTRACT, COBOLTokenType.MULTIPLY,
+                          COBOLTokenType.DIVIDE, COBOLTokenType.COMPUTE, COBOLTokenType.ACCEPT,
+                          COBOLTokenType.DISPLAY, COBOLTokenType.EVALUATE, COBOLTokenType.EXIT,
+                          COBOLTokenType.GOBACK, COBOLTokenType.STRING, COBOLTokenType.UNSTRING,
+                          COBOLTokenType.INSPECT):
+                break  # Stop - this is a statement keyword!
+            
+            # Also check IDENTIFIER tokens for statement keywords
+            if self.match(COBOLTokenType.IDENTIFIER):
+                next_val = self.current_token().value.upper()
+                STATEMENT_KEYWORDS = [
+                    'MOVE', 'DISPLAY', 'PERFORM', 'IF', 'ELSE', 'STOP', 'ADD', 'SUBTRACT', 
+                    'MULTIPLY', 'DIVIDE', 'COMPUTE', 'ACCEPT', 'READ', 'WRITE', 'OPEN', 'CLOSE',
+                    'CALL', 'EVALUATE', 'GO', 'GOTO', 'EXIT', 'GOBACK', 'STRING', 'UNSTRING',
+                    'INSPECT', 'SEARCH', 'SET', 'CONTINUE'
+                ]
+                if next_val in STATEMENT_KEYWORDS:
+                    break  # Stop - this is a new statement
+            
+            # If it's not a keyword, parse it as a target expression
+            targets.append(self.parse_expression())
+            
+            # 🔧 FIX: Check for keywords AFTER consuming comma
+            if self.match(COBOLTokenType.COMMA):
+                self.advance()
+                
+                # After comma, check if next token is a statement keyword TOKEN TYPE
+                if self.match(COBOLTokenType.GO, COBOLTokenType.GOTO, COBOLTokenType.CALL,
+                              COBOLTokenType.PERFORM, COBOLTokenType.IF, COBOLTokenType.STOP,
+                              COBOLTokenType.ADD, COBOLTokenType.SUBTRACT, COBOLTokenType.MULTIPLY,
+                              COBOLTokenType.DIVIDE, COBOLTokenType.COMPUTE, COBOLTokenType.ACCEPT,
+                              COBOLTokenType.DISPLAY, COBOLTokenType.EVALUATE, COBOLTokenType.EXIT,
+                              COBOLTokenType.GOBACK, COBOLTokenType.STRING, COBOLTokenType.UNSTRING,
+                              COBOLTokenType.INSPECT):
+                    break  # Comma separates statements!
+                
+                # Also check IDENTIFIER for statement keywords
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    next_val = self.current_token().value.upper()
+                    STATEMENT_KEYWORDS = [
+                        'MOVE', 'DISPLAY', 'PERFORM', 'IF', 'ELSE', 'STOP', 'ADD', 'SUBTRACT', 
+                        'MULTIPLY', 'DIVIDE', 'COMPUTE', 'ACCEPT', 'READ', 'WRITE', 'OPEN', 'CLOSE',
+                        'CALL', 'EVALUATE', 'GO', 'GOTO', 'EXIT', 'GOBACK', 'STRING', 'UNSTRING',
+                        'INSPECT', 'SEARCH', 'SET', 'CONTINUE'
+                    ]
+                    if next_val in STATEMENT_KEYWORDS:
+                        break  # Comma separates statements!
+                # Otherwise continue parsing more targets
+            else:
+                # No comma means list of targets is done
+                break
         
-        return COBOLMove(source=source, target=target, line=token.line, column=token.column)
+        self.consume_optional_period()
+        return COBOLMove(
+            source=source, 
+            targets=targets, 
+            is_corresponding=is_corresponding,
+            line=token.line, 
+            column=token.column
+        )
     
     def parse_compute(self, token: Token) -> COBOLCompute:
         self.consume(COBOLTokenType.COMPUTE)
@@ -945,9 +2020,7 @@ class COBOLMultiProgramParser:
         self.consume(COBOLTokenType.EQUALS_SIGN)
         expression = self.parse_arithmetic_expression()
         
-        if self.requires_period():
-            self.consume(COBOLTokenType.PERIOD)
-        
+        self.consume_optional_period()
         return COBOLCompute(target=target, expression=expression, line=token.line, column=token.column)
     
     def parse_add(self, token: Token) -> COBOLArithmetic:
@@ -1144,8 +2217,13 @@ class COBOLMultiProgramParser:
     
     def parse_unstring_statement(self, token: Token) -> COBOLUnstring:
         """
-        Parse UNSTRING statement
-        Syntax: UNSTRING source DELIMITED BY delimiter INTO field1 field2 [TALLYING IN counter]
+        Parse UNSTRING statement with multiple delimiters
+        
+        Examples:
+            UNSTRING source DELIMITED BY "," INTO f1 f2
+            UNSTRING source DELIMITED BY ALL " " INTO f1 f2
+            UNSTRING source DELIMITED BY "," OR " " INTO f1 f2
+            UNSTRING source DELIMITED BY ALL "," OR " " OR ALL ";" INTO f1 f2
         """
         self.consume(COBOLTokenType.UNSTRING)
         
@@ -1154,13 +2232,43 @@ class COBOLMultiProgramParser:
             self.error("Expected source field in UNSTRING statement")
         source = self.parse_expression()
         
-        # Parse DELIMITED BY clause
-        delimiter = None
+        # Parse DELIMITED BY clause with multiple delimiters
+        delimiters = []
+        delimiter_all_flags = []
+        
         if self.match(COBOLTokenType.DELIMITED):
             self.consume(COBOLTokenType.DELIMITED)
             self.consume(COBOLTokenType.BY)
+            
+            # Parse first delimiter
+            has_all = False
+            if self.match(COBOLTokenType.ALL):
+                self.advance()
+                has_all = True
+            
             delimiter = self.parse_expression()
+            delimiters.append(delimiter)
+            delimiter_all_flags.append(has_all)
+            
+            # ✅ NEW: Parse additional delimiters with OR
+            while self.match(COBOLTokenType.OR):
+                self.advance()  # consume OR
+                
+                # Check for optional ALL before next delimiter
+                has_all = False
+                if self.match(COBOLTokenType.ALL):
+                    self.advance()
+                    has_all = True
+                
+                delimiter = self.parse_expression()
+                delimiters.append(delimiter)
+                delimiter_all_flags.append(has_all)
         
+        # ✅ FIX: Skip any junk/comments between DELIMITED BY and INTO
+        # This handles line continuations with sequence numbers.
+        while not self.match(COBOLTokenType.INTO, COBOLTokenType.EOF, COBOLTokenType.PERIOD):
+            self.advance()
+
         # Parse INTO clause
         self.consume(COBOLTokenType.INTO)
         targets = []
@@ -1185,7 +2293,8 @@ class COBOLMultiProgramParser:
         
         return COBOLUnstring(
             source=source,
-            delimiter=delimiter,
+            delimiters=delimiters,  # ✅ List of delimiters
+            delimiter_all_flags=delimiter_all_flags,  # ✅ ALL flag for each
             targets=targets,
             count=counter,
             line=token.line,
@@ -1280,38 +2389,157 @@ class COBOLMultiProgramParser:
         self.consume(COBOLTokenType.IF)
         condition = self.parse_condition()
         
+        # Optional THEN keyword (can be omitted in COBOL)
+        if self.match(COBOLTokenType.THEN):
+            self.advance()
+        
         self.push_context(ParseContext.INSIDE_IF)
         
         # Parse THEN block
         then_statements = []
-        # ✅ ADD EOF CHECK HERE:
-        while not self.match(COBOLTokenType.ELSE, COBOLTokenType.END_IF, COBOLTokenType.EOF):
+        
+        while not self.match(COBOLTokenType.ELSE, COBOLTokenType.END_IF, 
+                            COBOLTokenType.PERIOD, COBOLTokenType.EOF):
+            # 🔧 FIX: Check for structural keywords that end IF
+            # SECTION, paragraph names followed by PERIOD, etc.
+            if self.match(COBOLTokenType.IDENTIFIER):
+                # Check if this is "SECTION" keyword
+                if self.current_token().value.upper() == 'SECTION':
+                    # This starts a new section, IF is implicitly ended
+                    self.pop_context()
+                    return COBOLIf(
+                        condition=condition,
+                        then_statements=then_statements,
+                        else_statements=None,
+                        line=token.line,
+                        column=token.column
+                    )
+                
+                # Check for paragraph name (IDENTIFIER followed by PERIOD)
+                next_token = self.peek_token(1)
+                if next_token and next_token.type == COBOLTokenType.PERIOD:
+                    # This is a paragraph declaration, IF ended
+                    self.pop_context()
+                    return COBOLIf(
+                        condition=condition,
+                        then_statements=then_statements,
+                        else_statements=None,
+                        line=token.line,
+                        column=token.column
+                    )
+            
+            # Check for next program starting
+            if self.match(COBOLTokenType.IDENTIFICATION):
+                self.pop_context()
+                return COBOLIf(
+                    condition=condition,
+                    then_statements=then_statements,
+                    else_statements=None,
+                    line=token.line,
+                    column=token.column
+                )
+            
             stmt = self.parse_statement()
             if stmt:
                 then_statements.append(stmt)
+                
+                # After each statement, check if PERIOD terminates the IF
+                if self.match(COBOLTokenType.PERIOD):
+                    # This is old-style IF - PERIOD terminates it
+                    self.consume(COBOLTokenType.PERIOD)
+                    self.pop_context()
+                    
+                    return COBOLIf(
+                        condition=condition,
+                        then_statements=then_statements,
+                        else_statements=None,
+                        line=token.line,
+                        column=token.column
+                    )
         
         # Parse ELSE block (if present)
         else_statements = None
         if self.match(COBOLTokenType.ELSE):
             self.advance()
             else_statements = []
-            # ✅ ADD EOF CHECK HERE TOO:
-            while not self.match(COBOLTokenType.END_IF, COBOLTokenType.EOF):
+            
+            while not self.match(COBOLTokenType.END_IF, COBOLTokenType.PERIOD, COBOLTokenType.EOF):
+                # 🔧 FIX: Apply same logic to ELSE block
+                if self.match(COBOLTokenType.IDENTIFIER):
+                    if self.current_token().value.upper() == 'SECTION':
+                        self.pop_context()
+                        return COBOLIf(
+                            condition=condition,
+                            then_statements=then_statements,
+                            else_statements=else_statements,
+                            line=token.line,
+                            column=token.column
+                        )
+                    
+                    next_token = self.peek_token(1)
+                    if next_token and next_token.type == COBOLTokenType.PERIOD:
+                        self.pop_context()
+                        return COBOLIf(
+                            condition=condition,
+                            then_statements=then_statements,
+                            else_statements=else_statements,
+                            line=token.line,
+                            column=token.column
+                        )
+
+                # Check for next program starting
+                if self.match(COBOLTokenType.IDENTIFICATION):
+                    self.pop_context()
+                    return COBOLIf(
+                        condition=condition,
+                        then_statements=then_statements,
+                        else_statements=else_statements,
+                        line=token.line,
+                        column=token.column
+                    )
+                
                 stmt = self.parse_statement()
                 if stmt:
                     else_statements.append(stmt)
+                    
+                    # PERIOD can also terminate ELSE block in old-style
+                    if self.match(COBOLTokenType.PERIOD):
+                        self.consume(COBOLTokenType.PERIOD)
+                        self.pop_context()
+                        
+                        return COBOLIf(
+                            condition=condition,
+                            then_statements=then_statements,
+                            else_statements=else_statements,
+                            line=token.line,
+                            column=token.column
+                        )
         
-        # ✅ ADD EOF CHECK BEFORE CONSUMING END-IF:
+        # Check for PERIOD before END-IF (mixed style)
+        if self.match(COBOLTokenType.PERIOD):
+            self.consume(COBOLTokenType.PERIOD)
+            self.pop_context()
+            
+            return COBOLIf(
+                condition=condition,
+                then_statements=then_statements,
+                else_statements=else_statements,
+                line=token.line,
+                column=token.column
+            )
+        
+        # Modern style - consume END-IF
         if self.match(COBOLTokenType.END_IF):
             self.consume(COBOLTokenType.END_IF)
         elif self.match(COBOLTokenType.EOF):
             # Graceful error: IF without END-IF
             self.pop_context()
-            raise ParserError("IF statement missing END-IF before end of file", 
-                             token.line, token.column)
+            raise ParserError("IF statement missing END-IF or PERIOD before end of file", 
+                            token.line, token.column)
         
         self.pop_context()
         
+        # Optional period after END-IF
         if self.requires_period() and self.match(COBOLTokenType.PERIOD):
             self.consume(COBOLTokenType.PERIOD)
         
@@ -1360,8 +2588,7 @@ class COBOLMultiProgramParser:
                                 token.line, token.column)
             
             self.pop_context()
-            if self.requires_period():
-                self.consume(COBOLTokenType.PERIOD)
+            self.consume_optional_period()
             
             return COBOLPerformTimes(
                 times_expr=times_expr,
@@ -1372,39 +2599,34 @@ class COBOLMultiProgramParser:
             )
 
         elif self.match(COBOLTokenType.IDENTIFIER):
-            para_name = self.consume(COBOLTokenType.IDENTIFIER).value
-            print(f"DEBUG parse_perform: Consumed paragraph name '{para_name}'")
-            print(f"DEBUG parse_perform: Current token = {self.current_token()}")
-            print(f"DEBUG parse_perform: Peek(1) = {self.peek_token(1)}")
-            
-            # Check for N TIMES
-            if self.match(COBOLTokenType.NUMBER_LITERAL, COBOLTokenType.IDENTIFIER):
-                peek_next = self.peek_token(1)
-                print(f"DEBUG parse_perform: Matched NUMBER/ID, peek(1) = {peek_next}")
-                if peek_next and peek_next.type == COBOLTokenType.TIMES:
-                    print(f"DEBUG parse_perform: Creating COBOLPerformTimes with paragraph")
-                    times_expr = self.parse_expression()
-                    self.consume(COBOLTokenType.TIMES)
-                    if self.requires_period():
-                        self.consume(COBOLTokenType.PERIOD)
-                    return COBOLPerformTimes(
-                        times_expr=times_expr,
-                        paragraph_name=para_name,
-                        statements=None,
-                        line=token.line,
-                        column=token.column
-                    )
-            until_condition = None
-            if self.match(COBOLTokenType.UNTIL):
-                self.advance()
-                until_condition = self.parse_condition()
-            if self.requires_period(): self.consume(COBOLTokenType.PERIOD)
-            return COBOLPerformParagraph(
-                paragraph_name=para_name,
-                until_condition=until_condition,
-                line=token.line,
-                column=token.column
-            )
+            para_name_token = self.current_token()
+            para_name = para_name_token.value
+
+            # Look ahead to decide what kind of PERFORM this is
+            peek1 = self.peek_token(1)
+
+            # Check for VARYING after paragraph name
+            if peek1 and peek1.type == COBOLTokenType.VARYING:
+                self.advance() # consume para_name
+                return self.parse_perform_varying(token, para_name)
+
+            # Check for UNTIL after paragraph name
+            elif peek1 and peek1.type == COBOLTokenType.UNTIL:
+                self.advance() # consume para_name
+                return self.parse_perform_until(token, para_name)
+
+            elif peek1 and peek1.type == COBOLTokenType.TIMES:
+                 # This is PERFORM N TIMES, not a paragraph name
+                 return self.parse_perform_times_inline(token)
+
+            else:
+                # Default case: PERFORM para.
+                self.advance() # consume para_name
+                self.consume_optional_period()
+                return COBOLPerformParagraph(
+                    paragraph_name=para_name,
+                    line=token.line, column=token.column
+                )
         else:
             self.error("Invalid PERFORM statement syntax")
     
@@ -1440,7 +2662,8 @@ class COBOLMultiProgramParser:
             line=token.line,
             column=token.column
         )
-    def parse_perform_varying(self, token: Token) -> COBOLPerformVarying:
+        
+    def parse_perform_varying(self, token: Token, paragraph_name: Optional[str] = None) -> COBOLPerformVarying:
         self.consume(COBOLTokenType.VARYING)
         
         variable = self.consume(COBOLTokenType.IDENTIFIER).value
@@ -1457,36 +2680,40 @@ class COBOLMultiProgramParser:
         self.push_context(ParseContext.INSIDE_LOOP)
         
         statements = []
-        # ✅ FIX: Add EOF check here
-        while not self.match(COBOLTokenType.END_PERFORM, COBOLTokenType.EOF):
-            stmt = self.parse_statement()
-            if stmt:
-                statements.append(stmt)
         
-        # ✅ FIX: Check for EOF before consuming
-        if self.match(COBOLTokenType.END_PERFORM):
-            self.consume(COBOLTokenType.END_PERFORM)
-        elif self.match(COBOLTokenType.EOF):
-            self.pop_context()
-            raise ParserError("PERFORM VARYING missing END-PERFORM before end of file",
-                             token.line, token.column)
+        # Only parse inline statements if there's NO paragraph name
+        if paragraph_name is None:
+            # Inline PERFORM VARYING ... END-PERFORM
+            while not self.match(COBOLTokenType.END_PERFORM, COBOLTokenType.EOF):
+                stmt = self.parse_statement()
+                if stmt:
+                    statements.append(stmt)
+            
+            if self.match(COBOLTokenType.END_PERFORM):
+                self.consume(COBOLTokenType.END_PERFORM)
+            elif self.match(COBOLTokenType.EOF):
+                self.pop_context()
+                raise ParserError("PERFORM VARYING missing END-PERFORM before end of file",
+                                token.line, token.column)
+        # else: PERFORM paragraph VARYING has no inline statements
         
         self.pop_context()
         
-        if self.requires_period() and self.match(COBOLTokenType.PERIOD):
-            self.consume(COBOLTokenType.PERIOD)
+        self.consume_optional_period()
         
         return COBOLPerformVarying(
             variable=variable,
             from_expr=from_expr,
             by_expr=by_expr,
             until_condition=until_condition,
-            statements=statements,
+            paragraph_name=paragraph_name,
+            statements=statements if paragraph_name is None else None,
             line=token.line,
             column=token.column
         )
     
     def parse_call(self, token: Token) -> COBOLCall:
+        print(f"[DEBUG] parse_call called at line {token.line}") 
         self.consume(COBOLTokenType.CALL)
         
         # String literal or identifier
@@ -1497,28 +2724,62 @@ class COBOLMultiProgramParser:
         
         # Optional USING clause
         parameters = []
-        using_params = []
         if self.match(COBOLTokenType.USING):
             self.consume(COBOLTokenType.USING)
             # Parse parameter list
             while self.match(COBOLTokenType.IDENTIFIER):
                 param_name = self.consume(COBOLTokenType.IDENTIFIER).value
-                using_params.append(param_name)
+                parameters.append(param_name)
                 # Check for comma-separated list
-                if not self.match(COBOLTokenType.IDENTIFIER):
-                    break
+                if self.match(COBOLTokenType.COMMA):
+                    self.advance()
         
-        if self.requires_period():
-            self.consume(COBOLTokenType.PERIOD)
+        # 🔧 FIX: Skip optional semicolon after USING clause
+        if self.match(COBOLTokenType.SEMICOLON):
+            self.advance()
         
-        return COBOLCall(program_name=prog_name, parameters=parameters,
-                         using_params=using_params if using_params else None,
+        # Optional ON OVERFLOW clause
+        overflow_statements = []
+        has_overflow = False
+        
+        if self.match(COBOLTokenType.IDENTIFIER):
+            val = self.current_token().value.upper()
+            if val == 'ON':
+                self.advance()
+                if self.match(COBOLTokenType.IDENTIFIER) and self.current_token().value.upper() == 'OVERFLOW':
+                    self.advance()
+                    has_overflow = True
+            elif val == 'OVERFLOW':
+                self.advance()
+                has_overflow = True
+        
+        if has_overflow:
+            while not self.match(COBOLTokenType.PERIOD, COBOLTokenType.EOF):
+                if self.match(COBOLTokenType.COMMA, COBOLTokenType.SEMICOLON):
+                    self.advance()
+                    continue
+                
+                stmt = self.parse_statement()
+                if stmt:
+                    overflow_statements.append(stmt)
+        
+        self.consume_optional_period()
+        
+        return COBOLCall(
+            program_name=prog_name,
+            parameters=parameters if parameters else [],
+            overflow_statements=overflow_statements if overflow_statements else None,
                          line=token.line, column=token.column)
 
     def parse_evaluate(self, token: Token) -> COBOLEvaluate:
         self.consume(COBOLTokenType.EVALUATE)
         
         subject = self.parse_expression()
+        
+        # ✅ ADD THESE 3 LINES:
+        while not self.match(COBOLTokenType.WHEN, COBOLTokenType.END_EVALUATE, COBOLTokenType.EOF):
+            self.advance()
+        # ✅ END OF FIX
         
         self.push_context(ParseContext.INSIDE_IF)
         
@@ -1630,15 +2891,21 @@ class COBOLMultiProgramParser:
     def parse_comparison(self) -> COBOLASTNode:
         left = self.parse_arithmetic_expression()
         
+        # Handle GREATER THAN OR EQUAL TO / >=
         if self.match(COBOLTokenType.GTE_SIGN, COBOLTokenType.GREATER):
             op_token = self.current_token()
             self.advance()
-            if self.match(COBOLTokenType.EQUAL, COBOLTokenType.EQUALS, COBOLTokenType.THAN): # Handles "GREATER THAN OR EQUAL TO"
+            
+            # Handle various forms: GREATER, GREATER THAN, GREATER THAN OR EQUAL, etc.
+            if self.match(COBOLTokenType.THAN):
                 self.advance()
-                if self.match(COBOLTokenType.OR): self.advance()
-                if self.match(COBOLTokenType.EQUAL): self.advance()
-                if self.match(COBOLTokenType.TO): self.advance()
-
+            if self.match(COBOLTokenType.OR):
+                self.advance()
+            if self.match(COBOLTokenType.EQUAL, COBOLTokenType.EQUALS):
+                self.advance()
+            if self.match(COBOLTokenType.TO):
+                self.advance()
+            
             right = self.parse_arithmetic_expression()
             return COBOLBinaryOp(
                 operator='>=',
@@ -1647,15 +2914,22 @@ class COBOLMultiProgramParser:
                 line=op_token.line,
                 column=op_token.column
             )
+        
+        # Handle LESS THAN OR EQUAL TO / <=
         elif self.match(COBOLTokenType.LTE_SIGN, COBOLTokenType.LESS):
             op_token = self.current_token()
             self.advance()
-            if self.match(COBOLTokenType.EQUAL, COBOLTokenType.EQUALS, COBOLTokenType.THAN): # Handles "LESS THAN OR EQUAL TO"
+            
+            # Handle various forms: LESS, LESS THAN, LESS THAN OR EQUAL, etc.
+            if self.match(COBOLTokenType.THAN):
                 self.advance()
-                if self.match(COBOLTokenType.OR): self.advance()
-                if self.match(COBOLTokenType.EQUAL): self.advance()
-                if self.match(COBOLTokenType.TO): self.advance()
-
+            if self.match(COBOLTokenType.OR):
+                self.advance()
+            if self.match(COBOLTokenType.EQUAL, COBOLTokenType.EQUALS):
+                self.advance()
+            if self.match(COBOLTokenType.TO):
+                self.advance()
+            
             right = self.parse_arithmetic_expression()
             return COBOLBinaryOp(
                 operator='<=',
@@ -1664,6 +2938,8 @@ class COBOLMultiProgramParser:
                 line=op_token.line,
                 column=op_token.column
             )
+        
+        # Handle > (greater than only, no equal)
         elif self.match(COBOLTokenType.GT_SIGN):
             op_token = self.current_token()
             self.advance()
@@ -1675,6 +2951,8 @@ class COBOLMultiProgramParser:
                 line=op_token.line,
                 column=op_token.column
             )
+        
+        # Handle < (less than only, no equal)
         elif self.match(COBOLTokenType.LT_SIGN):
             op_token = self.current_token()
             self.advance()
@@ -1686,9 +2964,14 @@ class COBOLMultiProgramParser:
                 line=op_token.line,
                 column=op_token.column
             )
+        
+        # Handle EQUAL / EQUAL TO / =
         elif self.match(COBOLTokenType.EQUALS_SIGN, COBOLTokenType.EQUAL, COBOLTokenType.EQUALS):
             op_token = self.current_token()
             self.advance()
+            # Handle optional "TO" in "EQUAL TO"
+            if self.match(COBOLTokenType.TO):
+                self.advance()
             right = self.parse_arithmetic_expression()
             return COBOLBinaryOp(
                 operator='=',
@@ -1697,11 +2980,16 @@ class COBOLMultiProgramParser:
                 line=op_token.line,
                 column=op_token.column
             )
+        
+        # Handle NOT EQUAL / NOT EQUAL TO
         elif self.match(COBOLTokenType.NOT):
+            op_token = self.current_token()
             self.advance()
             if self.match(COBOLTokenType.EQUALS_SIGN, COBOLTokenType.EQUAL, COBOLTokenType.EQUALS):
-                op_token = self.current_token()
                 self.advance()
+                # ✅ Handle optional "TO" in "NOT EQUAL TO"
+                if self.match(COBOLTokenType.TO):
+                    self.advance()
                 right = self.parse_arithmetic_expression()
                 return COBOLBinaryOp(
                     operator='!=',
@@ -1720,8 +3008,8 @@ class COBOLMultiProgramParser:
         left = self.parse_multiplicative()
         
         while self.match(COBOLTokenType.PLUS, COBOLTokenType.MINUS):
-            op = '+' if self.current_token().type == COBOLTokenType.PLUS else '-'
-            token = self.current_token()
+            token = self.current_token()  # ✅ Fix #4: Capture FIRST
+            op = '+' if token.type == COBOLTokenType.PLUS else '-'
             self.advance()
             right = self.parse_multiplicative()
             left = COBOLBinaryOp(operator=op, left=left, right=right, line=token.line, column=token.column)
@@ -1732,8 +3020,8 @@ class COBOLMultiProgramParser:
         left = self.parse_primary()
         
         while self.match(COBOLTokenType.ASTERISK, COBOLTokenType.SLASH):
-            op = '*' if self.current_token().type == COBOLTokenType.ASTERISK else '/'
-            token = self.current_token()
+            token = self.current_token()  # ✅ Fix #4: Capture FIRST
+            op = '*' if token.type == COBOLTokenType.ASTERISK else '/'
             self.advance()
             right = self.parse_primary()
             left = COBOLBinaryOp(operator=op, left=left, right=right, line=token.line, column=token.column)
@@ -1743,7 +3031,8 @@ class COBOLMultiProgramParser:
     def parse_primary(self) -> COBOLASTNode:
         token = self.current_token()
         
-        print(f"DEBUG parse_primary: token={token.type.name} value={token.value}")
+        if self.debug:  # ✅ Fix #7
+            print(f"DEBUG parse_primary: token={token.type.name} value={token.value}")
         
         if self.match(COBOLTokenType.NUMBER_LITERAL):
             value = token.value
@@ -1755,6 +3044,21 @@ class COBOLMultiProgramParser:
             self.advance()
             return COBOLStringLiteral(value=value, line=token.line, column=token.column)
         
+        elif self.match(COBOLTokenType.ALL):
+            self.advance()
+            if self.match(COBOLTokenType.STRING_LITERAL):
+                literal = self.current_token().value
+                self.advance()
+                return COBOLStringLiteral(value=f"ALL:{literal}", line=token.line, column=token.column)
+            elif self.match(COBOLTokenType.IDENTIFIER):
+                identifier = self.current_token().value
+                self.advance()
+                return COBOLIdentifier(name=f"ALL:{identifier}", line=token.line, column=token.column)
+            else:
+                if self.debug:  # ✅ Fix #3
+                    print(f"WARNING: Standalone ALL keyword at line {token.line}, column {token.column}")
+                return COBOLIdentifier(name="ALL", line=token.line, column=token.column)
+        
         elif self.match(COBOLTokenType.FUNCTION):
             return self.parse_function_call()
 
@@ -1762,22 +3066,63 @@ class COBOLMultiProgramParser:
             name = token.value
             self.advance()
             
-            # NEW: Check for array subscript
+            # NEW: Handle qualified names (IDENTIFIER OF IDENTIFIER)
+            # Example: HOURS OF MSG-TIME, MINUTES OF MSG-TIME
+            if self.match(COBOLTokenType.OF):
+                self.advance()  # consume OF
+                if not self.match(COBOLTokenType.IDENTIFIER):
+                    self.error("Expected identifier after OF keyword")
+                parent_name = self.current_token().value
+                self.advance()
+                # Create a qualified identifier: "HOURS.MSG_TIME" style
+                # Note: The converter will need to normalize this to MSG_TIME_HOURS
+                qualified_name = f"{name}.{parent_name}"
+                name = qualified_name
+            
             if self.match(COBOLTokenType.LPAREN):
-                self.advance() # consume (
-                index_expr = self.parse_expression()
+                self.advance()
+                
+                # Special case: ARRAY(ALL)
+                if self.match(COBOLTokenType.ALL):
+                    self.advance()
+                    self.consume(COBOLTokenType.RPAREN)
+                    return COBOLArraySubscript(
+                        array_name=name,
+                        indices=[COBOLIdentifier(name="ALL", line=token.line, column=token.column)],  # ✅ Fix #1
+                        line=token.line,
+                        column=token.column
+                    )
+                
+                # Parse subscripts
+                subscripts = []
+                subscripts.append(self.parse_expression())
+                
+                # ✅ Fix #2: Add infinite loop protection
+                while not self.match(COBOLTokenType.RPAREN):
+                    if self.match(COBOLTokenType.COMMA):
+                        self.advance()
+                    
+                    if not self.match(COBOLTokenType.RPAREN):
+                        before_pos = self.pos
+                        subscripts.append(self.parse_expression())
+                        
+                        if self.pos == before_pos:
+                            self.error(f"Parser stuck at position {self.pos} in array subscript")
+                
+                # ✅ Fix #5: Validate subscript count
+                if len(subscripts) > 7:
+                    self.error(f"Too many array subscripts: {len(subscripts)} (COBOL max is 7)")
+                
                 self.consume(COBOLTokenType.RPAREN)
                 return COBOLArraySubscript(
                     array_name=name,
-                    index=index_expr,
+                    indices=subscripts,
                     line=token.line,
                     column=token.column
                 )
             
-            # Regular identifier
             return COBOLIdentifier(name=name, line=token.line, column=token.column)
         
-        # Accept USAGE keywords as identifiers (variable names)
         elif self.match(
             COBOLTokenType.USAGE,
             COBOLTokenType.COMP, COBOLTokenType.COMP_1, COBOLTokenType.COMP_2, COBOLTokenType.COMP_3,
@@ -1786,6 +3131,8 @@ class COBOLMultiProgramParser:
         ):
             name = token.value
             self.advance()
+            if self.debug:  # ✅ Fix #6
+                print(f"WARNING: Using USAGE keyword '{name}' as identifier at line {token.line}")
             return COBOLIdentifier(name=name, line=token.line, column=token.column)
         
         elif self.match(COBOLTokenType.LPAREN):
@@ -1803,20 +3150,73 @@ class COBOLMultiProgramParser:
             self.error(f"Unexpected token in expression: {token.type.name}")
     
     def parse_function_call(self) -> COBOLFunctionCall:
-        token = self.current_token()
-        self.advance() # consume FUNCTION
-        func_name_token = self.current_token()
-        func_name = func_name_token.value
-        self.advance()
-        self.consume(COBOLTokenType.LPAREN)
-        arg = self.parse_expression()
-        self.consume(COBOLTokenType.RPAREN)
-        return COBOLFunctionCall(
-            function_name=func_name,
-            arguments=[arg],
-            line=token.line,
-            column=token.column
-        )
+            """
+    Parse COBOL intrinsic function call
+    
+    Syntax:
+        FUNCTION function-name(arg1, arg2, ...)
+        FUNCTION function-name(arg1 arg2 ...)  <-- IBM COBOL allows space-separated!
+    
+    Where arguments can be:
+        - Simple identifiers: FIELD1
+        - Literals: "text", 123
+        - Arithmetic expressions: VALUE1 / 12
+        - Nested function calls: FUNCTION OTHER(X)
+        - Parenthesized expressions: (INTEREST / 12)
+    """
+            token = self.current_token()
+            self.consume(COBOLTokenType.FUNCTION)
+            
+            # Get function name (UPPER-CASE, NUMVAL-C, ANNUITY, etc.)
+            if not self.match(COBOLTokenType.IDENTIFIER, COBOLTokenType.UPPER_CASE, COBOLTokenType.LOWER_CASE):
+                self.error("Expected function name after FUNCTION keyword")
+            
+            function_name = self.current_token().value
+            self.advance()
+            
+            # Parse arguments in parentheses
+            arguments = []
+            
+            if self.match(COBOLTokenType.LPAREN):
+                self.consume(COBOLTokenType.LPAREN)
+                
+                # Parse arguments (comma-separated OR space-separated)
+                while not self.match(COBOLTokenType.RPAREN):
+                    # Parse full arithmetic expression as argument
+                    arg = self.parse_arithmetic_expression()
+                    arguments.append(arg)
+                    
+                    # ✅ FIX: Accept either COMMA or just continue if we see another argument
+                    if self.match(COBOLTokenType.COMMA):
+                        self.advance()  # Consume the comma and continue
+                    elif not self.match(COBOLTokenType.RPAREN):
+                        # No comma, but not at closing paren yet
+                        # Check if the next token could start an argument (IBM COBOL space-separated args)
+                        if self.match(
+                            COBOLTokenType.IDENTIFIER,
+                            COBOLTokenType.NUMBER_LITERAL,
+                            COBOLTokenType.STRING_LITERAL,
+                            COBOLTokenType.LPAREN,  # Parenthesized expression
+                            COBOLTokenType.FUNCTION,  # Nested function call
+                            COBOLTokenType.MINUS  # Negative number
+                        ):
+                            # This looks like another argument, continue parsing (space-separated)
+                            continue
+                        else:
+                            # Unknown token - error
+                            self.error(
+                                f"Expected comma, closing parenthesis, or another argument in function call. "
+                                f"Got {self.current_token().type.name} '{self.current_token().value}'"
+                            )
+                
+                self.consume(COBOLTokenType.RPAREN)
+            
+            return COBOLFunctionCall(
+                function_name=function_name,
+                arguments=arguments,
+                line=token.line,
+                column=token.column
+            )
     def parse_expression(self) -> COBOLASTNode:
         return self.parse_primary()
     
