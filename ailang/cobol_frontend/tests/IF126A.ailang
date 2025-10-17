@@ -1,0 +1,1208 @@
+FixedPool.COBOL_IF126A_VARS {
+    "A": Initialize="4"
+    "B": Initialize="203"
+    "C": Initialize=".429"
+    "D": Initialize="928.344"
+    "E": Initialize="-042.3240"
+    "F": Initialize=" 23.000"
+    "G": Initialize="-92924.3"
+    "H": Initialize="93.21+"
+    "I": Initialize=" 92.92  -"
+    "J": Initialize="8,848.934"
+    "K": Initialize="4,825,293.92"
+    "L": Initialize=" - 5,555.55 "
+    "M": Initialize="5,555.55-"
+    "N": Initialize=" 77,777.77 + "
+    "O": Initialize="$33"
+    "P": Initialize="$0.11"
+    "Q": Initialize="$4,000.00"
+    "R": Initialize="$1,000,000.50"
+    "S": Initialize=" $ 3,900.21"
+    "T": Initialize=" + $ 9,000.99"
+    "U": Initialize=" $ 3,890.20 + "
+    "TEMP": Initialize=0
+    "TEST_RESULTS": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "FEATURE": Initialize=" "
+    "P_OR_F": Initialize=" "
+    "PAR_NAME": Initialize=""
+    "PARDOT_X": Initialize=" "
+    "DOTVALUE": Initialize=0
+    "RE_MARK": Initialize=""
+    "TEST_COMPUTED": Initialize=""
+    "COMPUTED_X": Initialize=""
+    "COMPUTED_A": Initialize=" "
+    "COMPUTED_N": Initialize=""
+    "COMPUTED_0V18": Initialize=""
+    "COMPUTED_4V14": Initialize=""
+    "COMPUTED_14V4": Initialize=""
+    "CM_18V0": Initialize=""
+    "COMPUTED_18V0": Initialize=""
+    "TEST_CORRECT": Initialize=""
+    "CORRECT_X": Initialize=""
+    "CORRECT_A": Initialize=" "
+    "CORRECT_N": Initialize=""
+    "CORRECT_0V18": Initialize=""
+    "CORRECT_4V14": Initialize=""
+    "CORRECT_14V4": Initialize=""
+    "CR_18V0": Initialize=""
+    "CORRECT_18V0": Initialize=""
+    "COR_ANSI_REFERENCE": Initialize=" "
+    "CCVS_C_1": Initialize=""
+    "CCVS_C_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_COUNTER": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "ANSI_REFERENCE": Initialize=" "
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2A": Initialize=""
+    "CCVS_H_2B": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "INF_ANSI_REFERENCE": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="IF126A"
+}
+
+SubRoutine.IF126A {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_CCVS1 {
+    RunTask(IF126A_OPEN_FILES)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_OPEN_FILES {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_PRINT_FILE {
+    COBOL_IF126A_VARS.TEST_ID = COBOL_IF126A_VARS.CCVS_PGM_ID
+    COBOL_IF126A_VARS.ID_AGAIN = COBOL_IF126A_VARS.CCVS_PGM_ID
+    COBOL_IF126A_VARS.TEST_RESULTS = " "
+    RunTask(IF126A_HEAD_ROUTINE)
+    RunTask(IF126A_CCVS1_EXIT)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_CLOSE_FILES {
+    RunTask(IF126A_END_ROUTINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_TERMINATE_CCVS {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_INSPT {
+    COBOL_IF126A_VARS.P_OR_F = "INSPT"
+    COBOL_IF126A_VARS.INSPECT_COUNTER = Add(COBOL_IF126A_VARS.INSPECT_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_PASS {
+    COBOL_IF126A_VARS.P_OR_F = "PASS "
+    COBOL_IF126A_VARS.PASS_COUNTER = Add(COBOL_IF126A_VARS.PASS_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_FAIL {
+    COBOL_IF126A_VARS.P_OR_F = "FAIL*"
+    COBOL_IF126A_VARS.ERROR_COUNTER = Add(COBOL_IF126A_VARS.ERROR_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_DE_LETE {
+    COBOL_IF126A_VARS.P_OR_F = "*****"
+    COBOL_IF126A_VARS.DELETE_COUNTER = Add(COBOL_IF126A_VARS.DELETE_COUNTER, 1)
+    COBOL_IF126A_VARS.RE_MARK = "****TEST DELETED****"
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_PRINT_DETAIL {
+    IfCondition EqualTo(COBOL_IF126A_VARS.REC_CT, 0) ThenBlock: {
+            COBOL_IF126A_VARS.PARDOT_X = "."
+            COBOL_IF126A_VARS.DOTVALUE = COBOL_IF126A_VARS.REC_CT
+            PRINT_REC = COBOL_IF126A_VARS.TEST_RESULTS
+            RunTask(IF126A_WRITE_LINE)
+            IfCondition EqualTo(COBOL_IF126A_VARS.P_OR_F, "FAIL*") ThenBlock: {
+                        RunTask(IF126A_WRITE_LINE)
+                        RunTask(IF126A_FAIL_ROUTINE)
+                    } ElseBlock: {
+                        RunTask(IF126A_BAIL_OUT)
+                        COBOL_IF126A_VARS.P_OR_F = " "
+                        COBOL_IF126A_VARS.COMPUTED_X = " "
+                        COBOL_IF126A_VARS.CORRECT_X = " "
+                        IfCondition EqualTo(COBOL_IF126A_VARS.REC_CT, 0) ThenBlock: {
+                                        COBOL_IF126A_VARS.PAR_NAME = " "
+                                        COBOL_IF126A_VARS.RE_MARK = " "
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_HEAD_ROUTINE {
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_H_1
+    RunTask(IF126A_WRITE_LINE)
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_H_2A
+    RunTask(IF126A_WRITE_LINE)
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_H_2B
+    RunTask(IF126A_WRITE_LINE)
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_H_3
+    RunTask(IF126A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_COLUMN_NAMES_ROUTINE {
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_C_1
+    RunTask(IF126A_WRITE_LINE)
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_C_2
+    RunTask(IF126A_WRITE_LINE)
+    DUMMY_RECORD = COBOL_IF126A_VARS.HYPHEN_LINE
+    RunTask(IF126A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_END_ROUTINE {
+    DUMMY_RECORD = COBOL_IF126A_VARS.HYPHEN_LINE
+    RunTask(IF126A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_END_RTN_EXIT {
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_E_1
+    RunTask(IF126A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_END_ROUTINE_1 {
+    COBOL_IF126A_VARS.ERROR_HOLD = Add(COBOL_IF126A_VARS.ERROR_HOLD, COBOL_IF126A_VARS.ERROR_COUNTER)
+    COBOL_IF126A_VARS.ERROR_HOLD = Add(COBOL_IF126A_VARS.ERROR_HOLD, COBOL_IF126A_VARS.INSPECT_COUNTER)
+    COBOL_IF126A_VARS.ERROR_HOLD = Add(COBOL_IF126A_VARS.ERROR_HOLD, COBOL_IF126A_VARS.DELETE_COUNTER)
+    COBOL_IF126A_VARS.ERROR_HOLD = Add(COBOL_IF126A_VARS.ERROR_HOLD, COBOL_IF126A_VARS.PASS_COUNTER)
+    COBOL_IF126A_VARS.CCVS_E_4_1 = COBOL_IF126A_VARS.PASS_COUNTER
+    COBOL_IF126A_VARS.CCVS_E_4_2 = COBOL_IF126A_VARS.ERROR_HOLD
+    COBOL_IF126A_VARS.CCVS_E_2_2 = COBOL_IF126A_VARS.CCVS_E_4
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_E_2
+    RunTask(IF126A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_END_ROUTINE_12 {
+    COBOL_IF126A_VARS.ENDER_DESC = "TEST(S) FAILED"
+    IfCondition EqualTo(COBOL_IF126A_VARS.ERROR_COUNTER, 0) ThenBlock: {
+            COBOL_IF126A_VARS.ERROR_TOTAL = "NO "
+        } ElseBlock: {
+            COBOL_IF126A_VARS.ERROR_TOTAL = COBOL_IF126A_VARS.ERROR_COUNTER
+            DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_E_2
+            RunTask(IF126A_WRITE_LINE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_END_ROUTINE_13 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.DELETE_COUNTER, 0) ThenBlock: {
+            COBOL_IF126A_VARS.ERROR_TOTAL = "NO "
+        } ElseBlock: {
+            COBOL_IF126A_VARS.ERROR_TOTAL = COBOL_IF126A_VARS.DELETE_COUNTER
+            COBOL_IF126A_VARS.ENDER_DESC = "TEST(S) DELETED     "
+            DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_E_2
+            RunTask(IF126A_WRITE_LINE)
+            IfCondition EqualTo(COBOL_IF126A_VARS.INSPECT_COUNTER, 0) ThenBlock: {
+                        COBOL_IF126A_VARS.ERROR_TOTAL = "NO "
+                    } ElseBlock: {
+                        COBOL_IF126A_VARS.ERROR_TOTAL = COBOL_IF126A_VARS.INSPECT_COUNTER
+                        COBOL_IF126A_VARS.ENDER_DESC = "TEST(S) REQUIRE INSPECTION"
+                        DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_E_2
+                        RunTask(IF126A_WRITE_LINE)
+                        DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_E_3
+                        RunTask(IF126A_WRITE_LINE)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_WRITE_LINE {
+    COBOL_IF126A_VARS.RECORD_COUNT = Add(COBOL_IF126A_VARS.RECORD_COUNT, 1)
+    COBOL_IF126A_VARS.DUMMY_HOLD = DUMMY_RECORD
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_H_1
+    RunTask(IF126A_WRT_LN)
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_H_2B
+    RunTask(IF126A_WRT_LN)
+    DUMMY_RECORD = COBOL_IF126A_VARS.CCVS_C_1
+    RunTask(IF126A_WRT_LN)
+    DUMMY_RECORD = COBOL_IF126A_VARS.HYPHEN_LINE
+    RunTask(IF126A_WRT_LN)
+    COBOL_IF126A_VARS.RECORD_COUNT = 0
+    RunTask(IF126A_WRT_LN)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_WRT_LN {
+    DUMMY_RECORD = " "
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_BLANK_LINE_PRINT {
+    RunTask(IF126A_WRT_LN)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_FAIL_ROUTINE {
+    IfCondition EqualTo(COBOL_IF126A_VARS.COMPUTED_X, " ") ThenBlock: {
+            RunTask(IF126A_FAIL_ROUTINE_WRITE)
+            IfCondition EqualTo(COBOL_IF126A_VARS.CORRECT_X, " ") ThenBlock: {
+                        RunTask(IF126A_FAIL_ROUTINE_WRITE)
+                        COBOL_IF126A_VARS.INF_ANSI_REFERENCE = COBOL_IF126A_VARS.ANSI_REFERENCE
+                        COBOL_IF126A_VARS.INFO_TEXT = "NO FURTHER INFORMATION, SEE PROGRAM."
+                        DUMMY_RECORD = COBOL_IF126A_VARS.XXINFO
+                        RunTask(IF126A_WRITE_LINE)
+                    }
+        }
+    COBOL_IF126A_VARS.INF_ANSI_REFERENCE = " "
+    RunTask(IF126A_FAIL_ROUTINE_EX)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_FAIL_ROUTINE_WRITE {
+    PRINT_REC = COBOL_IF126A_VARS.TEST_COMPUTED
+    RunTask(IF126A_WRITE_LINE)
+    COBOL_IF126A_VARS.COR_ANSI_REFERENCE = COBOL_IF126A_VARS.ANSI_REFERENCE
+    PRINT_REC = COBOL_IF126A_VARS.TEST_CORRECT
+    RunTask(IF126A_WRITE_LINE)
+    COBOL_IF126A_VARS.COR_ANSI_REFERENCE = " "
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_FAIL_ROUTINE_EX {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_BAIL_OUT {
+    IfCondition EqualTo(COBOL_IF126A_VARS.COMPUTED_A, " ") ThenBlock: {
+            RunTask(IF126A_BAIL_OUT_WRITE)
+            IfCondition EqualTo(COBOL_IF126A_VARS.CORRECT_A, " ") ThenBlock: {
+                        RunTask(IF126A_BAIL_OUT_EX)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_BAIL_OUT_WRITE {
+    COBOL_IF126A_VARS.XXCORRECT = COBOL_IF126A_VARS.CORRECT_A
+    COBOL_IF126A_VARS.XXCOMPUTED = COBOL_IF126A_VARS.COMPUTED_A
+    COBOL_IF126A_VARS.INF_ANSI_REFERENCE = COBOL_IF126A_VARS.ANSI_REFERENCE
+    DUMMY_RECORD = COBOL_IF126A_VARS.XXINFO
+    RunTask(IF126A_WRITE_LINE)
+    COBOL_IF126A_VARS.INF_ANSI_REFERENCE = " "
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_BAIL_OUT_EX {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_CCVS1_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_SECT_IF126A {
+    RunTask(IF126A_F_NUMVALC_INFO)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_INFO {
+    COBOL_IF126A_VARS.ANSI_REFERENCE = "See ref. A-59 2.30"
+    COBOL_IF126A_VARS.FEATURE = "NUMVAL-C Function"
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_01 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_01 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 9) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(9, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_01)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_01 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_01)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_01 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-01"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_02 {
+    COBOL_IF126A_VARS.TEMP = 77
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_02 {
+    RunTask(IF126A_PASS)
+    RunTask(IF126A_F_NUMVALC_WRITE_02)
+    RunTask(IF126A_FAIL)
+    RunTask(IF126A_F_NUMVALC_WRITE_02)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_02 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_02)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_02 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-02"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_03 {
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_03 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_03)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_03 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-03"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_04 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_04 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 0), LessEqual(COBOL_IF126A_VARS.TEMP, 0)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(0, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_04)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_04 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_04)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_04 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-04"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_05 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_05 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 385), LessEqual(COBOL_IF126A_VARS.TEMP, 385)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(385, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_05)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_05 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_05)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_05 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-05"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_06 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_06 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 8848), LessEqual(COBOL_IF126A_VARS.TEMP, 8849)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(8848, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_06)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_06 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_06)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_06 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-06"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_07 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_07 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 394), LessEqual(COBOL_IF126A_VARS.TEMP, 394)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(394, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_07)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_07 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_07)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_07 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-07"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_08 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_08 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 939), LessEqual(COBOL_IF126A_VARS.TEMP, 939)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(939, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_08)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_08 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_08)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_08 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-08"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_09 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_09 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 4929)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 4928))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 4929), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_09)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_09 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_09)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_09 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-09"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_10 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_10 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 4825197), LessEqual(COBOL_IF126A_VARS.TEMP, 4825390)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(4825293, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_10)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_10 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_10)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_10 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-10"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_11 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_11 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 5555)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 5555))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 5555), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_11)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_11 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_11)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_11 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-11"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_12 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_12 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 82), LessEqual(COBOL_IF126A_VARS.TEMP, 82)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(82, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_12)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_12 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_12)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_12 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-12"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_13 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_13 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 5555)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 5555))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 5555), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_13)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_13 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_13)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_13 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-13"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_14 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_14 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 200)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 199))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 200), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_14)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_14 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_14)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_14 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-14"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_15 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_15 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 77776), LessEqual(COBOL_IF126A_VARS.TEMP, 77779)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(77777, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_15)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_15 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_15)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_15 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-15"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_16 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_16 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 5) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(5, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_16)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_16 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_16)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_16 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-16"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_17 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_17 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 33) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(33, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_17)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_17 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_17)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_17 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-17"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_18 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_18 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 93021) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(93021, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_18)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_18 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_18)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_18 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-18"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_20 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_20 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 924), LessEqual(COBOL_IF126A_VARS.TEMP, 924)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(924, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_20)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_20 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_20)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_20 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-20"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_21 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_21 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 4000) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(4000, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_21)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_21 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_21)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_21 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-21"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_22 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_22 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 34)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 34))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 34), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_22)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_22 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_22)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_22 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-22"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_23 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_23 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 999980), LessEqual(COBOL_IF126A_VARS.TEMP, 1000020)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(1000000, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_23)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_23 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_23)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_23 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-23"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_24 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_24 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 89), LessEqual(COBOL_IF126A_VARS.TEMP, 89)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(89, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_24)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_24 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_24)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_24 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-24"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_25 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_25 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 3900), LessEqual(COBOL_IF126A_VARS.TEMP, 3900)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(3900, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_25)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_25 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_25)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_25 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-25"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_26 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_26 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 890)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 890))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 890), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_26)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_26 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_26)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_26 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-26"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_27 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_27 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 9000), LessEqual(COBOL_IF126A_VARS.TEMP, 9001)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(9000, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_27)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_27 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_27)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_27 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-27"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_28 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_28 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 90)), LessEqual(COBOL_IF126A_VARS.TEMP, Subtract(0, 90))) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(Subtract(0, 90), 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_28)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_28 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_28)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_28 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-28"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_29 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_29 {
+    IfCondition EqualTo(GreaterEqual(COBOL_IF126A_VARS.TEMP, 3890), LessEqual(COBOL_IF126A_VARS.TEMP, 3890)) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(3890, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_29)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_29 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_29)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_29 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-29"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_30 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_30 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 100) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(100, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_30)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_30 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_30)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_30 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-30"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_31 {
+    COBOL_IF126A_VARS.TEMP = 0
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_TEST_31 {
+    IfCondition EqualTo(COBOL_IF126A_VARS.TEMP, 10) ThenBlock: {
+            RunTask(IF126A_PASS)
+        } ElseBlock: {
+            COBOL_IF126A_VARS.CORRECT_N = FormatSigned(10, 4, 4, 2, "trailing")
+            COBOL_IF126A_VARS.COMPUTED_N = FormatSigned(COBOL_IF126A_VARS.TEMP, 4, 4, 2, "trailing")
+            RunTask(IF126A_FAIL)
+            RunTask(IF126A_F_NUMVALC_WRITE_31)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_DELETE_31 {
+    RunTask(IF126A_DE_LETE)
+    RunTask(IF126A_F_NUMVALC_WRITE_31)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_F_NUMVALC_WRITE_31 {
+    COBOL_IF126A_VARS.PAR_NAME = "F-NUMVALC-31"
+    RunTask(IF126A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_CCVS_EXIT {
+    RunTask(IF126A_CCVS_999999)
+    ReturnValue(0)
+}
+
+SubRoutine.IF126A_CCVS_999999 {
+    RunTask(IF126A_CLOSE_FILES)
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(IF126A)
+}

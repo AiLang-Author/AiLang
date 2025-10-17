@@ -1,0 +1,3365 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_EXEC85_VARS {
+    "SOURCE_IN_2400": Initialize=""
+    "SOURCE_IN": Initialize=""
+    "CONTROL_RECORD": Initialize=""
+    "PRINT_REC": Initialize=""
+    "FILLER": Initialize=""
+    "PRINT_DATA": Initialize=""
+    "CT_OUT": Initialize=""
+    "UPDATED_SOURCE_OUT_2400": Initialize=""
+    "UD_SOURCE_OUT": Initialize=""
+    "BLOCK_TYPE": Initialize=""
+    "SUB1": Initialize=0
+    "SUB2": Initialize=0
+    "SUB3": Initialize=0
+    "SUB4": Initialize=0
+    "SUB5": Initialize=0
+    "SUB6": Initialize=0
+    "SUB7": Initialize=0
+    "WA_ERR_IND": Initialize=0
+    "WA_FIRST_IND": Initialize=0
+    "WA_ZCARD_TABLE": Initialize=""
+    "WA_ZCARD": Initialize=""
+    "WA_TOP_OF_PAGE_LINE": Initialize=""
+    "WA_VERSION": Initialize=""
+    "WA_VERSION_TEXT": Initialize="CCVS85 VERSION NUMBER"
+    "WA_VERSION_NUM": Initialize=" "
+    "WA_RELEASE": Initialize=""
+    "WA_RELEASE_TEXT": Initialize=", RELEASED ON"
+    "WA_VERSION_DATE": Initialize=" "
+    "WA_COMPANY_AND_COMPILER": Initialize=" "
+    "WA_DATE": Initialize=""
+    "WA_PAGE_CT": Initialize=""
+    "WA_ACCT_LINE_1": Initialize=""
+    "WA_CURRENT_PROG": Initialize=""
+    "WA_LINES_COBOL": Initialize=""
+    "WA_ACCT_LINE_2": Initialize=""
+    "WA_LINES_INSERTED": Initialize=""
+    "WA_LINES_REPLACED": Initialize=""
+    "WA_LINES_DELETED": Initialize=""
+    "WA_ACCT_LINE_3": Initialize=""
+    "WA_OPTIONAL_CODE": Initialize=""
+    "WA_CODE_REMOVED": Initialize=""
+    "WA_CODE_KILLED": Initialize="** COMMENTS DELETED"
+    "WA_COMMENTS_DEL": Initialize=""
+    "WA_FINAL_LINE_1": Initialize=""
+    "WA_PROGS_FOUND": Initialize=""
+    "WA_FINAL_LINE_2": Initialize=""
+    "WA_SOURCE_PROGS": Initialize=""
+    "WA_FINAL_LINE_3": Initialize=""
+    "WA_NEWPOP_PROGS": Initialize=""
+    "WB_CONTROL_DATA": Initialize=""
+    "WB_FILL": Initialize=""
+    "WB_3": Initialize=""
+    "WB_4": Initialize=""
+    "WB_NN": Initialize=0
+    "WB_X": Initialize=""
+    "WB_6": Initialize=""
+    "WB_7": Initialize=""
+    "WB_8": Initialize=""
+    "WB_9": Initialize=""
+    "WB_10": Initialize=""
+    "WB_11": Initialize=""
+    "WB_12": Initialize=""
+    "WB_PROG": Initialize=""
+    "WB_13": Initialize=""
+    "WB_14": Initialize=""
+    "WB_MODULE": Initialize=""
+    "WB_LEVEL": Initialize=""
+    "WB_15": Initialize=""
+    "WB_16": Initialize=""
+    "WB_X_CARD": Initialize=""
+    "WB_X_HYPHEN": Initialize=""
+    "WB_X_CARD_NUM": Initialize=0
+    "WB_PROG_POS": Initialize=""
+    "WB_PROG_POS_NUM": Initialize=0
+    "WB_SUBS_TEXT": Initialize=""
+    "WB_START_CARD": Initialize=""
+    "WB_STAR_START": Initialize=""
+    "WB_UPDATE_PROG": Initialize=""
+    "WB_RENUMBER": Initialize=""
+    "WB_LINE_UPDATE": Initialize=""
+    "WB_SEQ_1": Initialize=""
+    "WB_COBOL_LINE": Initialize=""
+    "WB_COL_7": Initialize=""
+    "WB_CHAR": Initialize=""
+    "WB_SEQ_2": Initialize=""
+    "WC_CURRENT_POP_RECORD": Initialize=""
+    "WC_1": Initialize=""
+    "WC_END_OF_POPFILE": Initialize=""
+    "WC_HEADER": Initialize=""
+    "WC_STAR_HEADER": Initialize=""
+    "WC_COBOL": Initialize=""
+    "WC_PROG_ID": Initialize=""
+    "WC_PROG_ID_1_5": Initialize=""
+    "WC_PROG_ID_1_4": Initialize=""
+    "WC_MODULE": Initialize=""
+    "WC_LEVEL": Initialize=""
+    "WC_PROG_ID_6": Initialize=""
+    "WC_SUBPRG": Initialize=""
+    "WC_PROG2ID": Initialize=""
+    "WC_PROG2ID_1_5": Initialize=""
+    "WC_1_72": Initialize=""
+    "WC_6": Initialize=""
+    "WC_STAR": Initialize=""
+    "WC_1_5": Initialize=""
+    "WC_COL_7": Initialize=""
+    "WC_COL_8": Initialize=""
+    "WC_SUB_DATA": Initialize=""
+    "WC_12_15": Initialize=""
+    "WC_17_19": Initialize=0
+    "WC_20": Initialize=""
+    "WC_73_80": Initialize=""
+    "WD_SOURCE_REC": Initialize=""
+    "WD_1": Initialize=""
+    "WD_HEADER": Initialize=""
+    "WE_PRINT_DATA": Initialize=""
+    "WE_COBOL_LINE": Initialize=""
+    "WE_X_CARD": Initialize=""
+    "WE_CHANGE_TYPE": Initialize=""
+    "WF_PROGRAM_SELECTED_TABLE": Initialize=""
+    "WF_PROGRAM_SELECTED": Initialize=""
+    "WG_MODULE_SELECTED_TABLE": Initialize=""
+    "WG_MODULE_SELECTED": Initialize=""
+    "WG_MODULE_LEVEL": Initialize=""
+    "WV_PRINT_MISCELLANEOUS": Initialize=""
+    "WV_OPTION_HEADING": Initialize="OPTION SWITCH SETTINGS -"
+    "WV_OPT_1": Initialize="0                 1                   2"
+    "WV_OPT_2": Initialize="1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6"
+    "WV_OPT_SWITCHES": Initialize=""
+    "WV_OPT": Initialize=""
+    "WX_X_CARD_TABLE": Initialize=""
+    "WX_X_CARD": Initialize=0
+    "WX_X_CHAR": Initialize=""
+    "WX_PROG_POS_TABLE": Initialize=""
+    "WX_PROG_POS": Initialize=0
+    "WY_SWITCHES": Initialize=""
+    "WY_OPTION_SWITCHES": Initialize=""
+    "WY_OPT_SW_1": Initialize=""
+    "WY_OPT_SW_2": Initialize=""
+    "WY_OPT_SW_3": Initialize=""
+    "WY_OPT_SW_4": Initialize=""
+    "WY_OPT_SW_5": Initialize=""
+    "WY_OPT_SW_6": Initialize=""
+    "WY_OPT_SW_7": Initialize=""
+    "WY_OPT_SW_8": Initialize=""
+    "WY_OPT_SW_9": Initialize=""
+    "WY_OPT_SW_10": Initialize=""
+    "WY_OPT_SW_11": Initialize=""
+    "WY_OPT_SW_12": Initialize=""
+    "WY_OPT_SW_13": Initialize=""
+    "WY_OPT_SW_14": Initialize=""
+    "WY_OPT_SW_15": Initialize=""
+    "WY_OPT_SW_16": Initialize=""
+    "WY_OPT_SW_17": Initialize=""
+    "WY_OPT_SW_18": Initialize=""
+    "WY_OPT_SW_19": Initialize=""
+    "WY_OPT_SW_20": Initialize=""
+    "WY_OPT_SW_21": Initialize=""
+    "WY_OPT_SW_22": Initialize=""
+    "WY_OPT_SW_23": Initialize=""
+    "WY_OPT_SW_24": Initialize=""
+    "WY_OPT_SW_25": Initialize=""
+    "WY_OPT_SW_26": Initialize=""
+    "WY_OPT_SW": Initialize=""
+    "WY_PRINT_SWITCHES": Initialize=""
+    "WY_EXTRACT_ALL": Initialize=""
+    "WY_EXTRACT_AUTO": Initialize=""
+    "WY_EXTRACT_MAN": Initialize=""
+    "WY_KILL_DELETIONS": Initialize=""
+    "WY_LIST_NO_UPDATES": Initialize=""
+    "WY_LIST_X_CARDS": Initialize=""
+    "WY_LIST_PROGRAMS": Initialize=""
+    "WY_LIST_COMPACT": Initialize=""
+    "WY_NO_DATA": Initialize=""
+    "WY_NO_LIBRARY": Initialize=""
+    "WY_NO_SOURCE": Initialize=""
+    "WY_REMOVE_COMMENTS": Initialize=""
+    "WY_NEW_POP": Initialize=""
+    "WY_SELECT_PROG": Initialize=""
+    "WY_SELECT_MODULE": Initialize=""
+    "WY_SELECT_LEVEL": Initialize=""
+    "WZ_MISCELLANEOUS": Initialize=""
+    "WZ_PROGRAM_SELECTED": Initialize=""
+    "WZ_END_OF_POPFILE": Initialize=""
+    "WZ_FULL_STOP": Initialize=""
+    "WZ_DONT_READ_POPFILE": Initialize=""
+    "WZ_UPDATE_THIS_PROG": Initialize=""
+    "WZ_REPLACE_FLAG": Initialize=""
+    "WZ_LINE_UPDATE": Initialize=""
+    "WZ_RESEQUENCE_THIS": Initialize=""
+    "WZ_RESEQUENCE_NEXT": Initialize=""
+    "WZ_END_OF_UPDATES": Initialize=""
+    "WZ_OPTIONAL_SELECTED": Initialize=""
+    "WZ_DELETE_FLAG": Initialize=""
+    "WZ_NOT_THIS_COMMENT": Initialize=""
+    "WZ_CURRENT_HEADER": Initialize=""
+    "WZ_INVALID_DATA": Initialize=""
+    "WZ_ERROR_MESSAGE": Initialize=""
+    "WZ_CURRENT_UPD_PROG": Initialize=""
+    "WZ_UPD_PROG_CHAR": Initialize=""
+    "WZ_CURRENT_MAIN_PROG": Initialize=""
+    "WZ_MAIN_PROG_CHAR": Initialize=""
+    "WZ_PROG_BREAK": Initialize=""
+    "WZ_1CHAR": Initialize=""
+    "WZ_CURRENT_POP_PROG": Initialize=""
+    "WZ_PROG_ID_6": Initialize=""
+    "WZ_MAIN_PROG_FLAG": Initialize=""
+    "WZ_LINES_COBOL": Initialize=0
+    "WZ_LINES_INSERTED": Initialize=0
+    "WZ_LINES_REPLACED": Initialize=0
+    "WZ_LINES_DELETED": Initialize=0
+    "WZ_COMMENTS_DELETED": Initialize=0
+    "WZ_CODE_REMOVED": Initialize=0
+    "WZ_SOURCE_PROGS": Initialize=0
+    "WZ_NEWPOP_PROGS": Initialize=0
+    "WZ_PROGS_FOUND": Initialize=0
+    "WZ_COMMENTS_DEL": Initialize=0
+    "WZ_SEQ_NO": Initialize=0
+    "WZ_SAVE_POP_RECORD": Initialize=""
+    "WZ_SAVE_SEQ": Initialize=""
+    "WZ_SAVE_12_20": Initialize=""
+    "WZ_SAVE_12_15": Initialize=""
+    "WZ_PAGE_CT": Initialize=0
+    "WZ_LINE_CT": Initialize=0
+    "WZ_MODULE": Initialize=""
+    "WZ_LEVEL": Initialize=""
+    "WZ_PRINT_HOLD": Initialize=""
+    "WZ_X_CARD": Initialize=""
+    "WZ_X_CHAR": Initialize=""
+    "WZ_WITHIN_DELETE_SERIES_FLAG": Initialize=""
+    "WZ_VERSION_CARD": Initialize=""
+    "WZ_VERSION_CONTROL": Initialize=""
+    "WZ_VERSION_NUM": Initialize=""
+    "WZ_VERSION_DATE": Initialize=""
+}
+
+SubRoutine.EXEC85 {
+    COBOL_EXEC85_VARS.UD_SOURCE_OUT = ArrayCreate(30)
+    COBOL_EXEC85_VARS.WA_ZCARD = ArrayCreate(10)
+    COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED = ArrayCreate(50)
+    COBOL_EXEC85_VARS.WX_X_CARD = ArrayCreate(200)
+    COBOL_EXEC85_VARS.WX_X_CHAR = ArrayCreate(60)
+    COBOL_EXEC85_VARS.WX_PROG_POS = ArrayCreate(200)
+    COBOL_EXEC85_VARS.WY_OPT_SW = ArrayCreate(26)
+    COBOL_EXEC85_VARS.WZ_MAIN_PROG_CHAR = ArrayCreate(6)
+    COBOL_EXEC85_VARS.WZ_1CHAR = ArrayCreate(6)
+    COBOL_EXEC85_VARS.WZ_X_CHAR = ArrayCreate(60)
+    RunTask(EXEC85_A10_1_MAIN)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_A10_MAIN {
+    RunTask(EXEC85_A10_1_MAIN)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_A10_1_MAIN {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM B10-INITIALISE")
+        }
+    RunTask(EXEC85_B10_INITIALISE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM C10-PROCESS-MONITOR")
+        }
+    RunTask(EXEC85_C10_PROCESS_MONITOR)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D10-MERGE-UPDATE-CARDS")
+        }
+    RunTask(EXEC85_D10_MERGE_UPDATE_CARDS)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM E10-TERMINATE")
+        }
+    RunTask(EXEC85_E10_TERMINATE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_A10_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B10_INITIALISE {
+    RunTask(EXEC85_B10_1_INIT_OPTION_SWITCHES)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B10_1_INIT_OPTION_SWITCHES {
+    COBOL_EXEC85_VARS.WZ_MISCELLANEOUS = " "
+    COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED_TABLE = " "
+    COBOL_EXEC85_VARS.WG_MODULE_SELECTED_TABLE = " "
+    COBOL_EXEC85_VARS.WY_SWITCHES = " "
+    COBOL_EXEC85_VARS.WY_OPT_SW_1 = "A"
+    COBOL_EXEC85_VARS.WY_OPT_SW_2 = "E"
+    COBOL_EXEC85_VARS.WY_OPT_SW_3 = "H"
+    COBOL_EXEC85_VARS.WY_OPT_SW_4 = "L"
+    COBOL_EXEC85_VARS.WY_OPT_SW_7 = "Y"
+    COBOL_EXEC85_VARS.WY_OPT_SW_11 = "T"
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B10_2_INIT_X_CARDS {
+    COBOL_EXEC85_VARS.SUB1 = 0
+    COBOL_EXEC85_VARS.SUB6 = 0
+    COBOL_EXEC85_VARS.SUB7 = 0
+    COBOL_EXEC85_VARS.SUB5 = 1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM B20-INIT-X-CARDS")
+        }
+    RunTask(EXEC85_B20_INIT_X_CARDS)
+    ArraySet(COBOL_EXEC85_VARS.WX_X_CARD, Subtract(84, 1), "    OMITTED")
+    COBOL_EXEC85_VARS.WZ_LINES_COBOL = 0
+    COBOL_EXEC85_VARS.WZ_LINES_INSERTED = 0
+    COBOL_EXEC85_VARS.WZ_LINES_REPLACED = 0
+    COBOL_EXEC85_VARS.WZ_LINES_DELETED = 0
+    COBOL_EXEC85_VARS.WZ_COMMENTS_DELETED = 0
+    COBOL_EXEC85_VARS.WZ_CODE_REMOVED = 0
+    COBOL_EXEC85_VARS.WZ_SOURCE_PROGS = 0
+    COBOL_EXEC85_VARS.WZ_NEWPOP_PROGS = 0
+    COBOL_EXEC85_VARS.WZ_PROGS_FOUND = 0
+    COBOL_EXEC85_VARS.WZ_COMMENTS_DEL = 0
+    COBOL_EXEC85_VARS.WZ_SEQ_NO = 0
+    COBOL_EXEC85_VARS.WZ_PAGE_CT = 0
+    COBOL_EXEC85_VARS.WZ_LINE_CT = 0
+    Debug("cobol.trace", level=2) {
+            PrintMessage("[COBOL] ACCEPT WA-DATE")
+        }
+    COBOL_EXEC85_VARS.WA_DATE = GetUserInput()
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B10_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B20_INIT_X_CARDS {
+    RunTask(EXEC85_B20_1_INIT)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B20_1_INIT {
+    COBOL_EXEC85_VARS.SUB1 = Add(COBOL_EXEC85_VARS.SUB1, 1)
+    ArraySet(COBOL_EXEC85_VARS.WX_X_CARD, Subtract(COBOL_EXEC85_VARS.SUB1, 1), "**** X-CARD UNDEFINED ****")
+    ArraySet(COBOL_EXEC85_VARS.WX_PROG_POS, Subtract(COBOL_EXEC85_VARS.SUB1, 1), 0)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_B20_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C10_PROCESS_MONITOR {
+    RunTask(EXEC85_C10_1_OPEN_FILES)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C10_1_OPEN_FILES {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_PRINT_FILE {
+    COBOL_EXEC85_VARS.PRINT_REC = " "
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_CONTROL_CARD_FILE {
+    COBOL_EXEC85_VARS.PRINT_DATA = "CONTROL-CARD-FILE IS EMPTY"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WB_X_HYPHEN, "X-")) {
+            RunTask(EXEC85_C20_PROCESS_STAR_CARDS)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM C30-CHECK-COMBINATIONS")
+        }
+    RunTask(EXEC85_C30_CHECK_COMBINATIONS)
+    WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WB_12, "*END-MONITOR")) {
+            RunTask(EXEC85_C40_PROCESS_X_CARDS)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM C50-PRINT-OPTIONS")
+        }
+    RunTask(EXEC85_C50_PRINT_OPTIONS)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C10_10_GET_FIRST_START_CARD {
+    COBOL_EXEC85_VARS.PRINT_DATA = "NO BEGIN-UPDATE CARD FOUND"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_13, "*BEGIN-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "*BEGIN-UPDATE CARD MISSING"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    COBOL_EXEC85_VARS.PRINT_DATA = "NO END-UPDATE CARD FOUND"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C10-EXIT")
+                    }
+            RunTask(EXEC85_C10_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_STAR_START, "*START") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM C60-START-CARD")
+                                    }
+                        RunTask(EXEC85_C60_START_CARD)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C10_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C20_PROCESS_STAR_CARDS {
+    RunTask(EXEC85_C20_1_UPDATE_CHECK)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C20_1_UPDATE_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_13, "*BEGIN-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_INVALID_DATA = COBOL_EXEC85_VARS.WB_13
+            COBOL_EXEC85_VARS.WZ_ERROR_MESSAGE = "ENCOUNTERED BEFORE *END-MONITOR CARD"
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WZ_INVALID_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_6, "*START") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_INVALID_DATA = COBOL_EXEC85_VARS.WB_6
+            COBOL_EXEC85_VARS.WZ_ERROR_MESSAGE = "ENCOUNTERED BEFORE *END-MONITOR CARD"
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WZ_INVALID_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_INVALID_DATA = COBOL_EXEC85_VARS.WB_11
+            COBOL_EXEC85_VARS.WZ_ERROR_MESSAGE = "ENCOUNTERED BEFORE *END-MONITOR CARD"
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WZ_INVALID_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM C25-SET-FLAGS")
+        }
+    RunTask(EXEC85_C25_SET_FLAGS)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C20_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C25_SET_FLAGS {
+    RunTask(EXEC85_C25_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C25_1 {
+    COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_12, "*EXTRACT-ALL") ThenBlock: {
+            COBOL_EXEC85_VARS.WY_EXTRACT_ALL = "Y"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_13, "*EXTRACT-AUTO") ThenBlock: {
+                        COBOL_EXEC85_VARS.WY_EXTRACT_AUTO = "Y"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WB_12, "*EXTRACT-MAN") ThenBlock: {
+                                        COBOL_EXEC85_VARS.WY_EXTRACT_MAN = "Y"
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WB_15, "*KILL-DELETIONS") ThenBlock: {
+                                                            COBOL_EXEC85_VARS.WY_KILL_DELETIONS = "Y"
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                }
+                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_16, "*LIST NO-UPDATES") ThenBlock: {
+                                                                                    COBOL_EXEC85_VARS.WY_LIST_NO_UPDATES = "Y"
+                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                            }
+                                                                                    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_13, "*LIST X-CARDS") ThenBlock: {
+                                                                                                                COBOL_EXEC85_VARS.WY_LIST_X_CARDS = "Y"
+                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                                                            }
+                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WB_14, "*LIST PROGRAMS") ThenBlock: {
+                                                                                                                                                COBOL_EXEC85_VARS.WY_LIST_PROGRAMS = "Y"
+                                                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                }
+                                                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WB_13, "*LIST COMPACT") ThenBlock: {
+                                                                                                                                                                                    COBOL_EXEC85_VARS.WY_LIST_COMPACT = "Y"
+                                                                                                                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                            PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                        }
+                                                                                                                                                                                    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_8, "*NO-DATA") ThenBlock: {
+                                                                                                                                                                                                                            COBOL_EXEC85_VARS.WY_NO_DATA = "Y"
+                                                                                                                                                                                                                            Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                        PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*NO-LIBRARY") ThenBlock: {
+                                                                                                                                                                                                                                                                        COBOL_EXEC85_VARS.WY_NO_LIBRARY = "Y"
+                                                                                                                                                                                                                                                                        Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                        PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WB_10, "*NO-SOURCE") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                        COBOL_EXEC85_VARS.WY_NO_SOURCE = "Y"
+                                                                                                                                                                                                                                                                                                                        Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                            PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WB_16, "*REMOVE-COMMENTS") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                            COBOL_EXEC85_VARS.WY_REMOVE_COMMENTS = "Y"
+                                                                                                                                                                                                                                                                                                                                                                            Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_8, "*NEW-POP") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                    COBOL_EXEC85_VARS.WY_NEW_POP = "Y"
+                                                                                                                                                                                                                                                                                                                                                                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_4, "*OPT") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ArraySet(COBOL_EXEC85_VARS.WY_OPT_SW, Subtract(COBOL_EXEC85_VARS.WB_NN, 1), COBOL_EXEC85_VARS.WB_X)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WB_14, "*SELECT-MODULE") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WB_MODULE, " ") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    COBOL_EXEC85_VARS.PRINT_DATA = "SELECTED MODULE NOT SPECIFIED"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    RunTask(EXEC85_X20_PRINT_DETAIL)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WB_14, "*SELECT-MODULE") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    COBOL_EXEC85_VARS.SUB6 = Add(COBOL_EXEC85_VARS.SUB6, 1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    IfCondition GreaterThan(COBOL_EXEC85_VARS.SUB6, 10) ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            COBOL_EXEC85_VARS.PRINT_DATA = "MORE THAN 10 MODULES SELECTED"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            RunTask(EXEC85_X20_PRINT_DETAIL)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        } ElseBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            COBOL_EXEC85_VARS.WY_SELECT_MODULE = "Y"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ArraySet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1), COBOL_EXEC85_VARS.WB_MODULE)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ArraySet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1), COBOL_EXEC85_VARS.WB_LEVEL)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_12, "*SELECT-PROG") ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        COBOL_EXEC85_VARS.SUB7 = Add(COBOL_EXEC85_VARS.SUB7, 1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        IfCondition GreaterThan(COBOL_EXEC85_VARS.SUB7, 50) ThenBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        COBOL_EXEC85_VARS.PRINT_DATA = "MORE THAN 50 RECORDS SELECTED"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Debug("cobol.trace", level=3) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    } ElseBlock: {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        COBOL_EXEC85_VARS.WY_SELECT_PROG = "Y"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ArraySet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1), COBOL_EXEC85_VARS.WB_PROG)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                        }
+                                                                                                                                                                                }
+                                                                                                                                            }
+                                                                                                            }
+                                                                                }
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C25_10_READ_FILE {
+    COBOL_EXEC85_VARS.WB_CONTROL_DATA = " "
+    COBOL_EXEC85_VARS.PRINT_DATA = "*END-MONITOR NOT ENCOUNTERED"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C25_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_CHECK_COMBINATIONS {
+    RunTask(EXEC85_C30_1_SELECTION_CHECK)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_1_SELECTION_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_ALL, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-10")
+                    }
+            RunTask(EXEC85_C30_10)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "ALL AND AUTO PROGRAMS SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_10 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_ALL, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-20")
+                    }
+            RunTask(EXEC85_C30_20)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "ALL AND MANUAL PROGRAMS SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_20 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_PROGRAMS, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-30")
+                    }
+            RunTask(EXEC85_C30_30)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_NO_UPDATES, " ") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "BOTH UPDATES AND PROGRAMS SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_30 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-40-CHECK-FOR-NEW-FILE")
+                    }
+            RunTask(EXEC85_C30_40_CHECK_FOR_NEW_FILE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "AUTO AND MANUAL PROGRAMS SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_40_CHECK_FOR_NEW_FILE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-50")
+                    }
+            RunTask(EXEC85_C30_50)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM C30-50")
+                                    }
+                        RunTask(EXEC85_C30_50)
+                        COBOL_EXEC85_VARS.PRINT_DATA = "NO SOURCE OR UPDATED POPFILE SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_50 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_ALL, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-55")
+                    }
+            RunTask(EXEC85_C30_55)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, "Y") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM C30-55")
+                                    }
+                        RunTask(EXEC85_C30_55)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, " ") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM C30-60")
+                                                        }
+                                        RunTask(EXEC85_C30_60)
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_55 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_PROG, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "SINGLE PROGRAM SELECTED WITH ALL/AUTO/MANUAL"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_MODULE, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "SINGLE MODULE SELECTED WITH ALL/AUTO/MANUAL"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_60 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_PROG, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C30-70")
+                    }
+            RunTask(EXEC85_C30_70)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_MODULE, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "SINGLE MODULE AND SINGLE PROGRAM SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_70 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_ALL, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, " ") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, " ") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_PROG, " ") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                }
+                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_MODULE, " ") ThenBlock: {
+                                                                                    COBOL_EXEC85_VARS.PRINT_DATA = "NO PROGRAMS SELECTED"
+                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                                                                                            }
+                                                                                    RunTask(EXEC85_X20_PRINT_DETAIL)
+                                                                                }
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C30_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C40_PROCESS_X_CARDS {
+    RunTask(EXEC85_C40_1_PROCESS_CARD)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C40_1_PROCESS_CARD {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_X_HYPHEN, "X-") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_INVALID_DATA = "INVALID X-CARD:"
+            COBOL_EXEC85_VARS.WZ_ERROR_MESSAGE = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WZ_INVALID_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C40-90-READ-FILE")
+                    }
+            RunTask(EXEC85_C40_90_READ_FILE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition GreaterThan(COBOL_EXEC85_VARS.WB_X_CARD_NUM, 200) ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_INVALID_DATA = "INVALID X-CARD:"
+                        COBOL_EXEC85_VARS.WZ_ERROR_MESSAGE = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+                        COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WZ_INVALID_DATA
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM C40-90-READ-FILE")
+                                    }
+                        RunTask(EXEC85_C40_90_READ_FILE)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C40_20_MOVE_DATA {
+    ArraySet(COBOL_EXEC85_VARS.WX_X_CARD, Subtract(COBOL_EXEC85_VARS.WB_X_CARD_NUM, 1), COBOL_EXEC85_VARS.WB_SUBS_TEXT)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_PROG_POS, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C40-30-MOVE-DATA")
+                    }
+            RunTask(EXEC85_C40_30_MOVE_DATA)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition LessThan(COBOL_EXEC85_VARS.WB_PROG_POS_NUM, 55) ThenBlock: {
+                        ArraySet(COBOL_EXEC85_VARS.WX_PROG_POS, Subtract(COBOL_EXEC85_VARS.WB_X_CARD_NUM, 1), COBOL_EXEC85_VARS.WB_PROG_POS_NUM)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C40_30_MOVE_DATA {
+    COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C40_90_READ_FILE {
+    COBOL_EXEC85_VARS.PRINT_DATA = "*BEGIN-UPDATE AND *END-UPDATE CARDS NOT ENCOUNTERED"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C40_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_PRINT_OPTIONS {
+    RunTask(EXEC85_C50_1_PRINT_OPTION_SWITCHES)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_1_PRINT_OPTION_SWITCHES {
+    COBOL_EXEC85_VARS.WV_OPT_SWITCHES = " "
+    COBOL_EXEC85_VARS.SUB1 = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM C50-4")
+        }
+    RunTask(EXEC85_C50_4)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM C50-5")
+        }
+    RunTask(EXEC85_C50_5)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_4 {
+    COBOL_EXEC85_VARS.SUB1 = Add(COBOL_EXEC85_VARS.SUB1, 1)
+    ArraySet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB1, 1), ArrayGet(COBOL_EXEC85_VARS.WY_OPT_SW, Subtract(COBOL_EXEC85_VARS.SUB1, 1)))
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_5 {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_20_LISTING_OPTIONS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_NO_UPDATES, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "UPDATES WILL NOT BE REPORTED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "UPDATES WILL BE REPORTED"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_X_CARDS, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "X-CARD SUBSTITUTIONS WILL BE SHOWN"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "X-CARD SUBSTITUTIONS WILL NOT BE SHOWN"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_PROGRAMS, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "PROGRAM LISTINGS WILL BE PRINTED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "PROGRAM LISTINGS WILL NOT BE PRINTED"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_COMPACT, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "REPORT WILL BE COMPRESSED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "REPORT WILL BE EXPANDED"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "SOURCE FILE WILL BE SUPPRESSED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "SOURCE FILE WILL BE CREATED"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "NEW POPULATION FILE WILL BE CREATED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "NEW POPULATION FILE WILL BE SUPPRESSED"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_30 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_LIBRARY, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "LIBRARY NOT SELECTED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "LIBRARY FILES WILL BE SELECTED"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_35 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_DATA, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "DATA BLOCKS WILL BE IGNORED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "DATA BLOCKS WILL BE SENT TO SOURCE FILE"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_40 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_ALL, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "ALL PROGRAMS SELECTED"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "ALL AUTOMATIC PROGRAMS SELECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, "Y") ThenBlock: {
+                                        COBOL_EXEC85_VARS.PRINT_DATA = "ALL MANUAL PROGRAMS SELECTED"
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_PROG, "Y") ThenBlock: {
+                                                            COBOL_EXEC85_VARS.PRINT_DATA = "SEPARATE PROGRAMS SELECTED"
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                }
+                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_MODULE, "Y") ThenBlock: {
+                                                                                    COBOL_EXEC85_VARS.PRINT_DATA = "SEPARATE MODULES SELECTED"
+                                                                                }
+                                                        }
+                                    }
+                    }
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_REMOVE_COMMENTS, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "COMMENT LINES WILL BE REMOVED"
+                    } ElseBlock: {
+                        COBOL_EXEC85_VARS.PRINT_DATA = "COMMENT LINES WILL BE RETAINED"
+                    }
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_KILL_DELETIONS, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "UNUSED OPTIONAL CODE WILL BE REMOVED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "UNUSED OPTIONAL CODE WILL BE CONVERTED TO COM    MENTS AND RETAINED"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C50_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C60_START_CARD {
+    RunTask(EXEC85_C60_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C60_1 {
+    COBOL_EXEC85_VARS.WZ_CURRENT_UPD_PROG = COBOL_EXEC85_VARS.WB_UPDATE_PROG
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_CURRENT_UPD_PROG, COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG) ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_UPDATE_THIS_PROG = "Y"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.WZ_UPDATE_THIS_PROG = " "
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_C60_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_MERGE_UPDATE_CARDS {
+    RunTask(EXEC85_D10_1_OPEN_FILES)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_1_OPEN_FILES {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, " ") ThenBlock: {
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_POPULATION_FILE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D10-20-GET-VERSION")
+        }
+    RunTask(EXEC85_D10_20_GET_VERSION)
+    COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WZ_VERSION_CARD
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_10_GET_HEADER {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D11-GET-NEXT-PROGRAM")
+        }
+    RunTask(EXEC85_D11_GET_NEXT_PROGRAM)
+    WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_POPFILE, "Y")) {
+            RunTask(EXEC85_D20_PROCESS_POPFILE)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D15-END-OF-POPFILE")
+        }
+    RunTask(EXEC85_D15_END_OF_POPFILE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_20_GET_VERSION {
+    RunTask(EXEC85_D10_20_INIT_VER)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_20_INIT_VER {
+    COBOL_EXEC85_VARS.WA_VERSION_NUM = COBOL_EXEC85_VARS.WZ_VERSION_NUM
+    COBOL_EXEC85_VARS.WA_VERSION_DATE = COBOL_EXEC85_VARS.WZ_VERSION_DATE
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D10_20_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D11_GET_NEXT_PROGRAM {
+    RunTask(EXEC85_D11_1_READ_POPFILE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D11_1_READ_POPFILE {
+    COBOL_EXEC85_VARS.WC_STAR_HEADER = " "
+    WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WC_STAR_HEADER, "*HEADER")) {
+            RunTask(EXEC85_X30_READ_POPFILE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D11_TEST_END {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_POPFILE, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D11-EXIT")
+                    }
+            RunTask(EXEC85_D11_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COBOL, "COBOL") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COBOL, "CLBRY") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_LIBRARY, "Y") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D11-1-READ-POPFILE")
+                                                                                }
+                                                            RunTask(EXEC85_D11_1_READ_POPFILE)
+                                                        }
+                                    } ElseBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COBOL, "DATA*") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                }
+                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_DATA, "Y") ThenBlock: {
+                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                PrintMessage("[COBOL] PERFORM D11-1-READ-POPFILE")
+                                                                                                            }
+                                                                                    RunTask(EXEC85_D11_1_READ_POPFILE)
+                                                                                }
+                                                        } ElseBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D11-1-READ-POPFILE")
+                                                                                }
+                                                            RunTask(EXEC85_D11_1_READ_POPFILE)
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D11_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D15_END_OF_POPFILE {
+    RunTask(EXEC85_D15_1_SET_UP_FIELDS)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D15_1_SET_UP_FIELDS {
+    COBOL_EXEC85_VARS.WA_PROGS_FOUND = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_PROGS_FOUND, 0, 2, 0)
+    COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WA_FINAL_LINE_1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, " ") ThenBlock: {
+            COBOL_EXEC85_VARS.WA_SOURCE_PROGS = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_SOURCE_PROGS, 0, 2, 0)
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WA_FINAL_LINE_2
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.WA_NEWPOP_PROGS = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_NEWPOP_PROGS, 0, 2, 0)
+                        COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WA_FINAL_LINE_3
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_UPDATES, " ") ThenBlock: {
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_WZ_END_OF_UPDATES {
+    WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_UPDATES, "Y")) {
+            RunTask(EXEC85_D16_FLAG_UNUSED_UPDATES)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(EqualTo(COBOL_EXEC85_VARS.WY_SELECT_PROG, "Y"), EqualTo(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED_TABLE, " ")) ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = "SOME PROGRAMS NOT FOUND"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            COBOL_EXEC85_VARS.SUB7 = 1
+            WhileLoop Not(GreaterThan(COBOL_EXEC85_VARS.SUB7, 50)) {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1)), " ") ThenBlock: {
+                                        COBOL_EXEC85_VARS.PRINT_DATA = ArrayGet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1))
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                                        }
+                                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                                    }
+                        COBOL_EXEC85_VARS.SUB7 = Add(COBOL_EXEC85_VARS.SUB7, 1)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D15_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D16_FLAG_UNUSED_UPDATES {
+    RunTask(EXEC85_D16_1_PRINT_UPDATES)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D16_1_PRINT_UPDATES {
+    COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+        }
+    RunTask(EXEC85_X20_PRINT_DETAIL)
+    COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D16_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D20_PROCESS_POPFILE {
+    RunTask(EXEC85_D20_1_CHECK_RECORD_TYPE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D20_1_CHECK_RECORD_TYPE {
+    COBOL_EXEC85_VARS.WZ_NOT_THIS_COMMENT = " "
+    COBOL_EXEC85_VARS.WZ_LINE_UPDATE = " "
+    COBOL_EXEC85_VARS.WZ_REPLACE_FLAG = " "
+    COBOL_EXEC85_VARS.WZ_OPTIONAL_SELECTED = " "
+    COBOL_EXEC85_VARS.WZ_DELETE_FLAG = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_STAR_HEADER, "*HEADER") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = " "
+            WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED, "Y")) {
+                        RunTask(EXEC85_D30_PROCESS_HEADER)
+                    }
+        } ElseBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_STAR_HEADER, "*END-OF") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D90-PROCESS-END-OF")
+                                    }
+                        RunTask(EXEC85_D90_PROCESS_END_OF)
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D50-PROCESS-COBOL-LINE")
+                                    }
+                        RunTask(EXEC85_D50_PROCESS_COBOL_LINE)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D25-PRINT-REPORT")
+                                    }
+                        RunTask(EXEC85_D25_PRINT_REPORT)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D20_10_SOURCE_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D20-20-UPDATED-POP-CHECK")
+                    }
+            RunTask(EXEC85_D20_20_UPDATED_POP_CHECK)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_DELETE_FLAG, "Y") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D20-20-UPDATED-POP-CHECK")
+                                    }
+                        RunTask(EXEC85_D20_20_UPDATED_POP_CHECK)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_NOT_THIS_COMMENT, "Y") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D20-20-UPDATED-POP-CHECK")
+                                                        }
+                                        RunTask(EXEC85_D20_20_UPDATED_POP_CHECK)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_POPFILE, "Y") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM X40-WRITE-SOURCE-FILE")
+                                                                                }
+                                                            RunTask(EXEC85_X40_WRITE_SOURCE_FILE)
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D20_20_UPDATED_POP_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X10-WRITE-UPDATED-POPFILE")
+                    }
+            RunTask(EXEC85_X10_WRITE_UPDATED_POPFILE)
+            COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD = COBOL_EXEC85_VARS.WZ_SAVE_POP_RECORD
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D20_30_READ_FILE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_POPFILE, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D20-EXIT")
+                    }
+            RunTask(EXEC85_D20_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_SEQ_1, " ") ThenBlock: {
+                        COBOL_EXEC85_VARS.WC_6 = COBOL_EXEC85_VARS.WZ_SAVE_SEQ
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D20-EXIT")
+                                    }
+                        RunTask(EXEC85_D20_EXIT)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X30-READ-POPFILE")
+                                    }
+                        RunTask(EXEC85_X30_READ_POPFILE)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D20_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D25_PRINT_REPORT {
+    RunTask(EXEC85_D25_1_CHECK_LIST_PROGRAMS)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D25_1_CHECK_LIST_PROGRAMS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_PROGRAMS, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D25-EXIT")
+                    }
+            RunTask(EXEC85_D25_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D25_10_UPDATES_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_NO_UPDATES, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_LINE_UPDATE, "Y") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D27-PRINT-UPDATES")
+                                    }
+                        RunTask(EXEC85_D27_PRINT_UPDATES)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D25-EXIT")
+                                    }
+                        RunTask(EXEC85_D25_EXIT)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D25_20_X_CARD_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_X_CARDS, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_SAVE_12_15, "XXXX") ThenBlock: {
+                        COBOL_EXEC85_VARS.WE_X_CARD = COBOL_EXEC85_VARS.WZ_SAVE_12_20
+                        COBOL_EXEC85_VARS.WE_CHANGE_TYPE = "SUBSTITUTION"
+                        COBOL_EXEC85_VARS.WE_COBOL_LINE = COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD
+                        COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WE_PRINT_DATA
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                                    }
+                        RunTask(EXEC85_X20_PRINT_DETAIL)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D25_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D27_PRINT_UPDATES {
+    RunTask(EXEC85_D27_1_PRINT_REPLACEMENTS)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D27_1_PRINT_REPLACEMENTS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_REPLACE_FLAG, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WE_COBOL_LINE = COBOL_EXEC85_VARS.WZ_SAVE_POP_RECORD
+            COBOL_EXEC85_VARS.WE_X_CARD = " "
+            COBOL_EXEC85_VARS.WE_CHANGE_TYPE = "ORIGINAL"
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WE_PRINT_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            COBOL_EXEC85_VARS.WE_CHANGE_TYPE = "REPLACEMENT"
+            COBOL_EXEC85_VARS.WE_X_CARD = " "
+            COBOL_EXEC85_VARS.WE_COBOL_LINE = COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WE_PRINT_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D27-EXIT")
+                    }
+            RunTask(EXEC85_D27_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D27_10_PRINT_NEW_DATA {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_DONT_READ_POPFILE, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WE_COBOL_LINE = COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WE_PRINT_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D27-EXIT")
+                    }
+            RunTask(EXEC85_D27_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D27_20_PRINT_DELETIONS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_DELETE_FLAG, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WE_COBOL_LINE = COBOL_EXEC85_VARS.WZ_SAVE_POP_RECORD
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WE_PRINT_DATA
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D27_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D30_PROCESS_HEADER {
+    RunTask(EXEC85_D30_1_CHECK_HEADER_TYPE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D30_1_CHECK_HEADER_TYPE {
+    COBOL_EXEC85_VARS.BLOCK_TYPE = COBOL_EXEC85_VARS.WC_COBOL
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(EqualTo(COBOL_EXEC85_VARS.WC_COBOL, "CLBRY"), EqualTo(COBOL_EXEC85_VARS.WY_NO_LIBRARY, "Y")) ThenBlock: {
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WC_HEADER
+            COBOL_EXEC85_VARS.WZ_CURRENT_MAIN_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+        }
+    COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D34-PROGRAM-SELECTED")
+        }
+    RunTask(EXEC85_D34_PROGRAM_SELECTED)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COBOL, "DATA*") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D31-PROCESS-DATA-HEADER")
+                    }
+            RunTask(EXEC85_D31_PROCESS_DATA_HEADER)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COBOL, "COBOL") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_PROGS_FOUND = Add(COBOL_EXEC85_VARS.WZ_PROGS_FOUND, 1)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D32-PROCESS-COBOL-HEADER")
+                                    }
+                        RunTask(EXEC85_D32_PROCESS_COBOL_HEADER)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED, "Y") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D30-20-HEADER-SELECTED")
+                                                        }
+                                        RunTask(EXEC85_D30_20_HEADER_SELECTED)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D11-GET-NEXT-PROGRAM")
+                                                        }
+                                        RunTask(EXEC85_D11_GET_NEXT_PROGRAM)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_POPFILE, "Y") ThenBlock: {
+                                                            COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D30-EXIT")
+                                                                                }
+                                                            RunTask(EXEC85_D30_EXIT)
+                                                        } ElseBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D30-1-CHECK-HEADER-TYPE")
+                                                                                }
+                                                            RunTask(EXEC85_D30_1_CHECK_HEADER_TYPE)
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D30_20_HEADER_SELECTED {
+    COBOL_EXEC85_VARS.WZ_CURRENT_HEADER = COBOL_EXEC85_VARS.WC_COBOL
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_UPDATES, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D40-ANY-UPDATES")
+                    }
+            RunTask(EXEC85_D40_ANY_UPDATES)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D30_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D31_PROCESS_DATA_HEADER {
+    RunTask(EXEC85_D31_1_CHECK_FOR_DATA_SELECTED)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D31_1_CHECK_FOR_DATA_SELECTED {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_DATA, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D31-EXIT")
+                    }
+            RunTask(EXEC85_D31_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_PROG_ID_6, "M") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D31-30-MANUAL-CHECK")
+                                    }
+                        RunTask(EXEC85_D31_30_MANUAL_CHECK)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D31_20_AUTO_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, " ") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+        } ElseBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D31-EXIT")
+                    }
+            RunTask(EXEC85_D31_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D31_30_MANUAL_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, " ") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D31_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_PROCESS_COBOL_HEADER {
+    RunTask(EXEC85_D32_0_CHECK_A_OR_M)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_0_CHECK_A_OR_M {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_6, "A") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D32-1-CHECK-FOR-ALL-SELECTED")
+                    }
+            RunTask(EXEC85_D32_1_CHECK_FOR_ALL_SELECTED)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_6, "B") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D32-1-CHECK-FOR-ALL-SELECTED")
+                                    }
+                        RunTask(EXEC85_D32_1_CHECK_FOR_ALL_SELECTED)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_6, "M") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D32-1-CHECK-FOR-ALL-SELECTED")
+                                                        }
+                                        RunTask(EXEC85_D32_1_CHECK_FOR_ALL_SELECTED)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_6, "5") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D32-1-CHECK-FOR-ALL-SELECTED")
+                                                                                }
+                                                            RunTask(EXEC85_D32_1_CHECK_FOR_ALL_SELECTED)
+                                                            COBOL_EXEC85_VARS.WC_PROG_ID_6 = " "
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_1_CHECK_FOR_ALL_SELECTED {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_ALL, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+            COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D32-50-CHECK-IF-SELECTED")
+                    }
+            RunTask(EXEC85_D32_50_CHECK_IF_SELECTED)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_10_MANUAL_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_MAN, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_6, "M") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+                        COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D32-50-CHECK-IF-SELECTED")
+                                    }
+                        RunTask(EXEC85_D32_50_CHECK_IF_SELECTED)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_20_AUTO_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_EXTRACT_AUTO, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_6, "A"), "B") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+                        COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D32-50-CHECK-IF-SELECTED")
+                                    }
+                        RunTask(EXEC85_D32_50_CHECK_IF_SELECTED)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_30_MODULE_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_MODULE, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WG_MODULE_SELECTED_TABLE, " ") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_END_OF_POPFILE = "Y"
+                    } ElseBlock: {
+                        COBOL_EXEC85_VARS.SUB6 = 1
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D33-MODULE-CHECK")
+                                    }
+                        RunTask(EXEC85_D33_MODULE_CHECK)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D32-50-CHECK-IF-SELECTED")
+                                    }
+                        RunTask(EXEC85_D32_50_CHECK_IF_SELECTED)
+                        COBOL_EXEC85_VARS.SUB7 = 1
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_40_PROGRAM_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_SELECT_PROG, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED_TABLE, " ") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_END_OF_POPFILE = "Y"
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG_ID_1_5, ArrayGet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1))) ThenBlock: {
+                                        ArraySet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1), " ")
+                                        COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+                                        COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D32-50-CHECK-IF-SELECTED")
+                                                        }
+                                        RunTask(EXEC85_D32_50_CHECK_IF_SELECTED)
+                                    } ElseBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition LessThan(COBOL_EXEC85_VARS.SUB7, 50) ThenBlock: {
+                                                            COBOL_EXEC85_VARS.SUB7 = Add(COBOL_EXEC85_VARS.SUB7, 1)
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D32-40-PROGRAM-CHECK")
+                                                                                }
+                                                            RunTask(EXEC85_D32_40_PROGRAM_CHECK)
+                                                        } ElseBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                }
+                                                            IfCondition EqualTo(EqualTo(COBOL_EXEC85_VARS.WC_SUBPRG, "SUBPRG"), "SUBRTN") ThenBlock: {
+                                                                                    COBOL_EXEC85_VARS.SUB7 = 1
+                                                                                    TEMP_TIMES_CTR_133578092455664 = 0
+                                                                                    WhileLoop LessThan(TEMP_TIMES_CTR_133578092455664, 50) {
+                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                                                            }
+                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WC_PROG2ID_1_5, ArrayGet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1))) ThenBlock: {
+                                                                                                                                                ArraySet(COBOL_EXEC85_VARS.WF_PROGRAM_SELECTED, Subtract(COBOL_EXEC85_VARS.SUB7, 1), " ")
+                                                                                                                                                COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+                                                                                                                                                COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG2ID
+                                                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                                                    PrintMessage("[COBOL] PERFORM D32-50-CHECK-IF-SELECTED")
+                                                                                                                                                                                }
+                                                                                                                                                RunTask(EXEC85_D32_50_CHECK_IF_SELECTED)
+                                                                                                                                            }
+                                                                                                                COBOL_EXEC85_VARS.SUB7 = Add(COBOL_EXEC85_VARS.SUB7, 1)
+                                                                                                                TEMP_TIMES_CTR_133578092455664 = Add(TEMP_TIMES_CTR_133578092455664, 1)
+                                                                                                            }
+                                                                                }
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_50_CHECK_IF_SELECTED {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D34-PROGRAM-SELECTED")
+                    }
+            RunTask(EXEC85_D34_PROGRAM_SELECTED)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D32_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D33_MODULE_CHECK {
+    RunTask(EXEC85_D33_1_MODULE_CHECK)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D33_1_MODULE_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_MODULE, ArrayGet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1))) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D33-10-CHECK-MODULE-LEVEL")
+                    }
+            RunTask(EXEC85_D33_10_CHECK_MODULE_LEVEL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(GreaterThan(COBOL_EXEC85_VARS.WC_MODULE, ArrayGet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1))), EqualTo(COBOL_EXEC85_VARS.WZ_SOURCE_PROGS, 0)) ThenBlock: {
+                        ArraySet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1), " ")
+                        ArraySet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1), " ")
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition LessThan(COBOL_EXEC85_VARS.SUB6, 10) ThenBlock: {
+                                        COBOL_EXEC85_VARS.SUB6 = Add(COBOL_EXEC85_VARS.SUB6, 1)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D33-1-MODULE-CHECK")
+                                                        }
+                                        RunTask(EXEC85_D33_1_MODULE_CHECK)
+                                    } ElseBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D33-EXIT")
+                                                        }
+                                        RunTask(EXEC85_D33_EXIT)
+                                    }
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D33-EXIT")
+                                    }
+                        RunTask(EXEC85_D33_EXIT)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D33_10_CHECK_MODULE_LEVEL {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1)), " ") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+            COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D33-EXIT")
+                    }
+            RunTask(EXEC85_D33_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.FILLER, Subtract(COBOL_EXEC85_VARS.SUB6, 1)), COBOL_EXEC85_VARS.WC_LEVEL) ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG_ID
+                        COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED = "Y"
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D33_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D34_PROGRAM_SELECTED {
+    RunTask(EXEC85_D34_1_SELECTION_CHECK)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D34_1_SELECTION_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_PROGRAM_SELECTED, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D34-EXIT")
+                    }
+            RunTask(EXEC85_D34_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, " ") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_SOURCE_PROGS = Add(COBOL_EXEC85_VARS.WZ_SOURCE_PROGS, 1)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+                                        COBOL_EXEC85_VARS.WZ_NEWPOP_PROGS = Add(COBOL_EXEC85_VARS.WZ_NEWPOP_PROGS, 1)
+                                        COBOL_EXEC85_VARS.WZ_CURRENT_MAIN_PROG = COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D36-INITIALISE-PROGRAM-TOTALS")
+                                                        }
+                                        RunTask(EXEC85_D36_INITIALISE_PROGRAM_TOTALS)
+                                        COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WC_HEADER
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_SUBPRG, "SUBPRG") ThenBlock: {
+                                                            COBOL_EXEC85_VARS.WZ_CURRENT_MAIN_PROG = COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG
+                                                            COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG2ID
+                                                        }
+                                    }
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_SUBPRG, "SUBRTN") ThenBlock: {
+                                        COBOL_EXEC85_VARS.WZ_CURRENT_MAIN_PROG = COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG
+                                        COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = COBOL_EXEC85_VARS.WC_PROG2ID
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D34_2_OPEN_OUTPUT {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_LIST_COMPACT, " ") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_LINE_CT = 51
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D34_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D36_INITIALISE_PROGRAM_TOTALS {
+    RunTask(EXEC85_D36_1_RESET_TOTALS)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D36_1_RESET_TOTALS {
+    COBOL_EXEC85_VARS.WZ_LINES_COBOL = 0
+    COBOL_EXEC85_VARS.WZ_LINES_INSERTED = 0
+    COBOL_EXEC85_VARS.WZ_LINES_REPLACED = 0
+    COBOL_EXEC85_VARS.WZ_LINES_DELETED = 0
+    COBOL_EXEC85_VARS.WZ_CODE_REMOVED = 0
+    COBOL_EXEC85_VARS.WZ_COMMENTS_DEL = 0
+    COBOL_EXEC85_VARS.WZ_SEQ_NO = 0
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D36_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D40_ANY_UPDATES {
+    RunTask(EXEC85_D40_1_CHECK_UPDATE_AND_POP)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D40_1_CHECK_UPDATE_AND_POP {
+    COBOL_EXEC85_VARS.WZ_UPDATE_THIS_PROG = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition GreaterThan(COBOL_EXEC85_VARS.WZ_CURRENT_UPD_PROG, COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D40-EXIT")
+                    }
+            RunTask(EXEC85_D40_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_CURRENT_UPD_PROG, COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG) ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D40-20-PROGRAMS-EQUAL")
+                                    }
+                        RunTask(EXEC85_D40_20_PROGRAMS_EQUAL)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_UPD_PROG_CHAR, "A") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D40-05-CHECK-LIBRARY")
+                                                        }
+                                        RunTask(EXEC85_D40_05_CHECK_LIBRARY)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_UPD_PROG_CHAR, "K") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D40-05-CHECK-LIBRARY")
+                                                                                }
+                                                            RunTask(EXEC85_D40_05_CHECK_LIBRARY)
+                                                        } ElseBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D40-10-GET-NEXT-STAR-START")
+                                                                                }
+                                                            RunTask(EXEC85_D40_10_GET_NEXT_STAR_START)
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D40_05_CHECK_LIBRARY {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition LessThan(COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG, "SQ000") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D40-EXIT")
+                    }
+            RunTask(EXEC85_D40_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D40_10_GET_NEXT_STAR_START {
+    COBOL_EXEC85_VARS.WB_STAR_START = " "
+    WhileLoop Not(EqualTo(COBOL_EXEC85_VARS.WB_STAR_START, "*START")) {
+            RunTask(EXEC85_D42_READ_UPDATE_FILE)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_END_OF_UPDATES, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D40-EXIT")
+                    }
+            RunTask(EXEC85_D40_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C60-START-CARD")
+                    }
+            RunTask(EXEC85_C60_START_CARD)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D40-1-CHECK-UPDATE-AND-POP")
+                    }
+            RunTask(EXEC85_D40_1_CHECK_UPDATE_AND_POP)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D40_20_PROGRAMS_EQUAL {
+    COBOL_EXEC85_VARS.WZ_UPDATE_THIS_PROG = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_RENUMBER, "R") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_RESEQUENCE_THIS = "Y"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.WZ_RESEQUENCE_THIS = " "
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_WZ_END_OF_UPDATES {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D40_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D42_READ_UPDATE_FILE {
+    RunTask(EXEC85_D42_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D42_1 {
+    COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+    COBOL_EXEC85_VARS.WB_STAR_START = "*START"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D42-EXIT")
+        }
+    RunTask(EXEC85_D42_EXIT)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+            COBOL_EXEC85_VARS.WB_STAR_START = "*START"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D42_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D50_PROCESS_COBOL_LINE {
+    RunTask(EXEC85_D50_1_CHECK_FOR_UPDATING)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D50_1_CHECK_FOR_UPDATING {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_UPDATE_THIS_PROG, "Y") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D60-PROCESS-UPDATE-CARD")
+                    }
+            RunTask(EXEC85_D60_PROCESS_UPDATE_CARD)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_DELETE_FLAG, "Y") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D50-EXIT")
+                                    }
+                        RunTask(EXEC85_D50_EXIT)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, " ") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.BLOCK_TYPE, "DATA*") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D80-RAW-LINE")
+                                                                                }
+                                                            RunTask(EXEC85_D80_RAW_LINE)
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D50_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D60_PROCESS_UPDATE_CARD {
+    RunTask(EXEC85_D60_1_CHECK_BLOCK_INSERT)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D60_1_CHECK_BLOCK_INSERT {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_SEQ_1, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D67-LINE-UPDATE")
+                    }
+            RunTask(EXEC85_D67_LINE_UPDATE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D60-30-CHECK-END")
+                    }
+            RunTask(EXEC85_D60_30_CHECK_END)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D60_10_CHECK_FOR_SERIES_UPDATE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF WB-SEQ-1")
+        }
+    IfCondition COBOL_EXEC85_VARS.WB_SEQ_1 ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF WB-SEQ-2")
+        }
+    IfCondition COBOL_EXEC85_VARS.WB_SEQ_2 ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D62-SERIES-UPDATE")
+        }
+    RunTask(EXEC85_D62_SERIES_UPDATE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D60-30-CHECK-END")
+        }
+    RunTask(EXEC85_D60_30_CHECK_END)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D67_LINE_UPDATE {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D60_30_CHECK_END {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D60_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D62_SERIES_UPDATE {
+    RunTask(EXEC85_D62_1_CHECK_FOR_WITHIN_RANGE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D62_1_CHECK_FOR_WITHIN_RANGE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition LessThan(COBOL_EXEC85_VARS.WC_6, COBOL_EXEC85_VARS.WB_SEQ_1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_WITHIN_DELETE_SERIES_FLAG, "Y") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D62-20-NOW-WITHIN-RANGE")
+                                    }
+                        RunTask(EXEC85_D62_20_NOW_WITHIN_RANGE)
+                    }
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D62-EXIT")
+                    }
+            RunTask(EXEC85_D62_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF WC-6")
+                    }
+            IfCondition COBOL_EXEC85_VARS.WC_6 ThenBlock: {
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D62_10_READ_NEXT_UPDATE_CARD {
+    COBOL_EXEC85_VARS.WZ_WITHIN_DELETE_SERIES_FLAG = " "
+    COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D62-EXIT")
+        }
+    RunTask(EXEC85_D62_EXIT)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_STAR_START, "*START") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C60-START-CARD")
+                    }
+            RunTask(EXEC85_C60_START_CARD)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D62-EXIT")
+                    }
+            RunTask(EXEC85_D62_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D62-EXIT")
+                                    }
+                        RunTask(EXEC85_D62_EXIT)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF WB-SEQ-2")
+                                    }
+                        IfCondition COBOL_EXEC85_VARS.WB_SEQ_2 ThenBlock: {
+                                    }
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D62-1-CHECK-FOR-WITHIN-RANGE")
+                                    }
+                        RunTask(EXEC85_D62_1_CHECK_FOR_WITHIN_RANGE)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D67-LINE-UPDATE")
+                                    }
+                        RunTask(EXEC85_D67_LINE_UPDATE)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D62-EXIT")
+                                    }
+                        RunTask(EXEC85_D62_EXIT)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D62_20_NOW_WITHIN_RANGE {
+    COBOL_EXEC85_VARS.WZ_LINE_UPDATE = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_COL_7, ",") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_WITHIN_DELETE_SERIES_FLAG = "Y"
+            COBOL_EXEC85_VARS.WZ_LINES_DELETED = Add(COBOL_EXEC85_VARS.WZ_LINES_DELETED, 1)
+            COBOL_EXEC85_VARS.WZ_DELETE_FLAG = "Y"
+            COBOL_EXEC85_VARS.WE_X_CARD = " "
+            COBOL_EXEC85_VARS.WE_CHANGE_TYPE = "DELETIONS"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_SEQ_1, COBOL_EXEC85_VARS.WB_SEQ_2) ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_WITHIN_DELETE_SERIES_FLAG = " "
+                    }
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D62-EXIT")
+                    }
+            RunTask(EXEC85_D62_EXIT)
+            COBOL_EXEC85_VARS.WZ_REPLACE_FLAG = "Y"
+            COBOL_EXEC85_VARS.WC_COL_7 = COBOL_EXEC85_VARS.WB_COL_7
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D62_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D67_LINE_UPDATE {
+    RunTask(EXEC85_D67_1_CHECK_FOR_WITHIN_RANGE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D67_1_CHECK_FOR_WITHIN_RANGE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition LessThan(COBOL_EXEC85_VARS.WC_6, COBOL_EXEC85_VARS.WB_SEQ_1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D67-EXIT")
+                    }
+            RunTask(EXEC85_D67_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D67_10_LINES_EQUAL_OR_LESS {
+    COBOL_EXEC85_VARS.WZ_LINE_UPDATE = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_COL_7, ",") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_LINES_DELETED = Add(COBOL_EXEC85_VARS.WZ_LINES_DELETED, 1)
+            COBOL_EXEC85_VARS.WZ_DELETE_FLAG = "Y"
+            COBOL_EXEC85_VARS.WE_X_CARD = " "
+            COBOL_EXEC85_VARS.WE_CHANGE_TYPE = "DELETION"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D67-20-READ-CONTROL")
+                    }
+            RunTask(EXEC85_D67_20_READ_CONTROL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_6, COBOL_EXEC85_VARS.WB_SEQ_1) ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D68-LINE-EQUAL")
+                                    }
+                        RunTask(EXEC85_D68_LINE_EQUAL)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D67-EXIT")
+                                    }
+                        RunTask(EXEC85_D67_EXIT)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WB_SEQ_1, " ") ThenBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D69-LINE-BLANK-OR-LESS")
+                                                        }
+                                        RunTask(EXEC85_D69_LINE_BLANK_OR_LESS)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D67-EXIT")
+                                                        }
+                                        RunTask(EXEC85_D67_EXIT)
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition GreaterThan(COBOL_EXEC85_VARS.WC_6, COBOL_EXEC85_VARS.WB_SEQ_1) ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D69-LINE-BLANK-OR-LESS")
+                                                                                }
+                                                            RunTask(EXEC85_D69_LINE_BLANK_OR_LESS)
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM D67-EXIT")
+                                                                                }
+                                                            RunTask(EXEC85_D67_EXIT)
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D67_20_READ_CONTROL {
+    COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_STAR_START, "*START") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C60-START-CARD")
+                    }
+            RunTask(EXEC85_C60_START_CARD)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D67_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D68_LINE_EQUAL {
+    RunTask(EXEC85_D68_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D68_1 {
+    COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+    COBOL_EXEC85_VARS.WZ_LINES_REPLACED = Add(COBOL_EXEC85_VARS.WZ_LINES_REPLACED, 1)
+    COBOL_EXEC85_VARS.WZ_REPLACE_FLAG = "Y"
+    COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_STAR_START, "*START") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C60-START-CARD")
+                    }
+            RunTask(EXEC85_C60_START_CARD)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D68_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D69_LINE_BLANK_OR_LESS {
+    RunTask(EXEC85_D69_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D69_1 {
+    COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD = COBOL_EXEC85_VARS.WB_CONTROL_DATA
+    COBOL_EXEC85_VARS.WZ_LINES_INSERTED = Add(COBOL_EXEC85_VARS.WZ_LINES_INSERTED, 1)
+    COBOL_EXEC85_VARS.WZ_DONT_READ_POPFILE = "Y"
+    COBOL_EXEC85_VARS.WE_CHANGE_TYPE = "INSERTIONS"
+    COBOL_EXEC85_VARS.WE_X_CARD = " "
+    COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WB_STAR_START, "*START") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM C60-START-CARD")
+                    }
+            RunTask(EXEC85_C60_START_CARD)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WB_11, "*END-UPDATE") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_END_OF_UPDATES = "Y"
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D69_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D80_RAW_LINE {
+    RunTask(EXEC85_D80_1_ASTERISK_CHECK)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D80_1_ASTERISK_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COL_7, "D") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D80-30-PRINT-LINE")
+                    }
+            RunTask(EXEC85_D80_30_PRINT_LINE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COL_7, "*") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM D80-20-ALPHABETIC-CHECK")
+                                    }
+                        RunTask(EXEC85_D80_20_ALPHABETIC_CHECK)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WY_REMOVE_COMMENTS, "Y") ThenBlock: {
+                                        COBOL_EXEC85_VARS.WZ_COMMENTS_DELETED = Add(COBOL_EXEC85_VARS.WZ_COMMENTS_DELETED, 1)
+                                        COBOL_EXEC85_VARS.WZ_NOT_THIS_COMMENT = "Y"
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D80-EXIT")
+                                                        }
+                                        RunTask(EXEC85_D80_EXIT)
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D80_20_ALPHABETIC_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF WC-COL-7")
+        }
+    IfCondition COBOL_EXEC85_VARS.WC_COL_7 ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_COL_7, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D82-OPTIONAL-LETTER")
+                    }
+            RunTask(EXEC85_D82_OPTIONAL_LETTER)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D80_30_PRINT_LINE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_DELETE_FLAG, " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D85-X-CARD-CHECK")
+                    }
+            RunTask(EXEC85_D85_X_CARD_CHECK)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D80_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D82_OPTIONAL_LETTER {
+    RunTask(EXEC85_D82_1_SELECT_OPTIONAL)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D82_1_SELECT_OPTIONAL {
+    COBOL_EXEC85_VARS.SUB4 = 1
+    WhileLoop Not(GreaterThan(COBOL_EXEC85_VARS.SUB4, 26)) {
+            RunTask(EXEC85_D83_CHECK_OPTION_SWITCHES)
+            COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, 1)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_OPTIONAL_SELECTED, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WC_COL_7 = " "
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D82-EXIT")
+                    }
+            RunTask(EXEC85_D82_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D82_10_SAVE_OPTIONAL {
+    COBOL_EXEC85_VARS.WZ_CODE_REMOVED = Add(COBOL_EXEC85_VARS.WZ_CODE_REMOVED, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_KILL_DELETIONS, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_DELETE_FLAG = "Y"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.WC_COL_8 = COBOL_EXEC85_VARS.WC_COL_7
+            COBOL_EXEC85_VARS.WC_COL_7 = "*"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D82_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D83_CHECK_OPTION_SWITCHES {
+    RunTask(EXEC85_D83_1_CHECK_SWITCH)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D83_1_CHECK_SWITCH {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WY_OPT_SW, Subtract(COBOL_EXEC85_VARS.SUB4, 1)), COBOL_EXEC85_VARS.WC_COL_7) ThenBlock: {
+            COBOL_EXEC85_VARS.SUB4 = 99
+            COBOL_EXEC85_VARS.WZ_OPTIONAL_SELECTED = "Y"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D83_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D85_X_CARD_CHECK {
+    RunTask(EXEC85_D85_1_CHECK_FOR_XXXXX)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D85_1_CHECK_FOR_XXXXX {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_12_15, "XXXX") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D85-EXIT")
+                    }
+            RunTask(EXEC85_D85_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF WC-17-19")
+                    }
+            IfCondition COBOL_EXEC85_VARS.WC_17_19 ThenBlock: {
+                    }
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM D85-EXIT")
+        }
+    RunTask(EXEC85_D85_EXIT)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D85_10_SUBSTITUTION_REQUIRED {
+    COBOL_EXEC85_VARS.SUB1 = COBOL_EXEC85_VARS.WC_17_19
+    COBOL_EXEC85_VARS.WZ_X_CARD = ArrayGet(COBOL_EXEC85_VARS.WX_X_CARD, Subtract(COBOL_EXEC85_VARS.SUB1, 1))
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WX_PROG_POS, Subtract(COBOL_EXEC85_VARS.SUB1, 1)), 0) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D88-PROGRAM-NAME")
+                    }
+            RunTask(EXEC85_D88_PROGRAM_NAME)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D85-EXIT")
+                    }
+            RunTask(EXEC85_D85_EXIT)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D85_20_TEXT_SUBSTITUTION {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_20, " ") ThenBlock: {
+            COBOL_EXEC85_VARS.SUB4 = 60
+            WhileLoop Not(LessThan(COBOL_EXEC85_VARS.SUB4, 1)) {
+                        RunTask(EXEC85_D86_REMOVE_FULL_STOP)
+                        COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, Subtract(0, 1))
+                    }
+            COBOL_EXEC85_VARS.WC_SUB_DATA = COBOL_EXEC85_VARS.WZ_X_CARD
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D85-EXIT")
+                    }
+            RunTask(EXEC85_D85_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_20, ".") ThenBlock: {
+                        COBOL_EXEC85_VARS.SUB4 = 60
+                        WhileLoop Not(LessThan(COBOL_EXEC85_VARS.SUB4, 1)) {
+                                        RunTask(EXEC85_D87_INSERT_FULL_STOP)
+                                        COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, Subtract(0, 1))
+                                    }
+                        COBOL_EXEC85_VARS.WC_SUB_DATA = COBOL_EXEC85_VARS.WZ_X_CARD
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D85_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D86_REMOVE_FULL_STOP {
+    RunTask(EXEC85_D86_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D86_1 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)), " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D86-EXIT")
+                    }
+            RunTask(EXEC85_D86_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)), ".") ThenBlock: {
+                        ArraySet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1), " ")
+                        COBOL_EXEC85_VARS.SUB4 = 0
+                    } ElseBlock: {
+                        COBOL_EXEC85_VARS.SUB4 = 0
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D86_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D87_INSERT_FULL_STOP {
+    RunTask(EXEC85_D87_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D87_1 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)), " ") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM D87-EXIT")
+                    }
+            RunTask(EXEC85_D87_EXIT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)), ".") ThenBlock: {
+                        COBOL_EXEC85_VARS.SUB4 = 0
+                    } ElseBlock: {
+                        COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, 1)
+                        ArraySet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1), ".")
+                        COBOL_EXEC85_VARS.SUB4 = 0
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D87_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D88_PROGRAM_NAME {
+    RunTask(EXEC85_D88_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D88_1 {
+    COBOL_EXEC85_VARS.SUB2 = ArrayGet(COBOL_EXEC85_VARS.WX_PROG_POS, Subtract(COBOL_EXEC85_VARS.SUB1, 1))
+    COBOL_EXEC85_VARS.WZ_MAIN_PROG_FLAG = " "
+    COBOL_EXEC85_VARS.WZ_FULL_STOP = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_20, ".") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_FULL_STOP = "Y"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(ArrayGet(COBOL_EXEC85_VARS.WX_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB1, 1)), "J") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_PROG_BREAK = COBOL_EXEC85_VARS.WZ_CURRENT_MAIN_PROG
+                        COBOL_EXEC85_VARS.WZ_MAIN_PROG_FLAG = "Y"
+                    } ElseBlock: {
+                        COBOL_EXEC85_VARS.WZ_PROG_BREAK = COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_CURRENT_MAIN_PROG, " ") ThenBlock: {
+                                        COBOL_EXEC85_VARS.WZ_MAIN_PROG_FLAG = " "
+                                        COBOL_EXEC85_VARS.SUB4 = 1
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM D89-MOVE-PROGRAM-NAME")
+                                                        }
+                                        RunTask(EXEC85_D89_MOVE_PROGRAM_NAME)
+                                    }
+                    }
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_FULL_STOP, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.SUB4 = 60
+                        WhileLoop Not(LessThan(COBOL_EXEC85_VARS.SUB4, 1)) {
+                                        RunTask(EXEC85_D87_INSERT_FULL_STOP)
+                                        COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, Subtract(0, 1))
+                                    }
+                    } ElseBlock: {
+                        COBOL_EXEC85_VARS.SUB4 = 60
+                        WhileLoop Not(LessThan(COBOL_EXEC85_VARS.SUB4, 1)) {
+                                        RunTask(EXEC85_D86_REMOVE_FULL_STOP)
+                                        COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, Subtract(0, 1))
+                                    }
+                        COBOL_EXEC85_VARS.WC_SUB_DATA = COBOL_EXEC85_VARS.WZ_X_CARD
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D88_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D89_MOVE_PROGRAM_NAME {
+    RunTask(EXEC85_D89_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D89_1 {
+    ArraySet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB2, 1), ArrayGet(COBOL_EXEC85_VARS.WZ_1CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)))
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(EqualTo(COBOL_EXEC85_VARS.SUB4, 6), EqualTo(ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB2, 1)), " ")) ThenBlock: {
+            COBOL_EXEC85_VARS.SUB4 = Add(1, COBOL_EXEC85_VARS.SUB2)
+            WhileLoop Not(EqualTo(ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)), " ")) {
+                        RunTask(EXEC85_D89_2_CLOSE_SPACE)
+                    }
+            ArraySet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB2, 1), " ")
+            COBOL_EXEC85_VARS.SUB2 = Add(COBOL_EXEC85_VARS.SUB2, 1)
+            COBOL_EXEC85_VARS.SUB4 = Add(COBOL_EXEC85_VARS.SUB4, 1)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D89_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D89_2_CLOSE_SPACE {
+    RunTask(EXEC85_D89_2_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D89_2_1 {
+    ArraySet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB2, 1), ArrayGet(COBOL_EXEC85_VARS.WZ_X_CHAR, Subtract(COBOL_EXEC85_VARS.SUB4, 1)))
+    COBOL_EXEC85_VARS.SUB2 = Add(COBOL_EXEC85_VARS.SUB2, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D90_PROCESS_END_OF {
+    RunTask(EXEC85_D90_1_CHECK_HEADER_TYPE)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D90_1_CHECK_HEADER_TYPE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_KILL_DELETIONS, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WA_OPTIONAL_CODE = "DELETED"
+        } ElseBlock: {
+            COBOL_EXEC85_VARS.WA_OPTIONAL_CODE = "UNUSED "
+            COBOL_EXEC85_VARS.WA_CURRENT_PROG = COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG
+            COBOL_EXEC85_VARS.WA_LINES_COBOL = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 0, 2, 0)
+            COBOL_EXEC85_VARS.WA_LINES_INSERTED = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_LINES_INSERTED, 0, 2, 0)
+            COBOL_EXEC85_VARS.WA_LINES_REPLACED = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_LINES_REPLACED, 0, 2, 0)
+            COBOL_EXEC85_VARS.WA_LINES_DELETED = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_LINES_DELETED, 0, 2, 0)
+            COBOL_EXEC85_VARS.WA_CODE_REMOVED = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_CODE_REMOVED, 0, 2, 0)
+            COBOL_EXEC85_VARS.WA_COMMENTS_DEL = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_COMMENTS_DELETED, 0, 2, 0)
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WA_ACCT_LINE_1
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WA_ACCT_LINE_2
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            COBOL_EXEC85_VARS.PRINT_DATA = COBOL_EXEC85_VARS.WA_ACCT_LINE_3
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X20-PRINT-DETAIL")
+                    }
+            RunTask(EXEC85_X20_PRINT_DETAIL)
+            COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG = " "
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D90_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_D100_PROCESS_DATA {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_E10_TERMINATE {
+    RunTask(EXEC85_E10_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_E10_1 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NEW_POP, "Y") ThenBlock: {
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_UPDATED_POPULATION_FILE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WY_NO_SOURCE, " ") ThenBlock: {
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_SOURCE_COBOL_PROGRAMS {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_E20_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X10_WRITE_UPDATED_POPFILE {
+    RunTask(EXEC85_X10_1_CHECK_FOR_NC114)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X10_1_CHECK_FOR_NC114 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_CURRENT_POP_PROG, "NC114M") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X10-30-WRITE-FILE")
+                    }
+            RunTask(EXEC85_X10_30_WRITE_FILE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X10_20_RENUMBER_CHECK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_STAR, "*") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X10-30-WRITE-FILE")
+                    }
+            RunTask(EXEC85_X10_30_WRITE_FILE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_RESEQUENCE_THIS, "Y") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_SEQ_NO = Add(COBOL_EXEC85_VARS.WZ_SEQ_NO, 100)
+                        COBOL_EXEC85_VARS.WC_6 = COBOL_EXEC85_VARS.WZ_SEQ_NO
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X10_30_WRITE_FILE {
+    ArraySet(COBOL_EXEC85_VARS.UD_SOURCE_OUT, Subtract(COBOL_EXEC85_VARS.SUB5, 1), COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD)
+    COBOL_EXEC85_VARS.SUB5 = Add(COBOL_EXEC85_VARS.SUB5, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition GreaterEqual(COBOL_EXEC85_VARS.SUB5, 30) ThenBlock: {
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_UPDATED_SOURCE_OUT_2400 {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X10_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X20_PRINT_DETAIL {
+    RunTask(EXEC85_X20_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X20_1 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition GreaterThan(COBOL_EXEC85_VARS.WZ_LINE_CT, 50) ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_PRINT_HOLD = COBOL_EXEC85_VARS.PRINT_REC
+            COBOL_EXEC85_VARS.WZ_PAGE_CT = Add(COBOL_EXEC85_VARS.WZ_PAGE_CT, 1)
+            COBOL_EXEC85_VARS.WA_PAGE_CT = FormatZeroSuppress(COBOL_EXEC85_VARS.WZ_PAGE_CT, 0, 2, 0)
+            COBOL_EXEC85_VARS.PRINT_REC = COBOL_EXEC85_VARS.WA_TOP_OF_PAGE_LINE
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_WZ_LINE_CT {
+    COBOL_EXEC85_VARS.WZ_LINE_CT = Add(COBOL_EXEC85_VARS.WZ_LINE_CT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X20_2 {
+    COBOL_EXEC85_VARS.PRINT_REC = " "
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X20_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X30_READ_POPFILE {
+    RunTask(EXEC85_X30_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X30_1 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_DONT_READ_POPFILE, "Y") ThenBlock: {
+            COBOL_EXEC85_VARS.WZ_DONT_READ_POPFILE = " "
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM X30-EXIT")
+                    }
+            RunTask(EXEC85_X30_EXIT)
+        }
+    COBOL_EXEC85_VARS.WZ_SAVE_POP_RECORD = COBOL_EXEC85_VARS.WC_CURRENT_POP_RECORD
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_STAR, "*") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_CURRENT_HEADER, "COBOL") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, "ABCDE") ThenBlock: {
+                                        COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                                    } ElseBlock: {
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] IF condition")
+                                                        }
+                                        IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, "*/+(>") ThenBlock: {
+                                                            COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                                                        } ElseBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                }
+                                                            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, "999-9") ThenBlock: {
+                                                                                    COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                                                                                } ElseBlock: {
+                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                            }
+                                                                                    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, "Z=.,;") ThenBlock: {
+                                                                                                                COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                                                                                                            } ElseBlock: {
+                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                PrintMessage("[COBOL] IF condition")
+                                                                                                                                            }
+                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, ")14$ ") ThenBlock: {
+                                                                                                                                                COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                                                                                                                                            } ElseBlock: {
+                                                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                                                    PrintMessage("[COBOL] IF condition")
+                                                                                                                                                                                }
+                                                                                                                                                IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, "  23 ") ThenBlock: {
+                                                                                                                                                                                    COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                                                                                                                                                                                }
+                                                                                                                                            }
+                                                                                                            }
+                                                                                }
+                                                        }
+                                    }
+                    }
+        } ElseBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WZ_CURRENT_HEADER, "COBOL") ThenBlock: {
+                        COBOL_EXEC85_VARS.WZ_LINES_COBOL = Add(COBOL_EXEC85_VARS.WZ_LINES_COBOL, 1)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X30_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X40_WRITE_SOURCE_FILE {
+    RunTask(EXEC85_X40_1)
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X40_1 {
+    COBOL_EXEC85_VARS.WD_1 = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_EXEC85_VARS.WC_STAR, "*") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_EXEC85_VARS.WC_1_5, "*/+(>") ThenBlock: {
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_X40_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_FAIL {
+    ERROR_COUNTER = Subtract(ERROR_COUNTER, 1)
+    RE_MARK = "TEXT COPIED FROM WRONG LIBRARY"
+    ReturnValue(0)
+}
+
+SubRoutine.EXEC85_RE_MARK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PASS")
+        }
+    RunTask(EXEC85_PASS)
+    ERROR_COUNTER = Subtract(ERROR_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(EXEC85)
+}
+
+RunTask(Main)

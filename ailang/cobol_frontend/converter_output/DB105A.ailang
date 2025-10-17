@@ -1,0 +1,3692 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_EXEC85_VARS {
+    "SOURCE_IN_2400": Initialize=""
+    "SOURCE_IN": Initialize=""
+    "CONTROL_RECORD": Initialize=""
+    "PRINT_REC": Initialize=""
+    "FILLER": Initialize=""
+    "PRINT_DATA": Initialize=""
+    "CT_OUT": Initialize=""
+    "UPDATED_SOURCE_OUT_2400": Initialize=""
+    "UD_SOURCE_OUT": Initialize=""
+    "BLOCK_TYPE": Initialize=""
+    "SUB1": Initialize=0
+    "SUB2": Initialize=0
+    "SUB3": Initialize=0
+    "SUB4": Initialize=0
+    "SUB5": Initialize=0
+    "SUB6": Initialize=0
+    "SUB7": Initialize=0
+    "WA_ERR_IND": Initialize=0
+    "WA_FIRST_IND": Initialize=0
+    "WA_ZCARD_TABLE": Initialize=""
+    "WA_ZCARD": Initialize=""
+    "WA_TOP_OF_PAGE_LINE": Initialize=""
+    "WA_VERSION": Initialize=""
+    "WA_VERSION_TEXT": Initialize="CCVS85 VERSION NUMBER"
+    "WA_VERSION_NUM": Initialize=" "
+    "WA_RELEASE": Initialize=""
+    "WA_RELEASE_TEXT": Initialize=", RELEASED ON"
+    "WA_VERSION_DATE": Initialize=" "
+    "WA_COMPANY_AND_COMPILER": Initialize=" "
+    "WA_DATE": Initialize=""
+    "WA_PAGE_CT": Initialize=""
+    "WA_ACCT_LINE_1": Initialize=""
+    "WA_CURRENT_PROG": Initialize=""
+    "WA_LINES_COBOL": Initialize=""
+    "WA_ACCT_LINE_2": Initialize=""
+    "WA_LINES_INSERTED": Initialize=""
+    "WA_LINES_REPLACED": Initialize=""
+    "WA_LINES_DELETED": Initialize=""
+    "WA_ACCT_LINE_3": Initialize=""
+    "WA_OPTIONAL_CODE": Initialize=""
+    "WA_CODE_REMOVED": Initialize=""
+    "WA_CODE_KILLED": Initialize="** COMMENTS DELETED"
+    "WA_COMMENTS_DEL": Initialize=""
+    "WA_FINAL_LINE_1": Initialize=""
+    "WA_PROGS_FOUND": Initialize=""
+    "WA_FINAL_LINE_2": Initialize=""
+    "WA_SOURCE_PROGS": Initialize=""
+    "WA_FINAL_LINE_3": Initialize=""
+    "WA_NEWPOP_PROGS": Initialize=""
+    "WB_CONTROL_DATA": Initialize=""
+    "WB_FILL": Initialize=""
+    "WB_3": Initialize=""
+    "WB_4": Initialize=""
+    "WB_NN": Initialize=0
+    "WB_X": Initialize=""
+    "WB_6": Initialize=""
+    "WB_7": Initialize=""
+    "WB_8": Initialize=""
+    "WB_9": Initialize=""
+    "WB_10": Initialize=""
+    "WB_11": Initialize=""
+    "WB_12": Initialize=""
+    "WB_PROG": Initialize=""
+    "WB_13": Initialize=""
+    "WB_14": Initialize=""
+    "WB_MODULE": Initialize=""
+    "WB_LEVEL": Initialize=""
+    "WB_15": Initialize=""
+    "WB_16": Initialize=""
+    "WB_X_CARD": Initialize=""
+    "WB_X_HYPHEN": Initialize=""
+    "WB_X_CARD_NUM": Initialize=0
+    "WB_PROG_POS": Initialize=""
+    "WB_PROG_POS_NUM": Initialize=0
+    "WB_SUBS_TEXT": Initialize=""
+    "WB_START_CARD": Initialize=""
+    "WB_STAR_START": Initialize=""
+    "WB_UPDATE_PROG": Initialize=""
+    "WB_RENUMBER": Initialize=""
+    "WB_LINE_UPDATE": Initialize=""
+    "WB_SEQ_1": Initialize=""
+    "WB_COBOL_LINE": Initialize=""
+    "WB_COL_7": Initialize=""
+    "WB_CHAR": Initialize=""
+    "WB_SEQ_2": Initialize=""
+    "WC_CURRENT_POP_RECORD": Initialize=""
+    "WC_1": Initialize=""
+    "WC_END_OF_POPFILE": Initialize=""
+    "WC_HEADER": Initialize=""
+    "WC_STAR_HEADER": Initialize=""
+    "WC_COBOL": Initialize=""
+    "WC_PROG_ID": Initialize=""
+    "WC_PROG_ID_1_5": Initialize=""
+    "WC_PROG_ID_1_4": Initialize=""
+    "WC_MODULE": Initialize=""
+    "WC_LEVEL": Initialize=""
+    "WC_PROG_ID_6": Initialize=""
+    "WC_SUBPRG": Initialize=""
+    "WC_PROG2ID": Initialize=""
+    "WC_PROG2ID_1_5": Initialize=""
+    "WC_1_72": Initialize=""
+    "WC_6": Initialize=""
+    "WC_STAR": Initialize=""
+    "WC_1_5": Initialize=""
+    "WC_COL_7": Initialize=""
+    "WC_COL_8": Initialize=""
+    "WC_SUB_DATA": Initialize=""
+    "WC_12_15": Initialize=""
+    "WC_17_19": Initialize=0
+    "WC_20": Initialize=""
+    "WC_73_80": Initialize=""
+    "WD_SOURCE_REC": Initialize=""
+    "WD_1": Initialize=""
+    "WD_HEADER": Initialize=""
+    "WE_PRINT_DATA": Initialize=""
+    "WE_COBOL_LINE": Initialize=""
+    "WE_X_CARD": Initialize=""
+    "WE_CHANGE_TYPE": Initialize=""
+    "WF_PROGRAM_SELECTED_TABLE": Initialize=""
+    "WF_PROGRAM_SELECTED": Initialize=""
+    "WG_MODULE_SELECTED_TABLE": Initialize=""
+    "WG_MODULE_SELECTED": Initialize=""
+    "WG_MODULE_LEVEL": Initialize=""
+    "WV_PRINT_MISCELLANEOUS": Initialize=""
+    "WV_OPTION_HEADING": Initialize="OPTION SWITCH SETTINGS -"
+    "WV_OPT_1": Initialize="0                 1                   2"
+    "WV_OPT_2": Initialize="1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6"
+    "WV_OPT_SWITCHES": Initialize=""
+    "WV_OPT": Initialize=""
+    "WX_X_CARD_TABLE": Initialize=""
+    "WX_X_CARD": Initialize=0
+    "WX_X_CHAR": Initialize=""
+    "WX_PROG_POS_TABLE": Initialize=""
+    "WX_PROG_POS": Initialize=0
+    "WY_SWITCHES": Initialize=""
+    "WY_OPTION_SWITCHES": Initialize=""
+    "WY_OPT_SW_1": Initialize=""
+    "WY_OPT_SW_2": Initialize=""
+    "WY_OPT_SW_3": Initialize=""
+    "WY_OPT_SW_4": Initialize=""
+    "WY_OPT_SW_5": Initialize=""
+    "WY_OPT_SW_6": Initialize=""
+    "WY_OPT_SW_7": Initialize=""
+    "WY_OPT_SW_8": Initialize=""
+    "WY_OPT_SW_9": Initialize=""
+    "WY_OPT_SW_10": Initialize=""
+    "WY_OPT_SW_11": Initialize=""
+    "WY_OPT_SW_12": Initialize=""
+    "WY_OPT_SW_13": Initialize=""
+    "WY_OPT_SW_14": Initialize=""
+    "WY_OPT_SW_15": Initialize=""
+    "WY_OPT_SW_16": Initialize=""
+    "WY_OPT_SW_17": Initialize=""
+    "WY_OPT_SW_18": Initialize=""
+    "WY_OPT_SW_19": Initialize=""
+    "WY_OPT_SW_20": Initialize=""
+    "WY_OPT_SW_21": Initialize=""
+    "WY_OPT_SW_22": Initialize=""
+    "WY_OPT_SW_23": Initialize=""
+    "WY_OPT_SW_24": Initialize=""
+    "WY_OPT_SW_25": Initialize=""
+    "WY_OPT_SW_26": Initialize=""
+    "WY_OPT_SW": Initialize=""
+    "WY_PRINT_SWITCHES": Initialize=""
+    "WY_EXTRACT_ALL": Initialize=""
+    "WY_EXTRACT_AUTO": Initialize=""
+    "WY_EXTRACT_MAN": Initialize=""
+    "WY_KILL_DELETIONS": Initialize=""
+    "WY_LIST_NO_UPDATES": Initialize=""
+    "WY_LIST_X_CARDS": Initialize=""
+    "WY_LIST_PROGRAMS": Initialize=""
+    "WY_LIST_COMPACT": Initialize=""
+    "WY_NO_DATA": Initialize=""
+    "WY_NO_LIBRARY": Initialize=""
+    "WY_NO_SOURCE": Initialize=""
+    "WY_REMOVE_COMMENTS": Initialize=""
+    "WY_NEW_POP": Initialize=""
+    "WY_SELECT_PROG": Initialize=""
+    "WY_SELECT_MODULE": Initialize=""
+    "WY_SELECT_LEVEL": Initialize=""
+    "WZ_MISCELLANEOUS": Initialize=""
+    "WZ_PROGRAM_SELECTED": Initialize=""
+    "WZ_END_OF_POPFILE": Initialize=""
+    "WZ_FULL_STOP": Initialize=""
+    "WZ_DONT_READ_POPFILE": Initialize=""
+    "WZ_UPDATE_THIS_PROG": Initialize=""
+    "WZ_REPLACE_FLAG": Initialize=""
+    "WZ_LINE_UPDATE": Initialize=""
+    "WZ_RESEQUENCE_THIS": Initialize=""
+    "WZ_RESEQUENCE_NEXT": Initialize=""
+    "WZ_END_OF_UPDATES": Initialize=""
+    "WZ_OPTIONAL_SELECTED": Initialize=""
+    "WZ_DELETE_FLAG": Initialize=""
+    "WZ_NOT_THIS_COMMENT": Initialize=""
+    "WZ_CURRENT_HEADER": Initialize=""
+    "WZ_INVALID_DATA": Initialize=""
+    "WZ_ERROR_MESSAGE": Initialize=""
+    "WZ_CURRENT_UPD_PROG": Initialize=""
+    "WZ_UPD_PROG_CHAR": Initialize=""
+    "WZ_CURRENT_MAIN_PROG": Initialize=""
+    "WZ_MAIN_PROG_CHAR": Initialize=""
+    "WZ_PROG_BREAK": Initialize=""
+    "WZ_1CHAR": Initialize=""
+    "WZ_CURRENT_POP_PROG": Initialize=""
+    "WZ_PROG_ID_6": Initialize=""
+    "WZ_MAIN_PROG_FLAG": Initialize=""
+    "WZ_LINES_COBOL": Initialize=0
+    "WZ_LINES_INSERTED": Initialize=0
+    "WZ_LINES_REPLACED": Initialize=0
+    "WZ_LINES_DELETED": Initialize=0
+    "WZ_COMMENTS_DELETED": Initialize=0
+    "WZ_CODE_REMOVED": Initialize=0
+    "WZ_SOURCE_PROGS": Initialize=0
+    "WZ_NEWPOP_PROGS": Initialize=0
+    "WZ_PROGS_FOUND": Initialize=0
+    "WZ_COMMENTS_DEL": Initialize=0
+    "WZ_SEQ_NO": Initialize=0
+    "WZ_SAVE_POP_RECORD": Initialize=""
+    "WZ_SAVE_SEQ": Initialize=""
+    "WZ_SAVE_12_20": Initialize=""
+    "WZ_SAVE_12_15": Initialize=""
+    "WZ_PAGE_CT": Initialize=0
+    "WZ_LINE_CT": Initialize=0
+    "WZ_MODULE": Initialize=""
+    "WZ_LEVEL": Initialize=""
+    "WZ_PRINT_HOLD": Initialize=""
+    "WZ_X_CARD": Initialize=""
+    "WZ_X_CHAR": Initialize=""
+    "WZ_WITHIN_DELETE_SERIES_FLAG": Initialize=""
+    "WZ_VERSION_CARD": Initialize=""
+    "WZ_VERSION_CONTROL": Initialize=""
+    "WZ_VERSION_NUM": Initialize=""
+    "WZ_VERSION_DATE": Initialize=""
+}
+
+FixedPool.COBOL_CM101M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "PASSWORD1": Initialize="XXXXX031"
+    "DISABLE_STATUS": Initialize="99"
+    "POLL_COUNT": Initialize=0
+    "INIT_TIME": Initialize=0
+    "COMP_TIME": Initialize=0
+    "SYSTEM_TIME": Initialize=""
+    "SYS_HRS": Initialize=0
+    "SYS_MINS": Initialize=0
+    "SYS_SECS": Initialize=0
+    "MSG_TIME": Initialize=""
+    "HOURS": Initialize=0
+    "MINUTES": Initialize=0
+    "SECONDS": Initialize=0
+    "SPEC_LINE_1": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "INIT_ENABLE_STATUS": Initialize=""
+    "INCOMING_MSG": Initialize=""
+    "KILL_FIELD": Initialize=""
+    "LOG_HDR_1": Initialize=""
+    "LOG_HDR_2": Initialize=""
+    "SYM_SOURCE": Initialize=""
+    "MSG_DATE": Initialize=0
+    "LOG_HDR_3": Initialize=""
+    "LOG_HDR_4": Initialize=""
+    "LOG_LINE": Initialize=""
+    "RECEIPT_TIME": Initialize=""
+    "LAG_TIME": Initialize=""
+    "MESSAGE_LENGTH": Initialize=""
+    "SENTINEL": Initialize=""
+    "QUEUE_DEPTH": Initialize=0
+    "IDLE_COUNT": Initialize=""
+    "IDLE_OVERFLOW": Initialize=""
+    "MSG": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=""
+    "P_OR_F": Initialize=""
+    "PAR_NAME": Initialize=""
+    "COMPUTED_A": Initialize=""
+    "COMPUTED_STATUS": Initialize=""
+    "CORRECT_A": Initialize=""
+    "CORRECT_STATUS": Initialize=""
+    "RE_MARK": Initialize=""
+    "COLUMNS_LINE_1": Initialize=""
+    "COLUMNS_LINE_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM101M"
+}
+
+FixedPool.COBOL_CM102M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "COMP_TWO": Initialize=2
+    "TWO": Initialize=2
+    "COMP_THREE": Initialize=3
+    "THREE": Initialize=3
+    "SEND_SWITCH": Initialize=0
+    "MSG_NUM": Initialize=0
+    "MSG_70": Initialize=""
+    "PASSWORD1": Initialize="XXXXX033"
+    "ERR_MSG": Initialize=""
+    "FILLER": Initialize="-"
+    "TEST_IND": Initialize=""
+    "LOG_HDR_1": Initialize=""
+    "LOG_HDR_2": Initialize=""
+    "LOG_HDR_3": Initialize=""
+    "LOG_LINE": Initialize=""
+    "START_TIME": Initialize=""
+    "HOURS": Initialize=0
+    "MINUTES": Initialize=0
+    "SECONDS": Initialize=0
+    "ELAPSED": Initialize=""
+    "STAT": Initialize=0
+    "ERR": Initialize=0
+    "LNTH": Initialize=""
+    "MSG_OUT": Initialize=""
+    "LOG_LINE_1": Initialize=""
+    "MSG_FLD": Initialize=""
+    "SUPERIMPOSITION": Initialize=""
+    "S_ALL": Initialize=""
+    "S_WORDS": Initialize=""
+    "S_IN": Initialize=""
+    "S_THIS": Initialize=""
+    "S_MESSAGE": Initialize=""
+    "S_SHOULD": Initialize=""
+    "S_COME": Initialize=""
+    "S_OUT": Initialize=""
+    "S_ON": Initialize=""
+    "S_THE": Initialize=""
+    "S_SAME": Initialize=""
+    "S_LINE": Initialize=""
+    "MSG_A": Initialize=""
+    "MSG_B": Initialize=""
+    "MSG_C": Initialize=""
+    "MSG_D": Initialize=""
+    "MSG_E": Initialize=""
+    "MSG_NO": Initialize=""
+    "SYSTEM_TIME": Initialize=""
+    "COMP_TIME": Initialize=""
+    "COMP_HRS": Initialize=0
+    "COMP_MINS": Initialize=0
+    "COMP_SECS": Initialize=0
+    "MSG_F": Initialize=""
+    "MSG_F_NO": Initialize=""
+    "MSG_G": Initialize=""
+    "MSG_G_NO": Initialize=""
+    "MSG_H": Initialize=""
+    "MSG_H_NO": Initialize=""
+    "LONG_MSG": Initialize=""
+    "LONG_MSG_S1": Initialize="ON PAGE XIII-21, PARAGRAPH 3        .5.4(1)C, THE COBOL STANDARD STATES, "EXCESS"
+    "LONG_MSG_S2": Initialize="CHARACTERS OF A MESSAGE OR M        ESSAGE SEGMENT WILL NOT BE TRUNCATED."
+    "LONG_MSG_S3": Initialize="CHARACTERS WILL BE PACKED TO         A SIZE EQUAL TO THAT OF THE PHYSICAL LINE"
+    "LONG_MSG_S4": Initialize="AND THEN OUTPUTTED TO THE DE        VICE.  THE PROCESS CONTINUES ON THE NEXT"
+    "LONG_MSG_S5": Initialize="LINE WITH THE EXCESS CHARACT        ERS."  IF THIS ENTIRE PARAGRAPH WAS RECEIVED"
+    "LONG_MSG_S6": Initialize="BY THE DESIGNATED DEVICE, TH        EN THE FOREGOING RULE IS SUPPORTED BY THIS"
+    "LONG_MSG_S7": Initialize="COMPILER."
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM102M"
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=""
+    "P_OR_F": Initialize=""
+    "PAR_NAME": Initialize=""
+    "COMPUTED_A": Initialize=""
+    "COMPUTED_SLASH_SET": Initialize=""
+    "COMPUTED_STATUS": Initialize=""
+    "SLASH": Initialize=""
+    "COMPUTED_ERR_KEY": Initialize=""
+    "CORRECT_A": Initialize=""
+    "CORRECT_SLASH_SET": Initialize=""
+    "CORRECT_2SLASH1": Initialize=0
+    "RE_MARK": Initialize=""
+    "COLUMNS_LINE_1": Initialize=""
+    "COLUMNS_LINE_2": Initialize=""
+}
+
+FixedPool.COBOL_CM103M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "FILLER": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM103M"
+    "MCS_TIME": Initialize=""
+    "HRS": Initialize=0
+    "MINS": Initialize=0
+    "SECS": Initialize=0
+    "IN_TIME": Initialize=""
+    "IN_HRS": Initialize=0
+    "IN_MINS": Initialize=0
+    "IN_SECS": Initialize=0
+    "OUT_TIME": Initialize=""
+    "OUT_HRS": Initialize=0
+    "OUT_MINS": Initialize=0
+    "OUT_SECS": Initialize=0
+    "LOG_HDR_1": Initialize=""
+    "LOG_HDR_2": Initialize=""
+    "LOG_HDR_3": Initialize=""
+    "LOG_HDR_4": Initialize=""
+    "LOG_LINE": Initialize=""
+    "TIME_REC": Initialize=""
+    "PROG_TIME": Initialize=""
+    "TIME_SENT": Initialize=""
+    "RECV_STATUS": Initialize=""
+    "SEND_STATUS": Initialize=""
+    "SEND_ERR": Initialize=""
+    "MSG_LNGTH": Initialize=""
+    "MSG": Initialize=""
+    "KILL_FIELD": Initialize=""
+}
+
+FixedPool.COBOL_CM104M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "FILLER": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM104M"
+    "LOG_HDR_1": Initialize=""
+    "LOG_HDR_2": Initialize=""
+    "LOG_HDR_3": Initialize=""
+    "LOG_HDR_4": Initialize=""
+    "LOG_LINE": Initialize=""
+    "SYM_SOURCE": Initialize=""
+    "LOG_TIME": Initialize=""
+    "HRS": Initialize=0
+    "MINS": Initialize=0
+    "SECS": Initialize=0
+    "QUEUE_DEPTH": Initialize=""
+    "OUT_TIME": Initialize=""
+    "MSG_LENGTH": Initialize=""
+    "IN_STATUS": Initialize=""
+    "OUT_STATUS": Initialize=""
+    "OUT_ERR_KEY": Initialize=""
+    "MSG": Initialize=""
+    "KILL_FIELD": Initialize=""
+    "SEND_TIME": Initialize=""
+    "S_HRS": Initialize=0
+    "S_MINS": Initialize=0
+    "S_SECS": Initialize=0
+}
+
+FixedPool.COBOL_CM105M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "P": Initialize=""
+    "PP": Initialize=""
+    "PPP": Initialize=""
+    "PS": Initialize=""
+    "PSP": Initialize=""
+    "PPS": Initialize=""
+    "QUEUE_NAMES": Initialize=""
+    "PPPP": Initialize="XXXXX038"
+    "PPPS": Initialize="XXXXX039"
+    "PPSP": Initialize="XXXXX040"
+    "PSPP": Initialize="XXXXX041"
+    "QUEUE_NAMES_TABLE": Initialize=""
+    "NAME_SET": Initialize=""
+    "I1": Initialize=1
+    "TEST_RESULTS": Initialize=""
+    "FILLER": Initialize=" "
+    "FEATURE": Initialize=""
+    "P_OR_F": Initialize=""
+    "PAR_NAME": Initialize=""
+    "COMPUTED_A": Initialize=""
+    "STAT": Initialize=""
+    "CORRECT_A": Initialize=""
+    "CORRECT_QUEUE": Initialize=""
+    "RE_MARK": Initialize=""
+    "QUEUE_KEY": Initialize=""
+    "COLUMNS_LINE_1": Initialize=""
+    "COLUMNS_LINE_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM105M"
+    "MAIN_QUEUE_NAME": Initialize=""
+    "MAIN_QUEUE": Initialize=""
+}
+
+FixedPool.COBOL_CM201M_VARS {
+    "MSG_72": Initialize=""
+    "RECOGNITION_MSG_1": Initialize=""
+    "FILLER": Initialize=""."
+    "DEVICE_NAME": Initialize=""
+    "RECOGNITION_MSG_2": Initialize=""
+    "QUEUE_INVOLVED": Initialize=""
+    "RECOGNITION_MSG_3": Initialize="CM201M INVOKED BUT NO DATA WAS AVAILABLE."
+}
+
+FixedPool.COBOL_CM202M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "END_FLAG": Initialize=0
+    "FAIL_SAFE": Initialize=0
+    "ELAPSED_TIME": Initialize=0
+    "ENABLE_ALL_MSG": Initialize="ATTEMPT TO ENTER MESSAGES.  BOTH SOURCES ARE NOW ENABLED."
+    "INIT_TIME": Initialize=""
+    "I_HRS": Initialize=0
+    "I_MINS": Initialize=0
+    "I_SECS": Initialize=0
+    "TEST_TIME": Initialize=""
+    "T_HRS": Initialize=0
+    "T_MINS": Initialize=0
+    "T_SECS": Initialize=0
+    "SKIP_MSG_1": Initialize="SEGMENTED-MSG-TEST-05: THERE SHOU    LD BE NO BLANK LINES BETWEEN THIS LINE"
+    "SKIP_MSG_2": Initialize="AND THIS ONE."
+    "INCOMP_MSG": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "INC_MSG_NO": Initialize=0
+    "ENABLE_MSG": Initialize=""
+    "SELECTED_SOURCE": Initialize=""
+    "DISABLE_MSG": Initialize=""
+    "TERMINAL_1": Initialize="XXXXX042"
+    "TERMINAL_2": Initialize="XXXXX043"
+    "SEND_MSG": Initialize=""
+    "TEST_NUMB": Initialize=1
+    "ONE_TERMINAL_MSG": Initialize=""
+    "SELECTED_DEST": Initialize="XXXXX032"
+    "SEG_INIT": Initialize=""
+    "SEG_TEST_NO": Initialize=0
+    "SEG_CONT": Initialize="-CONTINUED"
+    "MSG_COMP": Initialize="-MSG COMPLETE."
+    "GROUP_COMP": Initialize="-GROUP COMPLETE."
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=""
+    "P_OR_F": Initialize=""
+    "PAR_NAME": Initialize=""
+    "COMPUTED_A": Initialize=""
+    "COMPUTED_STATUS": Initialize=""
+    "CORRECT_A": Initialize=""
+    "CORRECT_STATUS": Initialize=""
+    "RE_MARK": Initialize=""
+    "MSG_1": Initialize=""
+    "COLUMNS_LINE_1": Initialize=""
+    "COLUMNS_LINE_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM202M"
+}
+
+FixedPool.COBOL_DB101A_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "A": Initialize=1
+    "B": Initialize=5
+    "C": Initialize=9
+    "D": Initialize=0
+    "RESULT_FLAG": Initialize=0
+    "DBLINE_HOLD": Initialize=""
+    "DBNAME_HOLD": Initialize=""
+    "DBCONT_HOLD": Initialize=""
+    "FIVE": Initialize=5
+    "SIZE_19": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "SIZE_18": Initialize=""
+    "SIZE_17": Initialize=""
+    "SIZE_16": Initialize=""
+    "SIZE_15": Initialize=""
+    "SIZE_14": Initialize=""
+    "SIZE_13": Initialize=""
+    "SIZE_12": Initialize=""
+    "SIZE_10": Initialize=""
+    "SIZE_5": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=" "
+    "P_OR_F": Initialize=" "
+    "PAR_NAME": Initialize=""
+    "PARDOT_X": Initialize=" "
+    "DOTVALUE": Initialize=0
+    "RE_MARK": Initialize=""
+    "TEST_COMPUTED": Initialize=""
+    "COMPUTED_X": Initialize=""
+    "COMPUTED_A": Initialize=" "
+    "COMPUTED_N": Initialize=""
+    "COMPUTED_0V18": Initialize=""
+    "COMPUTED_4V14": Initialize=""
+    "COMPUTED_14V4": Initialize=""
+    "CM_18V0": Initialize=""
+    "COMPUTED_18V0": Initialize=""
+    "TEST_CORRECT": Initialize=""
+    "CORRECT_X": Initialize=""
+    "CORRECT_A": Initialize=" "
+    "CORRECT_N": Initialize=""
+    "CORRECT_0V18": Initialize=""
+    "CORRECT_4V14": Initialize=""
+    "CORRECT_14V4": Initialize=""
+    "CR_18V0": Initialize=""
+    "CORRECT_18V0": Initialize=""
+    "CCVS_C_1": Initialize=""
+    "CCVS_C_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="DB101A"
+    "DEBUG_CONTENTS": Initialize=""
+    "DEBUG_LINE": Initialize=""
+    "DEBUG_NAME": Initialize=""
+    "SPACE": Initialize=""
+    "ZERO": Initialize=""
+}
+
+FixedPool.COBOL_DB102A_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "A": Initialize=1
+    "B": Initialize=5
+    "C": Initialize=9
+    "D": Initialize=0
+    "RESULT_FLAG": Initialize=0
+    "DBLINE_HOLD": Initialize=""
+    "DBNAME_HOLD": Initialize=""
+    "DBCONT_HOLD": Initialize=""
+    "FIVE": Initialize=5
+    "SIZE_19": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "SIZE_18": Initialize=""
+    "SIZE_17": Initialize=""
+    "SIZE_16": Initialize=""
+    "SIZE_15": Initialize=""
+    "SIZE_14": Initialize=""
+    "SIZE_13": Initialize=""
+    "SIZE_12": Initialize=""
+    "SIZE_11": Initialize=""
+    "SIZE_10": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=" "
+    "P_OR_F": Initialize=" "
+    "PAR_NAME": Initialize=""
+    "PARDOT_X": Initialize=" "
+    "DOTVALUE": Initialize=0
+    "RE_MARK": Initialize=""
+    "TEST_COMPUTED": Initialize=""
+    "COMPUTED_X": Initialize=""
+    "COMPUTED_A": Initialize=" "
+    "COMPUTED_N": Initialize=""
+    "COMPUTED_0V18": Initialize=""
+    "COMPUTED_4V14": Initialize=""
+    "COMPUTED_14V4": Initialize=""
+    "CM_18V0": Initialize=""
+    "COMPUTED_18V0": Initialize=""
+    "TEST_CORRECT": Initialize=""
+    "CORRECT_X": Initialize=""
+    "CORRECT_A": Initialize=" "
+    "CORRECT_N": Initialize=""
+    "CORRECT_0V18": Initialize=""
+    "CORRECT_4V14": Initialize=""
+    "CORRECT_14V4": Initialize=""
+    "CR_18V0": Initialize=""
+    "CORRECT_18V0": Initialize=""
+    "CCVS_C_1": Initialize=""
+    "CCVS_C_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="DB102A"
+    "DEBUG_CONTENTS": Initialize=""
+    "DEBUG_LINE": Initialize=""
+    "DEBUG_NAME": Initialize=""
+    "SPACE": Initialize=""
+    "ZERO": Initialize=""
+}
+
+FixedPool.COBOL_DB103M_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "A": Initialize=1
+    "B": Initialize=5
+    "C": Initialize=9
+    "D": Initialize=0
+    "RESULT_FLAG": Initialize=0
+    "DBLINE_HOLD": Initialize=""
+    "DBNAME_HOLD": Initialize=""
+    "DBCONT_HOLD": Initialize=""
+    "FIVE": Initialize=5
+    "SIZE_19": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "SIZE_18": Initialize=""
+    "SIZE_17": Initialize=""
+    "SIZE_16": Initialize=""
+    "SIZE_15": Initialize=""
+    "SIZE_14": Initialize=""
+    "SIZE_13": Initialize=""
+    "SIZE_12": Initialize=""
+    "SIZE_11": Initialize=""
+    "SIZE_10": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=" "
+    "P_OR_F": Initialize=" "
+    "PAR_NAME": Initialize=""
+    "PARDOT_X": Initialize=" "
+    "DOTVALUE": Initialize=0
+    "RE_MARK": Initialize=""
+    "TEST_COMPUTED": Initialize=""
+    "COMPUTED_X": Initialize=""
+    "COMPUTED_A": Initialize=" "
+    "COMPUTED_N": Initialize=""
+    "COMPUTED_0V18": Initialize=""
+    "COMPUTED_4V14": Initialize=""
+    "COMPUTED_14V4": Initialize=""
+    "CM_18V0": Initialize=""
+    "COMPUTED_18V0": Initialize=""
+    "TEST_CORRECT": Initialize=""
+    "CORRECT_X": Initialize=""
+    "CORRECT_A": Initialize=" "
+    "CORRECT_N": Initialize=""
+    "CORRECT_0V18": Initialize=""
+    "CORRECT_4V14": Initialize=""
+    "CORRECT_14V4": Initialize=""
+    "CR_18V0": Initialize=""
+    "CORRECT_18V0": Initialize=""
+    "CCVS_C_1": Initialize=""
+    "CCVS_C_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="DB103M"
+    "DEBUG_CONTENTS": Initialize=""
+    "DEBUG_LINE": Initialize=""
+    "DEBUG_NAME": Initialize=""
+    "SPACE": Initialize=""
+    "ZERO": Initialize=""
+}
+
+FixedPool.COBOL_DB104A_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "GEN_REC": Initialize=""
+    "RESULT_FLAG": Initialize=0
+    "DBLINE_HOLD": Initialize=""
+    "DBNAME_HOLD": Initialize=""
+    "DBCONT_HOLD": Initialize=""
+    "FILE_RECORD_INFORMATION_REC": Initialize=""
+    "FILE_RECORD_INFO_SKELETON": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "FILE_RECORD_INFO": Initialize=0
+    "FILE_RECORD_INFO_P1_120": Initialize=""
+    "XFILE_NAME": Initialize=""
+    "XRECORD_NAME": Initialize=""
+    "REELUNIT_NUMBER": Initialize=0
+    "XRECORD_NUMBER": Initialize=0
+    "UPDATE_NUMBER": Initialize=0
+    "ODO_NUMBER": Initialize=0
+    "XPROGRAM_NAME": Initialize=""
+    "XRECORD_LENGTH": Initialize=0
+    "CHARS_OR_RECORDS": Initialize=""
+    "XBLOCK_SIZE": Initialize=0
+    "RECORDS_IN_FILE": Initialize=0
+    "XFILE_ORGANIZATION": Initialize=""
+    "XLABEL_TYPE": Initialize=""
+    "FILE_RECORD_INFO_P121_240": Initialize=""
+    "XRECORD_KEY": Initialize=""
+    "ALTERNATE_KEY1": Initialize=""
+    "ALTERNATE_KEY2": Initialize=""
+    "GEN_STATUS": Initialize=""
+    "END_FLAG": Initialize=""
+    "SIZE_13": Initialize=""
+    "SIZE_11": Initialize=""
+    "SIZE_10": Initialize=""
+    "SIZE_8": Initialize=""
+    "SIZE_7": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=" "
+    "P_OR_F": Initialize=" "
+    "PAR_NAME": Initialize=""
+    "PARDOT_X": Initialize=" "
+    "DOTVALUE": Initialize=0
+    "RE_MARK": Initialize=""
+    "TEST_COMPUTED": Initialize=""
+    "COMPUTED_X": Initialize=""
+    "COMPUTED_A": Initialize=" "
+    "COMPUTED_N": Initialize=""
+    "COMPUTED_0V18": Initialize=""
+    "COMPUTED_4V14": Initialize=""
+    "COMPUTED_14V4": Initialize=""
+    "CM_18V0": Initialize=""
+    "COMPUTED_18V0": Initialize=""
+    "TEST_CORRECT": Initialize=""
+    "CORRECT_X": Initialize=""
+    "CORRECT_A": Initialize=" "
+    "CORRECT_N": Initialize=""
+    "CORRECT_0V18": Initialize=""
+    "CORRECT_4V14": Initialize=""
+    "CORRECT_14V4": Initialize=""
+    "CR_18V0": Initialize=""
+    "CORRECT_18V0": Initialize=""
+    "CCVS_C_1": Initialize=""
+    "CCVS_C_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="DB104A"
+    "DEBUG_CONTENTS": Initialize=""
+    "DEBUG_LINE": Initialize=""
+    "DEBUG_NAME": Initialize=""
+}
+
+FixedPool.COBOL_DB105A_VARS {
+    "PRINT_REC": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "ATWO_DS_01V00": Initialize=2
+    "P_COUNT": Initialize=0
+    "THREE": Initialize=3
+    "XRAY": Initialize=""
+    "ALTERLOOP": Initialize=0
+    "BYPASS": Initialize=1
+    "STACK_END": Initialize=0
+    "INCREMENT": Initialize=0
+    "PROC_ACTIVE": Initialize=1
+    "PROCEDURE_NAMES": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "STATIC_TABLE": Initialize=""
+    "EXPECTED_NAME": Initialize=""
+    "STATIC_INDEX": Initialize=1
+    "STACKING_AREA": Initialize=""
+    "PROC_NAME": Initialize=0
+    "STACK_INDEX": Initialize=1
+    "PROC_LOC": Initialize=""
+    "BASE_NUMBER": Initialize=0
+    "BASE_NAME": Initialize=""
+    "TABLE_ENTRY": Initialize=""
+    "TABLE_ENTRY_BASE": Initialize=0
+    "FLOW_FAILURE_1": Initialize=""
+    "NUC_FAILURE_COUNT": Initialize=0
+    "FLOW_FAILURE_2": Initialize="A NON-ZERO COUNT WILL CAUSE FAILURES TO APPEAR IN THE A        BOVE REPORT."
+    "NOTE_RECORD": Initialize=""
+    "A": Initialize=" "
+    "B": Initialize=" "
+    "C": Initialize=" "
+    "D": Initialize=" "
+    "E": Initialize=" "
+    "F": Initialize=" "
+    "G": Initialize=" "
+    "H": Initialize=" "
+    "I": Initialize=" "
+    "J": Initialize=" "
+    "K": Initialize=" "
+    "L": Initialize=" "
+    "M": Initialize=" "
+    "N": Initialize=" "
+    "O": Initialize=" "
+    "P": Initialize=" "
+    "GO_TABLE": Initialize=""
+    "GO_SCRIPT": Initialize=0
+    "GO_TO_DEPEND": Initialize=0
+    "GO_TO_DEEP": Initialize=1
+    "PERFORM1": Initialize=" "
+    "PERFORM2": Initialize=20
+    "PERFORM4": Initialize=0
+    "PERFORM5": Initialize=0
+    "PERFORM_KEY": Initialize=0
+    "PERFORM_HOLD": Initialize=""
+    "TEST_LETTER": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=""
+    "P_OR_F": Initialize=""
+    "PAR_NAME": Initialize=""
+    "PARDOT_X": Initialize=""
+    "DOTVALUE": Initialize=0
+    "CORRECT_A": Initialize=""
+    "CORRECT_NFIELD": Initialize=""
+    "CORRECT_N": Initialize=""
+    "COMPUTED_A": Initialize=""
+    "COMPUTED_NFIELD": Initialize=""
+    "COMPUTED_N": Initialize=""
+    "RE_MARK": Initialize=""
+    "COLUMNS_LINE_1": Initialize=""
+    "PAGE_CONTROL_C": Initialize=" "
+    "COLUMNS_LINE_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="DB105A"
+    "DEBUG_NAME": Initialize=""
+    "SPACE": Initialize=""
+    "ZERO": Initialize=""
+}
+
+SubRoutine.DB105A {
+    COBOL_DB105A_VARS.EXPECTED_NAME = ArrayCreate(227)
+    COBOL_DB105A_VARS.PROC_NAME = ArrayCreate(500)
+    COBOL_DB105A_VARS.GO_SCRIPT = ArrayCreate(8)
+    COBOL_DB105A_VARS.TEST_LETTER = ArrayCreate(20)
+    RunTask(DB105A_PROCEDURES)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_DEBUG_ALL_PROCS {
+    RunTask(DB105A_PROCEDURES)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROCEDURES {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_DEBUG_ALL_0 {
+    COBOL_DB105A_VARS.PROC_ACTIVE = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.BYPASS, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM DEBUG-ALL-EXIT")
+                    }
+            RunTask(DB105A_DEBUG_ALL_EXIT)
+            ArraySet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1), COBOL_DB105A_VARS.DEBUG_NAME)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1)), "PROC") ThenBlock: {
+                        Debug("cobol.trace", level=2) {
+                                        PrintMessage("[COBOL] INSPECT PROC-NAME REPLACING")
+                                    }
+                        COBOL_DB105A_VARS.PROC_NAME = StringReplaceAll(COBOL_DB105A_VARS.PROC_NAME, 0, " ")
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1)) ThenBlock: {
+                                    }
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] IF condition")
+                                    }
+                        IfCondition EqualTo(COBOL_DB105A_VARS.STACK_INDEX, 500) ThenBlock: {
+                                        COBOL_DB105A_VARS.BYPASS = 1
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM DEBUG-ALL-EXIT")
+                                                        }
+                                        RunTask(DB105A_DEBUG_ALL_EXIT)
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_DEBUG_ALL_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CCVS1 {
+    RunTask(DB105A_OPEN_FILES)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_OPEN_FILES {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PRINT_FILE {
+    COBOL_DB105A_VARS.TEST_ID = COBOL_DB105A_VARS.CCVS_PGM_ID
+    COBOL_DB105A_VARS.ID_AGAIN = COBOL_DB105A_VARS.CCVS_PGM_ID
+    COBOL_DB105A_VARS.TEST_RESULTS = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM HEAD-ROUTINE")
+        }
+    RunTask(DB105A_HEAD_ROUTINE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM CCVS1-EXIT")
+        }
+    RunTask(DB105A_CCVS1_EXIT)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CLOSE_FILES {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM END-ROUTINE")
+        }
+    RunTask(DB105A_END_ROUTINE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_TERMINATE_CCVS {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_TTERMINATE_CALL {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_INSPT {
+    COBOL_DB105A_VARS.P_OR_F = "INSPT"
+    COBOL_DB105A_VARS.INSPECT_COUNTER = Add(COBOL_DB105A_VARS.INSPECT_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PASS {
+    COBOL_DB105A_VARS.P_OR_F = "PASS "
+    COBOL_DB105A_VARS.PASS_COUNTER = Add(COBOL_DB105A_VARS.PASS_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_FAIL {
+    COBOL_DB105A_VARS.P_OR_F = "FAIL*"
+    COBOL_DB105A_VARS.ERROR_COUNTER = Add(COBOL_DB105A_VARS.ERROR_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_DE_LETE {
+    COBOL_DB105A_VARS.P_OR_F = "*****"
+    COBOL_DB105A_VARS.DELETE_CNT = Add(COBOL_DB105A_VARS.DELETE_CNT, 1)
+    COBOL_DB105A_VARS.RE_MARK = "****TEST DELETED****"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PRINT_DETAIL {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.REC_CT, 0) ThenBlock: {
+            COBOL_DB105A_VARS.PARDOT_X = "."
+            COBOL_DB105A_VARS.DOTVALUE = COBOL_DB105A_VARS.REC_CT
+            COBOL_DB105A_VARS.PRINT_REC = COBOL_DB105A_VARS.TEST_RESULTS
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM WRITE-LINE")
+                    }
+            RunTask(DB105A_WRITE_LINE)
+            COBOL_DB105A_VARS.P_OR_F = " "
+            COBOL_DB105A_VARS.COMPUTED_A = " "
+            COBOL_DB105A_VARS.CORRECT_A = " "
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_DB105A_VARS.REC_CT, 0) ThenBlock: {
+                        COBOL_DB105A_VARS.PAR_NAME = " "
+                        COBOL_DB105A_VARS.RE_MARK = " "
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_HEAD_ROUTINE {
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_H_1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_H_2
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_H_3
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_COLUMN_NAMES_ROUTINE {
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.COLUMNS_LINE_1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.COLUMNS_LINE_2
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.HYPHEN_LINE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_END_ROUTINE {
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.HYPHEN_LINE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_END_RTN_EXIT {
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_E_1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_END_ROUTINE_1 {
+    COBOL_DB105A_VARS.ERROR_HOLD = Add(COBOL_DB105A_VARS.ERROR_HOLD, COBOL_DB105A_VARS.ERROR_COUNTER)
+    COBOL_DB105A_VARS.ERROR_HOLD = Add(COBOL_DB105A_VARS.ERROR_HOLD, COBOL_DB105A_VARS.INSPECT_COUNTER)
+    COBOL_DB105A_VARS.ERROR_HOLD = Add(COBOL_DB105A_VARS.ERROR_HOLD, COBOL_DB105A_VARS.DELETE_CNT)
+    COBOL_DB105A_VARS.ERROR_HOLD = Add(COBOL_DB105A_VARS.ERROR_HOLD, COBOL_DB105A_VARS.PASS_COUNTER)
+    COBOL_DB105A_VARS.CCVS_E_4_1 = COBOL_DB105A_VARS.PASS_COUNTER
+    COBOL_DB105A_VARS.CCVS_E_4_2 = COBOL_DB105A_VARS.ERROR_HOLD
+    COBOL_DB105A_VARS.CCVS_E_2_2 = COBOL_DB105A_VARS.CCVS_E_4
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_E_2
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_END_ROUTINE_12 {
+    COBOL_DB105A_VARS.ENDER_DESC = "TEST(S) FAILED"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.ERROR_COUNTER, 0) ThenBlock: {
+            COBOL_DB105A_VARS.ERROR_TOTAL = "NO "
+        } ElseBlock: {
+            COBOL_DB105A_VARS.ERROR_TOTAL = COBOL_DB105A_VARS.ERROR_COUNTER
+            COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_E_2
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM WRITE-LINE")
+                    }
+            RunTask(DB105A_WRITE_LINE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_END_ROUTINE_13 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.DELETE_CNT, 0) ThenBlock: {
+            COBOL_DB105A_VARS.ERROR_TOTAL = "NO "
+        } ElseBlock: {
+            COBOL_DB105A_VARS.ERROR_TOTAL = COBOL_DB105A_VARS.DELETE_CNT
+            COBOL_DB105A_VARS.ENDER_DESC = "TEST(S) DELETED     "
+            COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_E_2
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM WRITE-LINE")
+                    }
+            RunTask(DB105A_WRITE_LINE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_DB105A_VARS.INSPECT_COUNTER, 0) ThenBlock: {
+                        COBOL_DB105A_VARS.ERROR_TOTAL = "NO "
+                    } ElseBlock: {
+                        COBOL_DB105A_VARS.ERROR_TOTAL = COBOL_DB105A_VARS.INSPECT_COUNTER
+                        COBOL_DB105A_VARS.ENDER_DESC = "TEST(S) REQUIRE INSPECTION"
+                        COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_E_2
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM WRITE-LINE")
+                                    }
+                        RunTask(DB105A_WRITE_LINE)
+                        COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.CCVS_E_3
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM WRITE-LINE")
+                                    }
+                        RunTask(DB105A_WRITE_LINE)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_WRITE_LINE {
+    COBOL_DB105A_VARS.RECORD_COUNT = Add(COBOL_DB105A_VARS.RECORD_COUNT, 1)
+    COBOL_DB105A_VARS.DUMMY_HOLD = COBOL_DB105A_VARS.DUMMY_RECORD
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.COLUMNS_LINE_1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRT-LN")
+        }
+    RunTask(DB105A_WRT_LN)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.DUMMY_HOLD
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_RECORD_COUNT {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRT-LN")
+        }
+    RunTask(DB105A_WRT_LN)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_WRT_LN {
+    COBOL_DB105A_VARS.DUMMY_RECORD = " "
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CCVS1_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_INITIALIZE_PROC_NAME_STACK {
+    COBOL_DB105A_VARS.BYPASS = 0
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_001_BEGIN_TESTS {
+    RunTask(DB105A_PROC_002_GO__TEST_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_002_GO__TEST_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-003-GO--WRITE-1")
+        }
+    RunTask(DB105A_PROC_003_GO__WRITE_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_GO__DELETE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-003-GO--WRITE-1")
+        }
+    RunTask(DB105A_PROC_003_GO__WRITE_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_003_GO__WRITE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "GO TO "
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-002-GO--TEST-1"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_004_GO__INIT_2 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--TEST-2"
+    COBOL_DB105A_VARS.P_OR_F = " "
+    COBOL_DB105A_VARS.FEATURE = "GO TO DEPENDING"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_005_GO__TEST_2 {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.FEATURE = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-005-GO--B")
+        }
+    RunTask(DB105A_PROC_005_GO__B)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_GO_TO_DEPEND {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-005-GO--A")
+        }
+    RunTask(DB105A_PROC_005_GO__A)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_GO__DELETE_2 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--TEST-2"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-016-GO--WRITE-2")
+        }
+    RunTask(DB105A_PROC_016_GO__WRITE_2)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_005_GO__A {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--A"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.GO_TO_DEPEND, 0) ThenBlock: {
+            COBOL_DB105A_VARS.GO_TO_DEPEND = Add(COBOL_DB105A_VARS.GO_TO_DEPEND, 1)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition GreaterEqual(COBOL_DB105A_VARS.GO_TO_DEPEND, 3) ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM PROC-005-GO--E")
+                                    }
+                        RunTask(DB105A_PROC_005_GO__E)
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                                    }
+                        RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+                        COBOL_DB105A_VARS.GO_TO_DEPEND = 1
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                                    }
+                        RunTask(DB105A_PROC_005_GO__TEST_2)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_005_GO__B {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--B"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.GO_TO_DEPEND, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+            COBOL_DB105A_VARS.GO_TO_DEPEND = 3
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+            COBOL_DB105A_VARS.GO_TO_DEPEND = Add(COBOL_DB105A_VARS.GO_TO_DEPEND, 2)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_005_GO__C {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--C"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.GO_TO_DEPEND, 3) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+            COBOL_DB105A_VARS.GO_TO_DEPEND = 2
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+            COBOL_DB105A_VARS.GO_TO_DEPEND = Subtract(COBOL_DB105A_VARS.GO_TO_DEPEND, 1)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_005_GO__D {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--D"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.GO_TO_DEPEND, 2) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+            COBOL_DB105A_VARS.GO_TO_DEPEND = 4
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+            COBOL_DB105A_VARS.GO_TO_DEPEND = Add(COBOL_DB105A_VARS.GO_TO_DEPEND, 2)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-005-GO--TEST-2")
+                    }
+            RunTask(DB105A_PROC_005_GO__TEST_2)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_005_GO__E {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-005-GO--E"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.GO_TO_DEPEND, 4) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-016-GO--WRITE-2")
+                    }
+            RunTask(DB105A_PROC_016_GO__WRITE_2)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_016_GO__WRITE_2 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.REC_CT = Add(COBOL_DB105A_VARS.REC_CT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_017_GO__TEST_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-018-GO--PASS-3")
+        }
+    RunTask(DB105A_PROC_018_GO__PASS_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_GO__TEST_3A {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-019-GO--WRITE-3")
+        }
+    RunTask(DB105A_PROC_019_GO__WRITE_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_GO__DELETE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-019-GO--WRITE-3")
+        }
+    RunTask(DB105A_PROC_019_GO__WRITE_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_018_GO__PASS_3 {
+    RunTask(DB105A_PROC_019_GO__WRITE_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_019_GO__WRITE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "GO TO"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-017-GO--TEST-3"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_020_GO__TEST_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-021-GO--PASS-4")
+        }
+    RunTask(DB105A_PROC_021_GO__PASS_4)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-GO--NUC-FAIL-4")
+        }
+    RunTask(DB105A_PROC_000_GO__NUC_FAIL_4)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_GO__DELETE_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-023-GO--WRITE-4")
+        }
+    RunTask(DB105A_PROC_023_GO__WRITE_4)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_021_GO__PASS_4 {
+    RunTask(DB105A_PROC_022_GO__PAS_4)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_022_GO__PAS_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.GO_TO_DEEP, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-023-GO--WRITE-4")
+                    }
+            RunTask(DB105A_PROC_023_GO__WRITE_4)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_GO__NUC_FAIL_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.GO_TO_DEEP, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(1, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_023_GO__WRITE_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "GO TO DEPENDING"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-020-GO--TEST-4"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_024_ALTER_INIT {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "ALTER"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_025_ALTER_TEST_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.INCREMENT = 1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-026-ALTER-A")
+        }
+    RunTask(DB105A_PROC_026_ALTER_A)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_ALTER_DELETE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-028-ALTER-WRITE-1")
+        }
+    RunTask(DB105A_PROC_028_ALTER_WRITE_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_026_ALTER_A {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-ALTER-B")
+        }
+    RunTask(DB105A_PROC_000_ALTER_B)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_ALTER_B {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-028-ALTER-WRITE-1")
+        }
+    RunTask(DB105A_PROC_028_ALTER_WRITE_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_027_ALTER_C {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 0)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_028_ALTER_WRITE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-025-ALTER-TEST-1"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_030_ALTER_TEST_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.INCREMENT = 1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-031-ALTER-G")
+        }
+    RunTask(DB105A_PROC_031_ALTER_G)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_ALTER_DELETE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-032-ALTER-WRITE-3")
+        }
+    RunTask(DB105A_PROC_032_ALTER_WRITE_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_031_ALTER_G {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-ALTER-H")
+        }
+    RunTask(DB105A_PROC_000_ALTER_H)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_ALTER_H {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-032-ALTER-WRITE-3")
+        }
+    RunTask(DB105A_PROC_032_ALTER_WRITE_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_032_ALTER_I {
+    COBOL_DB105A_VARS.INCREMENT = 3
+    COBOL_DB105A_VARS.ALTERLOOP = Add(COBOL_DB105A_VARS.ALTERLOOP, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition GreaterEqual(COBOL_DB105A_VARS.ALTERLOOP, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-032-ALTER-WRITE-3")
+                    }
+            RunTask(DB105A_PROC_032_ALTER_WRITE_3)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_032_ALTER_WRITE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 4
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-031-ALTER-G")
+        }
+    RunTask(DB105A_PROC_031_ALTER_G)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_032_ALTER_WRITE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-030-ALTER-TEST-3"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_037_EXIT_TEST_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-038-EXIT-CHECK-1")
+        }
+    RunTask(DB105A_PROC_038_EXIT_CHECK_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_EXIT_DELETE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-039-EXIT-WRITE-1")
+        }
+    RunTask(DB105A_PROC_039_EXIT_WRITE_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_038_EXIT_CHECK_1 {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_039_EXIT_WRITE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "EXIT"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-037-EXIT-TEST-1"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_040_PFM_TEST_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM_KEY = 1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-041-PFM-A")
+        }
+    RunTask(DB105A_PROC_041_PFM_A)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM1, "ABC") ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-042-PFM-WRITE-1")
+        }
+    RunTask(DB105A_PROC_042_PFM_WRITE_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_042_PFM_WRITE_1 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM"
+    COBOL_DB105A_VARS.PAR_NAME = "PFM-TEST-1"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_043_PFM_TEST_2 {
+    COBOL_DB105A_VARS.INCREMENT = 3
+    COBOL_DB105A_VARS.PERFORM_KEY = 2
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-041-PFM-A")
+        }
+    RunTask(DB105A_PROC_041_PFM_A)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_2 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-046-PFM-WRITE-2")
+        }
+    RunTask(DB105A_PROC_046_PFM_WRITE_2)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_041_PFM_A {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM_KEY, 1) ThenBlock: {
+            COBOL_DB105A_VARS.PERFORM1 = "ABC"
+        } ElseBlock: {
+            COBOL_DB105A_VARS.PERFORM1 = "XYZ"
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_045_PFM_B {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM_KEY, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-043-PFM-TEST-2")
+                    }
+            RunTask(DB105A_PROC_043_PFM_TEST_2)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM1, "XYZ") ThenBlock: {
+                    }
+        } ElseBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_046_PFM_WRITE_2 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-043-PFM-TEST-2"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_047_PFM_TEST_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-048-PFM-C")
+        }
+    RunTask(DB105A_PROC_048_PFM_C)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-048-PFM-C")
+        }
+    RunTask(DB105A_PROC_048_PFM_C)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM2, 56) ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-048-PFM-WRITE-3")
+        }
+    RunTask(DB105A_PROC_048_PFM_WRITE_3)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_048_PFM_WRITE_3 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM TIMES"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-047-PFM-TEST-3"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_055_PFM_TEST_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-056-PFM-E")
+        }
+    RunTask(DB105A_PROC_056_PFM_E)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM4, 70) ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-060-PFM-WRITE-4")
+        }
+    RunTask(DB105A_PROC_060_PFM_WRITE_4)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_060_PFM_WRITE_4 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "NESTED PERFORM THRU"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-055-PFM-TEST-4"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_061_PFM_TEST_5 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-062-PFM-J")
+        }
+    RunTask(DB105A_PROC_062_PFM_J)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM2, 312) ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-064-PFM-WRITE-5")
+        }
+    RunTask(DB105A_PROC_064_PFM_WRITE_5)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_5 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_064_PFM_WRITE_5 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "NESTED PERFORM"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-061-PFM-TEST-5"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_065_PFM_TEST_6 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-066-PFM-N")
+        }
+    RunTask(DB105A_PROC_066_PFM_N)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-069-PFM-WRITE-6")
+        }
+    RunTask(DB105A_PROC_069_PFM_WRITE_6)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_6 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_069_PFM_WRITE_6 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM SECTION-NAME"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-065-PFM-TEST-6"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_070_PFM_TEST_7 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-071-PFM-V")
+        }
+    RunTask(DB105A_PROC_071_PFM_V)
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-096-PFM-WRITE-7")
+        }
+    RunTask(DB105A_PROC_096_PFM_WRITE_7)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_7 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_096_PFM_WRITE_7 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM EXIT PARAS"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-070-PFM-TEST-7"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_097_PFM_TEST_08 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-098-PFM-B-8")
+        }
+    RunTask(DB105A_PROC_098_PFM_B_8)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-097-PFM-A-8")
+        }
+    RunTask(DB105A_PROC_097_PFM_A_8)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_097_PFM_A_8 {
+    RunTask(DB105A_PROC_098_PFM_B_8)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_098_PFM_B_8 {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 2)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_097_PFM_TESTT_8 {
+    RunTask(DB105A_PROC_098_PFM_TESTTT_8)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_098_PFM_TESTTT_8 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.P_COUNT, 302) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-105-PFM-WRITE-08")
+                    }
+            RunTask(DB105A_PROC_105_PFM_WRITE_08)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-08")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_08)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_DELETE_08 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-105-PFM-WRITE-08")
+        }
+    RunTask(DB105A_PROC_105_PFM_WRITE_08)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_08 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.P_COUNT, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(302, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_105_PFM_WRITE_08 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM             "
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-097-PFM-TEST-08"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_106_PFM_TEST_09 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-107-PFM-B-9")
+        }
+    RunTask(DB105A_PROC_107_PFM_B_9)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-106-PFM-A-9")
+        }
+    RunTask(DB105A_PROC_106_PFM_A_9)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_106_PFM_A_9 {
+    RunTask(DB105A_PROC_107_PFM_B_9)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_107_PFM_B_9 {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 2)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_106_PFM_TESTT_9 {
+    RunTask(DB105A_PROC_107_PFM_TESTTT_9)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_107_PFM_TESTTT_9 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.P_COUNT, 402) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-116-PFM-WRITE-09")
+                    }
+            RunTask(DB105A_PROC_116_PFM_WRITE_09)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-09")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_09)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_09 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-116-PFM-WRITE-09")
+        }
+    RunTask(DB105A_PROC_116_PFM_WRITE_09)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_09 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.P_COUNT, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(502, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_116_PFM_WRITE_09 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM TIMES       "
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-106-PFM-TEST-09"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_117_PFM_TEST_10 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-118-PFM-B-10")
+        }
+    RunTask(DB105A_PROC_118_PFM_B_10)
+    COBOL_DB105A_VARS.INCREMENT = 4
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-117-PFM-A-10")
+        }
+    RunTask(DB105A_PROC_117_PFM_A_10)
+    COBOL_DB105A_VARS.INCREMENT = 8
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-117-PFM-A-10")
+        }
+    RunTask(DB105A_PROC_117_PFM_A_10)
+    COBOL_DB105A_VARS.INCREMENT = 11
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-118-PFM-B-10")
+        }
+    RunTask(DB105A_PROC_118_PFM_B_10)
+    COBOL_DB105A_VARS.INCREMENT = 15
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_117_PFM_A_10 {
+    RunTask(DB105A_PROC_118_PFM_B_10)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_118_PFM_B_10 {
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_119_PFM_C_10 {
+    RunTask(DB105A_PROC_120_PFM_D_10)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_120_PFM_D_10 {
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 10000)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_121_PFM_TESTT_10 {
+    RunTask(DB105A_PROC_122_PFM_TESTTT_10)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_122_PFM_TESTTT_10 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.P_COUNT, 50504) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-138-PFM-WRITE-10")
+                    }
+            RunTask(DB105A_PROC_138_PFM_WRITE_10)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-10")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_10)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_10 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-138-PFM-WRITE-10")
+        }
+    RunTask(DB105A_PROC_138_PFM_WRITE_10)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_10 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.P_COUNT, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(50504, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_138_PFM_WRITE_10 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM THRU        "
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-117-PFM-TEST-10"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_139_PFM_TEST_11 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-140-PFM-B-11")
+        }
+    RunTask(DB105A_PROC_140_PFM_B_11)
+    COBOL_DB105A_VARS.INCREMENT = 4
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-139-PFM-A-11")
+        }
+    RunTask(DB105A_PROC_139_PFM_A_11)
+    COBOL_DB105A_VARS.INCREMENT = 12
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-139-PFM-A-11")
+        }
+    RunTask(DB105A_PROC_139_PFM_A_11)
+    COBOL_DB105A_VARS.INCREMENT = 19
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-140-PFM-B-11")
+        }
+    RunTask(DB105A_PROC_140_PFM_B_11)
+    COBOL_DB105A_VARS.INCREMENT = 23
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_139_PFM_A_11 {
+    RunTask(DB105A_PROC_140_PFM_B_11)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_140_PFM_B_11 {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 2)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_139_PFM_C_11 {
+    RunTask(DB105A_PROC_140_PFM_D_11)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_140_PFM_D_11 {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 2)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 10000)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_139_PFM_TESTT_11 {
+    RunTask(DB105A_PROC_140_PFM_TESTTT_11)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_140_PFM_TESTTT_11 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.P_COUNT, 70704) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-168-PFM-WRITE-11")
+                    }
+            RunTask(DB105A_PROC_168_PFM_WRITE_11)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-11")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_11)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_11 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-168-PFM-WRITE-11")
+        }
+    RunTask(DB105A_PROC_168_PFM_WRITE_11)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_11 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.P_COUNT, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(90904, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_168_PFM_WRITE_11 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM THRU, TIMES "
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-139-PFM-TEST-11"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_169_PFM_TEST_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = 0
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-170-PFM-A-12")
+        }
+    RunTask(DB105A_PROC_170_PFM_A_12)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 2)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-175-PFM-TESTT-12")
+        }
+    RunTask(DB105A_PROC_175_PFM_TESTT_12)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_170_PFM_A_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 10)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-171-PFM-B-12")
+        }
+    RunTask(DB105A_PROC_171_PFM_B_12)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 20)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_171_PFM_B_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-172-PFM-C-12")
+        }
+    RunTask(DB105A_PROC_172_PFM_C_12)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 200)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_172_PFM_C_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1000)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-173-PFM-D-12")
+        }
+    RunTask(DB105A_PROC_173_PFM_D_12)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 2000)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_173_PFM_D_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 10000)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-174-PFM-E-12")
+        }
+    RunTask(DB105A_PROC_174_PFM_E_12)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 20000)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_174_PFM_E_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100000)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_175_PFM_TESTT_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.P_COUNT, 133333) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-176-PFM-WRITE-12")
+                    }
+            RunTask(DB105A_PROC_176_PFM_WRITE_12)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-12")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_12)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-176-PFM-WRITE-12")
+        }
+    RunTask(DB105A_PROC_176_PFM_WRITE_12)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.P_COUNT, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(133333, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_176_PFM_WRITE_12 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "NESTED PERFORM      "
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-169-PFM-TEST-12"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_177_PFM_TEST_13 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.P_COUNT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-178-PFM-A-13")
+        }
+    RunTask(DB105A_PROC_178_PFM_A_13)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 1)
+    COBOL_DB105A_VARS.INCREMENT = 2
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-178-PFM-A-13")
+        }
+    RunTask(DB105A_PROC_178_PFM_A_13)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 2)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_178_PFM_A_13 {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 2)
+    COBOL_DB105A_VARS.P_COUNT = Add(COBOL_DB105A_VARS.P_COUNT, 100)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_177_PFM_B_13 {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_178_PFM_TESTT_13 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.P_COUNT, 403) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-187-PFM-WRITE-13")
+                    }
+            RunTask(DB105A_PROC_187_PFM_WRITE_13)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-13")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_13)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_13 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-187-PFM-WRITE-13")
+        }
+    RunTask(DB105A_PROC_187_PFM_WRITE_13)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_13 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.P_COUNT, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(403, 4, 4, 2, "trailing")
+    COBOL_DB105A_VARS.FEATURE = "PERFORM WITH EXIT"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_187_PFM_WRITE_13 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-177-PFM-TEST-13"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_188_PFM_TEST_14 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-189-A101")
+        }
+    RunTask(DB105A_PROC_189_A101)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM_HOLD, "ABCDEFGHIJKLMNOPQRST") ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-210-PFM-WRITE-14")
+                    }
+            RunTask(DB105A_PROC_210_PFM_WRITE_14)
+            COBOL_DB105A_VARS.CORRECT_A = "ABCDEFGHIJKLMNOPQRST"
+            COBOL_DB105A_VARS.COMPUTED_A = COBOL_DB105A_VARS.PERFORM_HOLD
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-210-PFM-WRITE-14")
+                    }
+            RunTask(DB105A_PROC_210_PFM_WRITE_14)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_14 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_210_PFM_WRITE_14 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-188-PFM-TEST-14"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_211_PFM_A_15 {
+    RunTask(DB105A_PROC_212_PFM_TEST_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_212_PFM_TEST_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-213-PFM-G-15")
+        }
+    RunTask(DB105A_PROC_213_PFM_G_15)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-218-PFM-WRITE-15")
+        }
+    RunTask(DB105A_PROC_218_PFM_WRITE_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-218-PFM-WRITE-15")
+        }
+    RunTask(DB105A_PROC_218_PFM_WRITE_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_217_PFM_B_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.REC_CT = Add(COBOL_DB105A_VARS.REC_CT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_C_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    COBOL_DB105A_VARS.RE_MARK = "RETURN MECHANISM LOST"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-218-PFM-WRITE-15")
+        }
+    RunTask(DB105A_PROC_218_PFM_WRITE_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_D_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    COBOL_DB105A_VARS.RE_MARK = "PERFORM GOT LOST IN GO TOS"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-218-PFM-WRITE-15")
+        }
+    RunTask(DB105A_PROC_218_PFM_WRITE_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_215_PFM_E_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-216-PFM-L-15")
+        }
+    RunTask(DB105A_PROC_216_PFM_L_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_F_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-PFM-D-15")
+        }
+    RunTask(DB105A_PROC_000_PFM_D_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_213_PFM_G_15 {
+    RunTask(DB105A_PROC_214_PFM_H_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_214_PFM_H_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-215-PFM-E-15")
+        }
+    RunTask(DB105A_PROC_215_PFM_E_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_I_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-PFM-D-15")
+        }
+    RunTask(DB105A_PROC_000_PFM_D_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_J_15 {
+    RunTask(DB105A_PROC_000_PFM_K_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_K_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    COBOL_DB105A_VARS.RE_MARK = "PROC-000-PFM-K-15 ENTERED"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-218-PFM-WRITE-15")
+        }
+    RunTask(DB105A_PROC_218_PFM_WRITE_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_216_PFM_L_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-217-PFM-B-15")
+        }
+    RunTask(DB105A_PROC_217_PFM_B_15)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_218_PFM_WRITE_15 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.FEATURE = "PERFORM GO TO PARAS"
+    COBOL_DB105A_VARS.PAR_NAME = "PROC-212-PFM-TEST-15"
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_219_PFM_TEST_LAST {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM5 = 7
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-220-PFM-U")
+        }
+    RunTask(DB105A_PROC_220_PFM_U)
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PERFORM5, 707) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-227-PFM-WRITE-LAST")
+                    }
+            RunTask(DB105A_PROC_227_PFM_WRITE_LAST)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-PFM-NUC-FAIL-LST")
+                    }
+            RunTask(DB105A_PROC_000_PFM_NUC_FAIL_LST)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_DELETE_LAST {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-227-PFM-WRITE-LAST")
+        }
+    RunTask(DB105A_PROC_227_PFM_WRITE_LAST)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_NUC_FAIL_LST {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.PERFORM5, 0, 4, 2, "trailing")
+    COBOL_DB105A_VARS.CORRECT_N = FormatSigned(707, 4, 4, 2, "trailing")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_227_PFM_WRITE_LAST {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.PROC_ACTIVE, 0) ThenBlock: {
+            COBOL_DB105A_VARS.DUMMY_RECORD = " DEBUGGING PROCEDURE WAS NEVER EXECUTED.  NO FURTHE             R REPORT WILL BE GENERATED."
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM WRITE-LINE")
+                    }
+            RunTask(DB105A_WRITE_LINE)
+            COBOL_DB105A_VARS.ERROR_COUNTER = 227
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM CCVS-EXIT")
+                    }
+            RunTask(DB105A_CCVS_EXIT)
+            COBOL_DB105A_VARS.INCREMENT = 0
+            COBOL_DB105A_VARS.TEST_RESULTS = " "
+            COBOL_DB105A_VARS.FEATURE = "DEBUG ALL PROCEDURES"
+            COBOL_DB105A_VARS.REC_CT = 0
+            COBOL_DB105A_VARS.BYPASS = 1
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_STACK_INDEX {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM NAME-LISTER")
+        }
+    RunTask(DB105A_NAME_LISTER)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_EMPTY_THE_STACK {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF STACK-INDEX")
+        }
+    IfCondition COBOL_DB105A_VARS.STACK_INDEX ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM CORRECT-GT-STACK")
+        }
+    RunTask(DB105A_CORRECT_GT_STACK)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM EMPTY-THE-STACK")
+        }
+    RunTask(DB105A_EMPTY_THE_STACK)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_STACK_EMPTY {
+    COBOL_DB105A_VARS.DUMMY_RECORD = " "
+    COBOL_DB105A_VARS.RECORD_COUNT = 51
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.FLOW_FAILURE_1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    COBOL_DB105A_VARS.DUMMY_RECORD = COBOL_DB105A_VARS.FLOW_FAILURE_2
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM WRITE-LINE")
+        }
+    RunTask(DB105A_WRITE_LINE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM CCVS-EXIT")
+        }
+    RunTask(DB105A_CCVS_EXIT)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_NAME_LISTER {
+    RunTask(DB105A_NAME_LISTER_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_NAME_LISTER_1 {
+    COBOL_DB105A_VARS.TABLE_ENTRY = ArrayGet(COBOL_DB105A_VARS.EXPECTED_NAME, Subtract(COBOL_DB105A_VARS.STATIC_INDEX, 1))
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.STACK_INDEX, COBOL_DB105A_VARS.STACK_END) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM STACK-GT-CORRECT")
+                    }
+            RunTask(DB105A_STACK_GT_CORRECT)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1)) ThenBlock: {
+                    }
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM CORRECT-GT-STACK")
+        }
+    RunTask(DB105A_CORRECT_GT_STACK)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition GreaterEqual(COBOL_DB105A_VARS.TABLE_ENTRY_BASE, ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1))) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM CORRECT-GT-STACK")
+                    }
+            RunTask(DB105A_CORRECT_GT_STACK)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition LessEqual(COBOL_DB105A_VARS.TABLE_ENTRY_BASE, ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1))) ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM STACK-GT-CORRECT")
+                                    }
+                        RunTask(DB105A_STACK_GT_CORRECT)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CORRECT_EQ_STACK {
+    COBOL_DB105A_VARS.PAR_NAME = ArrayGet(COBOL_DB105A_VARS.EXPECTED_NAME, Subtract(COBOL_DB105A_VARS.STATIC_INDEX, 1))
+    COBOL_DB105A_VARS.CORRECT_A = COBOL_DB105A_VARS.TABLE_ENTRY
+    COBOL_DB105A_VARS.COMPUTED_A = ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1))
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition EqualTo(COBOL_DB105A_VARS.CORRECT_A, COBOL_DB105A_VARS.COMPUTED_A) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM FAIL")
+                    }
+            RunTask(DB105A_FAIL)
+        } ElseBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PASS")
+                    }
+            RunTask(DB105A_PASS)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PRINT-DETAIL")
+                    }
+            RunTask(DB105A_PRINT_DETAIL)
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] IF condition")
+                    }
+            IfCondition LessEqual(COBOL_DB105A_VARS.STACK_INDEX, 500) ThenBlock: {
+                    }
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition LessEqual(COBOL_DB105A_VARS.STATIC_INDEX, 227) ThenBlock: {
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM NAME-LISTER-EXIT")
+        }
+    RunTask(DB105A_NAME_LISTER_EXIT)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CORRECT_GT_STACK {
+    COBOL_DB105A_VARS.COMPUTED_A = ArrayGet(COBOL_DB105A_VARS.PROC_NAME, Subtract(COBOL_DB105A_VARS.STACK_INDEX, 1))
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM FAIL")
+        }
+    RunTask(DB105A_FAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PRINT-DETAIL")
+        }
+    RunTask(DB105A_PRINT_DETAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition LessEqual(COBOL_DB105A_VARS.STACK_INDEX, 500) ThenBlock: {
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CORRECT_GT_STACK_1 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM NAME-LISTER-1")
+        }
+    RunTask(DB105A_NAME_LISTER_1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_STACK_GT_CORRECT {
+    COBOL_DB105A_VARS.PAR_NAME = ArrayGet(COBOL_DB105A_VARS.EXPECTED_NAME, Subtract(COBOL_DB105A_VARS.STATIC_INDEX, 1))
+    COBOL_DB105A_VARS.CORRECT_A = COBOL_DB105A_VARS.TABLE_ENTRY
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM FAIL")
+        }
+    RunTask(DB105A_FAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PRINT-DETAIL")
+        }
+    RunTask(DB105A_PRINT_DETAIL)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition LessEqual(COBOL_DB105A_VARS.STATIC_INDEX, 227) ThenBlock: {
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_NAME_LISTER_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_OTHER_PROCEDURES {
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_NUCLEUS_FAILURE {
+    COBOL_DB105A_VARS.NUC_FAILURE_COUNT = Add(COBOL_DB105A_VARS.NUC_FAILURE_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_209_A121 {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_208_A120 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(20, 1), "T")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-209-A121")
+        }
+    RunTask(DB105A_PROC_209_A121)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_207_A119 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(19, 1), "S")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-208-A120")
+        }
+    RunTask(DB105A_PROC_208_A120)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_206_A118 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(18, 1), "R")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-207-A119")
+        }
+    RunTask(DB105A_PROC_207_A119)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_205_A117 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(17, 1), "Q")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-206-A118")
+        }
+    RunTask(DB105A_PROC_206_A118)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_204_A116 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(16, 1), "P")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-205-A117")
+        }
+    RunTask(DB105A_PROC_205_A117)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_203_A115 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(15, 1), "O")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-204-A116")
+        }
+    RunTask(DB105A_PROC_204_A116)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_202_A114 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(14, 1), "N")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-203-A115")
+        }
+    RunTask(DB105A_PROC_203_A115)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_201_A113 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(13, 1), "M")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-202-A114")
+        }
+    RunTask(DB105A_PROC_202_A114)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_200_A112 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(12, 1), "L")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-201-A113")
+        }
+    RunTask(DB105A_PROC_201_A113)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_199_A111 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(11, 1), "K")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-200-A112")
+        }
+    RunTask(DB105A_PROC_200_A112)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_198_A110 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(10, 1), "J")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-199-A111")
+        }
+    RunTask(DB105A_PROC_199_A111)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_197_A109 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(9, 1), "I")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-198-A110")
+        }
+    RunTask(DB105A_PROC_198_A110)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_196_A108 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(8, 1), "H")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-197-A109")
+        }
+    RunTask(DB105A_PROC_197_A109)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_195_A107 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(7, 1), "G")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-196-A108")
+        }
+    RunTask(DB105A_PROC_196_A108)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_194_A106 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(6, 1), "F")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-195-A107")
+        }
+    RunTask(DB105A_PROC_195_A107)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_193_A105 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(5, 1), "E")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-194-A106")
+        }
+    RunTask(DB105A_PROC_194_A106)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_192_A104 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(4, 1), "D")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-193-A105")
+        }
+    RunTask(DB105A_PROC_193_A105)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_191_A103 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(3, 1), "C")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-192-A104")
+        }
+    RunTask(DB105A_PROC_192_A104)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_190_A102 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(2, 1), "B")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-191-A103")
+        }
+    RunTask(DB105A_PROC_191_A103)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_189_A101 {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    ArraySet(COBOL_DB105A_VARS.TEST_LETTER, Subtract(1, 1), "A")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-190-A102")
+        }
+    RunTask(DB105A_PROC_190_A102)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_048_PFM_C {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.PERFORM2 = Add(COBOL_DB105A_VARS.PERFORM2, 6)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_D {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-055-PFM-TEST-4")
+        }
+    RunTask(DB105A_PROC_055_PFM_TEST_4)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_056_PFM_E {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM1 = "CSW"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-057-PFM-F")
+        }
+    RunTask(DB105A_PROC_057_PFM_F)
+    COBOL_DB105A_VARS.PERFORM4 = FixedPoint.Subtract(COBOL_DB105A_VARS.PERFORM4, 0)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-059-PFM-H")
+        }
+    RunTask(DB105A_PROC_059_PFM_H)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_057_PFM_F {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM4 = 60
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_058_PFM_G {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM4 = FixedPoint.Add(COBOL_DB105A_VARS.PERFORM4, 10)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_059_PFM_H {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_I {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-060-PFM-WRITE-4")
+        }
+    RunTask(DB105A_PROC_060_PFM_WRITE_4)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_062_PFM_J {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM1 = "YES"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-063-PFM-L")
+        }
+    RunTask(DB105A_PROC_063_PFM_L)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_K {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-064-PFM-WRITE-5")
+        }
+    RunTask(DB105A_PROC_064_PFM_WRITE_5)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_063_PFM_L {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM2 = 4
+    COBOL_DB105A_VARS.PERFORM2 = Add(COBOL_DB105A_VARS.PERFORM2, 100)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_M {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-064-PFM-WRITE-5")
+        }
+    RunTask(DB105A_PROC_064_PFM_WRITE_5)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_066_PFM_N {
+    RunTask(DB105A_PROC_067_PFM_O)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_067_PFM_O {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.NUC_FAILURE_COUNT = Add(COBOL_DB105A_VARS.NUC_FAILURE_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_068_PFM_P {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.NUC_FAILURE_COUNT = Subtract(COBOL_DB105A_VARS.NUC_FAILURE_COUNT, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_Q {
+    RunTask(DB105A_PROC_000_PFM_R)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_R {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+        }
+    RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM PROC-069-PFM-WRITE-6")
+        }
+    RunTask(DB105A_PROC_069_PFM_WRITE_6)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_S {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM5 = Add(COBOL_DB105A_VARS.PERFORM5, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_000_PFM_T {
+    COBOL_DB105A_VARS.INCREMENT = 0
+    COBOL_DB105A_VARS.PERFORM5 = Add(COBOL_DB105A_VARS.PERFORM5, 10)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_220_PFM_U {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 1)
+    COBOL_DB105A_VARS.PERFORM5 = Add(COBOL_DB105A_VARS.PERFORM5, 100)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] IF condition")
+        }
+    IfCondition GreaterEqual(COBOL_DB105A_VARS.PERFORM5, 899) ThenBlock: {
+            COBOL_DB105A_VARS.COMPUTED_N = FormatSigned(COBOL_DB105A_VARS.PERFORM5, 0, 4, 2, "trailing")
+            COBOL_DB105A_VARS.CORRECT_N = FormatSigned(707, 4, 4, 2, "trailing")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM PROC-000-NUCLEUS-FAILURE")
+                    }
+            RunTask(DB105A_PROC_000_NUCLEUS_FAILURE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_071_PFM_V {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_072_PFM_W {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_073_PFM_X {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_074_PFM_Y {
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_PROC_075_PFM_Z {
+    COBOL_DB105A_VARS.INCREMENT = Add(COBOL_DB105A_VARS.INCREMENT, 5)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CCVS_EXIT {
+    RunTask(DB105A_CCVS_999999)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_CCVS_999999 {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM CLOSE-FILES")
+        }
+    RunTask(DB105A_CLOSE_FILES)
+    ReturnValue(0)
+}
+
+SubRoutine.DB105A_DECLARATIVES {
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(DB105A)
+}
+
+RunTask(Main)

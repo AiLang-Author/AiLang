@@ -1,0 +1,13 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TEST.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 GO-TO-DEEP PIC 9.
+       PROCEDURE DIVISION.
+       PARA-1.
+           IF GO-TO-DEEP EQUAL TO 2
+              PERFORM PASS GO TO PARA-2.
+       PARA-2.
+           DISPLAY "PARA-2".
+       PASS.
+           DISPLAY "PASS".

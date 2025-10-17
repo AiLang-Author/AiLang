@@ -1,0 +1,18 @@
+LibraryImport.Cobol
+
+SubRoutine.NESTEDPROG {
+    RunTask(NESTEDPROG_DUMMY_PARA)
+    ReturnValue(0)
+}
+
+SubRoutine.NESTEDPROG_DUMMY_PARA {
+    PrintMessage("HELLO")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(NESTEDPROG)
+    ReturnValue(0)
+}
+
+RunTask(Main)

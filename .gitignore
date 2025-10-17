@@ -19,3 +19,27 @@ parser_failures/
 # Test outputs in root
 /*.ailang
 /*.cbl
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Ailang build artifacts
+*_exec
+*.import_debug.json
+
+# Temporary files
+*.tmp
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

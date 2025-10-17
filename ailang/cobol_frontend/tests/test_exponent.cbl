@@ -1,0 +1,12 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TEST-EXP.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-NUM PIC 9(5).
+       01 RESULT PIC 9(5).
+       PROCEDURE DIVISION.
+           COMPUTE WS-NUM = 10 ** 2.
+           COMPUTE RESULT = FUNCTION SQRT(10) ** 2.
+           DISPLAY WS-NUM.
+           DISPLAY RESULT.
+           STOP RUN.

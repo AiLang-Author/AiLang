@@ -1,0 +1,555 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_IC207A_VARS {
+    "DN3": Initialize=15
+    "ID1": Initialize="IC208A"
+    "DN4": Initialize=""
+    "DN5": Initialize=""
+    "DN1": Initialize=""
+    "DN2": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "FEATURE": Initialize=" "
+    "P_OR_F": Initialize=" "
+    "PARDOT_X": Initialize=" "
+    "DOTVALUE": Initialize=0
+    "RE_MARK": Initialize=""
+    "COMPUTED_A": Initialize=" "
+    "COMPUTED_N": Initialize=""
+    "COMPUTED_0V18": Initialize=""
+    "COMPUTED_4V14": Initialize=""
+    "COMPUTED_14V4": Initialize=""
+    "COMPUTED_18V0": Initialize=""
+    "CORRECT_A": Initialize=" "
+    "CORRECT_N": Initialize=""
+    "CORRECT_0V18": Initialize=""
+    "CORRECT_4V14": Initialize=""
+    "CORRECT_14V4": Initialize=""
+    "CORRECT_18V0": Initialize=""
+    "COR_ANSI_REFERENCE": Initialize=" "
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_COUNTER": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "ANSI_REFERENCE": Initialize=" "
+    "TEST_ID": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "INF_ANSI_REFERENCE": Initialize=""
+    "CCVS_PGM_ID": Initialize="IC207A"
+    "CCVS_C_2": Initialize=""
+    "PRINT_REC": Initialize=""
+    "CCVS_E_3": Initialize=""
+    "CCVS_H_1": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CORRECT_X": Initialize=""
+    "PAR_NAME": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "TEST_CORRECT": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "TABLE_02": Initialize=""
+    "TEST_COMPUTED": Initialize=""
+    "CCVS_C_1": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "XXINFO": Initialize=""
+    "SPACE": Initialize=""
+    "DUMMY_RECORD": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "SPACES": Initialize=""
+    "COMPUTED_X": Initialize=""
+    "ZERO": Initialize=""
+    "TABLE_01": Initialize=""
+}
+
+SubRoutine.IC207A {
+    COBOL_IC207A_VARS.DN1 = ArrayCreate(15)
+    COBOL_IC207A_VARS.DN2 = ArrayCreate(8)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_OPEN_FILES {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_PRINT_FILE {
+    COBOL_IC207A_VARS.TEST_ID = COBOL_IC207A_VARS.CCVS_PGM_ID
+    COBOL_IC207A_VARS.ID_AGAIN = COBOL_IC207A_VARS.CCVS_PGM_ID
+    COBOL_IC207A_VARS.TEST_RESULTS = " "
+    RunTask(IC207A_HEAD_ROUTINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_END_ROUTINE_13 {
+    IfCondition COBOL_IC207A_VARS.DELETE_COUNTER ThenBlock: {
+            COBOL_IC207A_VARS.ERROR_TOTAL = "NO "
+        } ElseBlock: {
+            COBOL_IC207A_VARS.ERROR_TOTAL = COBOL_IC207A_VARS.DELETE_COUNTER
+            COBOL_IC207A_VARS.ENDER_DESC = "TEST(S) DELETED     "
+            COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_E_2
+            RunTask(IC207A_WRITE_LINE)
+            IfCondition EqualTo(COBOL_IC207A_VARS.INSPECT_COUNTER, 0) ThenBlock: {
+                        COBOL_IC207A_VARS.ERROR_TOTAL = "NO "
+                    } ElseBlock: {
+                        COBOL_IC207A_VARS.ERROR_TOTAL = COBOL_IC207A_VARS.INSPECT_COUNTER
+                        COBOL_IC207A_VARS.ENDER_DESC = "TEST(S) REQUIRE INSPECTION"
+                        COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_E_2
+                        RunTask(IC207A_WRITE_LINE)
+                        COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_E_3
+                        RunTask(IC207A_WRITE_LINE)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_STERMINATE_CALL {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_INSPT {
+    COBOL_IC207A_VARS.P_OR_F = "INSPT"
+    COBOL_IC207A_VARS.INSPECT_COUNTER = Add(COBOL_IC207A_VARS.INSPECT_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_PASS {
+    COBOL_IC207A_VARS.P_OR_F = "PASS "
+    COBOL_IC207A_VARS.PASS_COUNTER = Add(COBOL_IC207A_VARS.PASS_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_FAIL {
+    COBOL_IC207A_VARS.P_OR_F = "FAIL*"
+    COBOL_IC207A_VARS.ERROR_COUNTER = Add(COBOL_IC207A_VARS.ERROR_COUNTER, 1)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_DE_LETE {
+    COBOL_IC207A_VARS.P_OR_F = "*****"
+    COBOL_IC207A_VARS.DELETE_COUNTER = Add(COBOL_IC207A_VARS.DELETE_COUNTER, 1)
+    COBOL_IC207A_VARS.RE_MARK = "****TEST DELETED****"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_PRINT_DETAIL {
+    IfCondition EqualTo(COBOL_IC207A_VARS.REC_CT, 0) ThenBlock: {
+            COBOL_IC207A_VARS.PARDOT_X = "."
+            COBOL_IC207A_VARS.DOTVALUE = COBOL_IC207A_VARS.REC_CT
+            COBOL_IC207A_VARS.PRINT_REC = COBOL_IC207A_VARS.TEST_RESULTS
+            RunTask(IC207A_WRITE_LINE)
+            IfCondition EqualTo(COBOL_IC207A_VARS.P_OR_F, "FAIL*") ThenBlock: {
+                        RunTask(IC207A_WRITE_LINE)
+                        RunTask(IC207A_FAIL_ROUTINE)
+                    } ElseBlock: {
+                        RunTask(IC207A_BAIL_OUT)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_BAIL_OUT_EX {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_HEAD_ROUTINE {
+    COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_H_1
+    RunTask(IC207A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_DUMMY_RECORD {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_END_ROUTINE {
+    COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.HYPHEN_LINE
+    RunTask(IC207A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_ERROR_HOLD {
+    COBOL_IC207A_VARS.ERROR_HOLD = Add(COBOL_IC207A_VARS.ERROR_HOLD, COBOL_IC207A_VARS.DELETE_COUNTER)
+    COBOL_IC207A_VARS.ERROR_HOLD = Add(COBOL_IC207A_VARS.ERROR_HOLD, COBOL_IC207A_VARS.PASS_COUNTER)
+    COBOL_IC207A_VARS.CCVS_E_4_1 = COBOL_IC207A_VARS.PASS_COUNTER
+    COBOL_IC207A_VARS.CCVS_E_4_2 = COBOL_IC207A_VARS.ERROR_HOLD
+    COBOL_IC207A_VARS.CCVS_E_2_2 = COBOL_IC207A_VARS.CCVS_E_4
+    COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_E_2
+    RunTask(IC207A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_END_ROUTINE_12 {
+    COBOL_IC207A_VARS.ENDER_DESC = "TEST(S) FAILED"
+    IfCondition COBOL_IC207A_VARS.ERROR_COUNTER ThenBlock: {
+            COBOL_IC207A_VARS.ERROR_TOTAL = "NO "
+        } ElseBlock: {
+            COBOL_IC207A_VARS.ERROR_TOTAL = COBOL_IC207A_VARS.ERROR_COUNTER
+            COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_E_2
+            RunTask(IC207A_WRITE_LINE)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_WRITE_LINE {
+    COBOL_IC207A_VARS.RECORD_COUNT = Add(COBOL_IC207A_VARS.RECORD_COUNT, 1)
+    COBOL_IC207A_VARS.DUMMY_HOLD = COBOL_IC207A_VARS.DUMMY_RECORD
+    COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.CCVS_C_1
+    RunTask(IC207A_WRT_LN)
+    COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.HYPHEN_LINE
+    RunTask(IC207A_WRT_LN)
+    COBOL_IC207A_VARS.RECORD_COUNT = 0
+    RunTask(IC207A_WRT_LN)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_WRT_LN {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_BLANK_LINE_PRINT {
+    RunTask(IC207A_WRT_LN)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_FAIL_ROUTINE {
+    IfCondition EqualTo(COBOL_IC207A_VARS.COMPUTED_X, " ") ThenBlock: {
+            RunTask(IC207A_FAIL_ROUTINE_WRITE)
+            IfCondition EqualTo(COBOL_IC207A_VARS.CORRECT_X, " ") ThenBlock: {
+                        RunTask(IC207A_FAIL_ROUTINE_WRITE)
+                        COBOL_IC207A_VARS.INF_ANSI_REFERENCE = COBOL_IC207A_VARS.ANSI_REFERENCE
+                        COBOL_IC207A_VARS.INFO_TEXT = "NO FURTHER INFORMATION, SEE PROGRAM."
+                        COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.XXINFO
+                        RunTask(IC207A_WRITE_LINE)
+                    }
+            COBOL_IC207A_VARS.INF_ANSI_REFERENCE = " "
+            RunTask(IC207A_FAIL_ROUTINE_EX)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_FAIL_ROUTINE_WRITE {
+    COBOL_IC207A_VARS.PRINT_REC = COBOL_IC207A_VARS.TEST_COMPUTED
+    RunTask(IC207A_WRITE_LINE)
+    COBOL_IC207A_VARS.COR_ANSI_REFERENCE = COBOL_IC207A_VARS.ANSI_REFERENCE
+    COBOL_IC207A_VARS.PRINT_REC = COBOL_IC207A_VARS.TEST_CORRECT
+    RunTask(IC207A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_COR_ANSI_REFERENCE {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_FAIL_ROUTINE_EX {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_BAIL_OUT {
+    IfCondition EqualTo(COBOL_IC207A_VARS.COMPUTED_A, " ") ThenBlock: {
+            RunTask(IC207A_BAIL_OUT_WRITE)
+            IfCondition EqualTo(COBOL_IC207A_VARS.CORRECT_A, " ") ThenBlock: {
+                        RunTask(IC207A_BAIL_OUT_EX)
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_BAIL_OUT_WRITE {
+    COBOL_IC207A_VARS.XXCORRECT = COBOL_IC207A_VARS.CORRECT_A
+    COBOL_IC207A_VARS.XXCOMPUTED = COBOL_IC207A_VARS.COMPUTED_A
+    COBOL_IC207A_VARS.INF_ANSI_REFERENCE = COBOL_IC207A_VARS.ANSI_REFERENCE
+    COBOL_IC207A_VARS.DUMMY_RECORD = COBOL_IC207A_VARS.XXINFO
+    RunTask(IC207A_WRITE_LINE)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_INF_ANSI_REFERENCE {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_CCVS1_EXIT {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_TABLE_01 {
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_IN1 {
+    COBOL_IC207A_VARS.DN3 = 3
+    COBOL_IC207A_VARS.TABLE_02 = " "
+    RunTask(IC208A)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_01 {
+    COBOL_IC207A_VARS.PAR_NAME = "LINK-TEST-01"
+    COBOL_IC207A_VARS.FEATURE = "INDEX DATA ITEM"
+    IfCondition ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(1, 1)) ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_01)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_01 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(1, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "C"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(1)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_01 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_02 {
+    COBOL_IC207A_VARS.REC_CT = 1
+    COBOL_IC207A_VARS.PAR_NAME = "LINK-TEST-02"
+    COBOL_IC207A_VARS.FEATURE = "VAR. LENGTH TABLE"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_02_01 {
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(2, 1)), "Z") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_02_01)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_02_01 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(2, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "Z"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(2)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_02_01 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_02_02 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(3, 1)), "B") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_02_02)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_02_02 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(3, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "B"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(3)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_02_02 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_02_03 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(4, 1)), "X") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_02_03)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_02_03 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(4, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "X"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(4)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_02_03 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_02_04 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(5, 1)), "G") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_02_04)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_02_04 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(5, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "G"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(5)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_02_04 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_03 {
+    COBOL_IC207A_VARS.PAR_NAME = "LINK-TEST-03"
+    COBOL_IC207A_VARS.REC_CT = 1
+    COBOL_IC207A_VARS.FEATURE = "CONDITION NAME"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_03_01 {
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(6, 1)), "A") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_03_01)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_03_01 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(6, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "A"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(6)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_03_01 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_03_02 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(7, 1)), "V") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_03_02)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_03_02 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(7, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "V"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(7)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_03_02 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_03_03 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    IfCondition EqualTo(ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(8, 1)), "H") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_03_03)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_03_03 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = ArrayGet(COBOL_IC207A_VARS.DN2, Subtract(8, 1))
+    COBOL_IC207A_VARS.CORRECT_A = "H"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN2(8)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_03_03 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_04 {
+    COBOL_IC207A_VARS.PAR_NAME = "LINK-TEST-04"
+    COBOL_IC207A_VARS.FEATURE = "CALL PARAMETERS"
+    COBOL_IC207A_VARS.REC_CT = 1
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_04_01 {
+    RunTask(IC207A_PASS)
+    RunTask(IC207A_LINK_WRITE_04_01)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_04_01 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = COBOL_IC207A_VARS.DN4
+    COBOL_IC207A_VARS.CORRECT_A = "B"
+    COBOL_IC207A_VARS.RE_MARK = "VALUE OF DN1(IN1)"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_04_01 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_04_02 {
+    COBOL_IC207A_VARS.RE_MARK = "MATCH SHOULD NOT BE FOUND"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_04_02 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_TEST_04_03 {
+    COBOL_IC207A_VARS.REC_CT = Add(COBOL_IC207A_VARS.REC_CT, 1)
+    COBOL_IC207A_VARS.DN5 = COBOL_IC207A_VARS.TABLE_01
+    IfCondition EqualTo(COBOL_IC207A_VARS.DN5, "ABCDEFGHI      ") ThenBlock: {
+            RunTask(IC207A_PASS)
+            RunTask(IC207A_LINK_WRITE_04_03)
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_FAIL_04_03 {
+    RunTask(IC207A_FAIL)
+    COBOL_IC207A_VARS.COMPUTED_A = COBOL_IC207A_VARS.DN5
+    COBOL_IC207A_VARS.CORRECT_A = "ABCDEFGHI      "
+    COBOL_IC207A_VARS.RE_MARK = "CONTENTS OF TABLE-01"
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_LINK_WRITE_04_03 {
+    RunTask(IC207A_PRINT_DETAIL)
+    ReturnValue(0)
+}
+
+SubRoutine.IC207A_EXIT_IC207 {
+    RunTask(IC207A_CCVS_EXIT)
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(IC207A)
+}
+
+RunTask(Main)
