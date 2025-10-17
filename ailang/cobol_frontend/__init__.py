@@ -7,14 +7,12 @@ This package provides:
 - COBOLLexer: Tokenizes COBOL source code
 - COBOLParser: Builds COBOL Abstract Syntax Tree
 - COBOLToAilangConverter: Converts COBOL AST to Ailang AST
-- COBOLIntegratedCompiler: Full compilation pipeline
 
 Usage:
-    from cobol_frontend import COBOLIntegratedCompiler
+    from cobol_frontend import COBOLToAilangConverter
+    from cobol_frontend.parser import COBOLParser
+    from cobol_frontend.cobol_lexer import COBOLLexer
     
-    compiler = COBOLIntegratedCompiler(debug=False)
-    compiler.compile_file('program.cbl', 'program')
-
 Or use the command-line interface:
     python3 cobol_frontend/cobol_integration.py program.cbl -o program
 """
@@ -26,10 +24,14 @@ __all__ = [
     'COBOLParser',
     'COBOLToAilangConverter',
     'AILangASTSerializer',
-    'COBOLIntegratedCompiler',
 ]
 
 from .cobol_lexer import COBOLLexer, Token, COBOLTokenType, LexerError
-from .cobol_parser import COBOLParser, ParserError
-from .cobol_ast_converter import COBOLToAilangConverter, AILangASTSerializer
-from .cobol_integration import COBOLIntegratedCompiler
+# Import from the refactored parser structure
+from .parser.parser_core import COBOLMultiProgramParser as COBOLParser, ParserError
+# Import from the refactored converter structure
+from .converter import COBOLToAilangMultiProgramConverter as COBOLToAilangConverter, AILangASTSerializer
+
+# Note: COBOLIntegratedCompiler is available via:
+#   from cobol_frontend.cobol_integration import COBOLIntegratedCompiler
+# It's not included in __all__ to avoid circular import issues

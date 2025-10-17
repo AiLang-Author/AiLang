@@ -152,7 +152,6 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             self.asm.emit_pop_r12()
             self.compiler.track_pop("Program restore RBX")
             self.asm.emit_pop_rbx()
-            
             self.compiler.codegen.emit_stack_frame_epilogue()
             
             self.asm.emit_mov_rax_imm64(60)
@@ -691,6 +690,60 @@ class MemoryManager:  # <-- THIS WAS MISSING!
             print(f"DEBUG: Stored to {var_name} at absolute address 0x{addr:x}")
             return True
         return False       
+    
+    def emit_strdup(self):
+        """
+        Duplicate a string to prevent double-free issues.
+        Input: RAX = source string pointer
+        Output: RAX = new duplicated string pointer
+        
+        This is called when copying strings between pool variables to ensure
+        each pool owns its own copy of the string data.
+        """
+        
+        # Step 1: Calculate source string length
+        self.asm.emit_push_rax()  # Save source pointer
+        self.asm.emit_mov_rdi_rax()  # RDI = source for strlen
+        self.asm.emit_xor_rcx_rcx()  # RCX = 0 (length counter)
+        
+        # strlen loop
+        strlen_loop = self.asm.create_label()
+        strlen_done = self.asm.create_label()
+        self.asm.mark_label(strlen_loop)
+        self.asm.emit_bytes(0x80, 0x3C, 0x0F, 0x00)  # CMP BYTE [RDI+RCX], 0
+        self.asm.emit_jump_to_label(strlen_done, "JE")
+        self.asm.emit_bytes(0x48, 0xFF, 0xC1)  # INC RCX
+        self.asm.emit_jump_to_label(strlen_loop, "JMP")
+        self.asm.mark_label(strlen_done)
+        
+        # RCX now has length, add 1 for null terminator
+        self.asm.emit_bytes(0x48, 0xFF, 0xC1)  # INC RCX
+        
+        # Step 2: Allocate new memory via mmap
+        self.asm.emit_push_rcx()  # Save length+1
+        self.asm.emit_mov_rax_imm64(9)  # sys_mmap
+        self.asm.emit_mov_rdi_imm64(0)  # addr = NULL (let kernel choose)
+        self.asm.emit_mov_rsi_rcx()  # length = RCX
+        self.asm.emit_mov_rdx_imm64(3)  # PROT_READ|WRITE
+        self.asm.emit_mov_r10_imm64(0x22)  # MAP_PRIVATE|ANON
+        self.asm.emit_mov_r8_imm64(0xFFFFFFFFFFFFFFFF)  # fd = -1
+        self.asm.emit_mov_r9_imm64(0)  # offset = 0
+        self.asm.emit_syscall()
+        
+        # RAX now has new buffer address
+        # Stack: [source][length]
+        
+        # Step 3: Copy string using REP MOVSB for efficiency
+        self.asm.emit_mov_rdi_rax()  # RDI = destination
+        self.asm.emit_bytes(0x48, 0x8B, 0x74, 0x24, 0x08)  # MOV RSI, [RSP+8] (source)
+        self.asm.emit_pop_rcx()  # RCX = length
+        self.asm.emit_bytes(0xF3, 0xA4)  # REP MOVSB
+        
+        # Step 4: Clean up stack and return duplicated string
+        self.asm.emit_bytes(0x48, 0x83, 0xC4, 0x08)  # ADD RSP, 8 (pop source)
+        
+        print("DEBUG: String duplication completed")
+        # RAX now contains the duplicated string pointer
     
     
     def compile_pool_allocation(self, node):

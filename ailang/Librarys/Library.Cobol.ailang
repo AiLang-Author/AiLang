@@ -1,5 +1,5 @@
-// Library.Cobol.ailang - CORRECTED VERSION
-// Uses StringSubstring for character access (returns string, not int)
+// Library.Cobol.ailang - FIXED VERSION with source_decimals support
+// Now properly handles different decimal precisions in format functions
 
 LibraryImport.FixedPointTrig
 LibraryImport.XArrays
@@ -13,8 +13,11 @@ FixedPool.COBOLState {
     "fmt_abs_value": Initialize=0, CanChange=True
     "fmt_integer_part": Initialize=0, CanChange=True
     "fmt_fractional_part": Initialize=0, CanChange=True
+    "fmt_source_scale": Initialize=1, CanChange=True
     "fmt_scale_down": Initialize=1, CanChange=True
+    "fmt_scale_up": Initialize=1, CanChange=True
     "fmt_decimals_to_remove": Initialize=0, CanChange=True
+    "fmt_decimals_to_add": Initialize=0, CanChange=True
     "fmt_half_scale": Initialize=0, CanChange=True
     "fmt_rounded_frac": Initialize=0, CanChange=True
     "fmt_frac_len": Initialize=0, CanChange=True
@@ -155,7 +158,6 @@ Function.StringReplaceAll {
     }
 }
 
-
 // =============================================================================
 // COBOL-SPECIFIC STRING SPLIT (supports ALL flag)
 // =============================================================================
@@ -230,23 +232,26 @@ Function.CStringSplit {
 }
 
 // =============================================================================
-// DECIMAL FORMATTING FOR DISPLAY
+// DECIMAL FORMATTING FOR DISPLAY - FIXED VERSION
 // =============================================================================
 
 Function.FormatDecimal {
     Input: value
-    Input: decimal_places
+    Input: source_decimals    // NEW: How many decimals in the source (0, 2, 4, etc.)
+    Input: target_decimals    // How many decimals to display
     Output: Address
     Body: {
         Debug("FormatDecimal.entry", level=2) {
             PrintMessage(">>> ENTER: FormatDecimal")
             PrintMessage(StringConcat("  value: ", NumberToString(value)))
-            PrintMessage(StringConcat("  decimal_places: ", NumberToString(decimal_places)))
+            PrintMessage(StringConcat("  source_decimals: ", NumberToString(source_decimals)))
+            PrintMessage(StringConcat("  target_decimals: ", NumberToString(target_decimals)))
         }
         Debug("FormatDecimal.trace", level=3) {
             PrintMessage("--- TRACE: FormatDecimal ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
-            PrintMessage(StringConcat("  Input decimal_places: ", NumberToString(decimal_places)))
+            PrintMessage(StringConcat("  Input source_decimals: ", NumberToString(source_decimals)))
+            PrintMessage(StringConcat("  Input target_decimals: ", NumberToString(target_decimals)))
         }
         
         COBOLState.fmt_is_negative = LessThan(value, 0)
@@ -256,29 +261,53 @@ Function.FormatDecimal {
             COBOLState.fmt_abs_value = Subtract(0, value)
         }
         
-        COBOLState.fmt_integer_part = Divide(COBOLState.fmt_abs_value, 10000)
-        COBOLState.fmt_fractional_part = Modulo(COBOLState.fmt_abs_value, 10000)
+        // Calculate the source scale (10^source_decimals)
+        COBOLState.fmt_source_scale = 1
+        COBOLState.loop_i = 0
+        WhileLoop LessThan(COBOLState.loop_i, source_decimals) {
+            COBOLState.fmt_source_scale = Multiply(COBOLState.fmt_source_scale, 10)
+            COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+        }
+        
+        // Use source_scale instead of hardcoded 10000
+        COBOLState.fmt_integer_part = Divide(COBOLState.fmt_abs_value, COBOLState.fmt_source_scale)
+        COBOLState.fmt_fractional_part = Modulo(COBOLState.fmt_abs_value, COBOLState.fmt_source_scale)
         
         Debug("FormatDecimal.trace", level=4) {
+            PrintMessage(StringConcat("    - source_scale: ", NumberToString(COBOLState.fmt_source_scale)))
             PrintMessage(StringConcat("    - integer_part: ", NumberToString(COBOLState.fmt_integer_part)))
             PrintMessage(StringConcat("    - fractional_part: ", NumberToString(COBOLState.fmt_fractional_part)))
         }
         
+        // Calculate how much to scale from source to target
+        COBOLState.fmt_decimals_to_remove = Subtract(source_decimals, target_decimals)
         COBOLState.fmt_scale_down = 1
-        COBOLState.fmt_decimals_to_remove = Subtract(4, decimal_places)
-        COBOLState.loop_i = 0
+        COBOLState.fmt_scale_up = 1
         
-        WhileLoop LessThan(COBOLState.loop_i, COBOLState.fmt_decimals_to_remove) {
-            COBOLState.fmt_scale_down = Multiply(COBOLState.fmt_scale_down, 10)
-            COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+        // Only scale down if source has more decimals than target
+        IfCondition GreaterThan(COBOLState.fmt_decimals_to_remove, 0) ThenBlock: {
+            COBOLState.loop_i = 0
+            WhileLoop LessThan(COBOLState.loop_i, COBOLState.fmt_decimals_to_remove) {
+                COBOLState.fmt_scale_down = Multiply(COBOLState.fmt_scale_down, 10)
+                COBOLState.loop_i = Add(COBOLState.loop_i, 1)
+            }
+            
+            COBOLState.fmt_half_scale = Divide(COBOLState.fmt_scale_down, 2)
+            COBOLState.fmt_rounded_frac = Divide(Add(COBOLState.fmt_fractional_part, COBOLState.fmt_half_scale), COBOLState.fmt_scale_down)
+        } ElseBlock: {
+            // Source has same or fewer decimals than target - need to scale UP
+            COBOLState.fmt_decimals_to_add = Subtract(target_decimals, source_decimals)
+            COBOLState.loop_j = 0
+            WhileLoop LessThan(COBOLState.loop_j, COBOLState.fmt_decimals_to_add) {
+                COBOLState.fmt_scale_up = Multiply(COBOLState.fmt_scale_up, 10)
+                COBOLState.loop_j = Add(COBOLState.loop_j, 1)
+            }
+            COBOLState.fmt_rounded_frac = Multiply(COBOLState.fmt_fractional_part, COBOLState.fmt_scale_up)
         }
-        
-        COBOLState.fmt_half_scale = Divide(COBOLState.fmt_scale_down, 2)
-        COBOLState.fmt_rounded_frac = Divide(Add(COBOLState.fmt_fractional_part, COBOLState.fmt_half_scale), COBOLState.fmt_scale_down)
         
         Debug("FormatDecimal.trace", level=4) {
             PrintMessage(StringConcat("    - scale_down: ", NumberToString(COBOLState.fmt_scale_down)))
-            PrintMessage(StringConcat("    - half_scale: ", NumberToString(COBOLState.fmt_half_scale)))
+            PrintMessage(StringConcat("    - scale_up: ", NumberToString(COBOLState.fmt_scale_up)))
             PrintMessage(StringConcat("    - rounded_frac: ", NumberToString(COBOLState.fmt_rounded_frac)))
         }
         
@@ -290,15 +319,16 @@ Function.FormatDecimal {
         
         result = StringConcat(result, NumberToString(COBOLState.fmt_integer_part))
         
-        IfCondition GreaterThan(decimal_places, 0) ThenBlock: {
+        IfCondition GreaterThan(target_decimals, 0) ThenBlock: {
             result = StringConcat(result, ".")
             
             frac_str = NumberToString(COBOLState.fmt_rounded_frac)
             COBOLState.fmt_frac_len = StringLength(frac_str)
             
-            WhileLoop LessThan(COBOLState.fmt_frac_len, decimal_places) {
+            // Pad with leading zeros to match target_decimals
+            WhileLoop LessThan(COBOLState.fmt_frac_len, target_decimals) {
                 frac_str = StringConcat("0", frac_str)
-                COBOLState.fmt_frac_len = Add(COBOLState.fmt_frac_len, 1)
+                COBOLState.fmt_frac_len = StringLength(frac_str)  // FIX: Recalculate length!
             }
             
             result = StringConcat(result, frac_str)
@@ -316,11 +346,12 @@ Function.FormatDecimal {
 }
 
 // =============================================================================
-// COBOL DISPLAY-EDITED FORMATTING FUNCTIONS
+// COBOL DISPLAY-EDITED FORMATTING FUNCTIONS - FIXED VERSIONS
 // =============================================================================
 
 Function.FormatCurrency {
     Input: value
+    Input: source_decimals    // NEW: How many decimals in source
     Input: width
     Input: decimals
     Input: symbol
@@ -334,7 +365,7 @@ Function.FormatCurrency {
         Debug("FormatCurrency.call", level=3) {
             PrintMessage("  Calling: FormatDecimal")
         }
-        formatted = FormatDecimal(value, decimals)
+        formatted = FormatDecimal(value, source_decimals, decimals)
         
         IfCondition EqualTo(has_commas, 1) ThenBlock:{
             Debug("FormatCurrency.call", level=3) {
@@ -363,6 +394,7 @@ Function.FormatCurrency {
 
 Function.FormatWithCommas {
     Input: value
+    Input: source_decimals    // NEW: How many decimals in source
     Input: width
     Input: decimals
     Output: Address
@@ -373,7 +405,7 @@ Function.FormatWithCommas {
         Debug("FormatWithCommas.call", level=3) {
             PrintMessage("  Calling: FormatDecimal")
         }
-        formatted = FormatDecimal(value, decimals)
+        formatted = FormatDecimal(value, source_decimals, decimals)
         Debug("FormatWithCommas.call", level=3) {
             PrintMessage("  Calling: AddCommasToNumber")
         }
@@ -394,6 +426,7 @@ Function.FormatWithCommas {
 
 Function.FormatZeroSuppress {
     Input: value
+    Input: source_decimals    // NEW: How many decimals in source
     Input: width
     Input: decimals
     Output: Address
@@ -404,6 +437,7 @@ Function.FormatZeroSuppress {
         Debug("FormatZeroSuppress", level=3) {
             PrintMessage("--- DEBUG: FormatZeroSuppress ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input source_decimals: ", NumberToString(source_decimals)))
             PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
             PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
         }
@@ -411,7 +445,7 @@ Function.FormatZeroSuppress {
         Debug("FormatZeroSuppress.call", level=3) {
             PrintMessage("  Calling: FormatDecimal")
         }
-        formatted = FormatDecimal(value, decimals)
+        formatted = FormatDecimal(value, source_decimals, decimals)
         
         COBOLState.loop_len = StringLength(formatted)
         
@@ -430,6 +464,7 @@ Function.FormatZeroSuppress {
 
 Function.FormatAsteriskFill {
     Input: value
+    Input: source_decimals    // NEW: How many decimals in source
     Input: width
     Input: decimals
     Output: Address
@@ -440,6 +475,7 @@ Function.FormatAsteriskFill {
         Debug("FormatAsteriskFill", level=3) {
             PrintMessage("--- DEBUG: FormatAsteriskFill ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input source_decimals: ", NumberToString(source_decimals)))
             PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
             PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
         }
@@ -447,7 +483,7 @@ Function.FormatAsteriskFill {
         Debug("FormatAsteriskFill.call", level=3) {
             PrintMessage("  Calling: FormatDecimal")
         }
-        formatted = FormatDecimal(value, decimals)
+        formatted = FormatDecimal(value, source_decimals, decimals)
         
         COBOLState.loop_len = StringLength(formatted)
         COBOLState.loop_i = 0
@@ -499,6 +535,7 @@ Function.FormatAsteriskFill {
 Function.FormatWithIndicator {
     Input: value
     Input: indicator
+    Input: source_decimals    // NEW: How many decimals in source
     Input: width
     Input: decimals
     Output: Address
@@ -510,6 +547,7 @@ Function.FormatWithIndicator {
             PrintMessage("--- DEBUG: FormatWithIndicator ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
             PrintMessage(StringConcat("  Input indicator: ", indicator))
+            PrintMessage(StringConcat("  Input source_decimals: ", NumberToString(source_decimals)))
             PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
             PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
         }
@@ -524,7 +562,7 @@ Function.FormatWithIndicator {
         Debug("FormatWithIndicator.call", level=3) {
             PrintMessage("  Calling: FormatDecimal")
         }
-        formatted = FormatDecimal(COBOLState.fwi_abs_value, decimals)
+        formatted = FormatDecimal(COBOLState.fwi_abs_value, source_decimals, decimals)
         
         IfCondition COBOLState.fwi_is_negative ThenBlock:{
             result = StringConcat(formatted, indicator)
@@ -556,6 +594,7 @@ Function.FormatWithIndicator {
 
 Function.FormatSigned {
     Input: value
+    Input: source_decimals    // NEW: How many decimals in source
     Input: width
     Input: decimals
     Input: position
@@ -567,6 +606,7 @@ Function.FormatSigned {
         Debug("FormatSigned", level=3) {
             PrintMessage("--- DEBUG: FormatSigned ---")
             PrintMessage(StringConcat("  Input value: ", NumberToString(value)))
+            PrintMessage(StringConcat("  Input source_decimals: ", NumberToString(source_decimals)))
             PrintMessage(StringConcat("  Input width: ", NumberToString(width)))
             PrintMessage(StringConcat("  Input decimals: ", NumberToString(decimals)))
             PrintMessage(StringConcat("  Input position: ", position))
@@ -575,7 +615,7 @@ Function.FormatSigned {
         Debug("FormatSigned.call", level=3) {
             PrintMessage("  Calling: FormatDecimal")
         }
-        formatted = FormatDecimal(value, decimals)
+        formatted = FormatDecimal(value, source_decimals, decimals)
         
         sign = " "
         
@@ -708,7 +748,6 @@ Function.AddCommasToNumber {
         ReturnValue(result)
     }
 }
-
 
 // =============================================================================
 // COBOL File IO stub functions

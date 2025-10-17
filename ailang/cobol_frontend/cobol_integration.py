@@ -8,6 +8,7 @@
 """
 COBOL Integration Module
 Orchestrates the compilation pipeline from COBOL source to native binary.
+Now uses the split parser/ and converter/ packages for better maintainability.
 """
 
 import sys
@@ -22,13 +23,13 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import COBOL frontend stages
-from cobol_lexer import COBOLLexer, LexerError
-from cobol_parser import COBOLMultiProgramParser, ParserError
-from cobol_ast_converter import COBOLToAilangMultiProgramConverter, AILangASTSerializer
+# ✅ UPDATED: Import from split packages instead of monolithic files
+from cobol_frontend.cobol_lexer import COBOLLexer, LexerError
+from cobol_frontend.parser import COBOLMultiProgramParser, ParserError
+from cobol_frontend.converter import COBOLToAilangMultiProgramConverter, AILangASTSerializer
 
 # ============================================================================
-# ADD: Dependency resolver class
+# Dependency resolver class
 # ============================================================================
 
 class COBOLDependencyResolver:
@@ -162,9 +163,7 @@ class COBOLDependencyResolver:
                 with open(current_file, 'r') as f:
                     source = f.read()
                 
-                from cobol_lexer import COBOLLexer
-                from cobol_parser import COBOLMultiProgramParser
-                
+                # ✅ UPDATED: Use split parser package
                 lexer = COBOLLexer(source)
                 tokens = lexer.tokenize()
                 parser = COBOLMultiProgramParser(tokens, debug=self.debug)
@@ -229,7 +228,8 @@ class COBOLIntegratedCompiler:
         self.search_paths = search_paths or ['.']
     
     def compile_file(self, input_file: str, output_name: str, 
-                     ailang_only: bool = False, auto_resolve: bool = True):
+                 ailang_only: bool = False, auto_resolve: bool = True,
+                 split_programs: bool = False): 
         """
         Compile a COBOL file with automatic dependency resolution.
         
@@ -237,7 +237,7 @@ class COBOLIntegratedCompiler:
             input_file: Main COBOL file
             output_name: Output binary name
             ailang_only: Only generate .ailang
-            auto_resolve: Automatically find and include CALL'd programs (NEW!)
+            auto_resolve: Automatically find and include CALL'd programs
         """
         if auto_resolve:
             # ✅ AUTO-DISCOVERY: Find all dependencies
@@ -251,11 +251,11 @@ class COBOLIntegratedCompiler:
             all_files = [input_file]
         
         # Use existing multi-file compilation
-        self.compile_files(all_files, output_name, ailang_only)
+        self.compile_files(all_files, output_name, ailang_only, split_programs)  
     
     def compile_files(self, input_files: List[str], output_name: str, 
-                     ailang_only: bool = False):
-        """Compile multiple COBOL files (existing code, unchanged)"""
+                    ailang_only: bool = False, split_programs: bool = False):
+        """Compile multiple COBOL files"""
         all_source_code = ""
         for file_path in input_files:
             try:
@@ -281,15 +281,16 @@ class COBOLIntegratedCompiler:
                 if len(tokens) > 20:
                     print(f"  ... and {len(tokens) - 20} more", file=sys.stderr)
 
-        # --- Stage 2: Parsing (UPDATED for multi-program) ---
+            # --- Stage 2: Parsing (UPDATED to use split parser) ---
             print("✓ Stage 2: Parsing tokens into COBOL AST...", file=sys.stderr)
+            # ✅ UPDATED: Use parser from split package
             parser = COBOLMultiProgramParser(tokens, debug=self.debug)
-            compilation_unit = parser.parse_all_programs()  # Returns COBOLCompilationUnit
+            compilation_unit = parser.parse_all_programs()
             
             print(f"    Found {len(compilation_unit.programs)} COBOL program(s):", file=sys.stderr)
             for i, prog in enumerate(compilation_unit.programs):
                 var_count = len(prog.data_division.working_storage) if prog.data_division else 0
-                para_count = len([p for p in prog.procedure_division.paragraphs if p.name])
+                para_count = len([p for p in prog.procedure_division.paragraphs if p.name]) if prog.procedure_division else 0
                 print(f"      {i+1}. {prog.program_id} ({var_count} variables, {para_count} paragraphs)", file=sys.stderr)
             
             if self.debug:
@@ -298,22 +299,43 @@ class COBOLIntegratedCompiler:
                     print(f"  Program: {prog.program_id}", file=sys.stderr)
                     if prog.data_division:
                         print(f"    Variables: {len(prog.data_division.working_storage)}", file=sys.stderr)
-                    print(f"    Paragraphs: {len(prog.procedure_division.paragraphs)}", file=sys.stderr)
+                    if prog.procedure_division:
+                        print(f"    Paragraphs: {len(prog.procedure_division.paragraphs)}", file=sys.stderr)
 
-        # --- Stage 3: Converting (UPDATED to handle compilation unit) ---
+            # --- Stage 3: Converting (FIXED to convert entire unit at once) ---
             print("✓ Stage 3: Converting COBOL AST to Ailang AST...", file=sys.stderr)
+            
+            # ✅ FIXED: Convert entire compilation unit at once
             converter = COBOLToAilangMultiProgramConverter(debug=self.debug)
-            ailang_ast = converter.convert(compilation_unit)  # Pass compilation unit
+            
+            if split_programs:
+                output_dir = output_name if os.path.isdir(output_name) else 'cobol_frontend/converter_output'
+                generated_files = converter.convert_split_programs(compilation_unit, output_dir)
+                print(f"✓ Generated {len(generated_files)} .ailang files to {output_dir}", file=sys.stderr)
+                return generated_files
+            
+            # Convert entire compilation unit at once
+            # This creates ONE Main() that calls all entry programs
+            try:
+                ailang_ast = converter.convert(compilation_unit)
+                print(f"✓ Conversion complete: {len(compilation_unit.programs)} programs converted", file=sys.stderr)
+            except Exception as e:
+                print(f"✗ Conversion failed: {e}", file=sys.stderr)
+                if self.debug:
+                    import traceback
+                    traceback.print_exc()
+                raise
             
             if self.debug:
                 print(f"\n--- Ailang AST ---", file=sys.stderr)
-                print(f"  Total subroutines: {len(ailang_ast.declarations)}", file=sys.stderr)
+                print(f"  Total declarations: {len(ailang_ast.declarations)}", file=sys.stderr)
                 for decl in ailang_ast.declarations:
                     if hasattr(decl, 'name'):
                         print(f"    - {decl.name}", file=sys.stderr)
 
-        # --- Stage 4: Serializing ---
+            # --- Stage 4: Serializing ---
             print("✓ Stage 4: Serializing Ailang AST to source...", file=sys.stderr)
+            # ✅ UPDATED: Use serializer from split package
             serializer = AILangASTSerializer()
             ailang_source = serializer.serialize(ailang_ast)
             
@@ -334,7 +356,7 @@ class COBOLIntegratedCompiler:
                 print(f"✓ Ailang output saved to: {ailang_file}", file=sys.stderr)
                 return
 
-        # --- Stage 5: Backend Compilation ---
+            # --- Stage 5: Backend Compilation ---
             print(f"✓ Stage 5: Invoking Ailang compiler on '{ailang_file}'...", file=sys.stderr)
             
             # Find main.py (Ailang compiler)
@@ -361,10 +383,8 @@ class COBOLIntegratedCompiler:
             print(f"  Executable: {executable}", file=sys.stderr)
             print(f"\nRun with: ./{executable}", file=sys.stderr)
             
-            # Cleanup intermediate file unless debugging
             # Keep intermediate files for debugging
             print(f"✓ Ailang output saved to: {ailang_file}", file=sys.stderr)
-            # os.remove(ailang_file) # Disabled for debugging
             return executable
 
         except (LexerError, ParserError) as e:
@@ -406,12 +426,6 @@ Auto-Dependency Resolution:
   
     CALL "COBLOAN" → Searches for cobloan.cbl, COBLOAN.cbl, etc.
   
-  # Compile with debug output
-  python3 cobol_frontend/cobol_integration.py program.cbl -o program --debug
-  
-  # Generate Ailang file only (don't compile to binary)
-  python3 cobol_frontend/cobol_integration.py program.cbl --ailang-only
-
   Search order:
     1. Same directory as the main file
     2. Directories specified with -I/--include-path
@@ -437,8 +451,6 @@ Auto-Dependency Resolution:
         action="store_true",
         help="Generate Ailang source file only, don't compile to binary."
     )
-    
-    # ✅ NEW: Auto-resolution options
     parser.add_argument(
         "--no-auto", 
         action="store_true",
@@ -449,6 +461,11 @@ Auto-Dependency Resolution:
         action="append",
         dest="include_paths",
         help="Add directory to search path for dependencies (can be used multiple times)"
+    )
+    parser.add_argument(
+        "--split-programs",
+        action="store_true",
+        help="Generate one .ailang file per COBOL program"
     )
     
     args = parser.parse_args()
@@ -472,14 +489,16 @@ Auto-Dependency Resolution:
                 args.input[0], 
                 args.output, 
                 ailang_only=args.ailang_only,
-                auto_resolve=True  # ✅ Enable auto-discovery
+                auto_resolve=True,
+                split_programs=args.split_programs 
             )
         else:
             # Multiple files or manual mode
             compiler.compile_files(
                 args.input, 
                 args.output, 
-                ailang_only=args.ailang_only
+                ailang_only=args.ailang_only,
+                split_programs=args.split_programs
             )
             
         if args.ailang_only:

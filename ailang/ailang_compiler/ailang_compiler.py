@@ -669,8 +669,6 @@ class AILANGToX64Compiler:
         self.track_push(f"SubRoutine.{node.name} save R13")
         self.asm.emit_push_r14()
         self.track_push(f"SubRoutine.{node.name} save R14")
-        self.asm.emit_push_r15()
-        self.track_push(f"SubRoutine.{node.name} save R15")
         # === END FIX ===
         
         # Create return label for this subroutine
@@ -689,15 +687,13 @@ class AILANGToX64Compiler:
         self.asm.mark_label(return_label)
         
         # Check stack balance before return (now +5 for 5 saved registers)
-        self.check_stack_balance(entry_depth + 5, f"SubRoutine.{node.name} before return (should have +5 for saved registers)")
+        self.check_stack_balance(entry_depth + 4, f"SubRoutine.{node.name} before return (should have +4 for saved registers)")
         
         # Clear context
         self.compiling_subroutine = False
         self.subroutine_return_label = None
         
         # === FIX: Restore ALL callee-saved registers in REVERSE order ===
-        self.track_pop(f"SubRoutine.{node.name} restore R15")
-        self.asm.emit_pop_r15()
         self.track_pop(f"SubRoutine.{node.name} restore R14")
         self.asm.emit_pop_r14()
         self.track_pop(f"SubRoutine.{node.name} restore R13")

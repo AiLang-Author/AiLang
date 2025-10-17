@@ -1,2 +1,21 @@
 __pycache__/
 *.pyc
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ailang build artifacts
+*_exec
+*.import_debug.json
+
+# Debug output
+debug_*.py
+*_debug.py
+conversion_failures/
+parser_failures/
+
+# Test outputs in root
+/*.ailang
+/*.cbl

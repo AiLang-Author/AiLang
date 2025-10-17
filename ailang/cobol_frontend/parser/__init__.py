@@ -1,0 +1,95 @@
+"""
+COBOL Parser Package
+"""
+
+# DO NOT re-export ast_nodes here to preserve correct module paths
+# Import them in parser_core.py and other modules using relative imports
+
+from .parser_core import (
+    COBOLMultiProgramParser,
+    ParserError,
+    ParseContext,
+)
+
+# Import method modules
+from . import division_parsers
+from . import statement_parsers
+from . import expression_parsers
+
+# Monkey-patch division parser methods onto COBOLMultiProgramParser
+COBOLMultiProgramParser.parse_single_program = division_parsers.parse_single_program
+COBOLMultiProgramParser.parse_identification_division = division_parsers.parse_identification_division
+COBOLMultiProgramParser._is_comment_entry_start = division_parsers._is_comment_entry_start 
+COBOLMultiProgramParser._skip_comment_entry_paragraph = division_parsers._skip_comment_entry_paragraph 
+COBOLMultiProgramParser.parse_environment_division = division_parsers.parse_environment_division
+COBOLMultiProgramParser.parse_data_division = division_parsers.parse_data_division
+COBOLMultiProgramParser.parse_working_storage = division_parsers.parse_working_storage
+COBOLMultiProgramParser.parse_linkage_section = division_parsers.parse_linkage_section
+COBOLMultiProgramParser.parse_file_section = division_parsers.parse_file_section
+COBOLMultiProgramParser.parse_fd_entry = division_parsers.parse_fd_entry
+COBOLMultiProgramParser.parse_select_statement = division_parsers.parse_select_statement
+COBOLMultiProgramParser.parse_procedure_division = division_parsers.parse_procedure_division
+COBOLMultiProgramParser.parse_paragraph = division_parsers.parse_paragraph
+
+# Monkey-patch statement parser methods
+COBOLMultiProgramParser.parse_statement = statement_parsers.parse_statement
+COBOLMultiProgramParser.parse_copy_statement = statement_parsers.parse_copy_statement
+COBOLMultiProgramParser.parse_display = statement_parsers.parse_display
+COBOLMultiProgramParser.parse_accept = statement_parsers.parse_accept
+COBOLMultiProgramParser.parse_move = statement_parsers.parse_move
+COBOLMultiProgramParser.parse_compute = statement_parsers.parse_compute
+COBOLMultiProgramParser.parse_add = statement_parsers.parse_add
+COBOLMultiProgramParser.parse_subtract = statement_parsers.parse_subtract
+COBOLMultiProgramParser.parse_multiply = statement_parsers.parse_multiply
+COBOLMultiProgramParser.parse_divide = statement_parsers.parse_divide
+COBOLMultiProgramParser.parse_if = statement_parsers.parse_if
+COBOLMultiProgramParser.parse_perform = statement_parsers.parse_perform
+COBOLMultiProgramParser.parse_perform_until = statement_parsers.parse_perform_until
+COBOLMultiProgramParser.parse_perform_varying = statement_parsers.parse_perform_varying
+COBOLMultiProgramParser.parse_call = statement_parsers.parse_call
+COBOLMultiProgramParser.parse_evaluate = statement_parsers.parse_evaluate
+COBOLMultiProgramParser.parse_when_clause = statement_parsers.parse_when_clause
+COBOLMultiProgramParser.parse_stop_run = statement_parsers.parse_stop_run
+COBOLMultiProgramParser.parse_go_to = statement_parsers.parse_go_to
+COBOLMultiProgramParser.parse_read_statement = statement_parsers.parse_read_statement
+COBOLMultiProgramParser.parse_string_statement = statement_parsers.parse_string_statement
+COBOLMultiProgramParser.parse_string = statement_parsers.parse_string
+COBOLMultiProgramParser.parse_unstring_statement = statement_parsers.parse_unstring_statement
+COBOLMultiProgramParser.parse_inspect = statement_parsers.parse_inspect
+COBOLMultiProgramParser.parse_inspect_statement = statement_parsers.parse_inspect_statement
+
+# Monkey-patch expression parser methods
+COBOLMultiProgramParser.parse_condition = expression_parsers.parse_condition
+COBOLMultiProgramParser.parse_or_expression = expression_parsers.parse_or_expression
+COBOLMultiProgramParser.parse_and_expression = expression_parsers.parse_and_expression
+COBOLMultiProgramParser.parse_not_expression = expression_parsers.parse_not_expression
+COBOLMultiProgramParser.parse_comparison = expression_parsers.parse_comparison
+COBOLMultiProgramParser.parse_arithmetic_expression = expression_parsers.parse_arithmetic_expression
+COBOLMultiProgramParser.parse_additive = expression_parsers.parse_additive
+COBOLMultiProgramParser.parse_multiplicative = expression_parsers.parse_multiplicative
+COBOLMultiProgramParser.parse_primary = expression_parsers.parse_primary
+COBOLMultiProgramParser.parse_expression = expression_parsers.parse_expression
+COBOLMultiProgramParser.parse_function_call = expression_parsers.parse_function_call
+COBOLMultiProgramParser.parse_variable_decl = expression_parsers.parse_variable_decl
+COBOLMultiProgramParser.parse_pic_clause = expression_parsers.parse_pic_clause
+COBOLMultiProgramParser.parse_usage_type = expression_parsers.parse_usage_type
+COBOLMultiProgramParser.parse_all_programs = division_parsers.parse_all_programs
+
+# CRITICAL FIX: Add the helper methods for abbreviated condition support
+COBOLMultiProgramParser._extract_comparison_subject = expression_parsers._extract_comparison_subject
+COBOLMultiProgramParser._parse_abbreviated_comparison = expression_parsers._parse_abbreviated_comparison
+
+COBOLMultiProgramParser._is_division_boundary = division_parsers._is_division_boundary
+COBOLMultiProgramParser._is_program_boundary = division_parsers._is_program_boundary
+COBOLMultiProgramParser._is_new_paragraph_declaration = division_parsers._is_new_paragraph_declaration
+
+
+
+
+__all__ = [
+    # Only export the parser, not AST nodes
+    # AST nodes should be imported from cobol_frontend.parser.ast_nodes
+    'COBOLMultiProgramParser',
+    'ParserError',
+    'ParseContext',
+]
