@@ -1,0 +1,121 @@
+// test_breakloop.ailang - Test BreakLoop functionality
+
+SubRoutine.Main {
+    PrintMessage("Test 1: BreakLoop in simple loop\n")
+    counter = 0
+    WhileLoop EqualTo(1, 1) {
+        PrintMessage("Iteration: ")
+        PrintNumber(counter)
+        PrintMessage("\n")
+        
+        counter = Add(counter, 1)
+        
+        IfCondition GreaterEqual(counter, 5) ThenBlock: {
+            PrintMessage("Breaking at 5\n")
+            BreakLoop
+        }
+    }
+    PrintMessage("Exited loop, counter = ")
+    PrintNumber(counter)
+    PrintMessage("\n\n")
+    
+    PrintMessage("Test 2: BreakLoop with condition check\n")
+    i = 0
+    found = 0
+    WhileLoop LessThan(i, 100) {
+        IfCondition EqualTo(i, 42) ThenBlock: {
+            PrintMessage("Found 42!\n")
+            found = 1
+            BreakLoop
+        }
+        i = Add(i, 1)
+    }
+    PrintMessage("After loop: i = ")
+    PrintNumber(i)
+    PrintMessage(", found = ")
+    PrintNumber(found)
+    PrintMessage("\n\n")
+    
+    PrintMessage("Test 3: BreakLoop NOT triggered\n")
+    j = 0
+    WhileLoop LessThan(j, 5) {
+        PrintMessage("j = ")
+        PrintNumber(j)
+        PrintMessage("\n")
+        j = Add(j, 1)
+        
+        IfCondition GreaterThan(j, 100) ThenBlock: {
+            PrintMessage("This should never print\n")
+            BreakLoop
+        }
+    }
+    PrintMessage("Normal loop exit, j = ")
+    PrintNumber(j)
+    PrintMessage("\n\n")
+    
+    PrintMessage("Test 4: Multiple potential breaks\n")
+    k = 0
+    break_reason = 0
+    WhileLoop EqualTo(1, 1) {
+        k = Add(k, 1)
+        
+        IfCondition EqualTo(k, 3) ThenBlock: {
+            PrintMessage("Break at 3\n")
+            break_reason = 3
+            BreakLoop
+        }
+        
+        IfCondition EqualTo(k, 7) ThenBlock: {
+            PrintMessage("This should not print (break at 7)\n")
+            break_reason = 7
+            BreakLoop
+        }
+        
+        IfCondition GreaterThan(k, 10) ThenBlock: {
+            PrintMessage("This should not print (break at >10)\n")
+            break_reason = 10
+            BreakLoop
+        }
+    }
+    PrintMessage("Final k = ")
+    PrintNumber(k)
+    PrintMessage(", break_reason = ")
+    PrintNumber(break_reason)
+    PrintMessage("\n\n")
+    
+    PrintMessage("Test 5: BreakLoop in read-like scenario\n")
+    bytes_to_read = 50
+    total_read = 0
+    chunk_size = 16
+    
+    WhileLoop EqualTo(1, 1) {
+        // Simulate reading
+        remaining = Subtract(bytes_to_read, total_read)
+        
+        IfCondition LessEqual(remaining, 0) ThenBlock: {
+            PrintMessage("No more to read\n")
+            BreakLoop
+        }
+        
+        // Read chunk
+        to_read = chunk_size
+        IfCondition GreaterThan(to_read, remaining) ThenBlock: {
+            to_read = remaining
+        }
+        
+        total_read = Add(total_read, to_read)
+        PrintMessage("Read ")
+        PrintNumber(to_read)
+        PrintMessage(" bytes, total = ")
+        PrintNumber(total_read)
+        PrintMessage("\n")
+    }
+    PrintMessage("Finished reading ")
+    PrintNumber(total_read)
+    PrintMessage(" bytes\n\n")
+    
+    PrintMessage("All BreakLoop tests completed!\n")
+    HaltProgram()
+}
+
+RunTask(Main)

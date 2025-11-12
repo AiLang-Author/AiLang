@@ -1,0 +1,22 @@
+// test_generator.ailang
+PrintMessage("Testing Generator Library\n")
+PrintMessage("=========================\n\n")
+
+LibraryImport.SmolLM_SQL
+LibraryImport.SmolLM_Tokenizer
+LibraryImport.SmolLM_Generator
+
+PrintMessage("Connecting to DB...\n")
+RunTask(SmolLM_ConnectDB)
+
+PrintMessage("\nTest: Generate from token 4\n")
+token_id = 4
+max_tokens = 5
+RunTask(Generator_SetMaxTokens)
+RunTask(Generator_Generate)
+
+PrintMessage("\n\nStats:\n")
+RunTask(Generator_GetStats)
+
+RunTask(SmolLM_DisconnectDB)
+PrintMessage("\nGenerator test complete!\n")

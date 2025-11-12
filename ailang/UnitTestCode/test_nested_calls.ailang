@@ -1,23 +1,179 @@
-LibraryImport.Cobol
+// test_fixedpool_nested_crash.ailang
+// REAL BUG: FixedPool member access inside nested function calls
+// This reproduces the ACTUAL crash you're experiencing
 
-LinkagePool.ESCAL056_Linkage {
-    "PPS_RTC": Initialize=0
+LibraryImport.FixedPointTrig
+
+// Create a simple FixedPool for testing
+FixedPool.Config {
+    "head_dim": Initialize=64
+    "scale_factor": Initialize=10000
 }
 
-Function.ESCAL056_0100_INITIAL_ROUTINE {
-    Input: linkage: LinkagePool.ESCAL056_Linkage
-    Body: { ReturnValue(0) }
+FixedPool.AttentionState {
+    "score": Initialize=1000
 }
 
-Function.ESCAL056_0000_MAINLINE_CONTROL {
-    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage
-    Body: {
-        ESCAL056_0100_INITIAL_ROUTINE(escal056_linkage)
-        ReturnValue(0)
-    }
+// Test variables
+result = 0
+temp1 = 0
+temp2 = 0
+
+PrintMessage("\n========================================")
+PrintMessage("\nFIXEDPOOL NESTED ACCESS BUG TEST")
+PrintMessage("\n========================================\n")
+
+// =============================================================================
+// TEST 1: Simple FixedPool access (WORKS)
+// =============================================================================
+PrintMessage("\n[TEST 1] Simple FixedPool access:")
+PrintMessage("\n  Testing: Config.head_dim")
+PrintMessage("\n  Expected: 64")
+
+result = Config.head_dim
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 64) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
 }
 
-SubRoutine.Main {
-    escal056_linkage = AllocateLinkage(LinkagePool.ESCAL056_Linkage)
-    ESCAL056_0000_MAINLINE_CONTROL(escal056_linkage)
+// =============================================================================
+// TEST 2: FixedPool in ONE level of nesting (WORKS)
+// =============================================================================
+PrintMessage("\n[TEST 2] FixedPool in one-level nesting:")
+PrintMessage("\n  Testing: Multiply(Config.head_dim, 100)")
+PrintMessage("\n  Expected: 6400")
+
+result = Multiply(Config.head_dim, 100)
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 6400) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
 }
+
+// =============================================================================
+// TEST 3: FixedPool in TWO levels of nesting (MAY CRASH)
+// =============================================================================
+PrintMessage("\n[TEST 3] FixedPool in two-level nesting:")
+PrintMessage("\n  Testing: Math.ISqrt(Multiply(Config.head_dim, 100))")
+PrintMessage("\n  Expected: 80")
+
+result = Math.ISqrt(Multiply(Config.head_dim, 100))
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 80) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL (Expected 80)\n")
+}
+
+// =============================================================================
+// TEST 4: FixedPool in THREE levels (LIKELY TO CRASH)
+// =============================================================================
+PrintMessage("\n[TEST 4] FixedPool in three-level nesting:")
+PrintMessage("\n  Testing: Divide(1000, Math.ISqrt(Multiply(Config.head_dim, 100)))")
+PrintMessage("\n  Expected: 12")
+
+result = Divide(1000, Math.ISqrt(Multiply(Config.head_dim, 100)))
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 12) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
+}
+
+// =============================================================================
+// TEST 5: EXACT CRASH CASE from your attention mechanism
+// =============================================================================
+PrintMessage("\n[TEST 5] ORIGINAL CRASH CASE:")
+PrintMessage("\n  Testing: Divide(AttentionState.score, Math.ISqrt(Multiply(Config.head_dim, FixedPointTrig.scale)))")
+PrintMessage("\n  Expected: 1 (1000 / sqrt(64 * 10000) = 1000 / 800 = 1)")
+
+result = Divide(AttentionState.score, Math.ISqrt(Multiply(Config.head_dim, FixedPointTrig.scale)))
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 1) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
+}
+
+// =============================================================================
+// TEST 6: Multiple FixedPool accesses nested
+// =============================================================================
+PrintMessage("\n[TEST 6] Multiple FixedPool in nesting:")
+PrintMessage("\n  Testing: Multiply(Config.head_dim, Add(Config.scale_factor, FixedPointTrig.scale))")
+PrintMessage("\n  Expected: 1280000 (64 * (10000 + 10000))")
+
+result = Multiply(Config.head_dim, Add(Config.scale_factor, FixedPointTrig.scale))
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 1280000) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
+}
+
+// =============================================================================
+// TEST 7: Workaround using temporary variables (ALWAYS WORKS)
+// =============================================================================
+PrintMessage("\n[TEST 7] Workaround with temp variables:")
+PrintMessage("\n  Testing same as TEST 5 but with intermediate temps")
+PrintMessage("\n  Expected: 1")
+
+temp1 = Config.head_dim
+temp2 = FixedPointTrig.scale
+temp1 = Multiply(temp1, temp2)
+temp2 = Math.ISqrt(temp1)
+result = Divide(AttentionState.score, temp2)
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 1) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS (workaround works)\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
+}
+
+// =============================================================================
+// TEST 8: Deep nesting with FixedPool at various levels
+// =============================================================================
+PrintMessage("\n[TEST 8] FixedPool at different nesting depths:")
+PrintMessage("\n  Testing: Divide(Multiply(Config.head_dim, 10), Add(5, Subtract(FixedPointTrig.scale, 9990)))")
+PrintMessage("\n  Expected: 42 (640 / (5 + 10) = 640 / 15 = 42)")
+
+result = Divide(Multiply(Config.head_dim, 10), Add(5, Subtract(FixedPointTrig.scale, 9990)))
+
+PrintMessage("\n  Result: ")
+PrintNumber(result)
+IfCondition EqualTo(result, 42) ThenBlock: {
+    PrintMessage("\n  Status: ✓ PASS\n")
+} ElseBlock: {
+    PrintMessage("\n  Status: ✗ FAIL\n")
+}
+
+// =============================================================================
+// SUMMARY
+// =============================================================================
+PrintMessage("\n========================================")
+PrintMessage("\nTEST SUITE COMPLETE")
+PrintMessage("\n========================================")
+PrintMessage("\nIf you see this message, the program didn't crash!")
+PrintMessage("\nCheck individual test results above.")
+PrintMessage("\n\nKEY INSIGHT:")
+PrintMessage("\n  The bug is NOT about nested arithmetic operations.")
+PrintMessage("\n  The bug is about FIXEDPOOL MEMBER ACCESS inside nested calls!")
+PrintMessage("\n  When FixedPool.member is accessed in a nested function argument,")
+PrintMessage("\n  the register used to load the pool address gets corrupted.")
+PrintMessage("\n\n========================================\n")

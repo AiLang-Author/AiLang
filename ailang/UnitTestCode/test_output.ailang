@@ -1,0 +1,95 @@
+// ============================================================================
+// COBOL PROGRAM INFORMATION
+// ============================================================================
+// Program: CM1014.2
+// Date Written: 001600 DATE-WRITTEN.                                                    CM1014.2 001700     CCVS-74 VERSION 4.0 - 1980 JULY 1.                           CM1014.2 001800     CREATION DATE     /    VALIDATION DATE                       CM1014.2 001900     "4.2 ".                                                      CM1014.2 002100     NONE.                                                        CM1014.2
+// ============================================================================
+LibraryImport.Cobol
+LibraryImport.COBOL_ControlFlow
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+
+// Set I/O backend: jcl
+Cobol.io_backend_type = "jcl"
+
+// Generated from COBOL source
+
+FixedPool.CM101M_VARS {
+    "PASSWORD1": Initialize="XXXXX031"
+    "DISABLE_STATUS": Initialize="99"
+    "POLL_COUNT": Initialize=0
+    "INIT_TIME": Initialize=0
+    "COMP_TIME": Initialize=0
+    "SYSTEM_TIME": Initialize=""
+    "SYS_HRS": Initialize=0
+    "SYS_MINS": Initialize=0
+    "SYS_SECS": Initialize=0
+    "MSG_TIME": Initialize=""
+    "HOURS": Initialize=0
+    "MINUTES": Initialize=0
+    "SECONDS": Initialize=0
+    "SPEC_LINE_1": Initialize=""
+    "FILLER": Initialize="************************    ******************************"
+    "INIT_ENABLE_STATUS": Initialize=""
+    "INCOMING_MSG": Initialize=""
+    "KILL_FIELD": Initialize=""
+    "LOG_HDR_1": Initialize=""
+    "LOG_HDR_2": Initialize=""
+    "SYM_SOURCE": Initialize=""
+    "MSG_DATE": Initialize=0
+    "LOG_HDR_3": Initialize=""
+    "LOG_HDR_4": Initialize=""
+    "LOG_LINE": Initialize=""
+    "RECEIPT_TIME": Initialize=""
+    "LAG_TIME": Initialize=""
+    "MESSAGE_LENGTH": Initialize=""
+    "SENTINEL": Initialize=""
+    "QUEUE_DEPTH": Initialize=0
+    "IDLE_COUNT": Initialize=""
+    "IDLE_OVERFLOW": Initialize=""
+    "MSG": Initialize=""
+    "TEST_RESULTS": Initialize=""
+    "FEATURE": Initialize=""
+    "P_OR_F": Initialize=""
+    "PAR_NAME": Initialize=""
+    "COMPUTED_A": Initialize=""
+    "COMPUTED_STATUS": Initialize=""
+    "CORRECT_A": Initialize=""
+    "CORRECT_STATUS": Initialize=""
+    "RE_MARK": Initialize=""
+    "COLUMNS_LINE_1": Initialize=""
+    "COLUMNS_LINE_2": Initialize=""
+    "REC_SKL_SUB": Initialize=0
+    "REC_CT": Initialize=0
+    "DELETE_CNT": Initialize=0
+    "ERROR_COUNTER": Initialize=0
+    "INSPECT_COUNTER": Initialize=0
+    "PASS_COUNTER": Initialize=0
+    "TOTAL_ERROR": Initialize=0
+    "ERROR_HOLD": Initialize=0
+    "DUMMY_HOLD": Initialize=" "
+    "RECORD_COUNT": Initialize=0
+    "CCVS_H_1": Initialize=""
+    "CCVS_H_2": Initialize=""
+    "TEST_ID": Initialize=""
+    "CCVS_H_3": Initialize=""
+    "CCVS_E_1": Initialize=""
+    "ID_AGAIN": Initialize=""
+    "CCVS_E_2": Initialize=""
+    "CCVS_E_2_2": Initialize=""
+    "ERROR_TOTAL": Initialize=" "
+    "ENDER_DESC": Initialize="ERRORS ENCOUNTERED"
+    "CCVS_E_3": Initialize=""
+    "CCVS_E_4": Initialize=""
+    "CCVS_E_4_1": Initialize=" "
+    "CCVS_E_4_2": Initialize=" "
+    "XXINFO": Initialize=""
+    "INFO_TEXT": Initialize=""
+    "XXCOMPUTED": Initialize=""
+    "XXCORRECT": Initialize=""
+    "HYPHEN_LINE": Initialize=""
+    "CCVS_PGM_ID": Initialize="CM101M"
+}
+
+RunTask(Main)

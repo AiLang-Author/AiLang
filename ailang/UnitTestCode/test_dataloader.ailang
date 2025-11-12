@@ -1,0 +1,89 @@
+// test_dataloader.ailang - Standalone test for JCL_DataLoader
+
+LibraryImport.XArrays
+LibraryImport.PostgreSQL_Complete
+LibraryImport.JCL_Worker
+
+SubRoutine.Main {
+    PrintMessage("=== JCL_DataLoader Test Program ===\n\n")
+    
+    // Step 1: Connect to database
+    PrintMessage("[TEST] Step 1: Connecting to database...\n")
+    db_conn = PG_Connect("localhost", 5432, "esrd_production", "esrd_worker", "esrd123")
+    
+    PrintMessage("[TEST] Connection handle: ")
+    PrintNumber(db_conn)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(db_conn, 0) ThenBlock: {
+        PrintMessage("[TEST] FAILED: Could not connect to database\n")
+        ReturnValue(1)
+    }
+    
+    PrintMessage("[TEST] SUCCESS: Connected to database\n\n")
+    
+    // Step 2: Set the connection in both places
+    PrintMessage("[TEST] Step 2: Setting connection variables...\n")
+    Cobol.api_db_conn = db_conn
+    ContainerConfig.db_conn = db_conn
+    
+    PrintMessage("[TEST] Cobol.api_db_conn = ")
+    PrintNumber(Cobol.api_db_conn)
+    PrintMessage("\n")
+    
+    PrintMessage("[TEST] ContainerConfig.db_conn = ")
+    PrintNumber(ContainerConfig.db_conn)
+    PrintMessage("\n\n")
+    
+    // Step 3: Call the DataLoader
+    PrintMessage("[TEST] Step 3: Calling JCL_DataLoader.LoadJobData(123)...\n")
+    test_job_id = 123
+    
+    result = JCL_DataLoader.LoadJobData(test_job_id, db_conn)
+    
+    PrintMessage("[TEST] LoadJobData returned: ")
+    PrintNumber(result)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(result, 0) ThenBlock: {
+        PrintMessage("[TEST] FAILED: LoadJobData returned 0 (no data)\n\n")
+    } ElseBlock: {
+        PrintMessage("[TEST] SUCCESS: LoadJobData returned data\n")
+        PrintMessage("[TEST] Data: ")
+        PrintString(result)
+        PrintMessage("\n\n")
+    }
+    
+    // Step 4: Verify connection is still valid
+    PrintMessage("[TEST] Step 4: Verifying connection after LoadJobData...\n")
+    PrintMessage("[TEST] Cobol.api_db_conn = ")
+    PrintNumber(Cobol.api_db_conn)
+    PrintMessage("\n")
+    
+    PrintMessage("[TEST] ContainerConfig.db_conn = ")
+    PrintNumber(ContainerConfig.db_conn)
+    PrintMessage("\n\n")
+    
+    // Step 5: Try a direct query to prove the connection works
+    PrintMessage("[TEST] Step 5: Testing direct PG_Query...\n")
+    query = "SELECT COUNT(*) FROM jcl_job_data WHERE job_id = 123"
+    direct_result = PG_Query(db_conn, query)
+    
+    IfCondition NotEqual(direct_result, 0) ThenBlock: {
+        PrintMessage("[TEST] SUCCESS: Direct query worked\n")
+        PG_DestroyResult(direct_result)
+    } ElseBlock: {
+        PrintMessage("[TEST] FAILED: Direct query failed\n")
+    }
+    
+    Deallocate(query, 0)
+    
+    // Cleanup
+    PrintMessage("\n[TEST] Disconnecting...\n")
+    PG_Disconnect(db_conn)
+    
+    PrintMessage("\n=== Test Complete ===\n")
+    ReturnValue(0)
+}
+
+RunTask(Main)

@@ -1,0 +1,167 @@
+// test_stringconcat.ailang
+// Test StringConcat with the exact pattern from FormatDecimal
+
+PrintMessage("=== TEST 1: Basic StringConcat ===\n")
+
+str1 = "Hello"
+str2 = " World"
+result1 = StringConcat(str1, str2)
+
+PrintMessage("Result: '")
+PrintString(result1)
+PrintMessage("'\n")
+
+PrintMessage("Bytes: ")
+i = 0
+len = StringLength(result1)
+WhileLoop LessThan(i, len) {
+    byte = GetByte(result1, i)
+    PrintNumber(byte)
+    PrintMessage(" ")
+    i = Add(i, 1)
+}
+PrintMessage("\n\n")
+
+
+PrintMessage("=== TEST 2: Concat Empty String ===\n")
+
+empty = ""
+num_str = NumberToString(7)
+result2 = StringConcat(empty, num_str)
+
+PrintMessage("Result: '")
+PrintString(result2)
+PrintMessage("'\n")
+
+PrintMessage("Bytes: ")
+j = 0
+len2 = StringLength(result2)
+WhileLoop LessThan(j, len2) {
+    byte = GetByte(result2, j)
+    PrintNumber(byte)
+    PrintMessage(" ")
+    IfCondition EqualTo(byte, 175) ThenBlock: {
+        PrintMessage("<<< FOUND 0xAF! ")
+    }
+    j = Add(j, 1)
+}
+PrintMessage("\n\n")
+
+
+PrintMessage("=== TEST 3: Multiple Concats (FormatDecimal Pattern) ===\n")
+
+// Simulate FormatDecimal's exact pattern
+result = ""
+PrintMessage("Step 1: result = '")
+PrintString(result)
+PrintMessage("'\n")
+
+// Add minus sign (only if negative, but let's test it)
+result = StringConcat(result, "-")
+PrintMessage("Step 2: result = '")
+PrintString(result)
+PrintMessage("'\n")
+
+// Add integer part
+integer_part = 7
+integer_str = NumberToString(integer_part)
+PrintMessage("integer_str = '")
+PrintString(integer_str)
+PrintMessage("'\n")
+
+result = StringConcat(result, integer_str)
+PrintMessage("Step 3: result = '")
+PrintString(result)
+PrintMessage("'\n")
+
+// Check bytes
+PrintMessage("Final bytes: ")
+k = 0
+len3 = StringLength(result)
+WhileLoop LessThan(k, len3) {
+    byte = GetByte(result, k)
+    PrintNumber(byte)
+    PrintMessage(" ")
+    IfCondition EqualTo(byte, 175) ThenBlock: {
+        PrintMessage("<<< FOUND 0xAF! ")
+    }
+    k = Add(k, 1)
+}
+PrintMessage("\n\n")
+
+
+PrintMessage("=== TEST 4: Exact FormatDecimal Simulation ===\n")
+
+// Exact reproduction of FormatDecimal logic
+value = 70000
+source_decimals = 4
+target_decimals = 0
+
+fmt_is_negative = 0  // value is positive
+fmt_abs_value = value
+
+// Calculate source scale
+fmt_source_scale = 1
+loop_i = 0
+WhileLoop LessThan(loop_i, source_decimals) {
+    fmt_source_scale = Multiply(fmt_source_scale, 10)
+    loop_i = Add(loop_i, 1)
+}
+
+PrintMessage("source_scale: ")
+PrintNumber(fmt_source_scale)
+PrintMessage("\n")
+
+// Calculate integer part
+fmt_integer_part = Divide(fmt_abs_value, fmt_source_scale)
+PrintMessage("integer_part: ")
+PrintNumber(fmt_integer_part)
+PrintMessage("\n")
+
+// Build result string (EXACT code from FormatDecimal)
+result = ""
+
+IfCondition fmt_is_negative ThenBlock: {
+    result = "-"
+}
+
+PrintMessage("Before concat, result = '")
+PrintString(result)
+PrintMessage("'\n")
+
+PrintMessage("About to call NumberToString(")
+PrintNumber(fmt_integer_part)
+PrintMessage(")\n")
+
+num_string = NumberToString(fmt_integer_part)
+PrintMessage("NumberToString returned: '")
+PrintString(num_string)
+PrintMessage("'\n")
+
+PrintMessage("About to concat...\n")
+result = StringConcat(result, num_string)
+
+PrintMessage("After concat, result = '")
+PrintString(result)
+PrintMessage("'\n")
+
+// Dump all bytes
+PrintMessage("Final result bytes: ")
+m = 0
+final_len = StringLength(result)
+WhileLoop LessThan(m, final_len) {
+    b = GetByte(result, m)
+    PrintMessage("0x")
+    PrintNumber(b)
+    PrintMessage(" ")
+    
+    IfCondition EqualTo(b, 175) ThenBlock: {
+        PrintMessage("<<< FOUND 0xAF CORRUPTION! ")
+    }
+    
+    m = Add(m, 1)
+}
+PrintMessage("\n\n")
+
+PrintMessage("=== TEST COMPLETE ===\n")
+PrintMessage("If you see 0xAF (175), the bug is in StringConcat or memory corruption!\n")

@@ -1,0 +1,47 @@
+LibraryImport.Cobol
+LibraryImport.PostgreSQL_Complete
+
+SubRoutine.Main {
+    PrintMessage("Testing PostgreSQL OFFSET queries...\n")
+    
+    // Connect to database
+    PrintMessage("Connecting to database...\n")
+    db = PG_Connect("localhost", 5432, "cobol", "postgres", "")
+    
+    PrintMessage("=== Testing OFFSET 0 ===\n")
+    result0 = PG_Query(db, "SELECT record_data FROM CONTROL_CARD_FILE_seq ORDER BY seq_id LIMIT 1 OFFSET 0")
+    count0 = XArray.XSize(result0)
+    PrintMessage("Rows: ")
+    PrintNumber(count0)
+    PrintMessage("\n")
+    
+    IfCondition GreaterThan(count0, 0) ThenBlock: {
+        row = XArray.XGet(result0, 0)
+        data = HashMap.HGetSimple(row, "record_data")
+        PrintMessage("Data: ")
+        PrintMessage(data)
+        PrintMessage("\n")
+    }
+    PG_DestroyResult(result0)
+    
+    PrintMessage("\n=== Testing OFFSET 1 ===\n")
+    result1 = PG_Query(db, "SELECT record_data FROM CONTROL_CARD_FILE_seq ORDER BY seq_id LIMIT 1 OFFSET 1")
+    count1 = XArray.XSize(result1)
+    PrintMessage("Rows: ")
+    PrintNumber(count1)
+    PrintMessage("\n")
+    
+    IfCondition GreaterThan(count1, 0) ThenBlock: {
+        row = XArray.XGet(result1, 0)
+        data = HashMap.HGetSimple(row, "record_data")
+        PrintMessage("Data: ")
+        PrintMessage(data)
+        PrintMessage("\n")
+    }
+    PG_DestroyResult(result1)
+    
+    PrintMessage("\nTest complete\n")
+    ReturnValue(0)
+}
+
+RunTask(Main)

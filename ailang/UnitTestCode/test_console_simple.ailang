@@ -1,0 +1,35 @@
+
+// test_console_simple.ailang
+// Minimal console test without all the libraries
+
+PrintMessage("Simple Console Test\n")
+PrintMessage("===================\n\n")
+
+// Variables
+input_buffer = 0
+input_size = 0
+first_char = 0
+
+PrintMessage("Type something: ")
+
+// Allocate buffer
+input_buffer = Allocate(256)
+
+// Read from stdin (fd=0)
+input_size = SystemCall(0, 0, input_buffer, 255)
+
+PrintMessage("You typed ")
+PrintNumber(input_size)
+PrintMessage(" bytes\n")
+
+// Get first char
+IfCondition GreaterThan(input_size, 0) ThenBlock: {
+    first_char = Dereference(input_buffer, "byte")
+    PrintMessage("First char code: ")
+    PrintNumber(first_char)
+    PrintMessage("\n")
+}
+
+Deallocate(input_buffer, 256)
+
+PrintMessage("Test complete!\n")

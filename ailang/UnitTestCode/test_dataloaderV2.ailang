@@ -1,0 +1,169 @@
+// test_dataloader_deep.ailang - Deep diagnostic test for JCL_DataLoader
+
+LibraryImport.XArrays
+LibraryImport.PostgreSQL_Complete
+LibraryImport.Cobol
+LibraryImport.JCL_Worker
+
+SubRoutine.Main {
+    PrintMessage("════════════════════════════════════════\n")
+    PrintMessage("  DEEP JCL_DataLoader Diagnostic Test\n")
+    PrintMessage("════════════════════════════════════════\n\n")
+    
+    // ===== TEST 1: Database Connection =====
+    PrintMessage("[TEST 1] Connecting to database...\n")
+    db_conn = PG_Connect("localhost", 5432, "esrd_production", "esrd_worker", "esrd123")
+    
+    PrintMessage("  Connection handle: ")
+    PrintNumber(db_conn)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(db_conn, 0) ThenBlock: {
+        PrintMessage("  ❌ FAILED: Could not connect\n")
+        ReturnValue(1)
+    }
+    PrintMessage("  ✓ SUCCESS: Connected\n\n")
+    
+    // ===== TEST 2: Set FixedPool Variables =====
+    PrintMessage("[TEST 2] Setting FixedPool variables...\n")
+    Cobol.api_db_conn = db_conn
+    ContainerConfig.db_conn = db_conn
+    ContainerConfig.job_id = 123
+    
+    PrintMessage("  Cobol.api_db_conn = ")
+    PrintNumber(Cobol.api_db_conn)
+    PrintMessage("\n")
+    PrintMessage("  ContainerConfig.db_conn = ")
+    PrintNumber(ContainerConfig.db_conn)
+    PrintMessage("\n")
+    PrintMessage("  ContainerConfig.job_id = ")
+    PrintNumber(ContainerConfig.job_id)
+    PrintMessage("\n")
+    PrintMessage("  ✓ Variables set\n\n")
+    
+    // ===== TEST 3: Verify Database Has Data =====
+    PrintMessage("[TEST 3] Checking if job_id 123 exists...\n")
+    check_query = "SELECT job_id, program_name, request_data FROM jcl_job_data WHERE job_id = 123"
+    check_result = PG_Query(db_conn, check_query)
+    
+    IfCondition EqualTo(check_result, 0) ThenBlock: {
+        PrintMessage("  ❌ FAILED: Query failed\n")
+        Deallocate(check_query, 0)
+        PG_Disconnect(db_conn)
+        ReturnValue(1)
+    }
+    
+    row_count = XArray.XSize(check_result)
+    PrintMessage("  Rows found: ")
+    PrintNumber(row_count)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(row_count, 0) ThenBlock: {
+        PrintMessage("  ❌ FAILED: No rows found for job_id 123\n")
+        PrintMessage("  Run this first: INSERT INTO jcl_job_data (job_id, program_name, request_data) VALUES (123, 'TEST', '{\"test\":\"data\"}');\n")
+        PG_DestroyResult(check_result)
+        Deallocate(check_query, 0)
+        PG_Disconnect(db_conn)
+        ReturnValue(1)
+    }
+    
+    // Show what's in the database
+    row = XArray.XGet(check_result, 0)
+    db_job_id = HashMap.HGetSimple(row, "job_id")
+    db_program = HashMap.HGetSimple(row, "program_name")
+    db_data = HashMap.HGetSimple(row, "request_data")
+    
+    PrintMessage("  job_id: ")
+    PrintString(db_job_id)
+    PrintMessage("\n")
+    PrintMessage("  program_name: ")
+    PrintString(db_program)
+    PrintMessage("\n")
+    PrintMessage("  request_data: ")
+    IfCondition EqualTo(db_data, 0) ThenBlock: {
+        PrintMessage("NULL\n")
+    } ElseBlock: {
+        PrintString(db_data)
+        PrintMessage("\n")
+    }
+    
+    PG_DestroyResult(check_result)
+    Deallocate(check_query, 0)
+    
+    IfCondition EqualTo(db_data, 0) ThenBlock: {
+        PrintMessage("  ⚠️  WARNING: request_data is NULL\n")
+    } ElseBlock: {
+        PrintMessage("  ✓ Data exists\n")
+    }
+    PrintMessage("\n")
+    
+    // ===== TEST 4: Call LoadJobData =====
+    PrintMessage("[TEST 4] Calling JCL_DataLoader.LoadJobData(123)...\n")
+    PrintMessage("  ContainerConfig.db_conn BEFORE call: ")
+    PrintNumber(ContainerConfig.db_conn)
+    PrintMessage("\n")
+    
+    result = JCL_DataLoader.LoadJobData(123, db_conn)
+    
+    PrintMessage("  Returned value: ")
+    PrintNumber(result)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(result, 0) ThenBlock: {
+        PrintMessage("  ❌ FAILED: LoadJobData returned 0\n")
+        PrintMessage("  Check debug output above for the failure point\n\n")
+    } ElseBlock: {
+        PrintMessage("  ✓ SUCCESS: Got data\n")
+        PrintMessage("  Data: ")
+        PrintString(result)
+        PrintMessage("\n\n")
+    }
+    
+    // ===== TEST 5: Check FixedPool After Call =====
+    PrintMessage("[TEST 5] Checking FixedPool values after LoadJobData...\n")
+    PrintMessage("  Cobol.api_db_conn = ")
+    PrintNumber(Cobol.api_db_conn)
+    PrintMessage("\n")
+    PrintMessage("  ContainerConfig.db_conn = ")
+    PrintNumber(ContainerConfig.db_conn)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(ContainerConfig.db_conn, 0) ThenBlock: {
+        PrintMessage("  ⚠️  WARNING: Connection was reset to 0!\n")
+    } ElseBlock: {
+        PrintMessage("  ✓ Connection still valid\n")
+    }
+    PrintMessage("\n")
+    
+    // ===== TEST 6: Direct Query Test =====
+    PrintMessage("[TEST 6] Testing direct PG_Query with same connection...\n")
+    direct_query = "SELECT 'direct_test' as test_value"
+    direct_result = PG_Query(db_conn, direct_query)
+    
+    IfCondition NotEqual(direct_result, 0) ThenBlock: {
+        PrintMessage("  ✓ Direct query works\n")
+        PG_DestroyResult(direct_result)
+    } ElseBlock: {
+        PrintMessage("  ❌ Direct query failed\n")
+    }
+    Deallocate(direct_query, 0)
+    PrintMessage("\n")
+    
+    // Cleanup
+    PrintMessage("════════════════════════════════════════\n")
+    PrintMessage("  Disconnecting...\n")
+    PG_Disconnect(db_conn)
+    
+    PrintMessage("════════════════════════════════════════\n")
+    IfCondition NotEqual(result, 0) ThenBlock: {
+        PrintMessage("  ✅ ALL TESTS PASSED\n")
+    } ElseBlock: {
+        PrintMessage("  ❌ DATALOADER FAILED\n")
+        PrintMessage("  Check the debug output above\n")
+    }
+    PrintMessage("════════════════════════════════════════\n")
+    
+    ReturnValue(0)
+}
+
+RunTask(Main)

@@ -1,0 +1,125 @@
+
+// test_sql_loader.ailang - Standalone test with everything inlined
+
+LibraryImport.PostgreSQL_Complete
+
+// Define embedding structure
+FixedPool.CurrentEmbedding {
+    "d0": Initialize=0    "d1": Initialize=0    "d2": Initialize=0    "d3": Initialize=0
+    "d4": Initialize=0    "d5": Initialize=0    "d6": Initialize=0    "d7": Initialize=0
+    "d8": Initialize=0    "d9": Initialize=0    "d10": Initialize=0   "d11": Initialize=0
+    "d12": Initialize=0   "d13": Initialize=0   "d14": Initialize=0   "d15": Initialize=0
+    "d16": Initialize=0   "d17": Initialize=0   "d18": Initialize=0   "d19": Initialize=0
+    "d20": Initialize=0   "d21": Initialize=0   "d22": Initialize=0   "d23": Initialize=0
+    "d24": Initialize=0   "d25": Initialize=0   "d26": Initialize=0   "d27": Initialize=0
+    "d28": Initialize=0   "d29": Initialize=0   "d30": Initialize=0   "d31": Initialize=0
+}
+
+FixedPool.DBConnection {
+    "pg_conn": Initialize=0
+    "connected": Initialize=0
+}
+
+FixedPool.SQLStats {
+    "queries_executed": Initialize=0
+    "rows_fetched": Initialize=0
+}
+
+// Top-level variables
+token_id = 0
+tid = 0
+query = ""
+tid_str = ""
+result = 0
+row_count = 0
+i = 0
+row = 0
+dim_str = ""
+val_str = ""
+dim = 0
+val = 0
+test_query = ""
+count_str = ""
+count = 0
+host = ""
+port = 0
+user = ""
+password = ""
+database = ""
+
+SubRoutine.SQL_Connect {
+    PrintMessage("[SQL] Connecting...\n")
+    
+    host = "localhost"
+    port = 5432
+    user = "sean"
+    password = ""
+    database = "smollm"
+    
+    DBConnection.pg_conn = PG_Connect(host, port, database, user, password)
+    
+    IfCondition EqualTo(DBConnection.pg_conn, 0) ThenBlock: {
+        PrintMessage("[SQL] ERROR: Cannot connect!\n")
+        SystemCall(60, 1, 0, 0)
+    }
+    
+    DBConnection.connected = 1
+    PrintMessage("[SQL] Connected!\n")
+}
+
+SubRoutine.LoadEmbeddingFromDB {
+    tid = token_id
+    
+    query = "SELECT dimension, value FROM embeddings WHERE token_id = "
+    tid_str = IntToString(tid)
+    query = StringConcat(query, tid_str)
+    query = StringConcat(query, " AND dimension < 32 ORDER BY dimension")
+    
+    result = PG_Query(DBConnection.pg_conn, query)
+    
+    IfCondition EqualTo(result, 0) ThenBlock: {
+        PrintMessage("[SQL] Query failed\n")
+        Return
+    }
+    
+    row_count = XArray.XSize(result)
+    
+    i = 0
+    WhileLoop LessThan(i, row_count) {
+        row = XArray.XGet(result, i)
+        dim_str = HashMap.HGetSimple(row, "dimension")
+        val_str = HashMap.HGetSimple(row, "value")
+        dim = StringToInt(dim_str)
+        val = StringToInt(val_str)
+        
+        Branch dim {
+            Case 0: { CurrentEmbedding.d0 = val }
+            Case 1: { CurrentEmbedding.d1 = val }
+            Case 2: { CurrentEmbedding.d2 = val }
+        }
+        
+        i = Add(i, 1)
+    }
+    
+    PG_DestroyResult(result)
+}
+
+// MAIN TEST
+PrintMessage("SQL Loader Test\n")
+PrintMessage("================\n\n")
+
+RunTask(SQL_Connect)
+
+PrintMessage("Loading token 0...\n")
+token_id = 0
+RunTask(LoadEmbeddingFromDB)
+
+PrintMessage("  d0=")
+PrintNumber(CurrentEmbedding.d0)
+PrintMessage(" d1=")
+PrintNumber(CurrentEmbedding.d1)
+PrintMessage(" d2=")
+PrintNumber(CurrentEmbedding.d2)
+PrintMessage("\n")
+
+PrintMessage("\nTest complete!\n")

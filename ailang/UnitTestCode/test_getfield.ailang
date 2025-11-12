@@ -1,0 +1,85 @@
+// test_getfield.ailang - Minimal test of GetField function
+
+LibraryImport.XArrays
+LibraryImport.PostgreSQL_Complete
+LibraryImport.HashMap
+LibraryImport.JSON
+LibraryImport.JCL_Worker
+
+SubRoutine.Main {
+    PrintMessage("=== Testing JCL_DataLoader.GetField ===\n\n")
+    
+    // Test 1: Parse a simple JSON string manually
+    PrintMessage("[TEST 1] Parsing test JSON...\n")
+    test_json = "{\"P-PROV-TYPE\": \"40\", \"TEST-NUM\": \"12500\"}"
+    
+    PrintMessage("Input JSON: ")
+    PrintString(test_json)
+    PrintMessage("\n")
+    
+    parsed = ParseJSON(test_json)
+    
+    PrintMessage("Parsed result: ")
+    PrintNumber(parsed)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(parsed, 0) ThenBlock: {
+        PrintMessage("❌ FAILED: ParseJSON returned 0\n")
+        ReturnValue(1)
+    }
+    
+    PrintMessage("✓ JSON parsed successfully\n\n")
+    
+    // Test 2: Try to get a field using GetField
+    PrintMessage("[TEST 2] Testing JCL_DataLoader.GetField...\n")
+    
+    field_value = JCL_DataLoader.GetField(parsed, "P-PROV-TYPE")
+    
+    PrintMessage("GetField returned: ")
+    PrintNumber(field_value)
+    PrintMessage("\n")
+    
+    IfCondition EqualTo(field_value, 0) ThenBlock: {
+        PrintMessage("❌ FAILED: GetField returned 0 for P-PROV-TYPE\n\n")
+        
+        // Try direct HashMap lookup
+        PrintMessage("[DEBUG] Trying XSHash.XLookup directly...\n")
+        direct_lookup = XSHash.XLookup(parsed, "P-PROV-TYPE")
+        PrintMessage("XLookup result: ")
+        PrintNumber(direct_lookup)
+        PrintMessage("\n")
+        
+        IfCondition EqualTo(direct_lookup, XArrays.XNULL) ThenBlock: {
+            PrintMessage("  Field not in hashmap\n")
+        } ElseBlock: {
+            PrintMessage("  Field found: '")
+            PrintString(direct_lookup)
+            PrintMessage("'\n")
+        }
+        
+    } ElseBlock: {
+        PrintMessage("✓ GetField returned data\n")
+        PrintMessage("Value: '")
+        PrintString(field_value)
+        PrintMessage("'\n\n")
+    }
+    
+    // Test 3: Try the number field
+    PrintMessage("[TEST 3] Testing numeric field...\n")
+    num_value = JCL_DataLoader.GetField(parsed, "TEST-NUM")
+    
+    PrintMessage("GetField('TEST-NUM') returned: ")
+    PrintNumber(num_value)
+    PrintMessage("\n")
+    
+    IfCondition NotEqual(num_value, 0) ThenBlock: {
+        PrintMessage("Value: '")
+        PrintString(num_value)
+        PrintMessage("'\n")
+    }
+    
+    PrintMessage("\n=== Test Complete ===\n")
+    ReturnValue(0)
+}
+
+RunTask(Main)
