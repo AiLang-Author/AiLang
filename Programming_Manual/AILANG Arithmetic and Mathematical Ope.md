@@ -4,15 +4,13 @@
 1. [Overview](#overview)
 2. [Basic Arithmetic Operations](#basic-arithmetic-operations)
 3. [Infix Notation System](#infix-notation-system)
-4. [Unary Negation](#unary-negation)
+4. [Unary Operations](#unary-operations)
 5. [Comparison Operations](#comparison-operations)
 6. [Bitwise Operations](#bitwise-operations)
 7. [Logical Operations](#logical-operations)
 8. [Advanced Mathematical Functions](#advanced-mathematical-functions)
-9. [Floating-Point Operations (Future)](#floating-point-operations-future)
-10. [Mixed Notation Programming](#mixed-notation-programming)
-11. [Performance Optimization](#performance-optimization)
-12. [Common Patterns and Examples](#common-patterns-and-examples)
+9. [Mixed Notation Programming](#mixed-notation-programming)
+10. [Common Patterns and Examples](#common-patterns-and-examples)
 
 ## Overview
 
@@ -142,9 +140,9 @@ result = (dividend / divisor)
 
 **Examples:**
 ```ailang
-// Integer division (truncated)
-quotient = Divide(20, 3)   // Returns 6 (truncated)
-quotient = (20 / 3)        // Returns 6 (truncated)
+// Integer division (truncated toward zero)
+quotient = Divide(20, 3)   // Returns 6
+quotient = (20 / 3)        // Returns 6
 
 // Exact division
 result = Divide(100, 4)    // Returns 25
@@ -215,15 +213,15 @@ squared = Power(5, 2)      // Returns 25
 squared = (5 ^ 2)          // Returns 25
 
 cubed = Power(3, 3)        // Returns 27
-cubed = (3 ^ 3)           // Returns 27
+cubed = (3 ^ 3)            // Returns 27
 
 // Powers of 2
 power2 = Power(2, 8)       // Returns 256
-power2 = (2 ^ 8)          // Returns 256
+power2 = (2 ^ 8)           // Returns 256
 
 // Power of 1 and 0
 identity = Power(42, 1)    // Returns 42
-one = Power(42, 0)        // Returns 1
+one = Power(42, 0)         // Returns 1
 ```
 
 ## Infix Notation System
@@ -263,6 +261,113 @@ result = (((a + b) * (c - d)) / (e + f))
 
 // Equivalent function call version
 result = Divide(Multiply(Add(a, b), Subtract(c, d)), Add(e, f))
+```
+
+### Available Infix Operators
+
+**Arithmetic:**
+- `+` (addition)
+- `-` (subtraction)
+- `*` (multiplication)
+- `/` (division)
+- `%` (modulo)
+- `^` (power - **NOT XOR**)
+
+**Comparison:**
+- `<` (less than)
+- `>` (greater than)
+- `<=` (less than or equal)
+- `>=` (greater than or equal)
+- `==` (equal to)
+- `!=` (not equal)
+
+**Logical:**
+- `&&` (logical AND)
+- `||` (logical OR)
+- `!` (logical NOT - unary, prefix only)
+
+**Bitwise:**
+- `&` (bitwise AND)
+- `|` (bitwise OR)
+- `~` (bitwise NOT - unary, prefix only)
+- `<<` (left shift)
+- `>>` (right shift)
+
+**⚠️ IMPORTANT: No Infix XOR Operator**
+
+BitwiseXor does **NOT** have an infix operator symbol. The `^` symbol is reserved for Power operations.
+
+```ailang
+// CORRECT - Use function for XOR
+result = BitwiseXor(a, b)
+
+// WRONG - This is POWER, not XOR!
+result = (a ^ b)  // This computes a to the power of b
+```
+
+## Unary Operations
+
+### Unary Negation (Prefix Minus)
+
+**Prefix Syntax:**
+```ailang
+result = -value
+```
+
+This is syntactic sugar that the compiler transforms to `Subtract(0, value)`.
+
+**Examples:**
+```ailang
+x = 5
+neg_x = -x           // Returns -5 (same as Subtract(0, x))
+
+// In expressions
+result = (-5 + 3)    // Returns -2
+result = (10 * -2)   // Returns -20
+
+// Double negation
+y = -10
+pos_y = -(-y)        // Returns 10
+```
+
+### Unary NOT (Prefix Bang)
+
+**Prefix Syntax:**
+```ailang
+result = !value
+```
+
+**Parenthesized Syntax:**
+```ailang
+result = (!value)
+```
+
+**Examples:**
+```ailang
+flag = 1
+inverted = !flag     // Returns 0
+
+// In expressions
+result = (!false_condition && true_condition)
+
+// Function equivalent
+result = Not(flag)
+```
+
+### Bitwise NOT (Prefix Tilde)
+
+**Prefix Syntax:**
+```ailang
+result = ~value
+```
+
+**Examples:**
+```ailang
+bits = 0xFF
+complement = ~bits   // Returns bitwise complement
+
+// Function equivalent
+result = BitwiseNot(value)
 ```
 
 ## Comparison Operations
@@ -317,7 +422,7 @@ is_answer = (value == 42)         // Returns 1
 ```ailang
 result = BitwiseAnd(a, b)      // Bitwise AND
 result = BitwiseOr(a, b)       // Bitwise OR
-result = BitwiseXor(a, b)      // Bitwise XOR (exclusive OR)
+result = BitwiseXor(a, b)      // Bitwise XOR (exclusive OR) - NO INFIX OPERATOR
 result = BitwiseNot(a)         // Bitwise NOT (complement)
 result = LeftShift(a, bits)    // Left shift
 result = RightShift(a, bits)   // Right shift
@@ -330,9 +435,18 @@ result = (a | b)               // Bitwise OR
 result = (a << bits)           // Left shift
 result = (a >> bits)           // Right shift
 result = (~a)                  // Bitwise NOT
+// NO INFIX FOR XOR - use BitwiseXor(a, b)
 ```
 
-**Note:** XOR uses the function `BitwiseXor()` as the `^` symbol is reserved for power operations.
+**⚠️ CRITICAL: The `^` symbol is Power, NOT XOR!**
+
+```ailang
+// CORRECT XOR usage
+toggled = BitwiseXor(value, mask)
+
+// WRONG - This does POWER not XOR!
+toggled = (value ^ mask)  // This computes value to the power of mask!
+```
 
 **Examples:**
 ```ailang
@@ -351,11 +465,11 @@ flag2 = 4
 combined = BitwiseOr(BitwiseOr(flags, flag1), flag2)  // Returns 5
 combined = ((flags | flag1) | flag2)                  // Returns 5
 
-// XOR operation - toggle bits
+// XOR operation - toggle bits (FUNCTION ONLY)
 original = 170                 // Binary: 10101010
 toggle_mask = 15              // Binary: 00001111
 toggled = BitwiseXor(original, toggle_mask)  // Returns 165
-// Note: No infix XOR symbol, use function
+// NOTE: MUST use function - no infix operator
 
 // NOT operation - complement
 value = 0
@@ -408,11 +522,11 @@ clear_bit = (value & (~(1 << bit_pos)))
 
 **Toggle a Bit:**
 ```ailang
-// Toggle bit n in value
+// Toggle bit n in value (MUST use function)
 bit_pos = 4
 value = 170
 toggle_bit = BitwiseXor(value, LeftShift(1, bit_pos))
-// Note: Must use BitwiseXor function, no infix symbol
+// CANNOT use infix - BitwiseXor has no operator symbol
 ```
 
 **Check if Bit is Set:**
@@ -448,6 +562,7 @@ result = Not(a)                // Logical NOT
 result = (a && b)              // Logical AND
 result = (a || b)              // Logical OR
 result = (!a)                  // Logical NOT
+result = !a                    // Logical NOT (prefix form)
 ```
 
 **Examples:**
@@ -467,6 +582,7 @@ either_true = (flag1 || flag2)  // Returns 1
 // NOT - invert boolean
 not_flag = Not(flag1)           // Returns 0
 not_flag = (!flag1)             // Returns 0
+not_flag = !flag1               // Returns 0 (prefix form)
 
 // Complex boolean expressions
 x = 5
@@ -522,13 +638,6 @@ smallest = Min(Min(a, b), c)
 largest = Max(Max(a, b), c)
 ```
 
-### Square Root (if available)
-
-**Function Syntax:**
-```ailang
-result = SquareRoot(value)
-```
-
 ## Mixed Notation Programming
 
 ### Combining Syntaxes
@@ -545,6 +654,9 @@ result = Add((x + y), (z - w))
 // Complex mixed expressions
 result = Multiply(((a + b) * c), Power(d, 2))
 result = (((a + b) * c) * (d ^ 2))
+
+// XOR must always use function
+result = BitwiseXor((a & mask), (b | flags))
 ```
 
 ### Style Guidelines
@@ -557,51 +669,13 @@ area = (length * width)
 is_valid = (age >= 18)
 ```
 
-**Recommendation 2: Use functions for complex operations**
+**Recommendation 2: Use functions for operations without infix**
 ```ailang
+// XOR has no infix operator - must use function
+toggled = BitwiseXor(value, mask)
+
 // Clearer for complex operations
 distance = SquareRoot(Add(Power(x2 - x1, 2), Power(y2 - y1, 2)))
-
-// Or mix styles
-distance = SquareRoot(((x2 - x1) ^ 2) + ((y2 - y1) ^ 2))
-```
-
-## Performance Optimization
-
-### Efficient Operation Ordering
-
-**Multiplication by Constants:**
-```ailang
-// Use bit shifting for powers of 2
-result = (value << 3)     // 8x faster than (value * 8)
-result = (value << 10)    // 1024x faster than (value * 1024)
-```
-
-**Division by Constants:**
-```ailang
-// Use bit shifting for powers of 2
-result = (value >> 2)     // 4x faster than (value / 4)
-result = (value >> 8)     // 256x faster than (value / 256)
-```
-
-**Modulo by Powers of 2:**
-```ailang
-// Use bitwise AND for powers of 2
-remainder = (value & 7)   // Equivalent to (value % 8)
-remainder = (value & 15)  // Equivalent to (value % 16)
-```
-
-### Memory-Efficient Patterns
-
-**Avoid Temporary Variables:**
-```ailang
-// Less efficient
-temp1 = (a + b)
-temp2 = (c * d)
-result = (temp1 - temp2)
-
-// More efficient
-result = ((a + b) - (c * d))
 ```
 
 ## Common Patterns and Examples
@@ -618,14 +692,6 @@ c_coef = 6
 discriminant = ((b_coef ^ 2) - ((4 * a_coef) * c_coef))
 ```
 
-**Fibonacci Sequence:**
-```ailang
-// Calculate next Fibonacci number
-fib_n_minus_2 = 8
-fib_n_minus_1 = 13
-fib_n = (fib_n_minus_2 + fib_n_minus_1)  // Returns 21
-```
-
 **Distance Formula:**
 ```ailang
 // Distance between two points
@@ -634,25 +700,13 @@ y1 = 0
 x2 = 3
 y2 = 4
 distance_squared = (((x2 - x1) ^ 2) + ((y2 - y1) ^ 2))  // Returns 25
-// distance = SquareRoot(distance_squared)  // Would return 5
 ```
 
 ### Bit Manipulation Algorithms
 
-**Count Set Bits (Brian Kernighan's Algorithm):**
+**XOR Swap (MUST use function):**
 ```ailang
-value = 42
-count = 0
-WhileLoop NotEqual(value, 0) {
-    value = BitwiseAnd(value, Subtract(value, 1))
-    count = Add(count, 1)
-}
-// count now contains number of set bits
-```
-
-**Swap Without Temporary Variable:**
-```ailang
-// XOR swap (use with caution)
+// XOR swap - requires BitwiseXor function
 a = 5
 b = 10
 a = BitwiseXor(a, b)
@@ -675,20 +729,6 @@ WhileLoop NotEqual(gcd_b, 0) {
 // gcd_a now contains GCD(48, 18) = 6
 ```
 
-**Check if Prime (Basic):**
-```ailang
-n = 17
-is_prime = 1
-i = 2
-WhileLoop And(LessThan(i, n), EqualTo(is_prime, 1)) {
-    IfCondition EqualTo(Modulo(n, i), 0) ThenBlock {
-        is_prime = 0
-    }
-    i = Add(i, 1)
-}
-// is_prime is 1 if n is prime, 0 otherwise
-```
-
 ## Error Conditions and Edge Cases
 
 ### Division Errors
@@ -696,14 +736,45 @@ WhileLoop And(LessThan(i, n), EqualTo(is_prime, 1)) {
 - **Integer Overflow**: Large results may wrap around
 
 ### Bitwise Operation Considerations
-- **Right Shift of Negative Numbers**: Implementation uses logical shift (fills with zeros), not arithmetic shift
+- **Right Shift of Negative Numbers**: Implementation uses logical shift (fills with zeros)
 - **Shift Amounts**: Shifting by more than 63 bits has undefined behavior
+
+### Common Pitfalls
+
+**⚠️ CRITICAL: `^` is Power, NOT XOR!**
+
+```ailang
+// WRONG - This does exponentiation!
+result = (value ^ 3)  // Computes value³, not value XOR 3
+
+// CORRECT - Power operation
+result = (value ^ 3)  // value cubed
+result = Power(value, 3)  // Same thing
+
+// CORRECT - XOR operation
+result = BitwiseXor(value, 3)  // value XOR 3
+```
 
 ### Best Practices
 1. **Always validate divisors** before division operations
 2. **Use parentheses** to make operator precedence explicit
-3. **Test edge cases** like zero, negative numbers, and large values
-4. **Use appropriate data types** for expected value ranges
-5. **Consider overflow** in multiplication and power operations
+3. **Remember: No infix XOR** - always use `BitwiseXor()` function
+4. **Test edge cases** like zero, negative numbers, and large values
+5. **Use appropriate data types** for expected value ranges
+6. **Consider overflow** in multiplication and power operations
 
-This manual provides comprehensive coverage of AILANG's mathematical capabilities, enabling developers to write efficient, readable, and mathematically sound programs using both traditional function syntax and modern infix notation.
+## Quick Reference: Operator Summary
+
+### Infix Operators Available
+- Arithmetic: `+` `-` `*` `/` `%` `^` (power)
+- Comparison: `<` `>` `<=` `>=` `==` `!=`
+- Logical: `&&` `||` `!` (prefix)
+- Bitwise: `&` `|` `~` (prefix) `<<` `>>`
+
+### Function-Only Operations (No Infix)
+- `BitwiseXor(a, b)` - **No `^` operator, that's Power!**
+- `Absolute(value)`
+- `Min(a, b)` / `Max(a, b)`
+- Advanced math functions (Floor, Ceil, Round, etc.)
+
+This manual provides comprehensive coverage of AILANG's mathematical capabilities as actually implemented in the compiler, enabling developers to write efficient, readable, and mathematically sound programs using both traditional function syntax and modern infix notation.
