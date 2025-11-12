@@ -1,0 +1,74 @@
+// Library.COBOL_ControlFlow.ailang
+// COBOL Control Flow Runtime using existing AiLang primitives
+//
+// Uses: Branch dispatch, FixedPool state, existing flow control
+
+// ============================================================================
+// CONTROL FLOW STATE
+// ============================================================================
+
+FixedPool.COBOLFlow {
+    "jump_target": Initialize=0        
+    "should_exit": Initialize=0        
+    "should_stop": Initialize=0        
+    "call_depth": Initialize=0        
+}
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+Function.COBOL_InitFlow {
+    Body: {
+        COBOLFlow.jump_target = 0
+        COBOLFlow.should_exit = 0
+        COBOLFlow.should_stop = 0
+        COBOLFlow.call_depth = 0
+    }
+}
+
+// ============================================================================
+// CONTROL FLOW PRIMITIVES
+// ============================================================================
+
+Function.COBOL_GoTo {
+    Input: target_id: Integer
+    Body: {
+        COBOLFlow.jump_target = target_id
+    }
+}
+
+Function.COBOL_Exit {
+    Body: {
+        COBOLFlow.should_exit = 1
+    }
+}
+
+Function.COBOL_StopRun {
+    Body: {
+        COBOLFlow.should_stop = 1
+        SystemCall(60, 0)  // Terminate immediately
+    }
+}
+
+Function.COBOL_CheckAbort {
+    Output: Integer  // 1 = should abort, 0 = continue
+    Body: {
+        // Check STOP RUN
+        IfCondition EqualTo(COBOLFlow.should_stop, 1) ThenBlock: {
+            ReturnValue(1)
+        }
+        
+        // Check EXIT
+        IfCondition EqualTo(COBOLFlow.should_exit, 1) ThenBlock: {
+            ReturnValue(1)
+        }
+        
+        // Check GO TO
+        IfCondition NotEqual(COBOLFlow.jump_target, 0) ThenBlock: {
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+

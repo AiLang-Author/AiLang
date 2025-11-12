@@ -1,0 +1,162 @@
+// Library.JCL_Scheduler.ailang
+// Lightweight job scheduling for JCL daemon
+
+// Job schedule mailbox (ring buffer)
+FixedPool.ScheduleMailbox {
+    "head": Initialize=0
+    "tail": Initialize=0
+    "count": Initialize=0
+    "slot0": Initialize=0  
+    "slot1": Initialize=0
+    "slot2": Initialize=0
+    "slot3": Initialize=0
+    "slot4": Initialize=0
+    "slot5": Initialize=0
+    "slot6": Initialize=0
+    "slot7": Initialize=0
+}
+
+// Schedule metadata (parallel to job names)
+FixedPool.ScheduleMeta {
+    "head": Initialize=0
+    "tail": Initialize=0
+    "count": Initialize=0
+    "time0": Initialize=0   
+    "time1": Initialize=0
+    "time2": Initialize=0
+    "time3": Initialize=0
+    "time4": Initialize=0
+    "time5": Initialize=0
+    "time6": Initialize=0
+    "time7": Initialize=0
+}
+
+FixedPool.SchedulerStats {
+    "jobs_scheduled": Initialize=0
+    "jobs_triggered": Initialize=0
+    "last_check_time": Initialize=0
+}
+
+// Schedule a job to run at a specific time
+Function.Scheduler.Schedule {
+    Input: job_name: Address
+    Input: run_time: Integer
+    Output: Integer
+    Body: {
+        // Check if schedule buffer is full
+        IfCondition LessThan(ScheduleMailbox.count, 8) ThenBlock: {
+            pos = ScheduleMailbox.tail
+            
+            // Store job name
+            Branch pos {
+                Case 0: { ScheduleMailbox.slot0 = job_name }
+                Case 1: { ScheduleMailbox.slot1 = job_name }
+                Case 2: { ScheduleMailbox.slot2 = job_name }
+                Case 3: { ScheduleMailbox.slot3 = job_name }
+                Case 4: { ScheduleMailbox.slot4 = job_name }
+                Case 5: { ScheduleMailbox.slot5 = job_name }
+                Case 6: { ScheduleMailbox.slot6 = job_name }
+                Case 7: { ScheduleMailbox.slot7 = job_name }
+            }
+            
+            // Store run time
+            Branch pos {
+                Case 0: { ScheduleMeta.time0 = run_time }
+                Case 1: { ScheduleMeta.time1 = run_time }
+                Case 2: { ScheduleMeta.time2 = run_time }
+                Case 3: { ScheduleMeta.time3 = run_time }
+                Case 4: { ScheduleMeta.time4 = run_time }
+                Case 5: { ScheduleMeta.time5 = run_time }
+                Case 6: { ScheduleMeta.time6 = run_time }
+                Case 7: { ScheduleMeta.time7 = run_time }
+            }
+            
+            ScheduleMailbox.tail = Modulo(Add(pos, 1), 8)
+            ScheduleMailbox.count = Add(ScheduleMailbox.count, 1)
+            ScheduleMeta.tail = ScheduleMailbox.tail
+            ScheduleMeta.count = ScheduleMailbox.count
+            
+            SchedulerStats.jobs_scheduled = Add(SchedulerStats.jobs_scheduled, 1)
+            
+            ReturnValue(1)
+        } ElseBlock: {
+            ReturnValue(0)  // Schedule full
+        }
+    }
+}
+
+// Check schedule and return jobs that are ready to run
+Function.Scheduler.CheckDue {
+    Input: current_time: Integer
+    Output: Address  // Job name or 0
+    Body: {
+        // Check if we have scheduled jobs
+        IfCondition EqualTo(ScheduleMailbox.count, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Check the first job in queue
+        pos = ScheduleMailbox.head
+        
+        // Get scheduled time
+        scheduled_time = 0
+        Branch pos {
+            Case 0: { scheduled_time = ScheduleMeta.time0 }
+            Case 1: { scheduled_time = ScheduleMeta.time1 }
+            Case 2: { scheduled_time = ScheduleMeta.time2 }
+            Case 3: { scheduled_time = ScheduleMeta.time3 }
+            Case 4: { scheduled_time = ScheduleMeta.time4 }
+            Case 5: { scheduled_time = ScheduleMeta.time5 }
+            Case 6: { scheduled_time = ScheduleMeta.time6 }
+            Case 7: { scheduled_time = ScheduleMeta.time7 }
+        }
+        
+        // Is it time to run?
+        IfCondition LessEqual(scheduled_time, current_time) ThenBlock: {
+            // Dequeue the job
+            job_name = 0
+            Branch pos {
+                Case 0: { job_name = ScheduleMailbox.slot0 }
+                Case 1: { job_name = ScheduleMailbox.slot1 }
+                Case 2: { job_name = ScheduleMailbox.slot2 }
+                Case 3: { job_name = ScheduleMailbox.slot3 }
+                Case 4: { job_name = ScheduleMailbox.slot4 }
+                Case 5: { job_name = ScheduleMailbox.slot5 }
+                Case 6: { job_name = ScheduleMailbox.slot6 }
+                Case 7: { job_name = ScheduleMailbox.slot7 }
+            }
+            
+            ScheduleMailbox.head = Modulo(Add(pos, 1), 8)
+            ScheduleMailbox.count = Subtract(ScheduleMailbox.count, 1)
+            ScheduleMeta.head = ScheduleMailbox.head
+            ScheduleMeta.count = ScheduleMailbox.count
+            
+            SchedulerStats.jobs_triggered = Add(SchedulerStats.jobs_triggered, 1)
+            SchedulerStats.last_check_time = current_time
+            
+            ReturnValue(job_name)
+        } ElseBlock: {
+            SchedulerStats.last_check_time = current_time
+            ReturnValue(0)  // Not time yet
+        }
+    }
+}
+
+// Schedule a job to run N seconds from now
+Function.Scheduler.ScheduleIn {
+    Input: job_name: Address
+    Input: seconds: Integer
+    Output: Integer
+    Body: {
+        // Get current time (syscall 96: gettimeofday)
+        timeval = Allocate(16)
+        SystemCall(96, timeval, 0)
+        current_time = Dereference(timeval)
+        Deallocate(timeval, 16)
+        
+        run_time = Add(current_time, seconds)
+        result = Scheduler.Schedule(job_name, run_time)
+        
+        ReturnValue(result)
+    }
+}

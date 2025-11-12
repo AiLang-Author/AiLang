@@ -1,0 +1,484 @@
+// Library.COBOL_String.ailang
+// COBOL String Library - Efficient String Operations for Transpiled COBOL
+// 
+// Provides high-performance string building patterns:
+// - StringBuilder for incremental construction (avoids O(n²) concat chains)
+// - StringArray for batch joining
+// - Persistent memory allocation (survives function scope)
+// 
+// Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering
+
+LibraryImport.Cobol
+
+// ============================================================================
+// CONFIGURATION CONSTANTS
+// ============================================================================
+
+FixedPool.COBOL_STRING_CONFIG {
+    "INITIAL_CAPACITY": Initialize=4096, CanChange=False
+    "MAX_CAPACITY": Initialize=1048576, CanChange=False
+    "ARRAY_MAX_PARTS": Initialize=1000, CanChange=False
+}
+
+// ============================================================================
+// PERSISTENT MEMORY POOLS
+// ============================================================================
+
+FixedPool.COBOL_StringBuilders {
+    "buffers": Initialize=0
+}
+
+FixedPool.COBOL_StringArrays {
+    "parts": Initialize=0
+}
+
+// ============================================================================
+// STRINGBUILDER FUNCTIONS
+// ============================================================================
+
+Function.COBOL_StringBuilder.Create {
+    Input: initial_capacity: Integer
+    Output: Integer
+    Body: {
+        Debug("string.builder.create", level=2) {
+            PrintMessage("[COBOL_String] Create builder requested with capacity: ")
+            PrintNumber(initial_capacity)
+            PrintMessage("\n")
+        }
+
+        capacity = initial_capacity
+        IfCondition LessEqual(capacity, 0) ThenBlock: {
+            capacity = COBOL_STRING_CONFIG.INITIAL_CAPACITY
+        }
+        IfCondition GreaterThan(capacity, COBOL_STRING_CONFIG.MAX_CAPACITY) ThenBlock: {
+            capacity = COBOL_STRING_CONFIG.MAX_CAPACITY
+        }
+        
+        builder = Allocate(32)
+        IfCondition EqualTo(builder, 0) ThenBlock: {
+            PrintMessage("[COBOL_String] ERROR: Failed to allocate StringBuilder\n")
+            ReturnValue(0)
+        }
+        
+        buffer = Allocate(capacity)
+        IfCondition EqualTo(buffer, 0) ThenBlock: {
+            PrintMessage("[COBOL_String] ERROR: Failed to allocate buffer\n")
+            Deallocate(builder, 32)
+            ReturnValue(0)
+        }
+        
+        StoreValue(buffer, 0)
+        
+        StoreValue(builder, buffer)
+        StoreValue(Add(builder, 8), 0)
+        StoreValue(Add(builder, 16), capacity)
+        StoreValue(Add(builder, 24), 1)
+        
+        Debug("string.builder.create.ok", level=2) {
+            PrintMessage("[COBOL_String] Builder created. Ptr: ")
+            PrintNumber(builder)
+            PrintMessage("\n")
+        }
+        ReturnValue(builder)
+    }
+}
+
+Function.COBOL_StringBuilder.Append {
+    Input: builder: Integer
+    Input: text: String
+    Output: Integer
+    Body: {
+        Debug("string.builder.append", level=3) {
+            PrintMessage("[COBOL_String] Append called for builder: ")
+            PrintNumber(builder)
+            PrintMessage("\n")
+        }
+        IfCondition EqualTo(builder, 0) ThenBlock: {
+            ReturnValue(-1)
+        }
+        IfCondition EqualTo(text, 0) ThenBlock: {
+            ReturnValue(-1)
+        }
+        
+        buffer_ptr = Dereference(builder)
+        current_length = Dereference(Add(builder, 8))
+        capacity = Dereference(Add(builder, 16))
+        
+        text_length = StringLength(text)
+        IfCondition EqualTo(text_length, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        new_length = Add(current_length, text_length)
+        IfCondition GreaterEqual(new_length, capacity) ThenBlock: {
+            new_capacity = Multiply(capacity, 2)
+            IfCondition GreaterThan(new_capacity, COBOL_STRING_CONFIG.MAX_CAPACITY) ThenBlock: {
+                new_capacity = COBOL_STRING_CONFIG.MAX_CAPACITY
+            }
+            
+            Debug("string.builder.grow", level=2) {
+                PrintMessage("[COBOL_String] Growing builder ")
+                PrintNumber(builder)
+                PrintMessage(" to new capacity: ")
+                PrintNumber(new_capacity)
+                PrintMessage("\n")
+            }
+            IfCondition GreaterEqual(new_length, new_capacity) ThenBlock: {
+                PrintMessage("[COBOL_String] ERROR: StringBuilder capacity exceeded\n")
+                ReturnValue(-1)
+            }
+            
+            new_buffer = Allocate(new_capacity)
+            IfCondition EqualTo(new_buffer, 0) ThenBlock: {
+                PrintMessage("[COBOL_String] ERROR: Failed to grow buffer\n")
+                ReturnValue(-1)
+            }
+            
+            i = 0
+            WhileLoop LessThan(i, current_length) {
+                byte_val = Dereference(Add(buffer_ptr, i), "byte")
+                StoreValue(Add(new_buffer, i), byte_val)
+                i = Add(i, 1)
+            }
+            
+            Deallocate(buffer_ptr, capacity)
+            StoreValue(builder, new_buffer)
+            StoreValue(Add(builder, 16), new_capacity)
+            buffer_ptr = new_buffer
+        }
+        
+        dest_ptr = Add(buffer_ptr, current_length)
+        i = 0
+        WhileLoop LessThan(i, text_length) {
+            char_code = GetByte(text, i)
+            StoreValue(Add(dest_ptr, i), char_code)
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(dest_ptr, text_length), 0)
+        
+        StoreValue(Add(builder, 8), new_length)
+        
+        Debug("string.builder.append.ok", level=3) {
+            PrintMessage("[COBOL_String] Append OK. New length: ")
+            PrintNumber(new_length)
+            PrintMessage("\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL_StringBuilder.ToString {
+    Input: builder: Integer
+    Output: String
+    Body: {
+        IfCondition EqualTo(builder, 0) ThenBlock: {
+            ReturnValue("")
+        }
+        
+        buffer_ptr = Dereference(builder)
+        length = Dereference(Add(builder, 8))
+        
+        ReturnValue(buffer_ptr)
+    }
+}
+
+Function.COBOL_StringBuilder.Destroy {
+    Input: builder: Integer
+    Output: Integer
+    Body: {
+        Debug("string.builder.destroy", level=2) {
+            PrintMessage("[COBOL_String] Destroy builder: ")
+            PrintNumber(builder)
+            PrintMessage("\n")
+        }
+        IfCondition EqualTo(builder, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        buffer_ptr = Dereference(builder)
+        capacity = Dereference(Add(builder, 16))
+        
+        IfCondition NotEqual(buffer_ptr, 0) ThenBlock: {
+            Deallocate(buffer_ptr, capacity)
+        }
+        
+        Deallocate(builder, 32)
+        
+        ReturnValue(0)
+    }
+}
+
+// ============================================================================
+// STRINGARRAY FUNCTIONS
+// ============================================================================
+
+Function.COBOL_StringArray.Create {
+    Input: max_parts: Integer
+    Output: Integer
+    Body: {
+        Debug("string.array.create", level=2) {
+            PrintMessage("[COBOL_String] Create StringArray requested with max_parts: ")
+            PrintNumber(max_parts)
+            PrintMessage("\n")
+        }
+        parts = max_parts
+        IfCondition LessEqual(parts, 0) ThenBlock: {
+            parts = 100
+        }
+        IfCondition GreaterThan(parts, COBOL_STRING_CONFIG.ARRAY_MAX_PARTS) ThenBlock: {
+            parts = COBOL_STRING_CONFIG.ARRAY_MAX_PARTS
+        }
+        
+        array = Allocate(24)
+        IfCondition EqualTo(array, 0) ThenBlock: {
+            PrintMessage("[COBOL_String] ERROR: Failed to allocate StringArray\n")
+            ReturnValue(0)
+        }
+        
+        parts_size = Multiply(parts, 8)
+        parts_array = Allocate(parts_size)
+        IfCondition EqualTo(parts_array, 0) ThenBlock: {
+            PrintMessage("[COBOL_String] ERROR: Failed to allocate parts array\n")
+            Deallocate(array, 24)
+            ReturnValue(0)
+        }
+        
+        StoreValue(array, parts_array)
+        StoreValue(Add(array, 8), 0)
+        StoreValue(Add(array, 16), parts)
+        
+        Debug("string.array.create.ok", level=2) {
+            PrintMessage("[COBOL_String] StringArray created. Ptr: ")
+            PrintNumber(array)
+            PrintMessage("\n")
+        }
+        ReturnValue(array)
+    }
+}
+
+Function.COBOL_StringArray.Add {
+    Input: array: Integer
+    Input: part: String
+    Output: Integer
+    Body: {
+        Debug("string.array.add", level=3) {
+            PrintMessage("[COBOL_String] Add to StringArray: ")
+            PrintNumber(array)
+            PrintMessage("\n")
+        }
+        IfCondition EqualTo(array, 0) ThenBlock: {
+            ReturnValue(-1)
+        }
+        
+        parts_ptr = Dereference(array)
+        count = Dereference(Add(array, 8))
+        capacity = Dereference(Add(array, 16))
+        
+        IfCondition GreaterEqual(count, capacity) ThenBlock: {
+            PrintMessage("[COBOL_String] ERROR: StringArray capacity exceeded\n")
+            ReturnValue(-1)
+        }
+        
+        part_offset = Multiply(count, 8)
+        StoreValue(Add(parts_ptr, part_offset), part)
+        
+        new_count = Add(count, 1)
+        StoreValue(Add(array, 8), new_count)
+        
+        Debug("string.array.add.ok", level=3) {
+            PrintMessage("[COBOL_String] Add OK. New count: ")
+            PrintNumber(new_count)
+            PrintMessage("\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL_StringArray.Join {
+    Input: array: Integer
+    Input: separator: String
+    Output: String
+    Body: {
+        Debug("string.array.join", level=2) {
+            PrintMessage("[COBOL_String] Join called for StringArray: ")
+            PrintNumber(array)
+            PrintMessage("\n")
+        }
+        IfCondition EqualTo(array, 0) ThenBlock: {
+            ReturnValue("")
+        }
+        
+        parts_ptr = Dereference(array)
+        count = Dereference(Add(array, 8))
+        
+        IfCondition LessEqual(count, 0) ThenBlock: {
+            ReturnValue("")
+        }
+        
+        sep_length = 0
+        IfCondition NotEqual(separator, 0) ThenBlock: {
+            sep_length = StringLength(separator)
+        }
+        
+        total_length = 0
+        
+        // Calculate total length - SKIP NULL PARTS
+        i = 0
+        WhileLoop LessThan(i, count) {
+            part_offset = Multiply(i, 8)
+            part_ptr = Dereference(Add(parts_ptr, part_offset))
+            
+            // FIX: Only add length if part is not NULL
+            IfCondition NotEqual(part_ptr, 0) ThenBlock: {
+                part_length = StringLength(part_ptr)
+                total_length = Add(total_length, part_length)
+            }
+            
+            IfCondition LessThan(i, Subtract(count, 1)) ThenBlock: {
+                total_length = Add(total_length, sep_length)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        result = Allocate(Add(total_length, 1))
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("[COBOL_String] ERROR: Failed to allocate join buffer\n")
+            ReturnValue("")
+        }
+        
+        write_pos = 0
+        i = 0
+        WhileLoop LessThan(i, count) {
+            part_offset = Multiply(i, 8)
+            part_ptr = Dereference(Add(parts_ptr, part_offset))
+            
+            // FIX: Only copy if part is not NULL
+            IfCondition NotEqual(part_ptr, 0) ThenBlock: {
+                part_length = StringLength(part_ptr)
+                
+                j = 0
+                WhileLoop LessThan(j, part_length) {
+                    char_code = GetByte(part_ptr, j)
+                    StoreValue(Add(result, write_pos), char_code)
+                    write_pos = Add(write_pos, 1)
+                    j = Add(j, 1)
+                }
+            }
+            
+            // Add separator (if not last item and separator not NULL)
+            IfCondition And(LessThan(i, Subtract(count, 1)), NotEqual(separator, 0)) ThenBlock: {
+                j = 0
+                WhileLoop LessThan(j, sep_length) {
+                    char_code = GetByte(separator, j)
+                    StoreValue(Add(result, write_pos), char_code)
+                    write_pos = Add(write_pos, 1)
+                    j = Add(j, 1)
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(result, write_pos), 0)
+        
+        ReturnValue(result)
+    }
+}
+
+Function.COBOL_StringArray.Destroy {
+    Input: array: Integer
+    Output: Integer
+    Body: {
+        Debug("string.array.destroy", level=2) {
+            PrintMessage("[COBOL_String] Destroy StringArray: ")
+            PrintNumber(array)
+            PrintMessage("\n")
+        }
+        IfCondition EqualTo(array, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        parts_ptr = Dereference(array)
+        capacity = Dereference(Add(array, 16))
+        parts_size = Multiply(capacity, 8)
+        
+        IfCondition NotEqual(parts_ptr, 0) ThenBlock: {
+            Deallocate(parts_ptr, parts_size)
+        }
+        
+        Deallocate(array, 24)
+        
+        ReturnValue(0)
+    }
+}
+
+// ============================================================================
+// CONVENIENCE FUNCTIONS
+// ============================================================================
+
+Function.COBOL_String.BuildJSON {
+    Input: field_names: Integer
+    Input: field_values: Integer
+    Input: num_fields: Integer
+    Output: String
+    Body: {
+        Debug("string.json.build", level=1) {
+            PrintMessage("[COBOL_String] BuildJSON called for num_fields: ")
+            PrintNumber(num_fields)
+            PrintMessage("\n")
+        }
+        builder = COBOL_StringBuilder.Create(4096)
+        
+        COBOL_StringBuilder.Append(builder, "{")
+        
+        i = 0
+        WhileLoop LessThan(i, num_fields) {
+            IfCondition GreaterThan(i, 0) ThenBlock: {
+                COBOL_StringBuilder.Append(builder, ",")
+            }
+            
+            name_offset = Multiply(i, 8)
+            value_offset = Multiply(i, 8)
+            field_name = Dereference(Add(field_names, name_offset))
+            field_value = Dereference(Add(field_values, value_offset))
+            
+            COBOL_StringBuilder.Append(builder, "\"")
+            COBOL_StringBuilder.Append(builder, field_name)
+            COBOL_StringBuilder.Append(builder, "\":")
+            COBOL_StringBuilder.Append(builder, field_value)
+            
+            i = Add(i, 1)
+        }
+        
+        COBOL_StringBuilder.Append(builder, "}")
+        
+        result = COBOL_StringBuilder.ToString(builder)
+        
+        Debug("string.json.build.ok", level=1) {
+            PrintMessage("[COBOL_String] BuildJSON complete. Result ptr: ")
+            PrintNumber(result)
+            PrintMessage("\n")
+        }
+        ReturnValue(result)
+    }
+}
+
+Function.COBOL_String.PrintInfo {
+    Output: Integer
+    Body: {
+        Debug("string.info", level=1) {
+            PrintMessage("[COBOL_String] PrintInfo called.\n")
+        }
+        PrintMessage("COBOL String Library v1.0\n")
+        PrintMessage("================================\n")
+        PrintMessage("Efficient string operations for COBOL transpilation\n")
+        PrintMessage("Features:\n")
+        PrintMessage("  - StringBuilder: Incremental string building\n")
+        PrintMessage("  - StringArray: Batch joining with separators\n")
+        PrintMessage("  - Persistent memory: Safe for API responses\n")
+        PrintMessage("  - JSON helpers: Common COBOL response patterns\n")
+        ReturnValue(0)
+    }
+}

@@ -1,0 +1,862 @@
+// Library.COBOL_DB.ailang
+// COBOL Database Access Layer - PostgreSQL Backend
+// Provides COBOL-style file I/O mapped to database operations
+
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+
+// =============================================================================
+// CURSOR STATE MANAGEMENT
+// =============================================================================
+
+FixedPool.DBCursorState {
+    "conn": Initialize=0
+    "table_name": Initialize=0
+    "organization": Initialize=0
+    "key_field": Initialize=0
+    "result_set": Initialize=0
+    "current_row": Initialize=0
+    "total_rows": Initialize=0
+    "is_open": Initialize=0
+    "mode": Initialize=0
+    "current_key": Initialize=0
+}
+
+FixedPool.CursorPoolState {
+    "cursors": Initialize=0
+    "next_id": Initialize=1
+    "initialized": Initialize=0
+}
+
+// =============================================================================
+// RECORD LAYOUT MANAGEMENT
+// =============================================================================
+
+FixedPool.RecordLayoutRegistry {
+    "layouts": Initialize=0
+    "layout_count": Initialize=0
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS - Use XArray/HashMap from PostgreSQL library
+// =============================================================================
+
+Function.COBOL.DB.GetRowCount {
+    Input: result: Address
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Result is an XArray of HashMaps
+        count = XArray.XSize(result)
+        ReturnValue(count)
+    }
+}
+
+Function.COBOL.DB.GetValue {
+    Input: result: Address
+    Input: row: Integer
+    Input: col_name: Address
+    Output: Address
+    Body: {
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        row_count = XArray.XSize(result)
+        IfCondition GreaterEqual(row, row_count) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        row_map = XArray.XGet(result, row)
+        IfCondition EqualTo(row_map, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        value = HashMap.HGetSimple(row_map, col_name)
+        ReturnValue(value)
+    }
+}
+
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
+
+Function.COBOL.DB.Init {
+    Body: {
+        Debug("cobol.db.init", level=2) {
+            PrintMessage("[COBOL.DB] Initializing database layer\n")
+        }
+        
+        // Initialize cursor pool
+        CursorPoolState.cursors = ArrayCreate(100)
+        CursorPoolState.next_id = 1
+        CursorPoolState.initialized = 1
+        
+        // Initialize layout registry
+        RecordLayoutRegistry.layouts = ArrayCreate(100)
+        RecordLayoutRegistry.layout_count = 0
+        
+        Debug("cobol.db.init", level=2) {
+            PrintMessage("[COBOL.DB] Initialization complete\n")
+        }
+    }
+}
+
+// =============================================================================
+// RECORD LAYOUT DEFINITION
+// =============================================================================
+
+Function.COBOL.DB.DefineRecordLayout {
+    Input: record_name: Address
+    Input: field_count: Integer
+    Output: Address  // Layout handle (array of field descriptors)
+    Body: {
+        Debug("cobol.db.layout", level=3) {
+            PrintMessage("[COBOL.DB] Defining record layout: ")
+            PrintString(record_name)
+            PrintMessage(" with ")
+            PrintNumber(field_count)
+            PrintMessage(" fields\n")
+        }
+        
+        // Create layout array: [field_count, col_names_array, field_descriptors_array]
+        layout = ArrayCreate(3)
+        ArraySet(layout, 0, field_count)
+        
+        // Column names array
+        col_names = ArrayCreate(field_count)
+        ArraySet(layout, 1, col_names)
+        
+        // Field descriptors array
+        field_descs = ArrayCreate(field_count)
+        ArraySet(layout, 2, field_descs)
+        
+        // Store in registry
+        layout_id = RecordLayoutRegistry.layout_count
+        ArraySet(RecordLayoutRegistry.layouts, layout_id, layout)
+        RecordLayoutRegistry.layout_count = Add(RecordLayoutRegistry.layout_count, 1)
+        
+        Debug("cobol.db.layout", level=3) {
+            PrintMessage("[COBOL.DB] Layout created with ID: ")
+            PrintNumber(layout_id)
+            PrintMessage("\n")
+        }
+        
+        ReturnValue(layout)
+    }
+}
+
+Function.COBOL.DB.AddField {
+    Input: layout: Address
+    Input: field_index: Integer
+    Input: col_name: Address        // PostgreSQL column name
+    Input: offset: Integer
+    Input: size: Integer
+    Input: field_type: Integer  // 1=integer, 2=string, 3=decimal
+    Body: {
+        Debug("cobol.db.layout", level=4) {
+            PrintMessage("[COBOL.DB]   Field ")
+            PrintNumber(field_index)
+            PrintMessage(": ")
+            PrintString(col_name)
+            PrintMessage(" offset=")
+            PrintNumber(offset)
+            PrintMessage(" size=")
+            PrintNumber(size)
+            PrintMessage(" type=")
+            PrintNumber(field_type)
+            PrintMessage("\n")
+        }
+        
+        // Get arrays from layout
+        col_names = ArrayGet(layout, 1)
+        field_descs = ArrayGet(layout, 2)
+        
+        // Store column name
+        ArraySet(col_names, field_index, col_name)
+        
+        // Create field descriptor: [offset, size, type]
+        field_descriptor = ArrayCreate(3)
+        ArraySet(field_descriptor, 0, offset)
+        ArraySet(field_descriptor, 1, size)
+        ArraySet(field_descriptor, 2, field_type)
+        
+        // Add to layout
+        ArraySet(field_descs, field_index, field_descriptor)
+    }
+}
+
+Function.COBOL.DB.GetRecordSize {
+    Input: layout: Address
+    Output: Integer
+    Body: {
+        field_count = ArrayGet(layout, 0)
+        field_descs = ArrayGet(layout, 2)
+        total_size = 0
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            field_desc = ArrayGet(field_descs, i)
+            offset = ArrayGet(field_desc, 0)
+            size = ArrayGet(field_desc, 1)
+            
+            // Total size is offset + size of last field
+            end_pos = Add(offset, size)
+            IfCondition GreaterThan(end_pos, total_size) ThenBlock: {
+                total_size = end_pos
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(total_size)
+    }
+}
+
+// =============================================================================
+// PACK/UNPACK FUNCTIONS
+// =============================================================================
+
+Function.COBOL.DB.PackRecord {
+    Input: layout: Address
+    Input: values: Address      // Array of values to pack
+    Output: Address             // Memory block pointer
+    Body: {
+        Debug("cobol.db.pack", level=4) {
+            PrintMessage("[COBOL.DB] Packing record\n")
+        }
+        
+        // Calculate total size
+        total_size = COBOL.DB.GetRecordSize(layout)
+        
+        // Allocate memory block
+        record_ptr = Allocate(total_size)
+        
+        // Zero out memory
+        i = 0
+        WhileLoop LessThan(i, total_size) {
+            StoreValue(Add(record_ptr, i), 0)
+            i = Add(i, 1)
+        }
+                
+        // Pack each field
+        field_count = ArrayGet(layout, 0)
+        field_descs = ArrayGet(layout, 2)
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            field_desc = ArrayGet(field_descs, i)
+            offset = ArrayGet(field_desc, 0)
+            size = ArrayGet(field_desc, 1)
+            field_type = ArrayGet(field_desc, 2)
+            value = ArrayGet(values, i)
+            
+            IfCondition EqualTo(field_type, 1) ThenBlock: {
+                // Integer/Decimal - 8 bytes
+                StoreValue(Add(record_ptr, offset), value)
+            } ElseBlock: {
+                IfCondition EqualTo(field_type, 2) ThenBlock: {
+                    // String - copy bytes
+                    str_len = StringLength(value)
+                    copy_len = size
+                    
+                    IfCondition GreaterThan(str_len, size) ThenBlock: {
+                        copy_len = size
+                    } ElseBlock: {
+                        copy_len = str_len
+                    }
+                    
+                   j = 0
+                    WhileLoop LessThan(j, copy_len) {
+                        byte_val = Dereference(Add(value, j), "byte")
+                        StoreValue(Add(Add(record_ptr, offset), j), byte_val)
+                        j = Add(j, 1)
+                    }
+                                        
+                    // Pad with spaces
+                    WhileLoop LessThan(j, size) {
+                        StoreValue(Add(Add(record_ptr, offset), j), 32)
+                        j = Add(j, 1)
+                    }
+                } ElseBlock: {
+                    // Decimal - treat as integer
+                    StoreValue(Add(record_ptr, offset), value)
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(record_ptr)
+    }
+}
+
+Function.COBOL.DB.UnpackRecord {
+    Input: layout: Address
+    Input: record_ptr: Address
+    Output: Address             // Array of unpacked values
+    Body: {
+        Debug("cobol.db.unpack", level=4) {
+            PrintMessage("[COBOL.DB] Unpacking record\n")
+        }
+        
+        field_count = ArrayGet(layout, 0)
+        field_descs = ArrayGet(layout, 2)
+        values = ArrayCreate(field_count)
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            field_desc = ArrayGet(field_descs, i)
+            offset = ArrayGet(field_desc, 0)
+            size = ArrayGet(field_desc, 1)
+            field_type = ArrayGet(field_desc, 2)
+            
+            IfCondition EqualTo(field_type, 1) ThenBlock: {
+                // Integer/Decimal
+                value = Dereference(Add(record_ptr, offset))
+            } ElseBlock: {
+                IfCondition EqualTo(field_type, 2) ThenBlock: {
+                    // String - allocate and copy
+                    value = Allocate(Add(size, 1))
+                    
+                    j = 0
+                    WhileLoop LessThan(j, size) {
+                        byte = Dereference(Add(Add(record_ptr, offset), j), "byte")
+                        StoreValue(Add(value, j), byte)
+                        j = Add(j, 1)
+                    }
+                    
+                    // Null terminate
+                    StoreValue(Add(value, size), 0)
+                } ElseBlock: {
+                    // Decimal - treat as integer
+                    value = Dereference(Add(record_ptr, offset))
+                }
+            }
+            
+            ArraySet(values, i, value)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(values)
+    }
+}
+
+// =============================================================================
+// SEQUENTIAL FILE ACCESS
+// =============================================================================
+
+Function.COBOL.DB.OpenSequential {
+    Input: conn: Address
+    Input: table_name: Address
+    Input: mode: Address        // "INPUT", "OUTPUT", "I-O", "EXTEND"
+    Output: Integer             // cursor_id (0 = error)
+    Body: {
+        Debug("cobol.db.open", level=2) {
+            PrintMessage("[COBOL.DB] Opening SEQUENTIAL file: ")
+            PrintString(table_name)
+            PrintMessage(" mode=")
+            PrintString(mode)
+            PrintMessage("\n")
+        }
+        
+        // Check initialization
+        IfCondition EqualTo(CursorPoolState.initialized, 0) ThenBlock: {
+            COBOL.DB.Init()
+        }
+        
+        cursor_id = CursorPoolState.next_id
+        
+        // Create cursor metadata array
+        cursor_data = ArrayCreate(10)
+        ArraySet(cursor_data, 0, conn)
+        ArraySet(cursor_data, 1, table_name)
+        ArraySet(cursor_data, 2, 1)  // SEQUENTIAL
+        ArraySet(cursor_data, 3, 0)  // key_field (none for sequential)
+        ArraySet(cursor_data, 4, 0)  // result_set (will be filled)
+        ArraySet(cursor_data, 5, 0)  // current_row
+        ArraySet(cursor_data, 6, 0)  // total_rows
+        ArraySet(cursor_data, 7, 1)  // is_open
+        ArraySet(cursor_data, 8, 0)  // mode (will be filled)
+        ArraySet(cursor_data, 9, 0)  // current_key
+        
+        // Parse mode string
+        mode_byte = GetByte(mode, 0)
+        
+        IfCondition EqualTo(mode_byte, 73) ThenBlock: {
+            // 'I' - INPUT or I-O
+            next_byte = GetByte(mode, 1)
+            IfCondition EqualTo(next_byte, 78) ThenBlock: {
+                // 'N' - INPUT
+                ArraySet(cursor_data, 8, 1)
+                
+                // Execute: SELECT * FROM table
+                query = StringConcat("SELECT * FROM ", table_name)
+                
+                result = PG_Query(conn, query)
+                Deallocate(query, 0)
+                
+                IfCondition EqualTo(result, 0) ThenBlock: {
+                    Debug("cobol.db.open", level=1) {
+                        PrintMessage("[COBOL.DB]   ERROR: Query failed\n")
+                    }
+                    ReturnValue(0)  // Error
+                }
+                
+                total_rows = COBOL.DB.GetRowCount(result)
+                
+                ArraySet(cursor_data, 4, result)
+                ArraySet(cursor_data, 6, total_rows)
+                
+                Debug("cobol.db.open", level=3) {
+                    PrintMessage("[COBOL.DB]   Rows found: ")
+                    PrintNumber(total_rows)
+                    PrintMessage("\n")
+                }
+            } ElseBlock: {
+                // 'I-O' mode
+                ArraySet(cursor_data, 8, 3)
+                
+                query = StringConcat("SELECT * FROM ", table_name)
+                result = PG_Query(conn, query)
+                Deallocate(query, 0)
+                
+                IfCondition NotEqual(result, 0) ThenBlock: {
+                    total_rows = COBOL.DB.GetRowCount(result)
+                    ArraySet(cursor_data, 4, result)
+                    ArraySet(cursor_data, 6, total_rows)
+                }
+            }
+        } ElseBlock: {
+            IfCondition EqualTo(mode_byte, 79) ThenBlock: {
+                // 'O' - OUTPUT
+                ArraySet(cursor_data, 8, 2)
+                ArraySet(cursor_data, 4, 0)
+                ArraySet(cursor_data, 6, 0)
+            }
+        }
+        
+        // Store cursor
+        ArraySet(CursorPoolState.cursors, cursor_id, cursor_data)
+        CursorPoolState.next_id = Add(CursorPoolState.next_id, 1)
+        
+        ReturnValue(cursor_id)
+    }
+}
+
+Function.COBOL.DB.ReadNext {
+    Input: cursor_id: Integer
+    Input: layout: Address      // Record layout
+    Output: Address             // Memory block with record data (0 = EOF/error)
+    Body: {
+        cursor_data = ArrayGet(CursorPoolState.cursors, cursor_id)
+        
+        is_open = ArrayGet(cursor_data, 7)
+        IfCondition EqualTo(is_open, 0) ThenBlock: {
+            ReturnValue(0)  // Error
+        }
+        
+        current_row = ArrayGet(cursor_data, 5)
+        total_rows = ArrayGet(cursor_data, 6)
+        
+        // Check EOF
+        IfCondition GreaterEqual(current_row, total_rows) ThenBlock: {
+            ReturnValue(0)  // EOF
+        }
+        
+        result = ArrayGet(cursor_data, 4)
+        
+        // Get column names from layout
+        field_count = ArrayGet(layout, 0)
+        col_names = ArrayGet(layout, 1)
+        field_descs = ArrayGet(layout, 2)
+        
+        // Get values from PostgreSQL result
+        values = ArrayCreate(field_count)
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            col_name = ArrayGet(col_names, i)
+            value_str = COBOL.DB.GetValue(result, current_row, col_name)
+            
+            // Convert based on field type from layout
+            field_desc = ArrayGet(field_descs, i)
+            field_type = ArrayGet(field_desc, 2)
+            
+            IfCondition EqualTo(field_type, 1) ThenBlock: {
+                // Numeric
+                value = StringToNumber(value_str)
+            } ElseBlock: {
+                IfCondition EqualTo(field_type, 3) ThenBlock: {
+                    // Decimal
+                    value = StringToNumber(value_str)
+                } ElseBlock: {
+                    // String
+                    value = value_str
+                }
+            }
+            
+            ArraySet(values, i, value)
+            i = Add(i, 1)
+        }
+        
+        // Pack values into memory block
+        record_ptr = COBOL.DB.PackRecord(layout, values)
+        
+        // Update cursor position
+        ArraySet(cursor_data, 5, Add(current_row, 1))
+        
+        ReturnValue(record_ptr)
+    }
+}
+
+Function.COBOL.DB.WriteRecord {
+    Input: cursor_id: Integer
+    Input: layout: Address
+    Input: record_ptr: Address
+    Output: Integer
+    Body: {
+        cursor_data = ArrayGet(CursorPoolState.cursors, cursor_id)
+        conn = ArrayGet(cursor_data, 0)
+        table_name = ArrayGet(cursor_data, 1)
+        
+        // Unpack memory block
+        values = COBOL.DB.UnpackRecord(layout, record_ptr)
+        
+        // Build INSERT
+        query = StringConcat("INSERT INTO ", table_name)
+        query = StringConcat(query, " VALUES (")
+        
+        field_count = ArrayGet(layout, 0)
+        field_descs = ArrayGet(layout, 2)
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            IfCondition GreaterThan(i, 0) ThenBlock: {
+                query = StringConcat(query, ", ")
+            }
+            
+            value = ArrayGet(values, i)
+            field_desc = ArrayGet(field_descs, i)
+            field_type = ArrayGet(field_desc, 2)
+            
+            IfCondition EqualTo(field_type, 1) ThenBlock: {
+                query = StringConcat(query, NumberToString(value))
+            } ElseBlock: {
+                IfCondition EqualTo(field_type, 3) ThenBlock: {
+                    query = StringConcat(query, NumberToString(value))
+                } ElseBlock: {
+                    query = StringConcat(query, "'")
+                    query = StringConcat(query, value)
+                    query = StringConcat(query, "'")
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        query = StringConcat(query, ")")
+        
+        result = PG_Query(conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL.DB.Close {
+    Input: cursor_id: Integer
+    Output: Integer
+    Body: {
+        cursor_data = ArrayGet(CursorPoolState.cursors, cursor_id)
+        
+        result = ArrayGet(cursor_data, 4)
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        ArraySet(cursor_data, 7, 0)  // is_open = 0
+        ArraySet(cursor_data, 4, 0)  // result_set = 0
+        
+        ReturnValue(1)
+    }
+}
+
+// =============================================================================
+// INDEXED FILE ACCESS
+// =============================================================================
+
+Function.COBOL.DB.OpenIndexed {
+    Input: conn: Address
+    Input: table_name: Address
+    Input: key_field: Address
+    Input: mode: Address
+    Output: Integer
+    Body: {
+        Debug("cobol.db.open", level=2) {
+            PrintMessage("[COBOL.DB] Opening INDEXED file: ")
+            PrintString(table_name)
+            PrintMessage(" key=")
+            PrintString(key_field)
+            PrintMessage("\n")
+        }
+        
+        // Check initialization
+        IfCondition EqualTo(CursorPoolState.initialized, 0) ThenBlock: {
+            COBOL.DB.Init()
+        }
+        
+        cursor_id = CursorPoolState.next_id
+        
+        // Create cursor metadata
+        cursor_data = ArrayCreate(10)
+        ArraySet(cursor_data, 0, conn)
+        ArraySet(cursor_data, 1, table_name)
+        ArraySet(cursor_data, 2, 2)  // INDEXED
+        ArraySet(cursor_data, 3, key_field)
+        ArraySet(cursor_data, 4, 0)  // result_set
+        ArraySet(cursor_data, 5, 0)  // current_row
+        ArraySet(cursor_data, 6, 0)  // total_rows
+        ArraySet(cursor_data, 7, 1)  // is_open
+        ArraySet(cursor_data, 9, 0)  // current_key
+        
+        // Parse mode
+        mode_byte = GetByte(mode, 0)
+        IfCondition EqualTo(mode_byte, 73) ThenBlock: {
+            // INPUT or I-O
+            next_byte = GetByte(mode, 1)
+            IfCondition EqualTo(next_byte, 78) ThenBlock: {
+                ArraySet(cursor_data, 8, 1)  // INPUT
+            } ElseBlock: {
+                ArraySet(cursor_data, 8, 3)  // I-O
+            }
+        }
+        
+        ArraySet(CursorPoolState.cursors, cursor_id, cursor_data)
+        CursorPoolState.next_id = Add(CursorPoolState.next_id, 1)
+        
+        ReturnValue(cursor_id)
+    }
+}
+
+Function.COBOL.DB.ReadByKey {
+    Input: cursor_id: Integer
+    Input: key_value: Integer
+    Input: layout: Address
+    Output: Address             // Memory block (0 = not found)
+    Body: {
+        cursor_data = ArrayGet(CursorPoolState.cursors, cursor_id)
+        conn = ArrayGet(cursor_data, 0)
+        table_name = ArrayGet(cursor_data, 1)
+        key_field = ArrayGet(cursor_data, 3)
+        
+        // Build: SELECT * FROM table WHERE key_field = key_value
+        query = StringConcat("SELECT * FROM ", table_name)
+        query = StringConcat(query, " WHERE ")
+        query = StringConcat(query, key_field)
+        query = StringConcat(query, " = ")
+        query = StringConcat(query, NumberToString(key_value))
+        
+        result = PG_Query(conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue(0)  // Error
+        }
+        
+        row_count = COBOL.DB.GetRowCount(result)
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(0)  // Not found
+        }
+        
+        // Map first row to values array
+        field_count = ArrayGet(layout, 0)
+        col_names = ArrayGet(layout, 1)
+        field_descs = ArrayGet(layout, 2)
+        values = ArrayCreate(field_count)
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            col_name = ArrayGet(col_names, i)
+            value_str = COBOL.DB.GetValue(result, 0, col_name)
+            
+            field_desc = ArrayGet(field_descs, i)
+            field_type = ArrayGet(field_desc, 2)
+            
+            IfCondition EqualTo(field_type, 1) ThenBlock: {
+                value = StringToNumber(value_str)
+            } ElseBlock: {
+                IfCondition EqualTo(field_type, 3) ThenBlock: {
+                    value = StringToNumber(value_str)
+                } ElseBlock: {
+                    value = value_str
+                }
+            }
+            
+            ArraySet(values, i, value)
+            i = Add(i, 1)
+        }
+        
+        PG_DestroyResult(result)
+        
+        // Store current key for UPDATE/DELETE
+        ArraySet(cursor_data, 9, key_value)
+        
+        // Pack record
+        record_ptr = COBOL.DB.PackRecord(layout, values)
+        
+        ReturnValue(record_ptr)
+    }
+}
+
+Function.COBOL.DB.UpdateRecord {
+    Input: cursor_id: Integer
+    Input: layout: Address
+    Input: record_ptr: Address
+    Output: Integer             // 0=error, 1=success
+    Body: {
+        cursor_data = ArrayGet(CursorPoolState.cursors, cursor_id)
+        conn = ArrayGet(cursor_data, 0)
+        table_name = ArrayGet(cursor_data, 1)
+        key_field = ArrayGet(cursor_data, 3)
+        key_value = ArrayGet(cursor_data, 9)
+        
+        // Unpack record
+        values = COBOL.DB.UnpackRecord(layout, record_ptr)
+        
+        // Build: UPDATE table SET field1=val1, ... WHERE key_field = key_value
+        query = StringConcat("UPDATE ", table_name)
+        query = StringConcat(query, " SET ")
+        
+        field_count = ArrayGet(layout, 0)
+        col_names = ArrayGet(layout, 1)
+        field_descs = ArrayGet(layout, 2)
+        
+        i = 0
+        WhileLoop LessThan(i, field_count) {
+            IfCondition GreaterThan(i, 0) ThenBlock: {
+                query = StringConcat(query, ", ")
+            }
+            
+            col_name = ArrayGet(col_names, i)
+            query = StringConcat(query, col_name)
+            query = StringConcat(query, " = ")
+            
+            value = ArrayGet(values, i)
+            field_desc = ArrayGet(field_descs, i)
+            field_type = ArrayGet(field_desc, 2)
+            
+            IfCondition EqualTo(field_type, 1) ThenBlock: {
+                query = StringConcat(query, NumberToString(value))
+            } ElseBlock: {
+                IfCondition EqualTo(field_type, 3) ThenBlock: {
+                    query = StringConcat(query, NumberToString(value))
+                } ElseBlock: {
+                    query = StringConcat(query, "'")
+                    query = StringConcat(query, value)
+                    query = StringConcat(query, "'")
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        query = StringConcat(query, " WHERE ")
+        query = StringConcat(query, key_field)
+        query = StringConcat(query, " = ")
+        query = StringConcat(query, NumberToString(key_value))
+        
+        result = PG_Query(conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL.DB.DeleteRecord {
+    Input: cursor_id: Integer
+    Input: key_value: Integer
+    Output: Integer
+    Body: {
+        cursor_data = ArrayGet(CursorPoolState.cursors, cursor_id)
+        conn = ArrayGet(cursor_data, 0)
+        table_name = ArrayGet(cursor_data, 1)
+        key_field = ArrayGet(cursor_data, 3)
+        
+        // Build: DELETE FROM table WHERE key_field = key_value
+        query = StringConcat("DELETE FROM ", table_name)
+        query = StringConcat(query, " WHERE ")
+        query = StringConcat(query, key_field)
+        query = StringConcat(query, " = ")
+        query = StringConcat(query, NumberToString(key_value))
+        
+        result = PG_Query(conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+// =============================================================================
+// TRANSACTION SUPPORT
+// =============================================================================
+
+Function.COBOL.DB.BeginTransaction {
+    Input: conn: Address
+    Output: Integer
+    Body: {
+        result = PG_Query(conn, "BEGIN")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL.DB.Commit {
+    Input: conn: Address
+    Output: Integer
+    Body: {
+        result = PG_Query(conn, "COMMIT")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL.DB.Rollback {
+    Input: conn: Address
+    Output: Integer
+    Body: {
+        result = PG_Query(conn, "ROLLBACK")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        ReturnValue(0)
+    }
+}

@@ -1,0 +1,334 @@
+{
+  "main_file": "UnitTestCode/test_nested_calls.ailang",
+  "loaded_modules": [
+    "Cobol",
+    "JCL_Worker",
+    "XArrays",
+    "PostgreSQL_Complete",
+    "Socket",
+    "HashMap",
+    "StringUtils",
+    "JSON",
+    "SQL",
+    "FixedPointTrig"
+  ],
+  "conflicts": {
+    "LibraryImport.PostgreSQL_Complete": [
+      "Cobol",
+      "JCL_Worker",
+      "SQL"
+    ],
+    "XArray.XDestroy": [
+      "Cobol",
+      "XArrays",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "StringUtils",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "XArray.XSize": [
+      "Cobol",
+      "JCL_Worker",
+      "XArrays",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "JSON",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "Cobol.api_db_conn": [
+      "Cobol",
+      "JCL_Worker"
+    ],
+    "SQL.GetValue": [
+      "Cobol",
+      "SQL"
+    ],
+    "Cobol.api_response_data": [
+      "Cobol",
+      "JCL_Worker"
+    ],
+    "APIFileState.current_db_conn": [
+      "Cobol",
+      "JCL_Worker"
+    ],
+    "Cobol.api_job_id": [
+      "Cobol",
+      "JCL_Worker"
+    ],
+    "APIFileState.current_job_id": [
+      "Cobol",
+      "JCL_Worker"
+    ],
+    "LibraryImport.XArrays": [
+      "Cobol",
+      "JCL_Worker",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "JSON",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "HashMap.HGetSimple": [
+      "Cobol",
+      "JCL_Worker",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "SQL"
+    ],
+    "XArray.XCreate": [
+      "Cobol",
+      "XArrays",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "StringUtils",
+      "JSON",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "XArray.XGet": [
+      "Cobol",
+      "JCL_Worker",
+      "XArrays",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "JSON",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "SQL.RowCount": [
+      "Cobol",
+      "SQL"
+    ],
+    "Cobol.InitFileSystem": [
+      "Cobol",
+      "JCL_Worker"
+    ],
+    "XArray.XPush": [
+      "Cobol",
+      "XArrays",
+      "PostgreSQL_Complete",
+      "HashMap",
+      "StringUtils",
+      "JSON",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "XArrays.XNULL": [
+      "JCL_Worker",
+      "XArrays",
+      "HashMap",
+      "JSON"
+    ],
+    "XSHash.XLookup": [
+      "JCL_Worker",
+      "XArrays",
+      "HashMap",
+      "JSON"
+    ],
+    "v1.0": [
+      "XArrays",
+      "SQL",
+      "FixedPointTrig"
+    ],
+    "library.load": [
+      "XArrays",
+      "SQL"
+    ],
+    "XUtil.XQuickSort": [
+      "XArrays",
+      "FixedPointTrig"
+    ],
+    "Helpers.StringCopy": [
+      "XArrays",
+      "SQL"
+    ],
+    "XArray.XSet": [
+      "XArrays",
+      "SQL"
+    ],
+    "HashMap.HDestroy": [
+      "PostgreSQL_Complete",
+      "HashMap"
+    ],
+    "LibraryImport.StringUtils": [
+      "PostgreSQL_Complete",
+      "JSON",
+      "SQL"
+    ],
+    "HashMap.HSetSimple": [
+      "PostgreSQL_Complete",
+      "HashMap"
+    ],
+    "HashMap.CreateSimple": [
+      "PostgreSQL_Complete",
+      "HashMap"
+    ],
+    "LibraryImport.HashMap": [
+      "PostgreSQL_Complete",
+      "SQL"
+    ],
+    "XSHash.XKeys": [
+      "HashMap",
+      "JSON"
+    ],
+    "XSHash.XDestroy": [
+      "HashMap",
+      "JSON"
+    ],
+    "XSHash.XCreate": [
+      "HashMap",
+      "JSON"
+    ],
+    "XSHash.XInsert": [
+      "HashMap",
+      "JSON"
+    ]
+  },
+  "prefixes": {
+    "SQL": "NSOIQ1XG",
+    "FixedPointTrig": "NS5P1ZPY",
+    "PostgreSQL_Complete": "NSRPIEBB",
+    "JCL_Worker": "NSAIHLZK",
+    "HashMap": "NSS93R9N",
+    "StringUtils": "NSKETIFI",
+    "Cobol": "NSVR63AC",
+    "JSON": "NSCQI6HA",
+    "XArrays": "NSM4N88W"
+  },
+  "resolution_log": [
+    {
+      "file": "UnitTestCode/test_nested_calls.ailang",
+      "line": 1,
+      "import": "Cobol",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.Cobol.ailang",
+      "line": 8,
+      "import": "JCL_Worker",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.Cobol.ailang",
+      "line": 9,
+      "import": "PostgreSQL_Complete",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.Cobol.ailang",
+      "line": 10,
+      "import": "SQL",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.Cobol.ailang",
+      "line": 11,
+      "import": "FixedPointTrig",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.Cobol.ailang",
+      "line": 12,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.JCL_Worker.ailang",
+      "line": 4,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.JCL_Worker.ailang",
+      "line": 5,
+      "import": "PostgreSQL_Complete",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.JCL_Worker.ailang",
+      "line": 6,
+      "import": "Cobol",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.JCL_Worker.ailang",
+      "line": 7,
+      "import": "JSON",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.PostgreSQL_Complete.ailang",
+      "line": 5,
+      "import": "Socket",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.PostgreSQL_Complete.ailang",
+      "line": 6,
+      "import": "HashMap",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.PostgreSQL_Complete.ailang",
+      "line": 7,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.PostgreSQL_Complete.ailang",
+      "line": 8,
+      "import": "StringUtils",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.HashMap.ailang",
+      "line": 5,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.JSON.ailang",
+      "line": 4,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.JSON.ailang",
+      "line": 5,
+      "import": "StringUtils",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.SQL.ailang",
+      "line": 5,
+      "import": "PostgreSQL_Complete",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.SQL.ailang",
+      "line": 6,
+      "import": "XArrays",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.SQL.ailang",
+      "line": 7,
+      "import": "HashMap",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.SQL.ailang",
+      "line": 8,
+      "import": "StringUtils",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.FixedPointTrig.ailang",
+      "line": 7,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

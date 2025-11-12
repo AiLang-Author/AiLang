@@ -1,0 +1,143 @@
+// Library.JCL_IPC.ailang
+// Inter-process communication between HTTP gateway and daemon
+
+FixedPool.IPCConfig {
+    "socket_path": Initialize="/tmp/jcl_daemon.sock"
+    "max_message_size": Initialize=4096
+}
+
+Function.IPC.CreateServerSocket {
+    Input: socket_path: Address
+    Output: Integer
+    Body: {
+        Debug("ipc.server", level=1) { PrintMessage("[DEBUG] IPC.CreateServerSocket: Creating Unix socket\n") }
+        // AF_UNIX = 1, SOCK_STREAM = 1
+        sock_fd = SystemCall(41, 1, 1, 0)
+        
+        IfCondition LessThan(sock_fd, 0) ThenBlock: {
+            ReturnValue(-1)
+        }
+        
+        // Unlink old socket if exists
+        SystemCall(87, socket_path)
+        
+        // Bind to Unix socket
+        sockaddr = Allocate(110)
+        SetByte(sockaddr, 0, 1)
+        SetByte(sockaddr, 1, 0)
+        
+        // Copy path
+        i = 0
+        path_len = StringLength(socket_path)
+        WhileLoop LessThan(i, path_len) {
+            SetByte(sockaddr, Add(i, 2), GetByte(socket_path, i))
+            i = Add(i, 1)
+        }
+        SetByte(sockaddr, Add(path_len, 2), 0)
+        
+        Debug("ipc.server", level=2) { PrintMessage("[DEBUG] IPC.CreateServerSocket: Binding socket\n") }
+        bind_result = SystemCall(49, sock_fd, sockaddr, 110)
+        Deallocate(sockaddr, 110)
+        
+        IfCondition LessThan(bind_result, 0) ThenBlock: {
+            SystemCall(3, sock_fd)
+            ReturnValue(-1)
+        }
+        
+        // Listen
+        Debug("ipc.server", level=2) { PrintMessage("[DEBUG] IPC.CreateServerSocket: Listening on socket\n") }
+        SystemCall(50, sock_fd, 10)
+        
+        ReturnValue(sock_fd)
+    }
+}
+
+Function.IPC.ConnectToServer {
+    Input: socket_path: Address
+    Output: Integer
+    Body: {
+        Debug("ipc.client", level=1) { PrintMessage("[DEBUG] IPC.ConnectToServer: Creating client socket\n") }
+        sock_fd = SystemCall(41, 1, 1, 0)
+        
+        IfCondition LessThan(sock_fd, 0) ThenBlock: {
+            ReturnValue(-1)
+        }
+        
+        // Connect to Unix socket
+        sockaddr = Allocate(110)
+        SetByte(sockaddr, 0, 1)
+        SetByte(sockaddr, 1, 0)
+        
+        i = 0
+        path_len = StringLength(socket_path)
+        WhileLoop LessThan(i, path_len) {
+            SetByte(sockaddr, Add(i, 2), GetByte(socket_path, i))
+            i = Add(i, 1)
+        }
+        SetByte(sockaddr, Add(path_len, 2), 0)
+        
+        // syscall 42: connect
+        Debug("ipc.client", level=2) { PrintMessage("[DEBUG] IPC.ConnectToServer: Connecting to server socket\n") }
+        connect_result = SystemCall(42, sock_fd, sockaddr, 110)
+        Deallocate(sockaddr, 110)
+        
+        IfCondition LessThan(connect_result, 0) ThenBlock: {
+            SystemCall(3, sock_fd)
+            ReturnValue(-1)
+        }
+        
+        ReturnValue(sock_fd)
+    }
+}
+
+Function.IPC.SendMessage {
+    Input: sock_fd: Integer
+    Input: msg_text: Address
+    Output: Integer
+    Body: {
+        Debug("ipc.comm", level=3) { PrintMessage("[DEBUG] IPC.SendMessage: Sending message\n") }
+        msg_len = StringLength(msg_text)
+        bytes_sent = SystemCall(1, sock_fd, msg_text, msg_len)
+        ReturnValue(bytes_sent)
+    }
+}
+
+Function.IPC.ReceiveMessage {
+    Input: sock_fd: Integer
+    Output: Address
+    Body: {
+        Debug("ipc.comm", level=3) { PrintMessage("[DEBUG] IPC.ReceiveMessage: Receiving message\n") }
+        buffer = Allocate(4096)
+        bytes_read = SystemCall(0, sock_fd, buffer, 4096)
+        
+        IfCondition LessEqual(bytes_read, 0) ThenBlock: {
+            Deallocate(buffer, 4096)
+            ReturnValue(0)
+        }
+        
+        // Null terminate
+        SetByte(buffer, bytes_read, 0)
+        ReturnValue(buffer)
+    }
+}
+
+// NEW: Receive large messages (for worker results up to 16KB)
+Function.IPC.ReceiveMessageLarge {
+    Input: sock_fd: Integer
+    Input: max_size: Integer
+    Output: Address
+    Body: {
+        Debug("ipc.comm", level=3) { PrintMessage("[DEBUG] IPC.ReceiveMessageLarge: Receiving large message\n") }
+        buffer = Allocate(max_size)
+        bytes_read = SystemCall(0, sock_fd, buffer, max_size)
+        
+        IfCondition LessEqual(bytes_read, 0) ThenBlock: {
+            Deallocate(buffer, max_size)
+            ReturnValue(0)
+        }
+        
+        // Null terminate
+        SetByte(buffer, bytes_read, 0)
+        ReturnValue(buffer)
+    }
+}

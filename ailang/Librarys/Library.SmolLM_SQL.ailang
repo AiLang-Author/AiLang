@@ -1,0 +1,224 @@
+// Library.SmolLM_SQL.ailang
+// Reusable SQL weight loader for SmolLM transformer
+
+LibraryImport.PostgreSQL_Complete
+//LibraryImport.XArrays
+//LibraryImport.HashMap
+
+// Database connection state
+FixedPool.SmolLM_DB {
+    "pg_conn": Initialize=0
+    "connected": Initialize=0
+    "queries": Initialize=0
+    "rows": Initialize=0
+}
+
+// ALL variables declared at top level
+token_id = 0
+smollm_token_id = 0
+smollm_query = ""
+smollm_result = 0
+smollm_row_count = 0
+smollm_i = 0
+smollm_row = 0
+smollm_dim_str = ""
+smollm_val_str = ""
+smollm_dim = 0
+smollm_val = 0
+smollm_host = ""
+smollm_port = 0
+smollm_user = ""
+smollm_pass = ""
+smollm_db = ""
+test_query = ""
+test_result = 0
+test_row_count = 0
+test_row = 0
+count_str = ""
+weight_count = 0
+token_str = ""
+
+SubRoutine.SmolLM_ConnectDB {
+    Debug("smollm.sql.trace", level=1) {
+        PrintMessage("[SmolLM_ConnectDB] ENTER\n")
+    }
+    PrintMessage("[SmolLM] Connecting...\n")
+    
+    smollm_host = "localhost"
+    smollm_port = 5432
+    smollm_user = "sean"
+    smollm_pass = ""
+    smollm_db = "smollm"
+    
+    Debug("smollm.sql.trace", level=2) {
+        PrintMessage("  [Connect] Host: localhost, DB: smollm\n")
+    }
+    
+    SmolLM_DB.pg_conn = PG_Connect(smollm_host, smollm_port, smollm_db, smollm_user, smollm_pass)
+    
+    IfCondition EqualTo(SmolLM_DB.pg_conn, 0) ThenBlock: {
+        PrintMessage("[SmolLM] ERROR\n")
+        Debug("smollm.sql.trace", level=1) {
+            PrintMessage("[SmolLM_ConnectDB] EXIT - Connection Failed\n")
+        }
+        SystemCall(60, 1, 0, 0)
+    }
+    
+    SmolLM_DB.connected = 1
+    PrintMessage("[SmolLM] Connected!\n")
+    Debug("smollm.sql.trace", level=1) {
+        PrintMessage("[SmolLM_ConnectDB] EXIT - Success\n")
+    }
+}
+
+SubRoutine.SmolLM_LoadEmbedding {
+    Debug("smollm.sql.trace", level=1) {
+        PrintMessage("[SmolLM_LoadEmbedding] ENTER\n")
+    }
+    IfCondition EqualTo(SmolLM_DB.connected, 0) ThenBlock: {
+        RunTask(SmolLM_ConnectDB)
+    }
+    
+    local_token_id = token_id
+    local_pg_conn = SmolLM_DB.pg_conn
+    
+    smollm_query = "SELECT dimension, value FROM embeddings WHERE token_id = "
+    token_str = IntToString(local_token_id)
+    smollm_query = StringConcat(smollm_query, token_str)
+    smollm_query = StringConcat(smollm_query, " AND dimension < 32 ORDER BY dimension")
+    
+    Debug("smollm.sql.trace", level=2) {
+        PrintMessage("  [Load] Executing query for token_id ")
+        PrintNumber(local_token_id)
+        PrintMessage(": '")
+        PrintMessage(smollm_query)
+        PrintMessage("'\n")
+    }
+    
+    result_ptr = PG_Query(local_pg_conn, smollm_query)
+    result_is_null = EqualTo(result_ptr, 0)
+    
+    IfCondition result_is_null ThenBlock: {
+        Debug("smollm.sql.trace", level=1) {
+            PrintMessage("  [Load] Initial query failed. Attempting reconnect.\n")
+        }
+        PrintMessage("[DEBUG] Query failed, reconnecting...\n")
+        
+        SmolLM_DB.connected = 0
+        RunTask(SmolLM_ConnectDB)
+        
+        // CRITICAL: Refresh the connection pointer!
+        local_pg_conn = SmolLM_DB.pg_conn
+        
+        Debug("smollm.sql.trace", level=2) {
+            PrintMessage("  [Load] Retrying query with new connection.\n")
+        }
+        PrintMessage("[DEBUG] Retrying query with new connection\n")
+        result_ptr = PG_Query(local_pg_conn, smollm_query)
+        result_is_null = EqualTo(result_ptr, 0)
+        
+        IfCondition result_is_null ThenBlock: {
+            Debug("smollm.sql.trace", level=1) {
+                PrintMessage("[SmolLM_LoadEmbedding] EXIT - Query failed after reconnect.\n")
+            }
+            PrintMessage("[ERROR] Query still failed after reconnect\n")
+            Return
+        }
+        
+        Debug("smollm.sql.trace", level=1) {
+            PrintMessage("  [Load] Query succeeded after reconnect.\n")
+        }
+        PrintMessage("[DEBUG] Query succeeded after reconnect\n")
+    }
+    
+    PrintMessage("[DEBUG] Processing ")
+    PrintNumber(XArray.XSize(result_ptr))
+    PrintMessage(" rows\n")
+    
+    row_count = XArray.XSize(result_ptr)
+    Debug("smollm.sql.trace", level=2) {
+        PrintMessage("  [Load] Processing ")
+        PrintNumber(row_count)
+        PrintMessage(" rows from result set.\n")
+    }
+    
+    SmolLM_DB.queries = Add(SmolLM_DB.queries, 1)
+    SmolLM_DB.rows = Add(SmolLM_DB.rows, row_count)
+    
+    i = 0
+    WhileLoop LessThan(i, row_count) {
+        row = XArray.XGet(result_ptr, i)
+        dim_str = HashMap.HGetSimple(row, "dimension")
+        val_str = HashMap.HGetSimple(row, "value")
+        dim = StringToInt(dim_str)
+        val = StringToInt(val_str)
+        
+        Debug("smollm.sql.trace", level=3) {
+            PrintMessage("    [Parse] Row ")
+            PrintNumber(i)
+            PrintMessage(": dim=")
+            PrintNumber(dim)
+            PrintMessage(", val=")
+            PrintNumber(val)
+            PrintMessage("\n")
+        }
+        
+        Branch dim {
+            Case 0:  { CurrentEmbedding.d0 = val }
+            Case 1:  { CurrentEmbedding.d1 = val }
+            Case 2:  { CurrentEmbedding.d2 = val }
+            Case 3:  { CurrentEmbedding.d3 = val }
+            Case 4:  { CurrentEmbedding.d4 = val }
+            Case 5:  { CurrentEmbedding.d5 = val }
+            Case 6:  { CurrentEmbedding.d6 = val }
+            Case 7:  { CurrentEmbedding.d7 = val }
+            Case 8:  { CurrentEmbedding.d8 = val }
+            Case 9:  { CurrentEmbedding.d9 = val }
+            Case 10: { CurrentEmbedding.d10 = val }
+            Case 11: { CurrentEmbedding.d11 = val }
+            Case 12: { CurrentEmbedding.d12 = val }
+            Case 13: { CurrentEmbedding.d13 = val }
+            Case 14: { CurrentEmbedding.d14 = val }
+            Case 15: { CurrentEmbedding.d15 = val }
+            Case 16: { CurrentEmbedding.d16 = val }
+            Case 17: { CurrentEmbedding.d17 = val }
+            Case 18: { CurrentEmbedding.d18 = val }
+            Case 19: { CurrentEmbedding.d19 = val }
+            Case 20: { CurrentEmbedding.d20 = val }
+            Case 21: { CurrentEmbedding.d21 = val }
+            Case 22: { CurrentEmbedding.d22 = val }
+            Case 23: { CurrentEmbedding.d23 = val }
+            Case 24: { CurrentEmbedding.d24 = val }
+            Case 25: { CurrentEmbedding.d25 = val }
+            Case 26: { CurrentEmbedding.d26 = val }
+            Case 27: { CurrentEmbedding.d27 = val }
+            Case 28: { CurrentEmbedding.d28 = val }
+            Case 29: { CurrentEmbedding.d29 = val }
+            Case 30: { CurrentEmbedding.d30 = val }
+            Case 31: { CurrentEmbedding.d31 = val }
+        }
+        
+        i = Add(i, 1)
+    }
+    
+    // CRITICAL: The result set must be destroyed after use.
+    // PG_DestroyResult(result_ptr)
+    
+    PrintMessage("[DEBUG] LoadEmbedding complete\n")
+    Debug("smollm.sql.trace", level=1) {
+        PrintMessage("[SmolLM_LoadEmbedding] EXIT\n")
+    }
+}
+
+SubRoutine.SmolLM_DisconnectDB {
+    Debug("smollm.sql.trace", level=1) {
+        PrintMessage("[SmolLM_DisconnectDB] ENTER\n")
+    }
+    IfCondition EqualTo(SmolLM_DB.connected, 1) ThenBlock: {
+        PG_Disconnect(SmolLM_DB.pg_conn)
+        SmolLM_DB.connected = 0
+    }
+    Debug("smollm.sql.trace", level=1) {
+        PrintMessage("[SmolLM_DisconnectDB] EXIT\n")
+    }
+}

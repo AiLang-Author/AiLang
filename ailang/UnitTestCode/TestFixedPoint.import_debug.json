@@ -1,0 +1,55 @@
+{
+  "main_file": "UnitTestCode/TestFixedPoint.ailang",
+  "loaded_modules": [
+    "FixedPointTrig",
+    "XArrays"
+  ],
+  "conflicts": {
+    "XArray.XDestroy": [
+      "FixedPointTrig",
+      "XArrays"
+    ],
+    "XUtil.XQuickSort": [
+      "FixedPointTrig",
+      "XArrays"
+    ],
+    "v1.0": [
+      "FixedPointTrig",
+      "XArrays"
+    ],
+    "XArray.XCreate": [
+      "FixedPointTrig",
+      "XArrays"
+    ],
+    "XArray.XSize": [
+      "FixedPointTrig",
+      "XArrays"
+    ],
+    "XArray.XPush": [
+      "FixedPointTrig",
+      "XArrays"
+    ],
+    "XArray.XGet": [
+      "FixedPointTrig",
+      "XArrays"
+    ]
+  },
+  "prefixes": {
+    "XArrays": "NSDH5MJC",
+    "FixedPointTrig": "NSHFYMVJ"
+  },
+  "resolution_log": [
+    {
+      "file": "UnitTestCode/TestFixedPoint.ailang",
+      "line": 4,
+      "import": "FixedPointTrig",
+      "type": "library"
+    },
+    {
+      "file": "Librarys/Library.FixedPointTrig.ailang",
+      "line": 7,
+      "import": "XArrays",
+      "type": "library"
+    }
+  ]
+}

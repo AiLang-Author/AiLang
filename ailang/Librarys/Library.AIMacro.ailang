@@ -1,0 +1,542 @@
+// Library.AIMacro.ailang
+// Core Python built-in implementations for AIMacro
+// FINAL VERSION - Uses correct AILang function names
+
+// Import required libraries
+LibraryImport.XArrays
+LibraryImport.FixedPointTrig
+
+// =============================================================================
+// CORE BUILT-IN FUNCTIONS
+// =============================================================================
+
+Function.AIMacro.Print {
+    Input: value: Address
+    Body: {
+        // Handle different types - simplified for now
+        // Just print the value directly
+        // This is the old, buggy way. Replaced by SmartPrint.
+        PrintMessage(value) 
+    }
+}
+
+Function.AIMacro.SmartPrint {
+    Input: value: Address
+    Body: {
+        // This is the adapter layer logic.
+        // AILang uses a simple heuristic: small numbers are treated as integers,
+        // large numbers are treated as pointers to strings.
+        // A value of 0x400000 is a common start for memory-mapped regions.
+        IfCondition LessThan(value, 1000000) ThenBlock: {
+            // It's likely a number.
+            PrintNumber(value)
+        } ElseBlock: {
+            // It's likely a string pointer.
+            PrintString(value)
+        }
+    }
+}
+
+// In Library.AIMacro.ailang, the Len function:
+Function.AIMacro.Len {
+    Input: container: Address
+    Output: Integer
+    Body: {
+        // For now, assume it's an array-like structure
+        // Use XArray.XSize for dynamic arrays
+        ReturnValue(XArray.XSize(container))
+    }
+}
+
+Function.AIMacro.Str {
+    Input: value: Address
+    Output: Address
+    Body: {
+        // Convert number to string
+        ReturnValue(NumberToString(value))
+    }
+}
+
+Function.AIMacro.Int {
+    Input: value: Address
+    Output: Integer
+    Body: {
+        // Convert string to number
+        ReturnValue(StringToNumber(value))
+    }
+}
+
+Function.AIMacro.Bool {
+    Input: value: Address
+    Output: Integer
+    Body: {
+        // Numbers: 0 is false, everything else true
+        ReturnValue(NotEqual(value, 0))
+    }
+}
+
+Function.AIMacro.Get {
+    Input: container: Address
+    Input: index: Integer
+    Output: Address
+    Body: {
+        // Use XArray's get function
+        ReturnValue(XArray.XGet(container, index))
+    }
+}
+
+Function.AIMacro.Set {
+    Input: container: Address
+    Input: index: Integer
+    Input: value: Address
+    Body: {
+        // Use XArray's set function
+        XArray.XSet(container, index, value)
+    }
+}
+
+Function.AIMacro.CreateListWithElements {
+    Input: e0: Address
+    Input: e1: Address
+    Input: e2: Address
+    Input: e3: Address
+    Input: e4: Address
+    Output: Address
+    Body: {
+        list = XArray.XCreate(5)
+        XArray.XPush(list, e0)
+        XArray.XPush(list, e1)
+        XArray.XPush(list, e2)
+        XArray.XPush(list, e3)
+        XArray.XPush(list, e4)
+        ReturnValue(list)
+    }
+}
+
+Function.AIMacro.CreateList5 {
+    Input: e0: Address
+    Input: e1: Address
+    Input: e2: Address
+    Input: e3: Address
+    Input: e4: Address
+    Output: Address
+    Body: {
+        list = XArray.XCreate(5)
+        XArray.XPush(list, e0)
+        XArray.XPush(list, e1)
+        XArray.XPush(list, e2)
+        XArray.XPush(list, e3)
+        XArray.XPush(list, e4)
+        ReturnValue(list)
+    }
+}
+
+// =============================================================================
+// MATHEMATICAL FUNCTIONS
+// =============================================================================
+
+Function.AIMacro.Abs {
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        // Implement abs manually since AbsoluteValue may not be available
+        IfCondition LessThan(value, 0) ThenBlock: {
+            ReturnValue(Subtract(0, value))
+        } ElseBlock: {
+            ReturnValue(value)
+        }
+    }
+}
+
+Function.AIMacro.Max {
+    Input: a: Integer
+    Input: b: Integer
+    Output: Integer
+    Body: {
+        IfCondition GreaterThan(a, b) ThenBlock: {
+            ReturnValue(a)
+        } ElseBlock: {
+            ReturnValue(b)
+        }
+    }
+}
+
+Function.AIMacro.Min {
+    Input: a: Integer
+    Input: b: Integer
+    Output: Integer
+    Body: {
+        IfCondition LessThan(a, b) ThenBlock: {
+            ReturnValue(a)
+        } ElseBlock: {
+            ReturnValue(b)
+        }
+    }
+}
+
+Function.AIMacro.Sum {
+    Input: iterable: Address
+    Output: Integer
+    Body: {
+        total = 0
+        len = XArray.XSize(iterable)
+        i = 0
+        
+        WhileLoop LessThan(i, len) {
+            item = XArray.XGet(iterable, i)
+            total = Add(total, item)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(total)
+    }
+}
+
+// =============================================================================
+// DATA STRUCTURE CONSTRUCTORS
+// =============================================================================
+
+Function.AIMacro.List {
+    Output: Address
+    Body: {
+        list = XArray.XCreate(16)
+        ReturnValue(list)
+    }
+}
+
+Function.AIMacro.Dict {
+    Output: Address
+    Body: {
+        dict = XHash.XCreate(16)
+        ReturnValue(dict)
+    }
+}
+
+Function.AIMacro.Tuple {
+    Input: elements: Address
+    Output: Address
+    Body: {
+        // Create immutable array-like structure
+        len = XArray.XSize(elements)
+        tuple = ArrayCreate(len)
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            item = XArray.XGet(elements, i)
+            ArraySet(tuple, i, item)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(tuple)
+    }
+}
+
+// =============================================================================
+// ITERATION FUNCTIONS
+// =============================================================================
+
+Function.AIMacro.Range {
+    Input: start: Integer
+    Input: stop: Integer
+    Input: step: Integer
+    Output: Address
+    Body: {
+        // Calculate size needed
+        IfCondition LessEqual(step, 0) ThenBlock: {
+            step = 1
+        }
+        
+        size = Divide(Subtract(stop, start), step)
+        IfCondition LessThan(size, 0) ThenBlock: {
+            size = 0
+        }
+        
+        result = XArray.XCreate(size)
+        current = start
+        
+        WhileLoop LessThan(current, stop) {
+            XArray.XPush(result, current)
+            current = Add(current, step)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.AIMacro.Enumerate {
+    Input: iterable: Address
+    Output: Address
+    Body: {
+        len = XArray.XSize(iterable)
+        result = XArray.XCreate(len)
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            item = XArray.XGet(iterable, i)
+            // Create tuple (index, item) as a simple array
+            pair = ArrayCreate(2)
+            ArraySet(pair, 0, i)
+            ArraySet(pair, 1, item)
+            XArray.XPush(result, pair)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+Function.AIMacro.Zip {
+    Input: list1: Address
+    Input: list2: Address
+    Output: Address
+    Body: {
+        len1 = XArray.XSize(list1)
+        len2 = XArray.XSize(list2)
+        min_len = AIMacro.Min(len1, len2)
+        
+        result = XArray.XCreate(min_len)
+        
+        i = 0
+        WhileLoop LessThan(i, min_len) {
+            item1 = XArray.XGet(list1, i)
+            item2 = XArray.XGet(list2, i)
+            // Create tuple (item1, item2)
+            pair = ArrayCreate(2)
+            ArraySet(pair, 0, item1)
+            ArraySet(pair, 1, item2)
+            XArray.XPush(result, pair)
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(result)
+    }
+}
+
+// =============================================================================
+// I/O FUNCTIONS
+// =============================================================================
+
+Function.AIMacro.Open {
+    Input: filename: Address
+    Input: mode: Address
+    Output: Address
+    Body: {
+        // Simple file operations - for now just return a placeholder
+        // This would need proper file handle implementation
+        ReturnValue(filename)
+    }
+}
+
+Function.AIMacro.Input {
+    Input: prompt: Address
+    Output: Address
+    Body: {
+        // Print prompt if provided
+        IfCondition NotEqual(prompt, 0) ThenBlock: {
+            PrintMessage(prompt)
+        }
+        
+        // Actually read from stdin
+        ReturnValue(ReadInput())
+    }
+}
+
+// =============================================================================
+// STRING METHODS (as functions)
+// =============================================================================
+
+Function.AIMacro.StrUpper {
+    Input: text: Address
+    Output: Address
+    Body: {
+        ReturnValue(StringToUpper(text))
+    }
+}
+
+Function.AIMacro.StrLower {
+    Input: text: Address
+    Output: Address
+    Body: {
+        ReturnValue(StringToLower(text))
+    }
+}
+
+Function.AIMacro.StrSplit {
+    Input: text: Address
+    Input: delimiter: Address
+    Output: Address
+    Body: {
+        // The built-in StringSplit primitive is buggy. This manual implementation is correct
+        // and serves as a reference for the eventual fix in the compiler's native code.
+        results = XArray.XCreate(8) // Start with a reasonable capacity
+        text_len = StringLength(text)
+        delim_len = StringLength(delimiter)
+
+        // Edge Case: Empty input string should result in a list with one empty string.
+        IfCondition EqualTo(text_len, 0) ThenBlock: {
+            XArray.XPush(results, "")
+            ReturnValue(results)
+        }
+
+        last_pos = 0
+        current_pos = 0
+
+        // Loop through the string to find all occurrences of the delimiter.
+        WhileLoop LessThan(current_pos, text_len) {
+            found_pos = StringIndexOf(text, delimiter, current_pos)
+
+            IfCondition EqualTo(found_pos, -1) ThenBlock: {
+                // No more delimiters, the rest of the string is the final segment.
+                // This also handles the case where there are no delimiters at all.
+                break
+            }
+
+            segment = StringSubstring(text, last_pos, found_pos)
+            XArray.XPush(results, segment)
+            last_pos = Add(found_pos, delim_len)
+            current_pos = last_pos
+        }
+
+        // Add the final segment after the last delimiter (or the whole string if no delimiter was found).
+        final_segment = StringSubstring(text, last_pos, text_len)
+        XArray.XPush(results, final_segment)
+
+        ReturnValue(results)
+    }
+}
+
+// =============================================================================
+// LIST METHODS (as functions)
+// =============================================================================
+
+Function.AIMacro.ListAppend {
+    Input: list: Address
+    Input: item: Address
+    Body: {
+        XArray.XPush(list, item)
+    }
+}
+
+Function.AIMacro.ListPop {
+    Input: list: Address
+    Output: Address
+    Body: {
+        len = XArray.XSize(list)
+        IfCondition GreaterThan(len, 0) ThenBlock: {
+            item = XArray.XGet(list, Subtract(len, 1))
+            XArray.XPop(list)
+            ReturnValue(item)
+        } ElseBlock: {
+            ReturnValue(0)
+        }
+    }
+}
+
+Function.AIMacro.ListInsert {
+    Input: list: Address
+    Input: index: Integer
+    Input: item: Address
+    Body: {
+        // For now, just append - insert at arbitrary position is more complex
+        XArray.XPush(list, item)
+    }
+}
+
+Function.AIMacro.ListRemove {
+    Input: list: Address
+    Input: item: Address
+    Body: {
+        // Find and remove first occurrence
+        size = XArray.XSize(list)
+        i = 0
+        found = 0
+        
+        WhileLoop And(LessThan(i, size), EqualTo(found, 0)) {
+            current = XArray.XGet(list, i)
+            IfCondition EqualTo(current, item) ThenBlock: {
+                found = 1
+                // Shift elements left (simplified removal)
+                j = i
+                WhileLoop LessThan(j, Subtract(size, 1)) {
+                    next_item = XArray.XGet(list, Add(j, 1))
+                    XArray.XSet(list, j, next_item)
+                    j = Add(j, 1)
+                }
+                XArray.XPop(list) // Remove last element
+            }
+            i = Add(i, 1)
+        }
+    }
+}
+
+// =============================================================================
+// MATH MODULE FUNCTIONS
+// =============================================================================
+
+Function.AIMacro.Math.Sqrt {
+    Input: value: Integer
+    Output: Integer
+    Body: {
+        // Use the integer square root from FixedPointTrig library
+        ReturnValue(Math.ISqrt(value))
+    }
+}
+
+Function.AIMacro.Math.Sin {
+    Input: angle: Integer
+    Output: Integer
+    Body: {
+        // Use fixed-point trig if available
+        ReturnValue(Trig.Sin(angle))
+    }
+}
+
+Function.AIMacro.Math.Cos {
+    Input: angle: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Trig.Cos(angle))
+    }
+}
+
+Function.AIMacro.Math.Pi {
+    Output: Integer
+    Body: {
+        ReturnValue(31416) // Fixed-point representation
+    }
+}
+
+// =============================================================================
+// SYSTEM FUNCTIONS
+// =============================================================================
+
+Function.AIMacro.Exit {
+    Input: code: Integer
+    Body: {
+        HaltProgram()
+    }
+}
+
+Function.AIMacro.GetCommandLineArgs {
+    Output: Address
+    Body: {
+        // Return command line arguments as array
+        // For now, return empty array
+        args = XArray.XCreate(1)
+        XArray.XPush(args, "program_name") // Placeholder
+        ReturnValue(args)
+    }
+}
+
+// =============================================================================
+// LIBRARY INITIALIZATION
+// =============================================================================
+
+SubRoutine.InitializeAIMacroLibrary {
+    // Any initialization needed for the library
+    // Called once when library is loaded
+    PrintMessage("AIMacro Core Library Loaded")
+}
+
+// Auto-run initialization
+RunTask(InitializeAIMacroLibrary)

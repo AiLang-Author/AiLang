@@ -1,0 +1,26 @@
+// Library.Pool.ailang - Pool reflection utilities
+
+// Get field value from a pool by name
+Function.Pool.GetField {
+    Input: pool_addr: Address
+    Input: field_name: Address
+    Output: Address
+    Body: {
+        // This is a runtime reflection function
+        // The implementation would depend on how pools are stored in memory
+        // For now, return 0 (needs runtime support)
+        ReturnValue(0)
+    }
+}
+
+// Set field value in a pool by name
+Function.Pool.SetField {
+    Input: pool_addr: Address
+    Input: field_name: Address
+    Input: value: Address
+    Body: {
+        // This is a runtime reflection function
+        // The implementation would depend on how pools are stored in memory
+        ReturnValue(0)
+    }
+}

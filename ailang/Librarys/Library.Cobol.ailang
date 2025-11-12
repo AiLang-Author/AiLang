@@ -1,0 +1,2819 @@
+//
+// Licensed under the Sean Collins Software License (SCSL). See the LICENSE file in the root directory of this project
+// for the full terms and conditions, including restrictions on forking, corporate use, and permissions for private/teaching purposes.
+
+// Library.Cobol.ailang - CIRCULAR MEMORY POOL VERSION with COMPREHENSIVE DEBUG
+// Implements round-robin slot allocation to prevent buffer overwrites
+
+LibraryImport.JCL_Worker
+LibraryImport.PostgreSQL_Complete
+LibraryImport.SQL
+LibraryImport.FixedPointTrig
+LibraryImport.XArrays
+
+// =============================================================================
+// COBOL LIBRARY STATE POOL - Integer workspace + slot tracking + result buffers
+// =============================================================================
+FixedPool.COBOLState {
+    "input_buffer": Initialize=0, CanChange=True
+    "sc_count": Initialize=0, CanChange=True
+    "sc_text_len": Initialize=0, CanChange=True
+    "sc_pattern_len": Initialize=0, CanChange=True
+    "sc_pos": Initialize=0, CanChange=True
+    "sc_should_continue": Initialize=1, CanChange=True
+    "sc_found_pos": Initialize=0, CanChange=True
+    "sra_iteration": Initialize=0, CanChange=True
+    "sra_max_iterations": Initialize=100, CanChange=True
+    "sra_pos": Initialize=0, CanChange=True
+    "current_result_slot": Initialize=0, CanChange=True
+}
+
+// Result buffer pool - stores formatted strings in FixedPool
+FixedPool.ResultBuffers {
+    "slot_0": Initialize="", CanChange=True
+    "slot_1": Initialize="", CanChange=True
+    "slot_2": Initialize="", CanChange=True
+    "slot_3": Initialize="", CanChange=True
+    "slot_4": Initialize="", CanChange=True
+    "slot_5": Initialize="", CanChange=True
+    "slot_6": Initialize="", CanChange=True
+    "slot_7": Initialize="", CanChange=True
+    "slot_8": Initialize="", CanChange=True
+    "slot_9": Initialize="", CanChange=True
+}
+
+FixedPool.Cobol {
+    "file_system_initialized": CanChange=True
+    "db_conn": CanChange=True
+    "api_request_data": CanChange=True
+    "api_response_data": CanChange=True
+    "api_job_id": CanChange=True
+    "api_db_conn": CanChange=True
+    "api_response_data": Initialize=0   
+    "api_response_ready": Initialize=0  
+}
+
+FixedPool.CobolFileState {
+    "db_conn": Initialize=0
+    "current_file": Initialize=0
+    "current_mode": Initialize=0
+    "file_buffer": Initialize=0
+    "line_number": Initialize=0
+}
+
+FixedPool.APIFileState {
+    "request_fd": Initialize=100   
+    "response_fd": Initialize=101  
+    "request_data": Initialize=0  
+    "response_buffer": Initialize=0
+    "current_job_id": Initialize=0
+    "current_db_conn": Initialize=0
+}
+
+
+//  Pool reflection utilities
+
+// Get field value from a pool by name
+Function.Pool.GetField {
+    Input: pool_addr: Address
+    Input: field_name: Address
+    Output: Address
+    Body: {
+        // This is a runtime reflection function
+        // The implementation would depend on how pools are stored in memory
+        // For now, return 0 (needs runtime support)
+        ReturnValue(0)
+    }
+}
+
+// Set field value in a pool by name
+Function.Pool.SetField {
+    Input: pool_addr: Address
+    Input: field_name: Address
+    Input: value: Address
+    Body: {
+        // This is a runtime reflection function
+        // The implementation would depend on how pools are stored in memory
+        ReturnValue(0)
+    }
+}
+
+
+
+// =============================================================================
+// RESULT BUFFER MANAGEMENT - Simple Round-Robin Global Buffers
+// =============================================================================
+
+Function.Cobol.AllocResultSlot {
+    Output: Integer
+    Body: {
+        Debug("AllocResultSlot.entry", level=1) {
+            PrintMessage(">>> ENTER: AllocResultSlot\n")
+        }
+        
+        slot = COBOLState.current_result_slot
+        Debug("AllocResultSlot.current", level=2) {
+            PrintMessage("  Current slot before allocation: ")
+            PrintNumber(slot)
+            PrintMessage("\n")
+        }
+        
+        COBOLState.current_result_slot = Modulo(Add(slot, 1), 10)
+        Debug("AllocResultSlot.advance", level=2) {
+            PrintMessage("  Advanced to next slot: ")
+            PrintNumber(COBOLState.current_result_slot)
+            PrintMessage("\n")
+        }
+        
+        Debug("AllocResultSlot.exit", level=1) {
+            PrintMessage("<<< EXIT: AllocResultSlot returning slot ")
+            PrintNumber(slot)
+            PrintMessage("\n")
+        }
+        ReturnValue(slot)
+    }
+}
+
+Function.Cobol.StoreResult {
+    Input: slot: Integer
+    Input: result: Address
+    Body: {
+        Debug("StoreResult.entry", level=1) {
+            PrintMessage(">>> ENTER: StoreResult\n")
+            PrintMessage("  slot=")
+            PrintNumber(slot)
+            PrintMessage(" result='")
+            PrintString(result)
+            PrintMessage("'\n")
+        }
+        
+        Branch slot {
+            Case 0: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_0\n")
+                }
+                ResultBuffers.slot_0 = result
+            }
+            Case 1: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_1\n")
+                }
+                ResultBuffers.slot_1 = result
+            }
+            Case 2: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_2\n")
+                }
+                ResultBuffers.slot_2 = result
+            }
+            Case 3: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_3\n")
+                }
+                ResultBuffers.slot_3 = result
+            }
+            Case 4: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_4\n")
+                }
+                ResultBuffers.slot_4 = result
+            }
+            Case 5: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_5\n")
+                }
+                ResultBuffers.slot_5 = result
+            }
+            Case 6: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_6\n")
+                }
+                ResultBuffers.slot_6 = result
+            }
+            Case 7: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_7\n")
+                }
+                ResultBuffers.slot_7 = result
+            }
+            Case 8: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_8\n")
+                }
+                ResultBuffers.slot_8 = result
+            }
+            Case 9: { 
+                Debug("StoreResult.branch", level=2) {
+                    PrintMessage("  Storing in ResultBuffers.slot_9\n")
+                }
+                ResultBuffers.slot_9 = result
+            }
+            Default: { 
+                Debug("StoreResult.error", level=0) {
+                    PrintMessage("[ERROR] Invalid slot number: ")
+                    PrintNumber(slot)
+                    PrintMessage("\n")
+                }
+            }
+        }
+        
+        Debug("StoreResult.exit", level=1) {
+            PrintMessage("<<< EXIT: StoreResult\n")
+        }
+    }
+}
+
+Function.Cobol.GetResult {
+    Input: slot: Integer
+    Output: Address
+    Body: {
+        Debug("GetResult.entry", level=1) {
+            PrintMessage(">>> ENTER: GetResult for slot ")
+            PrintNumber(slot)
+            PrintMessage("\n")
+        }
+        
+        result_addr = ""
+        
+        Branch slot {
+            Case 0: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_0\n")
+                }
+                result_addr = ResultBuffers.slot_0
+            }
+            Case 1: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_1\n")
+                }
+                result_addr = ResultBuffers.slot_1
+            }
+            Case 2: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_2\n")
+                }
+                result_addr = ResultBuffers.slot_2
+            }
+            Case 3: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_3\n")
+                }
+                result_addr = ResultBuffers.slot_3
+            }
+            Case 4: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_4\n")
+                }
+                result_addr = ResultBuffers.slot_4
+            }
+            Case 5: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_5\n")
+                }
+                result_addr = ResultBuffers.slot_5
+            }
+            Case 6: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_6\n")
+                }
+                result_addr = ResultBuffers.slot_6
+            }
+            Case 7: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_7\n")
+                }
+                result_addr = ResultBuffers.slot_7
+            }
+            Case 8: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_8\n")
+                }
+                result_addr = ResultBuffers.slot_8
+            }
+            Case 9: { 
+                Debug("GetResult.branch", level=2) {
+                    PrintMessage("  Retrieving from ResultBuffers.slot_9\n")
+                }
+                result_addr = ResultBuffers.slot_9
+            }
+            Default: { 
+                Debug("GetResult.error", level=0) {
+                    PrintMessage("[ERROR] Invalid slot number: ")
+                    PrintNumber(slot)
+                    PrintMessage("\n")
+                }
+                result_addr = ""
+            }
+        }
+        
+        Debug("GetResult.exit", level=1) {
+            PrintMessage("<<< EXIT: GetResult returning '")
+            PrintString(result_addr)
+            PrintMessage("'\n")
+        }
+        
+        ReturnValue(result_addr)
+    }
+}
+
+// =============================================================================
+// USER INPUT FUNCTIONS
+// =============================================================================
+
+Function.GetUserInput {
+    Output: Address
+    Body: {
+        Debug("GetUserInput.entry", level=1) {
+            PrintMessage(">>> ENTER: GetUserInput\n")
+        }
+        Debug("GetUserInput.call", level=2) {
+            PrintMessage("  Calling: ReadInput\n")
+        }
+        COBOLState.input_buffer = ReadInput()
+        Debug("GetUserInput.result", level=2) {
+            PrintMessage("  ReadInput returned buffer\n")
+        }
+        Debug("GetUserInput.exit", level=1) {
+            PrintMessage("<<< EXIT: GetUserInput\n")
+        }
+        ReturnValue(COBOLState.input_buffer)
+    }
+}
+
+// =============================================================================
+// COBOL STRING HELPER FUNCTIONS
+// =============================================================================
+
+Function.StringCount {
+    Input: text
+    Input: pattern
+    Output: Integer
+    Body: {
+        Debug("StringCount.entry", level=1) {
+            PrintMessage(">>> ENTER: StringCount\n")
+            PrintMessage(StringConcat("  text: '", StringConcat(text, "'\n")))
+            PrintMessage(StringConcat("  pattern: '", StringConcat(pattern, "'\n")))
+        }
+        
+        COBOLState.sc_count = 0
+        Debug("StringCount.init", level=2) {
+            PrintMessage("  Initialized sc_count = 0\n")
+        }
+        
+        Debug("StringCount.call", level=2) {
+            PrintMessage("  Calling: StringLength(text)\n")
+        }
+        COBOLState.sc_text_len = StringLength(text)
+        Debug("StringCount.result", level=2) {
+            PrintMessage(StringConcat("  text_len = ", StringConcat(NumberToString(COBOLState.sc_text_len), "\n")))
+        }
+        
+        Debug("StringCount.call", level=2) {
+            PrintMessage("  Calling: StringLength(pattern)\n")
+        }
+        COBOLState.sc_pattern_len = StringLength(pattern)
+        Debug("StringCount.result", level=2) {
+            PrintMessage(StringConcat("  pattern_len = ", StringConcat(NumberToString(COBOLState.sc_pattern_len), "\n")))
+        }
+        
+        COBOLState.sc_pos = 0
+        COBOLState.sc_should_continue = 1
+        
+        Debug("StringCount.loop", level=2) {
+            PrintMessage("  Starting search loop\n")
+        }
+        WhileLoop And(LessThan(COBOLState.sc_pos, COBOLState.sc_text_len), EqualTo(COBOLState.sc_should_continue, 1)) {
+            Debug("StringCount.iteration", level=3) {
+                PrintMessage(StringConcat("    Loop iteration at pos=", StringConcat(NumberToString(COBOLState.sc_pos), "\n")))
+            }
+            
+            Debug("StringCount.call", level=3) {
+                PrintMessage("    Calling: StringIndexOf\n")
+            }
+            COBOLState.sc_found_pos = StringIndexOf(text, pattern, COBOLState.sc_pos)
+            Debug("StringCount.result", level=3) {
+                PrintMessage(StringConcat("    found_pos = ", StringConcat(NumberToString(COBOLState.sc_found_pos), "\n")))
+            }
+            
+            IfCondition EqualTo(COBOLState.sc_found_pos, -1) ThenBlock: {
+                Debug("StringCount.branch", level=3) {
+                    PrintMessage("    Pattern not found, stopping search\n")
+                }
+                COBOLState.sc_should_continue = 0
+            } ElseBlock: {
+                Debug("StringCount.branch", level=3) {
+                    PrintMessage("    Pattern found, incrementing count\n")
+                }
+                COBOLState.sc_count = Add(COBOLState.sc_count, 1)
+                COBOLState.sc_pos = Add(COBOLState.sc_found_pos, COBOLState.sc_pattern_len)
+                Debug("StringCount.update", level=3) {
+                    PrintMessage(StringConcat("    count = ", StringConcat(NumberToString(COBOLState.sc_count), "\n")))
+                    PrintMessage(StringConcat("    new_pos = ", StringConcat(NumberToString(COBOLState.sc_pos), "\n")))
+                }
+            }
+        }
+        
+        Debug("StringCount.exit", level=1) {
+            PrintMessage(StringConcat("<<< EXIT: StringCount with count: ", StringConcat(NumberToString(COBOLState.sc_count), "\n")))
+        }
+        ReturnValue(COBOLState.sc_count)
+    }
+}
+
+Function.StringReplaceAll {
+    Input: haystack
+    Input: needle
+    Input: replacement
+    Output: Address
+    Body: {
+        Debug("StringReplaceAll.entry", level=1) {
+            PrintMessage(">>> ENTER: StringReplaceAll\n")
+            PrintMessage(StringConcat("  haystack: '", StringConcat(haystack, "'\n")))
+            PrintMessage(StringConcat("  needle: '", StringConcat(needle, "'\n")))
+            PrintMessage(StringConcat("  replacement: '", StringConcat(replacement, "'\n")))
+        }
+        
+        // STEP 1: Allocate slot from pool
+        Debug("StringReplaceAll.alloc", level=2) {
+            PrintMessage("  Allocating result slot\n")
+        }
+        slot = Cobol.AllocResultSlot()
+        
+        // STEP 2: Build result using local variable
+        local_result = haystack
+        COBOLState.sra_iteration = 0
+        
+        Debug("StringReplaceAll.loop", level=2) {
+            PrintMessage("  Starting replacement loop\n")
+        }
+        WhileLoop LessThan(COBOLState.sra_iteration, COBOLState.sra_max_iterations) {
+            Debug("StringReplaceAll.iteration", level=3) {
+                PrintMessage(StringConcat("    Iteration ", StringConcat(NumberToString(COBOLState.sra_iteration), "\n")))
+            }
+            
+            COBOLState.sra_pos = StringIndexOf(local_result, needle, 0)
+            Debug("StringReplaceAll.search", level=3) {
+                PrintMessage(StringConcat("    Search result pos=", StringConcat(NumberToString(COBOLState.sra_pos), "\n")))
+            }
+            
+            IfCondition LessThan(COBOLState.sra_pos, 0) ThenBlock: {
+                Debug("StringReplaceAll.complete", level=3) {
+                    PrintMessage("    No more replacements, exiting\n")
+                }
+                Cobol.StoreResult(slot, local_result)
+                ReturnValue(Cobol.GetResult(slot))
+            }
+            
+            Debug("StringReplaceAll.replace", level=3) {
+                PrintMessage("    Performing replacement\n")
+            }
+            local_result = StringReplace(local_result, needle, replacement)
+            COBOLState.sra_iteration = Add(COBOLState.sra_iteration, 1)
+        }
+        
+        Debug("StringReplaceAll.exit", level=1) {
+            PrintMessage(StringConcat("<<< EXIT: StringReplaceAll with result: '", StringConcat(local_result, "'\n")))
+        }
+        
+        // STEP 3: Store result in allocated slot
+        Cobol.StoreResult(slot, local_result)
+        
+        // STEP 4: Return address of slot
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+
+// =============================================================================
+// STRING ARRAY FUNCTIONS - For building JSON responses efficiently
+// =============================================================================
+
+Function.Cobol.StringArrayCreate {
+    Input: capacity: Integer
+    Output: Address
+    Body: {
+        Debug("StringArrayCreate.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.StringArrayCreate\n")
+            PrintMessage("  capacity: ")
+            PrintNumber(capacity)
+            PrintMessage("\n")
+        }
+        
+        array = XArray.XCreate(capacity)
+        
+        Debug("StringArrayCreate.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.StringArrayCreate\n")
+        }
+        
+        ReturnValue(array)
+    }
+}
+
+Function.Cobol.StringArrayAdd {
+    Input: array: Address
+    Input: element: Address
+    Output: Integer
+    Body: {
+        Debug("StringArrayAdd.entry", level=2) {
+            PrintMessage(">>> ENTER: Cobol.StringArrayAdd\n")
+            PrintMessage(StringConcat("  element: '", StringConcat(element, "'\n")))
+        }
+        
+        XArray.XPush(array, element)
+        
+        Debug("StringArrayAdd.exit", level=2) {
+            PrintMessage("<<< EXIT: Cobol.StringArrayAdd\n")
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+Function.Cobol.StringArrayCount {
+    Input: array: Address
+    Output: Integer
+    Body: {
+        Debug("StringArrayCount.entry", level=2) {
+            PrintMessage(">>> ENTER: Cobol.StringArrayCount\n")
+        }
+        
+        count = XArray.XSize(array)
+        
+        Debug("StringArrayCount.exit", level=2) {
+            PrintMessage("  count: ")
+            PrintNumber(count)
+            PrintMessage("\n")
+            PrintMessage("<<< EXIT: Cobol.StringArrayCount\n")
+        }
+        
+        ReturnValue(count)
+    }
+}
+
+Function.Cobol.StringArrayJoin {
+    Input: array: Address
+    Input: separator: Address
+    Output: Address
+    Body: {
+        Debug("StringArrayJoin.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.StringArrayJoin\n")
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        size = XArray.XSize(array)
+        
+        Debug("StringArrayJoin.size", level=2) {
+            PrintMessage("  Array size: ")
+            PrintNumber(size)
+            PrintMessage("\n")
+        }
+        
+        IfCondition EqualTo(size, 0) ThenBlock: {
+            Cobol.StoreResult(slot, "")
+            Debug("StringArrayJoin.empty", level=2) {
+                PrintMessage("  Empty array, returning empty string\n")
+            }
+            ReturnValue(Cobol.GetResult(slot))
+        }
+        
+        local_result = XArray.XGet(array, 0)
+        i = 1
+        
+        WhileLoop LessThan(i, size) {
+            local_result = StringConcat(local_result, separator)
+            element = XArray.XGet(array, i)
+            local_result = StringConcat(local_result, element)
+            i = Add(i, 1)
+        }
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("StringArrayJoin.exit", level=1) {
+            PrintMessage(StringConcat("  Result length: ", StringConcat(NumberToString(StringLength(local_result)), "\n")))
+            PrintMessage("<<< EXIT: Cobol.StringArrayJoin\n")
+        }
+        
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+// =============================================================================
+// COBOL-SPECIFIC STRING SPLIT (supports ALL flag)
+// =============================================================================
+
+Function.CStringSplit {
+    Input: haystack
+    Input: delimiter
+    Input: use_all
+    Output: Address
+    Body: {
+        Debug("CStringSplit.entry", level=1) {
+            PrintMessage(">>> ENTER: CStringSplit\n")
+            PrintMessage(StringConcat("  haystack: '", StringConcat(haystack, "'\n")))
+            PrintMessage(StringConcat("  delimiter: '", StringConcat(delimiter, "'\n")))
+            PrintMessage(StringConcat("  use_all: ", StringConcat(NumberToString(use_all), "\n")))
+        }
+        
+        processed_haystack = haystack
+        IfCondition EqualTo(use_all, 1) ThenBlock: {
+            Debug("CStringSplit.collapse", level=2) {
+                PrintMessage("  Collapsing consecutive delimiters\n")
+            }
+            
+            double_delim = StringConcat(delimiter, delimiter)
+            COBOLState.sra_iteration = 0
+            
+            WhileLoop LessThan(COBOLState.sra_iteration, 100) {
+                COBOLState.sra_pos = StringIndexOf(processed_haystack, double_delim, 0)
+                
+                IfCondition LessThan(COBOLState.sra_pos, 0) ThenBlock: {
+                    COBOLState.sra_iteration = 100
+                } ElseBlock: {
+                    processed_haystack = StringReplace(processed_haystack, double_delim, delimiter)
+                    COBOLState.sra_iteration = Add(COBOLState.sra_iteration, 1)
+                }
+            }
+        }
+        
+        Debug("CStringSplit.split", level=2) {
+            PrintMessage("  Calling StringSplit\n")
+        }
+        result = StringSplit(processed_haystack, delimiter)
+        
+        Debug("CStringSplit.exit", level=1) {
+            PrintMessage(StringConcat("<<< EXIT: CStringSplit with array length: ", StringConcat(NumberToString(ArrayLength(result)), "\n")))
+        }
+        ReturnValue(result)
+    }
+}
+
+// ============================================================================
+// Cobol.GetSubstring - Read substring (reference modification on right side)
+// ============================================================================
+
+Function.Cobol.GetSubstring {
+    Input: str: String
+    Input: start: Integer
+    Input: length: Integer
+    Output: String
+    Body: {
+        Debug("GetSubstring.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.GetSubstring\n")
+            PrintMessage(StringConcat("  str: '", StringConcat(str, "'\n")))
+            PrintMessage(StringConcat("  start: ", StringConcat(NumberToString(start), "\n")))
+            PrintMessage(StringConcat("  length: ", StringConcat(NumberToString(length), "\n")))
+        }
+        
+        // STEP 1: Allocate slot
+        slot = Cobol.AllocResultSlot()
+        
+        // STEP 2: Convert COBOL 1-based to AiLang 0-based
+        ailang_start = Subtract(start, 1)
+        Debug("GetSubstring.convert", level=2) {
+            PrintMessage(StringConcat("  Converted to 0-based start: ", StringConcat(NumberToString(ailang_start), "\n")))
+        }
+        
+        // STEP 3: Extract substring
+        local_result = StringSubstring(str, ailang_start, length)
+        Debug("GetSubstring.extract", level=2) {
+            PrintMessage(StringConcat("  Extracted: '", StringConcat(local_result, "'\n")))
+        }
+        
+        // STEP 4: Store and return
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("GetSubstring.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.GetSubstring\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+// ============================================================================
+// Cobol.SetSubstring - Write substring (reference modification on left side)
+// ============================================================================
+
+Function.Cobol.SetSubstring {
+    Input: str: String
+    Input: start: Integer
+    Input: length: Integer
+    Input: value: String
+    Output: String
+    Body: {
+        Debug("SetSubstring.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.SetSubstring\n")
+            PrintMessage(StringConcat("  str: '", StringConcat(str, "'\n")))
+            PrintMessage(StringConcat("  start: ", StringConcat(NumberToString(start), "\n")))
+            PrintMessage(StringConcat("  length: ", StringConcat(NumberToString(length), "\n")))
+            PrintMessage(StringConcat("  value: '", StringConcat(value, "'\n")))
+        }
+        
+        // STEP 1: Allocate slot
+        slot = Cobol.AllocResultSlot()
+        
+        // STEP 2: Convert COBOL 1-based to AiLang 0-based
+        ailang_start = Subtract(start, 1)
+        
+        // STEP 3: Get string length
+        str_len = StringLength(str)
+        Debug("SetSubstring.length", level=2) {
+            PrintMessage(StringConcat("  String length: ", StringConcat(NumberToString(str_len), "\n")))
+        }
+        
+        // STEP 4: Extract parts
+        before = StringSubstring(str, 0, ailang_start)
+        after_pos = Add(ailang_start, length)
+        after_len = Subtract(str_len, after_pos)
+        after = StringSubstring(str, after_pos, after_len)
+        
+        Debug("SetSubstring.parts", level=2) {
+            PrintMessage(StringConcat("  before: '", StringConcat(before, "'\n")))
+            PrintMessage(StringConcat("  after: '", StringConcat(after, "'\n")))
+        }
+        
+        // STEP 5: Pad or truncate value
+        padded_value = value
+        value_len = StringLength(value)
+        
+        IfCondition LessThan(value_len, length) ThenBlock: {
+            needed = Subtract(length, value_len)
+            i = 0
+            WhileLoop LessThan(i, needed) {
+                padded_value = StringConcat(padded_value, " ")
+                i = Add(i, 1)
+            }
+            Debug("SetSubstring.pad", level=2) {
+                PrintMessage(StringConcat("  Padded value: '", StringConcat(padded_value, "'\n")))
+            }
+        } ElseBlock: {
+            IfCondition GreaterThan(value_len, length) ThenBlock: {
+                padded_value = StringSubstring(value, 0, length)
+                Debug("SetSubstring.truncate", level=2) {
+                    PrintMessage(StringConcat("  Truncated value: '", StringConcat(padded_value, "'\n")))
+                }
+            }
+        }
+        
+        // STEP 6: Concatenate parts
+        local_result = StringConcat(before, padded_value)
+        local_result = StringConcat(local_result, after)
+        
+        Debug("SetSubstring.result", level=2) {
+            PrintMessage(StringConcat("  Result: '", StringConcat(local_result, "'\n")))
+        }
+        
+        // STEP 7: Store and return
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("SetSubstring.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.SetSubstring\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+// ============================================================================
+// Cobol.SetChar - Optimized single character replacement
+// ============================================================================
+
+Function.Cobol.SetChar {
+    Input: str: String
+    Input: position: Integer
+    Input: char: String
+    Output: String
+    Body: {
+        Debug("SetChar.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.SetChar\n")
+            PrintMessage(StringConcat("  position: ", StringConcat(NumberToString(position), "\n")))
+            PrintMessage(StringConcat("  char: '", StringConcat(char, "'\n")))
+        }
+        
+        result = Cobol.SetSubstring(str, position, 1, char)
+        
+        Debug("SetChar.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.SetChar\n")
+        }
+        ReturnValue(result)
+    }
+}
+
+// =============================================================================
+// DECIMAL FORMATTING FOR DISPLAY - CIRCULAR POOL VERSION
+// =============================================================================
+
+Function.FormatDecimal {
+    Input: value
+    Input: source_decimals
+    Input: target_decimals
+    Output: Address
+    Body: {
+        Debug("FormatDecimal.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatDecimal\n")
+            PrintMessage(StringConcat("  value: ", StringConcat(NumberToString(value), "\n")))
+            PrintMessage(StringConcat("  source_decimals: ", StringConcat(NumberToString(source_decimals), "\n")))
+            PrintMessage(StringConcat("  target_decimals: ", StringConcat(NumberToString(target_decimals), "\n")))
+        }
+        
+        // STEP 1: Allocate a slot from the pool
+        Debug("FormatDecimal.alloc", level=2) {
+            PrintMessage("  Allocating result slot\n")
+        }
+        slot = Cobol.AllocResultSlot()
+        
+        // STEP 2: Build result using LOCAL variables
+        local_is_negative = LessThan(value, 0)
+        local_abs_value = value
+        
+        IfCondition local_is_negative ThenBlock: {
+            Debug("FormatDecimal.negative", level=2) {
+                PrintMessage("  Value is negative, computing absolute value\n")
+            }
+            local_abs_value = Subtract(0, value)
+        }
+        
+        Debug("FormatDecimal.scale", level=2) {
+            PrintMessage("  Computing source scale\n")
+        }
+        local_source_scale = 1
+        local_i = 0
+        WhileLoop LessThan(local_i, source_decimals) {
+            local_source_scale = Multiply(local_source_scale, 10)
+            local_i = Add(local_i, 1)
+        }
+        Debug("FormatDecimal.scale_result", level=2) {
+            PrintMessage(StringConcat("  source_scale: ", StringConcat(NumberToString(local_source_scale), "\n")))
+        }
+        
+        local_integer_part = Divide(local_abs_value, local_source_scale)
+        local_fractional_part = Modulo(local_abs_value, local_source_scale)
+        Debug("FormatDecimal.parts", level=2) {
+            PrintMessage(StringConcat("  integer_part: ", StringConcat(NumberToString(local_integer_part), "\n")))
+            PrintMessage(StringConcat("  fractional_part: ", StringConcat(NumberToString(local_fractional_part), "\n")))
+        }
+        
+        local_decimals_to_remove = Subtract(source_decimals, target_decimals)
+        local_scale_down = 1
+        local_rounded_frac = 0
+        
+        IfCondition GreaterThan(local_decimals_to_remove, 0) ThenBlock: {
+            Debug("FormatDecimal.scale_down", level=2) {
+                PrintMessage("  Scaling down fractional part\n")
+            }
+            
+            local_j = 0
+            WhileLoop LessThan(local_j, local_decimals_to_remove) {
+                local_scale_down = Multiply(local_scale_down, 10)
+                local_j = Add(local_j, 1)
+            }
+            
+            local_half_scale = Divide(local_scale_down, 2)
+            local_rounded_frac = Divide(
+                Add(local_fractional_part, local_half_scale),
+                local_scale_down
+            )
+            Debug("FormatDecimal.rounded", level=2) {
+                PrintMessage(StringConcat("  rounded_frac: ", StringConcat(NumberToString(local_rounded_frac), "\n")))
+            }
+        } ElseBlock: {
+            Debug("FormatDecimal.scale_up", level=2) {
+                PrintMessage("  Scaling up fractional part\n")
+            }
+            
+            local_decimals_to_add = Subtract(target_decimals, source_decimals)
+            local_scale_up = 1
+            local_k = 0
+            WhileLoop LessThan(local_k, local_decimals_to_add) {
+                local_scale_up = Multiply(local_scale_up, 10)
+                local_k = Add(local_k, 1)
+            }
+            local_rounded_frac = Multiply(local_fractional_part, local_scale_up)
+        }
+        
+        // BUILD RESULT STRING
+        Debug("FormatDecimal.build", level=2) {
+            PrintMessage("  Building result string\n")
+        }
+        local_result = ""
+        
+        IfCondition local_is_negative ThenBlock: {
+            local_result = "-"
+        }
+        
+        local_result = StringConcat(local_result, NumberToString(local_integer_part))
+        
+        IfCondition GreaterThan(target_decimals, 0) ThenBlock: {
+            local_result = StringConcat(local_result, ".")
+            
+            frac_str = NumberToString(local_rounded_frac)
+            local_frac_len = StringLength(frac_str)
+            
+            WhileLoop LessThan(local_frac_len, target_decimals) {
+                frac_str = StringConcat("0", frac_str)
+                local_frac_len = StringLength(frac_str)
+            }
+            
+            local_result = StringConcat(local_result, frac_str)
+        }
+        
+        Debug("FormatDecimal.store", level=2) {
+            PrintMessage(StringConcat("  Final result: '", StringConcat(local_result, "'\n")))
+        }
+        
+        // STEP 3: Store result in allocated slot
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatDecimal.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatDecimal\n")
+        }
+        
+        // STEP 4: Return address of slot
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+// =============================================================================
+// COBOL DISPLAY-EDITED FORMATTING FUNCTIONS - CIRCULAR POOL VERSIONS
+// =============================================================================
+
+Function.FormatCurrency {
+    Input: value
+    Input: source_decimals
+    Input: width
+    Input: decimals
+    Input: symbol
+    Input: has_commas
+    Input: float_symbol
+    Output: Address
+    Body: {
+        Debug("FormatCurrency.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatCurrency\n")
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        
+        formatted = FormatDecimal(value, source_decimals, decimals)
+        
+        IfCondition EqualTo(has_commas, 1) ThenBlock: {
+            formatted = AddCommasToNumber(formatted)
+        }
+        
+        local_result = StringConcat(symbol, formatted)
+        
+        local_len = StringLength(local_result)
+        WhileLoop LessThan(local_len, width) {
+            local_result = StringConcat(" ", local_result)
+            local_len = Add(local_len, 1)
+        }
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatCurrency.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatCurrency\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+Function.FormatWithCommas {
+    Input: value
+    Input: source_decimals
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatWithCommas.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatWithCommas\n")
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        
+        formatted = FormatDecimal(value, source_decimals, decimals)
+        local_result = AddCommasToNumber(formatted)
+        
+        local_len = StringLength(local_result)
+        WhileLoop LessThan(local_len, width) {
+            local_result = StringConcat(" ", local_result)
+            local_len = Add(local_len, 1)
+        }
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatWithCommas.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatWithCommas\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+Function.FormatZeroSuppress {
+    Input: value
+    Input: source_decimals
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatZeroSuppress.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatZeroSuppress\n")
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        
+        formatted = FormatDecimal(value, source_decimals, decimals)
+        
+        local_len = StringLength(formatted)
+        local_result = formatted
+        
+        WhileLoop LessThan(local_len, width) {
+            local_result = StringConcat(" ", local_result)
+            local_len = Add(local_len, 1)
+        }
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatZeroSuppress.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatZeroSuppress\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+Function.FormatAsteriskFill {
+    Input: value
+    Input: source_decimals
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatAsteriskFill.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatAsteriskFill\n")
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        
+        formatted = FormatDecimal(value, source_decimals, decimals)
+        
+        local_len = StringLength(formatted)
+        local_i = 0
+        local_found_nonzero = 0
+        
+        WhileLoop And(LessThan(local_i, local_len), EqualTo(local_found_nonzero, 0)) {
+            char = StringSubstring(formatted, local_i, Add(local_i, 1))
+            IfCondition NotEqual(char, "0") ThenBlock: {
+                local_found_nonzero = 1
+            } ElseBlock: {
+                local_i = Add(local_i, 1)
+            }
+        }
+        
+        local_result = ""
+        local_j = 0
+        
+        WhileLoop LessThan(local_j, local_len) {
+            IfCondition LessThan(local_j, local_i) ThenBlock: {
+                local_result = StringConcat(local_result, "*")
+            } ElseBlock: {
+                char = StringSubstring(formatted, local_j, Add(local_j, 1))
+                local_result = StringConcat(local_result, char)
+            }
+            local_j = Add(local_j, 1)
+        }
+        
+        local_result_len = StringLength(local_result)
+        WhileLoop LessThan(local_result_len, width) {
+            local_result = StringConcat(" ", local_result)
+            local_result_len = Add(local_result_len, 1)
+        }
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatAsteriskFill.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatAsteriskFill\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+Function.FormatWithIndicator {
+    Input: value
+    Input: indicator
+    Input: source_decimals
+    Input: width
+    Input: decimals
+    Output: Address
+    Body: {
+        Debug("FormatWithIndicator.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatWithIndicator\n")
+            PrintMessage("  value: ")
+            PrintNumber(value)
+            PrintMessage("\n")
+        }
+        
+        // STEP 1: Allocate OUR slot
+        slot = Cobol.AllocResultSlot()
+        
+        // STEP 2: Determine if negative and get absolute value
+        local_is_negative = LessThan(value, 0)
+        local_abs_value = value
+        
+        IfCondition local_is_negative ThenBlock: {
+            local_abs_value = Subtract(0, value)
+            Debug("FormatWithIndicator.negative", level=2) {
+                PrintMessage("  Negative value, abs_value=")
+                PrintNumber(local_abs_value)
+                PrintMessage("\n")
+            }
+        }
+        
+        // STEP 3: Format the ABSOLUTE value
+        formatted = FormatDecimal(local_abs_value, source_decimals, decimals)
+        
+        Debug("FormatWithIndicator.formatted", level=2) {
+            PrintMessage("  Formatted: '")
+            PrintString(formatted)
+            PrintMessage("'\n")
+        }
+        
+        // STEP 4: Add indicator or spaces
+        IfCondition local_is_negative ThenBlock: {
+            local_result = StringConcat(formatted, indicator)
+            Debug("FormatWithIndicator.indicator", level=2) {
+                PrintMessage("  With indicator: '")
+                PrintString(local_result)
+                PrintMessage("'\n")
+            }
+        } ElseBlock: {
+            local_indicator_len = StringLength(indicator)
+            spaces = ""
+            local_i = 0
+            
+            WhileLoop LessThan(local_i, local_indicator_len) {
+                spaces = StringConcat(spaces, " ")
+                local_i = Add(local_i, 1)
+            }
+            
+            local_result = StringConcat(formatted, spaces)
+            Debug("FormatWithIndicator.spaces", level=2) {
+                PrintMessage("  With spaces: '")
+                PrintString(local_result)
+                PrintMessage("'\n")
+            }
+        }
+        
+        // STEP 5: Pad to width
+        local_len = StringLength(local_result)
+        WhileLoop LessThan(local_len, width) {
+            local_result = StringConcat(" ", local_result)
+            local_len = Add(local_len, 1)
+        }
+        
+        Debug("FormatWithIndicator.padded", level=2) {
+            PrintMessage("  Padded: '")
+            PrintString(local_result)
+            PrintMessage("'\n")
+        }
+        
+        // STEP 6: Store and return
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatWithIndicator.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatWithIndicator\n")
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+Function.FormatSigned {
+    Input: value
+    Input: source_decimals
+    Input: width
+    Input: decimals
+    Input: position
+    Output: Address
+    Body: {
+        Debug("FormatSigned.entry", level=1) {
+            PrintMessage(">>> ENTER: FormatSigned\n")
+            PrintMessage("  value: ")
+            PrintNumber(value)
+            PrintMessage("\n")
+        }
+        
+        // STEP 1: Allocate OUR slot first
+        slot = Cobol.AllocResultSlot()
+        
+        // STEP 2: Determine sign and get absolute value
+        sign = " "
+        local_abs_value = value
+        
+        IfCondition LessThan(value, 0) ThenBlock: {
+            sign = "-"
+            local_abs_value = Subtract(0, value)
+            Debug("FormatSigned.sign", level=2) {
+                PrintMessage("  Negative value, sign='-', abs_value=")
+                PrintNumber(local_abs_value)
+                PrintMessage("\n")
+            }
+        } ElseBlock: {
+            IfCondition GreaterThan(value, 0) ThenBlock: {
+                sign = "+"
+                Debug("FormatSigned.sign", level=2) {
+                    PrintMessage("  Positive value, sign='+'\n")
+                }
+            } ElseBlock: {
+                Debug("FormatSigned.sign", level=2) {
+                    PrintMessage("  Zero value, sign=' '\n")
+                }
+            }
+        }
+        
+        // STEP 3: Format the ABSOLUTE value (no sign)
+        formatted = FormatDecimal(local_abs_value, source_decimals, decimals)
+        
+        Debug("FormatSigned.formatted", level=2) {
+            PrintMessage("  Formatted absolute value: '")
+            PrintString(formatted)
+            PrintMessage("'\n")
+        }
+        
+        // STEP 4: Add sign in correct position
+        local_is_leading = StringEquals(position, "leading")
+        
+        IfCondition local_is_leading ThenBlock: {
+            local_result = StringConcat(sign, formatted)
+            Debug("FormatSigned.position", level=2) {
+                PrintMessage("  Leading sign: '")
+                PrintString(local_result)
+                PrintMessage("'\n")
+            }
+        } ElseBlock: {
+            local_result = StringConcat(formatted, sign)
+            Debug("FormatSigned.position", level=2) {
+                PrintMessage("  Trailing sign: '")
+                PrintString(local_result)
+                PrintMessage("'\n")
+            }
+        }
+        
+        // STEP 5: Pad to width
+        local_len = StringLength(local_result)
+        WhileLoop LessThan(local_len, width) {
+            local_result = StringConcat(" ", local_result)
+            local_len = Add(local_len, 1)
+        }
+        
+        Debug("FormatSigned.padded", level=2) {
+            PrintMessage("  Padded result: '")
+            PrintString(local_result)
+            PrintMessage("'\n")
+        }
+        
+        // STEP 6: Store in OUR slot
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("FormatSigned.exit", level=1) {
+            PrintMessage("<<< EXIT: FormatSigned\n")
+        }
+        
+        // STEP 7: Return OUR slot
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+Function.AddCommasToNumber {
+    Input: number_str
+    Output: Address
+    Body: {
+        Debug("AddCommasToNumber.entry", level=1) {
+            PrintMessage(">>> ENTER: AddCommasToNumber\n")
+            PrintMessage(StringConcat("  Input: '", StringConcat(number_str, "'\n")))
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        
+        local_len = StringLength(number_str)
+        local_decimal_pos = -1
+        local_i = 0
+        local_found_decimal = 0
+        
+        WhileLoop And(LessThan(local_i, local_len), EqualTo(local_found_decimal, 0)) {
+            char = StringSubstring(number_str, local_i, Add(local_i, 1))
+            IfCondition EqualTo(char, ".") ThenBlock: {
+                local_decimal_pos = local_i
+                local_found_decimal = 1
+            } ElseBlock: {
+                local_i = Add(local_i, 1)
+            }
+        }
+        
+        integer_part = ""
+        decimal_part = ""
+        
+        IfCondition EqualTo(local_decimal_pos, -1) ThenBlock: {
+            integer_part = number_str
+        } ElseBlock: {
+            local_j = 0
+            WhileLoop LessThan(local_j, local_decimal_pos) {
+                char = StringSubstring(number_str, local_j, Add(local_j, 1))
+                integer_part = StringConcat(integer_part, char)
+                local_j = Add(local_j, 1)
+            }
+            
+            local_k = local_decimal_pos
+            WhileLoop LessThan(local_k, local_len) {
+                char = StringSubstring(number_str, local_k, Add(local_k, 1))
+                decimal_part = StringConcat(decimal_part, char)
+                local_k = Add(local_k, 1)
+            }
+        }
+        
+        local_int_len = StringLength(integer_part)
+        local_result = ""
+        local_counter = 0
+        local_m = Subtract(local_int_len, 1)
+        
+        WhileLoop GreaterEqual(local_m, 0) {
+            char = StringSubstring(integer_part, local_m, Add(local_m, 1))
+            local_result = StringConcat(char, local_result)
+            local_counter = Add(local_counter, 1)
+            
+            local_remainder = Modulo(local_counter, 3)
+            
+            IfCondition And(EqualTo(local_remainder, 0), GreaterThan(local_m, 0)) ThenBlock: {
+                prev_char = StringSubstring(integer_part, Subtract(local_m, 1), local_m)
+                IfCondition NotEqual(prev_char, "-") ThenBlock: {
+                    local_result = StringConcat(",", local_result)
+                }
+            }
+            
+            local_m = Subtract(local_m, 1)
+        }
+        
+        local_result = StringConcat(local_result, decimal_part)
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("AddCommasToNumber.exit", level=1) {
+            PrintMessage(StringConcat("<<< EXIT: AddCommasToNumber with result: '", StringConcat(local_result, "'\n")))
+        }
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+// =============================================================================
+// COBOL FILE I/O - DATABASE IMPLEMENTATION
+// =============================================================================
+
+FixedPool.CobolFileState {
+    "db_conn": Initialize=0
+    "current_file": Initialize=0
+    "current_mode": Initialize=0
+    "file_buffer": Initialize=0
+    "line_number": Initialize=0
+}
+
+FixedPool.APIFileState {
+    "request_fd": Initialize=100   
+    "response_fd": Initialize=101  
+    "request_data": Initialize=0  
+    "response_buffer": Initialize=0  
+}
+
+// ============================================================================
+// API FILE DETECTION AND HANDLERS
+// ============================================================================
+
+Function.COBOL_API_RESPONSE {
+    Input: response_data: Address
+    Output: Integer
+    Body: {
+        Debug("COBOL_API_RESPONSE.entry", level=1) {
+            PrintMessage(">>> ENTER: COBOL_API_RESPONSE\n")
+        }
+        Cobol.api_response_data = response_data
+        Debug("COBOL_API_RESPONSE.exit", level=1) {
+            PrintMessage("<<< EXIT: COBOL_API_RESPONSE\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.COBOL_API_REQUEST {
+    Input: request_buffer: Address
+    Output: Integer
+    Body: {
+        Debug("COBOL_API_REQUEST.entry", level=1) {
+            PrintMessage(">>> ENTER: COBOL_API_REQUEST\n")
+        }
+        request_buffer = Cobol.api_request_data
+        Debug("COBOL_API_REQUEST.exit", level=1) {
+            PrintMessage("<<< EXIT: COBOL_API_REQUEST\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.Cobol.GetJobIdFromCommandLine {
+    Output: Integer
+    Body: {
+        Debug("GetJobIdFromCommandLine.entry", level=1) {
+            PrintMessage(">>> ENTER: GetJobIdFromCommandLine\n")
+        }
+        
+        cmdline_path = "/proc/self/cmdline"
+        fd = SystemCall(2, cmdline_path, 0, 0)
+        
+        IfCondition LessThan(fd, 0) ThenBlock: {
+            Debug("GetJobIdFromCommandLine.error", level=0) {
+                PrintMessage("[ERROR] Could not open /proc/self/cmdline\n")
+            }
+            ReturnValue(0)
+        }
+        
+        buf = Allocate(256)
+        bytes = SystemCall(0, fd, buf, 256)
+        SystemCall(3, fd)
+        
+        IfCondition LessThan(bytes, 1) ThenBlock: {
+            Deallocate(buf, 256)
+            ReturnValue(0)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, bytes) {
+            ch = GetByte(buf, i)
+            IfCondition EqualTo(ch, 0) ThenBlock: {
+                BreakLoop
+            }
+            i = Add(i, 1)
+        }
+        
+        i = Add(i, 1)
+        
+        IfCondition Not(LessThan(i, bytes)) ThenBlock: {
+            Deallocate(buf, 256)
+            Debug("GetJobIdFromCommandLine.warning", level=0) {
+                PrintMessage("[WARNING] No job_id argument\n")
+            }
+            ReturnValue(0)
+        }
+        
+        arg1_start = Add(buf, i)
+        job_id = StringToNumber(arg1_start)
+        
+        Deallocate(buf, 256)
+        
+        Debug("GetJobIdFromCommandLine.exit", level=1) {
+            PrintMessage("<<< EXIT: GetJobIdFromCommandLine with job_id=")
+            PrintNumber(job_id)
+            PrintMessage("\n")
+        }
+        ReturnValue(job_id)
+    }
+}
+
+Function.Cobol.IsAPIFile {
+    Input: filename: Address
+    Output: Integer
+    Body: {
+        Debug("IsAPIFile.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.IsAPIFile\n")
+            PrintMessage(StringConcat("  filename: '", StringConcat(filename, "'\n")))
+        }
+        
+        is_request = StringEquals(filename, "REQUEST")
+        IfCondition EqualTo(is_request, 1) ThenBlock: {
+            Debug("IsAPIFile.result", level=2) {
+                PrintMessage("  Detected REQUEST file\n")
+            }
+            ReturnValue(1)
+        }
+        
+        is_response = StringEquals(filename, "RESPONSE")
+        IfCondition EqualTo(is_response, 1) ThenBlock: {
+            Debug("IsAPIFile.result", level=2) {
+                PrintMessage("  Detected RESPONSE file\n")
+            }
+            ReturnValue(2)
+        }
+        
+        Debug("IsAPIFile.result", level=2) {
+            PrintMessage("  Normal file\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.Cobol.OpenAPIRequest {
+    Output: Integer
+    Body: {
+        Debug("OpenAPIRequest.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.OpenAPIRequest\n")
+        }
+        
+        // Read from Cobol FixedPool and store in APIFileState
+        job_id = Cobol.api_job_id
+        db_conn = Cobol.api_db_conn
+        
+        APIFileState.current_job_id = job_id
+        APIFileState.current_db_conn = db_conn
+        
+        Debug("OpenAPIRequest.job_id", level=2) {
+            PrintMessage("[COBOL.API] Job ID: ")
+            PrintNumber(job_id)
+            PrintMessage("\n")
+        }
+        
+        // If job_id or db_conn is not set, we can't proceed
+        IfCondition Or(EqualTo(job_id, 0), EqualTo(db_conn, 0)) ThenBlock: {
+            Debug("OpenAPIRequest.warning", level=0) {
+                PrintMessage("[COBOL.API] WARNING: No job_id or db_conn, using empty request\n")
+            }
+            Cobol.api_request_data = ""
+            ReturnValue(1)
+        }
+        
+        // Prepare and execute a parameterized query for safety
+        stmt = PG_Prepare(db_conn, "get_request", "SELECT request_data FROM api_requests WHERE job_id = $1")
+        
+        params = XArray.XCreate(1)
+        job_id_str = NumberToString(job_id)
+        XArray.XPush(params, job_id_str)
+        
+        Debug("OpenAPIRequest.execute", level=2) {
+            PrintMessage("[COBOL.API] Executing prepared statement 'get_request'\n")
+        }
+        result = PG_Execute(stmt, params)
+        
+        XArray.XDestroy(params)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            Debug("OpenAPIRequest.error", level=0) {
+                PrintMessage("[COBOL.API] ERROR: Query failed\n")
+            }
+            ReturnValue(0)
+        }
+        
+        row_count = XArray.XSize(result)
+        
+        Debug("OpenAPIRequest.rows", level=1) {
+            PrintMessage("[COBOL.API] Row count: ")
+            PrintNumber(row_count)
+            PrintMessage("\n")
+        }
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            Debug("OpenAPIRequest.warning", level=1) {
+                PrintMessage("[COBOL.API] WARNING: No request found\n")
+            }
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        
+        row_map = XArray.XGet(result, 0)
+        request_json = HashMap.HGetSimple(row_map, "request_data")
+        
+        Debug("OpenAPIRequest.loaded", level=1) {
+            PrintMessage("[COBOL.API] Loaded request: ")
+            PrintString(request_json)
+            PrintMessage("\n")
+        }
+        
+        Cobol.api_request_data = request_json
+        
+        PG_DestroyResult(result)
+        
+        Debug("OpenAPIRequest.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.OpenAPIRequest\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+
+
+Function.Cobol.OpenAPIResponse {
+    Output: Integer
+    Body: {
+        Debug("OpenAPIResponse.entry", level=1) {
+            PrintMessage("[COBOL.API] Opening RESPONSE file\n")
+        }
+        
+        // ADD THIS DEBUG
+        Debug("OpenAPIResponse.check_values", level=0) {
+            PrintMessage("[COBOL.API] Cobol.api_job_id = ")
+            PrintNumber(Cobol.api_job_id)
+            PrintMessage("\n")
+            PrintMessage("[COBOL.API] Cobol.api_db_conn = ")
+            PrintNumber(Cobol.api_db_conn)
+            PrintMessage("\n")
+        }
+        
+        // Capture job_id and db_conn when RESPONSE file opens
+        APIFileState.current_job_id = Cobol.api_job_id
+        APIFileState.current_db_conn = Cobol.api_db_conn
+        
+        Debug("OpenAPIResponse.stored_values", level=0) {
+            PrintMessage("[COBOL.API] APIFileState.current_job_id = ")
+            PrintNumber(APIFileState.current_job_id)
+            PrintMessage("\n")
+            PrintMessage("[COBOL.API] APIFileState.current_db_conn = ")
+            PrintNumber(APIFileState.current_db_conn)
+            PrintMessage("\n")
+        }
+        
+        APIFileState.response_buffer = ""
+        
+        Debug("OpenAPIResponse.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.OpenAPIResponse\n")
+        }
+        ReturnValue(APIFileState.response_fd)
+    }
+}
+
+
+Function.Cobol.ReadAPIRequest {
+    Output: Address
+    Body: {
+        Debug("ReadAPIRequest.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.ReadAPIRequest\n")
+        }
+        
+        content = APIFileState.request_data
+        
+        IfCondition EqualTo(content, 0) ThenBlock: {
+            ReturnValue("")
+        }
+        
+        Debug("ReadAPIRequest.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.ReadAPIRequest\n")
+        }
+        ReturnValue(content)
+    }
+}
+
+Function.Cobol.WriteAPIResponse {
+    Input: job_id: Integer
+    Input: response_data: Address
+    Output: Integer
+    Body: {
+        // Check if database connection exists
+        IfCondition EqualTo(Cobol.api_db_conn, 0) ThenBlock: {
+            PrintMessage("[COBOL] No database connection for response\n")
+            ReturnValue(0)
+        }
+        
+        // Build the INSERT query
+        query = "INSERT INTO api_responses (job_id, response_data, created_at) VALUES ($1, $2, NOW())"
+        
+        // Create prepared statement
+        stmt = PG_Prepare(Cobol.api_db_conn, "write_response", query)
+        
+        IfCondition EqualTo(stmt, 0) ThenBlock: {
+            PrintMessage("[COBOL] Failed to prepare response write\n")
+            ReturnValue(0)
+        }
+        
+        // Create parameters array
+        params = XArray.XCreate(2)
+        job_id_str = NumberToString(job_id)
+        XArray.XPush(params, job_id_str)
+        XArray.XPush(params, response_data)
+        
+        // Execute
+        result = PG_Execute(stmt, params)
+        
+        // Cleanup
+        Deallocate(job_id_str, 0)
+        XArray.XDestroy(params)
+        PG_DestroyStatement(stmt)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            PrintMessage("[COBOL] Response written to database\n")
+            ReturnValue(1)
+        } ElseBlock: {
+            PrintMessage("[COBOL] Failed to write response\n")
+            ReturnValue(0)
+        }
+    }
+}
+Function.Cobol.CloseAPIResponse {
+    Input: job_id: Integer
+    Input: db_conn: Address
+    Output: Integer
+    Body: {
+        // The response was already written by string_optimizer
+        // This function is now a no-op
+        ReturnValue(1)
+    }
+}
+
+Function.Cobol.InitFileSystem {
+    Input: conn: Address
+    Body: {
+        Debug("InitFileSystem.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.InitFileSystem\n")
+        }
+        
+        CobolFileState.db_conn = conn
+        
+        create_sql = "CREATE TABLE IF NOT EXISTS cobol_files (filename TEXT PRIMARY KEY, content TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+        
+        result = PG_Query(conn, create_sql)
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        Debug("InitFileSystem.success", level=2) {
+            PrintMessage("[COBOL] File system initialized (PostgreSQL backend)\n")
+        }
+        
+        Debug("InitFileSystem.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.InitFileSystem\n")
+        }
+    }
+}
+
+Function.FileOpen {
+    Input: filename: Address
+    Input: mode: Address
+    Output: Integer
+    Body: {
+        Debug("FileOpen.entry", level=1) {
+            PrintMessage(">>> ENTER: FileOpen\n")
+            PrintMessage(StringConcat("  filename: '", StringConcat(filename, "'\n")))
+            PrintMessage(StringConcat("  mode: '", StringConcat(mode, "'\n")))
+        }
+        
+        api_type = Cobol.IsAPIFile(filename)
+        
+        IfCondition EqualTo(api_type, 1) ThenBlock: {
+            Debug("FileOpen.api_request", level=2) {
+                PrintMessage("  Opening as REQUEST file\n")
+            }
+            ReturnValue(Cobol.OpenAPIRequest())
+        }
+        
+        IfCondition EqualTo(api_type, 2) ThenBlock: {
+            Debug("FileOpen.api_response", level=2) {
+                PrintMessage("  Opening as RESPONSE file\n")
+            }
+            ReturnValue(Cobol.OpenAPIResponse())
+        }
+        
+        Debug("FileOpen.normal", level=2) {
+            PrintMessage("  Opening as normal file\n")
+        }
+        
+        IfCondition EqualTo(CobolFileState.db_conn, 0) ThenBlock: {
+            Debug("FileOpen.error", level=0) {
+                PrintMessage("ERROR: File system not initialized\n")
+            }
+            ReturnValue(0)
+        }
+        
+        mode_char = GetByte(mode, 0)
+        Debug("FileOpen.mode", level=2) {
+            PrintMessage("  mode_char: ")
+            PrintNumber(mode_char)
+            PrintMessage("\n")
+        }
+        
+        CobolFileState.current_file = filename
+        CobolFileState.current_mode = mode_char
+        CobolFileState.line_number = 0
+        
+        IfCondition EqualTo(mode_char, 114) ThenBlock: {
+            Debug("FileOpen.read_mode", level=2) {
+                PrintMessage("  Read mode detected\n")
+            }
+            
+            query = StringConcat("SELECT content FROM cobol_files WHERE filename = '", filename)
+            query = StringConcat(query, "'")
+            
+            result = PG_Query(CobolFileState.db_conn, query)
+            Deallocate(query, 0)
+            
+            IfCondition EqualTo(result, 0) ThenBlock: {
+                Debug("FileOpen.error", level=0) {
+                    PrintMessage("ERROR: File not found: ")
+                    PrintString(filename)
+                    PrintMessage("\n")
+                }
+                ReturnValue(0)
+            }
+            
+            row_count = SQL.RowCount(result)
+            
+            IfCondition EqualTo(row_count, 0) ThenBlock: {
+                PG_DestroyResult(result)
+                Debug("FileOpen.error", level=0) {
+                    PrintMessage("ERROR: File not found: ")
+                    PrintString(filename)
+                    PrintMessage("\n")
+                }
+                ReturnValue(0)
+            }
+            
+            content = SQL.GetValue(result, 0, "content")
+            CobolFileState.file_buffer = content
+            PG_DestroyResult(result)
+            
+            Debug("FileOpen.success", level=2) {
+                PrintMessage("  File opened successfully in read mode\n")
+            }
+            ReturnValue(1)
+        }
+        
+        IfCondition EqualTo(mode_char, 119) ThenBlock: {
+            Debug("FileOpen.write_mode", level=2) {
+                PrintMessage("  Write mode detected\n")
+            }
+            CobolFileState.file_buffer = ""
+            ReturnValue(1)
+        }
+        
+        IfCondition EqualTo(mode_char, 97) ThenBlock: {
+            Debug("FileOpen.append_mode", level=2) {
+                PrintMessage("  Append mode detected\n")
+            }
+            
+            query = StringConcat("SELECT content FROM cobol_files WHERE filename = '", filename)
+            query = StringConcat(query, "'")
+            
+            result = PG_Query(CobolFileState.db_conn, query)
+            Deallocate(query, 0)
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                row_count = SQL.RowCount(result)
+                
+                IfCondition GreaterThan(row_count, 0) ThenBlock: {
+                    content = SQL.GetValue(result, 0, "content")
+                    CobolFileState.file_buffer = content
+                } ElseBlock: {
+                    CobolFileState.file_buffer = ""
+                }
+                
+                PG_DestroyResult(result)
+            } ElseBlock: {
+                CobolFileState.file_buffer = ""
+            }
+            
+            Debug("FileOpen.success", level=2) {
+                PrintMessage("  File opened successfully in append mode\n")
+            }
+            ReturnValue(1)
+        }
+        
+        Debug("FileOpen.error", level=0) {
+            PrintMessage("ERROR: Invalid mode: ")
+            PrintString(mode)
+            PrintMessage("\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.FileRead {
+    Input: handle: Integer
+    Output: Address
+    Body: {
+        Debug("FileRead.entry", level=1) {
+            PrintMessage(">>> ENTER: FileRead\n")
+            PrintMessage("  handle: ")
+            PrintNumber(handle)
+            PrintMessage("\n")
+        }
+        
+        IfCondition EqualTo(handle, 0) ThenBlock: {
+            Debug("FileRead.error", level=0) {
+                PrintMessage("ERROR: Invalid handle\n")
+            }
+            ReturnValue(0)
+        }
+        
+        IfCondition EqualTo(handle, APIFileState.request_fd) ThenBlock: {
+            Debug("FileRead.api_request", level=2) {
+                PrintMessage("  Reading from REQUEST file\n")
+            }
+            ReturnValue(Cobol.ReadAPIRequest())
+        }
+        
+        Debug("FileRead.normal", level=2) {
+            PrintMessage("  Reading from normal file\n")
+        }
+        
+        Debug("FileRead.exit", level=1) {
+            PrintMessage("<<< EXIT: FileRead\n")
+        }
+        ReturnValue(CobolFileState.file_buffer)
+    }
+}
+
+Function.Cobol.ReadLine {
+    Input: handle: Integer
+    Output: Address
+    Body: {
+        Debug("ReadLine.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.ReadLine\n")
+        }
+        
+        IfCondition EqualTo(handle, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        buffer = CobolFileState.file_buffer
+        buffer_len = StringLength(buffer)
+        
+        start_pos = CobolFileState.line_number
+        
+        Debug("ReadLine.position", level=2) {
+            PrintMessage("  start_pos: ")
+            PrintNumber(start_pos)
+            PrintMessage(" buffer_len: ")
+            PrintNumber(buffer_len)
+            PrintMessage("\n")
+        }
+        
+        IfCondition GreaterEqual(start_pos, buffer_len) ThenBlock: {
+            Debug("ReadLine.eof", level=2) {
+                PrintMessage("  EOF reached\n")
+            }
+            ReturnValue("")
+        }
+        
+        pos = start_pos
+        found_newline = 0
+        
+        WhileLoop And(LessThan(pos, buffer_len), EqualTo(found_newline, 0)) {
+            ch = GetByte(buffer, pos)
+            
+            IfCondition Or(EqualTo(ch, 10), EqualTo(ch, 13)) ThenBlock: {
+                found_newline = 1
+            } ElseBlock: {
+                pos = Add(pos, 1)
+            }
+        }
+        
+        line_len = Subtract(pos, start_pos)
+        line = Allocate(Add(line_len, 1))
+        
+        i = 0
+        WhileLoop LessThan(i, line_len) {
+            ch = GetByte(buffer, Add(start_pos, i))
+            SetByte(line, i, ch)
+            i = Add(i, 1)
+        }
+        SetByte(line, line_len, 0)
+        
+        CobolFileState.line_number = Add(pos, 1)
+        
+        Debug("ReadLine.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.ReadLine\n")
+        }
+        ReturnValue(line)
+    }
+}
+
+Function.FileWrite {
+    Input: handle: Integer
+    Input: data: Address
+    Output: Integer
+    Body: {
+        Debug("FileWrite.entry", level=1) {
+            PrintMessage(">>> ENTER: FileWrite\n")
+            PrintMessage("  handle: ")
+            PrintNumber(handle)
+            PrintMessage("\n")
+            PrintMessage(StringConcat("  data: '", StringConcat(data, "'\n")))
+        }
+        
+        IfCondition EqualTo(handle, 0) ThenBlock: {
+            Debug("FileWrite.error", level=0) {
+                PrintMessage("ERROR: Invalid handle\n")
+            }
+            ReturnValue(0)
+        }
+        
+        IfCondition EqualTo(handle, APIFileState.response_fd) ThenBlock: {
+            Debug("FileWrite.api_response", level=2) {
+                PrintMessage("  Writing to RESPONSE file\n")
+            }
+            Cobol.WriteAPIResponse(data)
+            ReturnValue(1)
+        }
+        
+        Debug("FileWrite.normal", level=2) {
+            PrintMessage("  Writing to normal file buffer\n")
+        }
+        CobolFileState.file_buffer = StringConcat(CobolFileState.file_buffer, data)
+        
+        Debug("FileWrite.exit", level=1) {
+            PrintMessage("<<< EXIT: FileWrite\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+Function.Cobol.WriteLine {
+    Input: handle: Integer
+    Input: data: Address
+    Output: Integer
+    Body: {
+        Debug("WriteLine.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.WriteLine\n")
+        }
+        
+        line = StringConcat(data, "\n")
+        result = FileWrite(handle, line)
+        Deallocate(line, 0)
+        
+        Debug("WriteLine.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.WriteLine\n")
+        }
+        ReturnValue(result)
+    }
+}
+
+Function.FileClose {
+    Input: handle: Integer
+    Output: Integer
+    Body: {
+        Debug("FileClose.entry", level=1) {
+            PrintMessage(">>> ENTER: FileClose\n")
+            PrintMessage("  handle: ")
+            PrintNumber(handle)
+            PrintMessage("\n")
+        }
+        
+        IfCondition EqualTo(handle, 0) ThenBlock: {
+            Debug("FileClose.null", level=2) {
+                PrintMessage("  Null handle, returning success\n")
+            }
+            ReturnValue(1)
+        }
+        
+        IfCondition EqualTo(handle, APIFileState.response_fd) ThenBlock: {
+            Debug("FileClose.api_response", level=2) {
+                PrintMessage("  Closing RESPONSE file\n")
+            }
+            Cobol.CloseAPIResponse(APIFileState.current_job_id, APIFileState.current_db_conn)
+            ReturnValue(1)
+        }
+        
+        IfCondition EqualTo(handle, APIFileState.request_fd) ThenBlock: {
+            Debug("FileClose.api_request", level=2) {
+                PrintMessage("  Closing REQUEST file\n")
+            }
+            APIFileState.request_data = 0
+            ReturnValue(1)
+        }
+        
+        Debug("FileClose.normal", level=2) {
+            PrintMessage("  Closing normal file\n")
+        }
+        
+        mode_char = CobolFileState.current_mode
+        
+        IfCondition Or(EqualTo(mode_char, 119), EqualTo(mode_char, 97)) ThenBlock: {
+            Debug("FileClose.save", level=2) {
+                PrintMessage("  Saving file to database\n")
+            }
+            
+            filename = CobolFileState.current_file
+            content = CobolFileState.file_buffer
+            
+            query = StringConcat("INSERT INTO cobol_files (filename, content, modified_at) VALUES ('", filename)
+            query = StringConcat(query, "', '")
+            
+            escaped = StringReplaceAll(content, "'", "''")
+            query = StringConcat(query, escaped)
+            query = StringConcat(query, "', CURRENT_TIMESTAMP) ON CONFLICT (filename) DO UPDATE SET content = EXCLUDED.content, modified_at = CURRENT_TIMESTAMP")
+            
+            result = PG_Query(CobolFileState.db_conn, query)
+            Deallocate(query, 0)
+            Deallocate(escaped, 0)
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                Debug("FileClose.saved", level=2) {
+                    PrintMessage("  File saved successfully\n")
+                }
+                PG_DestroyResult(result)
+            }
+        }
+        
+        CobolFileState.current_file = 0
+        CobolFileState.file_buffer = 0
+        CobolFileState.line_number = 0
+        
+        Debug("FileClose.exit", level=1) {
+            PrintMessage("<<< EXIT: FileClose\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+
+Function.Cobol.CheckFileExists {
+    Input: filename: Address
+    Output: Integer
+    Body: {
+        Debug("CheckFileExists.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.CheckFileExists\n")
+            PrintMessage(StringConcat("  filename: '", StringConcat(filename, "'\n")))
+        }
+        
+        query = StringConcat("SELECT 1 FROM cobol_files WHERE filename = '", filename)
+        query = StringConcat(query, "'")
+        
+        result = PG_Query(CobolFileState.db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            Debug("CheckFileExists.error", level=0) {
+                PrintMessage("ERROR: Query failed\n")
+            }
+            ReturnValue(0)
+        }
+        
+        count = SQL.RowCount(result)
+        PG_DestroyResult(result)
+        
+        Debug("CheckFileExists.result", level=2) {
+            PrintMessage("  Row count: ")
+            PrintNumber(count)
+            PrintMessage("\n")
+        }
+        
+        IfCondition GreaterThan(count, 0) ThenBlock: {
+            Debug("CheckFileExists.exit", level=1) {
+                PrintMessage("<<< EXIT: Cobol.CheckFileExists (exists)\n")
+            }
+            ReturnValue(1)
+        }
+        
+        Debug("CheckFileExists.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.CheckFileExists (not found)\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+Function.Cobol.DeleteFile {
+    Input: filename: Address
+    Output: Integer
+    Body: {
+        Debug("DeleteFile.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.DeleteFile\n")
+            PrintMessage(StringConcat("  filename: '", StringConcat(filename, "'\n")))
+        }
+        
+        query = StringConcat("DELETE FROM cobol_files WHERE filename = '", filename)
+        query = StringConcat(query, "'")
+        
+        result = PG_Query(CobolFileState.db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            Debug("DeleteFile.success", level=2) {
+                PrintMessage("  File deleted successfully\n")
+            }
+            PG_DestroyResult(result)
+            ReturnValue(1)
+        }
+        
+        Debug("DeleteFile.error", level=0) {
+            PrintMessage("ERROR: Delete failed\n")
+        }
+        ReturnValue(0)
+    }
+}
+
+// ============================================================================
+// DATE/TIME FORMATTING FUNCTIONS
+// ============================================================================
+
+Function.Cobol.FormatDateString {
+    Input: date_int: Integer
+    Input: pic_pattern: Integer
+    Input: output_buffer: Integer
+    Output: Integer
+    Body: {
+        Debug("FormatDateString.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.FormatDateString\n")
+            PrintMessage("  date_int: ")
+            PrintNumber(date_int)
+            PrintMessage("\n")
+        }
+        
+        year = Divide(date_int, 10000)
+        remainder = Modulo(date_int, 10000)
+        month = Divide(remainder, 100)
+        day = Modulo(remainder, 100)
+        
+        Debug("FormatDateString.components", level=2) {
+            PrintMessage("  year: ")
+            PrintNumber(year)
+            PrintMessage(" month: ")
+            PrintNumber(month)
+            PrintMessage(" day: ")
+            PrintNumber(day)
+            PrintMessage("\n")
+        }
+        
+        pic_len = StringLength(pic_pattern)
+        output_pos = 0
+        component_index = 0
+        digit_in_component = 0
+        current_component = month
+        
+        i = 0
+        WhileLoop LessThan(i, pic_len) {
+            ch = StringCharAt(pic_pattern, i)
+            
+            is_digit_char = 0
+            IfCondition EqualTo(ch, 88) ThenBlock: {
+                is_digit_char = 1
+            }
+            IfCondition EqualTo(ch, 120) ThenBlock: {
+                is_digit_char = 1
+            }
+            IfCondition EqualTo(ch, 57) ThenBlock: {
+                is_digit_char = 1
+            }
+            
+            IfCondition EqualTo(is_digit_char, 1) ThenBlock: {
+                digit_val = 0
+                IfCondition EqualTo(digit_in_component, 0) ThenBlock: {
+                    digit_val = Divide(current_component, 10)
+                } ElseBlock: {
+                    digit_val = Modulo(current_component, 10)
+                }
+                
+                StoreValue(Add(output_buffer, output_pos), Add(48, digit_val))
+                output_pos = Add(output_pos, 1)
+                
+                digit_in_component = Add(digit_in_component, 1)
+                
+                IfCondition GreaterEqual(digit_in_component, 2) ThenBlock: {
+                    component_index = Add(component_index, 1)
+                    digit_in_component = 0
+                    
+                    IfCondition EqualTo(component_index, 1) ThenBlock: {
+                        current_component = day
+                    }
+                    IfCondition EqualTo(component_index, 2) ThenBlock: {
+                        current_component = Modulo(year, 100)
+                    }
+                }
+            } ElseBlock: {
+                IfCondition EqualTo(ch, 66) ThenBlock: {
+                    StoreValue(Add(output_buffer, output_pos), 32)
+                    output_pos = Add(output_pos, 1)
+                } ElseBlock: {
+                    IfCondition EqualTo(ch, 47) ThenBlock: {
+                        StoreValue(Add(output_buffer, output_pos), 47)
+                        output_pos = Add(output_pos, 1)
+                    } ElseBlock: {
+                        IfCondition EqualTo(ch, 45) ThenBlock: {
+                            StoreValue(Add(output_buffer, output_pos), 45)
+                            output_pos = Add(output_pos, 1)
+                        } ElseBlock: {
+                            StoreValue(Add(output_buffer, output_pos), ch)
+                            output_pos = Add(output_pos, 1)
+                        }
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(output_buffer, output_pos), 0)
+        
+        Debug("FormatDateString.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.FormatDateString\n")
+        }
+        ReturnValue(output_buffer)
+    }
+}
+
+Function.Cobol.FormatTimeString {
+    Input: time_int: Integer
+    Input: pic_pattern: Integer
+    Input: output_buffer: Integer
+    Output: Integer
+    Body: {
+        Debug("FormatTimeString.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.FormatTimeString\n")
+            PrintMessage("  time_int: ")
+            PrintNumber(time_int)
+            PrintMessage("\n")
+        }
+        
+        hour = Divide(time_int, 10000)
+        remainder = Modulo(time_int, 10000)
+        minute = Divide(remainder, 100)
+        second = Modulo(remainder, 100)
+        
+        Debug("FormatTimeString.components", level=2) {
+            PrintMessage("  hour: ")
+            PrintNumber(hour)
+            PrintMessage(" minute: ")
+            PrintNumber(minute)
+            PrintMessage(" second: ")
+            PrintNumber(second)
+            PrintMessage("\n")
+        }
+        
+        pic_len = StringLength(pic_pattern)
+        output_pos = 0
+        component_index = 0
+        digit_in_component = 0
+        current_component = hour
+        
+        i = 0
+        WhileLoop LessThan(i, pic_len) {
+            ch = StringCharAt(pic_pattern, i)
+            
+            is_digit_char = 0
+            IfCondition EqualTo(ch, 88) ThenBlock: {
+                is_digit_char = 1
+            }
+            IfCondition EqualTo(ch, 120) ThenBlock: {
+                is_digit_char = 1
+            }
+            IfCondition EqualTo(ch, 57) ThenBlock: {
+                is_digit_char = 1
+            }
+            
+            IfCondition EqualTo(is_digit_char, 1) ThenBlock: {
+                digit_val = 0
+                IfCondition EqualTo(digit_in_component, 0) ThenBlock: {
+                    digit_val = Divide(current_component, 10)
+                } ElseBlock: {
+                    digit_val = Modulo(current_component, 10)
+                }
+                
+                StoreValue(Add(output_buffer, output_pos), Add(48, digit_val))
+                output_pos = Add(output_pos, 1)
+                
+                digit_in_component = Add(digit_in_component, 1)
+                
+                IfCondition GreaterEqual(digit_in_component, 2) ThenBlock: {
+                    component_index = Add(component_index, 1)
+                    digit_in_component = 0
+                    
+                    IfCondition EqualTo(component_index, 1) ThenBlock: {
+                        current_component = minute
+                    }
+                    IfCondition EqualTo(component_index, 2) ThenBlock: {
+                        current_component = second
+                    }
+                }
+            } ElseBlock: {
+                IfCondition EqualTo(ch, 66) ThenBlock: {
+                    StoreValue(Add(output_buffer, output_pos), 32)
+                    output_pos = Add(output_pos, 1)
+                } ElseBlock: {
+                    IfCondition EqualTo(ch, 58) ThenBlock: {
+                        StoreValue(Add(output_buffer, output_pos), 58)
+                        output_pos = Add(output_pos, 1)
+                    } ElseBlock: {
+                        IfCondition EqualTo(ch, 46) ThenBlock: {
+                            StoreValue(Add(output_buffer, output_pos), 46)
+                            output_pos = Add(output_pos, 1)
+                        } ElseBlock: {
+                            StoreValue(Add(output_buffer, output_pos), ch)
+                            output_pos = Add(output_pos, 1)
+                        }
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(output_buffer, output_pos), 0)
+        
+        Debug("FormatTimeString.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.FormatTimeString\n")
+        }
+        ReturnValue(output_buffer)
+    }
+}
+
+Function.Cobol.FormatDayString {
+    Input: day_int: Integer
+    Input: pic_pattern: Integer
+    Input: output_buffer: Integer
+    Output: Integer
+    Body: {
+        Debug("FormatDayString.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.FormatDayString\n")
+            PrintMessage("  day_int: ")
+            PrintNumber(day_int)
+            PrintMessage("\n")
+        }
+        
+        year = Divide(day_int, 1000)
+        day_of_year = Modulo(day_int, 1000)
+        
+        Debug("FormatDayString.components", level=2) {
+            PrintMessage("  year: ")
+            PrintNumber(year)
+            PrintMessage(" day_of_year: ")
+            PrintNumber(day_of_year)
+            PrintMessage("\n")
+        }
+        
+        pic_len = StringLength(pic_pattern)
+        output_pos = 0
+        component_index = 0
+        digit_in_component = 0
+        current_component = year
+        component_digits = 4
+        
+        i = 0
+        WhileLoop LessThan(i, pic_len) {
+            ch = StringCharAt(pic_pattern, i)
+            
+            is_digit_char = 0
+            IfCondition EqualTo(ch, 88) ThenBlock: {
+                is_digit_char = 1
+            }
+            IfCondition EqualTo(ch, 120) ThenBlock: {
+                is_digit_char = 1
+            }
+            IfCondition EqualTo(ch, 57) ThenBlock: {
+                is_digit_char = 1
+            }
+            
+            IfCondition EqualTo(is_digit_char, 1) ThenBlock: {
+                digit_val = 0
+                
+                IfCondition EqualTo(component_digits, 4) ThenBlock: {
+                    IfCondition EqualTo(digit_in_component, 0) ThenBlock: {
+                        digit_val = Divide(current_component, 1000)
+                    }
+                    IfCondition EqualTo(digit_in_component, 1) ThenBlock: {
+                        digit_val = Divide(Modulo(current_component, 1000), 100)
+                    }
+                    IfCondition EqualTo(digit_in_component, 2) ThenBlock: {
+                        digit_val = Divide(Modulo(current_component, 100), 10)
+                    }
+                    IfCondition EqualTo(digit_in_component, 3) ThenBlock: {
+                        digit_val = Modulo(current_component, 10)
+                    }
+                } ElseBlock: {
+                    IfCondition EqualTo(digit_in_component, 0) ThenBlock: {
+                        digit_val = Divide(current_component, 100)
+                    }
+                    IfCondition EqualTo(digit_in_component, 1) ThenBlock: {
+                        digit_val = Divide(Modulo(current_component, 100), 10)
+                    }
+                    IfCondition EqualTo(digit_in_component, 2) ThenBlock: {
+                        digit_val = Modulo(current_component, 10)
+                    }
+                }
+                
+                StoreValue(Add(output_buffer, output_pos), Add(48, digit_val))
+                output_pos = Add(output_pos, 1)
+                
+                digit_in_component = Add(digit_in_component, 1)
+                
+                IfCondition GreaterEqual(digit_in_component, component_digits) ThenBlock: {
+                    component_index = Add(component_index, 1)
+                    digit_in_component = 0
+                    
+                    IfCondition EqualTo(component_index, 1) ThenBlock: {
+                        current_component = day_of_year
+                        component_digits = 3
+                    }
+                }
+            } ElseBlock: {
+                IfCondition EqualTo(ch, 66) ThenBlock: {
+                    StoreValue(Add(output_buffer, output_pos), 32)
+                    output_pos = Add(output_pos, 1)
+                } ElseBlock: {
+                    IfCondition EqualTo(ch, 45) ThenBlock: {
+                        StoreValue(Add(output_buffer, output_pos), 45)
+                        output_pos = Add(output_pos, 1)
+                    } ElseBlock: {
+                        StoreValue(Add(output_buffer, output_pos), ch)
+                        output_pos = Add(output_pos, 1)
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        StoreValue(Add(output_buffer, output_pos), 0)
+        
+        Debug("FormatDayString.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.FormatDayString\n")
+        }
+        ReturnValue(output_buffer)
+    }
+}
+
+
+// =============================================================================
+// SQL STRING SANITIZATION
+// =============================================================================
+
+Function.Cobol.EscapeForSQL {
+    Input: str: Address
+    Output: Address
+    Body: {
+        Debug("EscapeForSQL.entry", level=2) {
+            PrintMessage(">>> ENTER: Cobol.EscapeForSQL\n")
+            PrintMessage("  Input length: ")
+            PrintNumber(StringLength(str))
+            PrintMessage("\n")
+        }
+        
+        slot = Cobol.AllocResultSlot()
+        
+        local_result = ""
+        local_len = StringLength(str)
+        local_i = 0
+        local_nulls_stripped = 0
+        local_quotes_escaped = 0
+        
+        WhileLoop LessThan(local_i, local_len) {
+            ch_code = StringCharAt(str, local_i)
+            
+            Debug("EscapeForSQL.char", level=3) {
+                PrintMessage("    Position ")
+                PrintNumber(local_i)
+                PrintMessage(" char_code=")
+                PrintNumber(ch_code)
+                PrintMessage("\n")
+            }
+            
+            // Skip null bytes (ASCII 0)
+            IfCondition EqualTo(ch_code, 0) ThenBlock: {
+                local_nulls_stripped = Add(local_nulls_stripped, 1)
+                Debug("EscapeForSQL.null", level=3) {
+                    PrintMessage("      Stripped null byte\n")
+                }
+            } ElseBlock: {
+                ch = StringSubstring(str, local_i, 1)
+                
+                // Escape single quotes by doubling them (ASCII 39)
+                IfCondition EqualTo(ch_code, 39) ThenBlock: {
+                    local_result = StringConcat(local_result, "''")
+                    local_quotes_escaped = Add(local_quotes_escaped, 1)
+                    Debug("EscapeForSQL.quote", level=3) {
+                        PrintMessage("      Escaped single quote\n")
+                    }
+                } ElseBlock: {
+                    local_result = StringConcat(local_result, ch)
+                }
+            }
+            
+            local_i = Add(local_i, 1)
+        }
+        
+        Debug("EscapeForSQL.summary", level=2) {
+            PrintMessage("  Nulls stripped: ")
+            PrintNumber(local_nulls_stripped)
+            PrintMessage("\n")
+            PrintMessage("  Quotes escaped: ")
+            PrintNumber(local_quotes_escaped)
+            PrintMessage("\n")
+            PrintMessage("  Output length: ")
+            PrintNumber(StringLength(local_result))
+            PrintMessage("\n")
+        }
+        
+        Cobol.StoreResult(slot, local_result)
+        
+        Debug("EscapeForSQL.exit", level=2) {
+            PrintMessage("<<< EXIT: Cobol.EscapeForSQL\n")
+        }
+        
+        ReturnValue(Cobol.GetResult(slot))
+    }
+}
+
+
+// =============================================================================
+// COBOL CLASS CONDITION TESTS
+// =============================================================================
+
+Function.Cobol.IsNumeric {
+    Input: value: Address
+    Output: Integer
+    Body: {
+        Debug("IsNumeric.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.IsNumeric\n")
+            PrintMessage(StringConcat("  value: '", StringConcat(value, "'\n")))
+        }
+        
+        len = StringLength(value)
+        
+        IfCondition EqualTo(len, 0) ThenBlock: {
+            Debug("IsNumeric.empty", level=2) {
+                PrintMessage("  Empty string, not numeric\n")
+            }
+            ReturnValue(0)
+        }
+        
+        i = 0
+        has_digit = 0
+        has_decimal = 0
+        
+        WhileLoop LessThan(i, len) {
+            ch = StringCharAt(value, i)
+            
+            // Check for digits (ASCII 48-57)
+            is_digit = And(GreaterEqual(ch, 48), LessEqual(ch, 57))
+            
+            // Check for decimal point (ASCII 46)
+            is_decimal = EqualTo(ch, 46)
+            
+            // Check for minus sign (ASCII 45) - only valid at position 0
+            is_minus = And(EqualTo(ch, 45), EqualTo(i, 0))
+            
+            // Check for plus sign (ASCII 43) - only valid at position 0
+            is_plus = And(EqualTo(ch, 43), EqualTo(i, 0))
+            
+            IfCondition is_digit ThenBlock: {
+                has_digit = 1
+            } ElseBlock: {
+                IfCondition is_decimal ThenBlock: {
+                    IfCondition EqualTo(has_decimal, 1) ThenBlock: {
+                        // Multiple decimal points
+                        Debug("IsNumeric.invalid", level=2) {
+                            PrintMessage("  Multiple decimal points\n")
+                        }
+                        ReturnValue(0)
+                    }
+                    has_decimal = 1
+                } ElseBlock: {
+                    IfCondition Not(Or(is_minus, is_plus)) ThenBlock: {
+                        Debug("IsNumeric.invalid", level=2) {
+                            PrintMessage("  Invalid character at position ")
+                            PrintNumber(i)
+                            PrintMessage("\n")
+                        }
+                        ReturnValue(0)
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        IfCondition EqualTo(has_digit, 0) ThenBlock: {
+            Debug("IsNumeric.no_digits", level=2) {
+                PrintMessage("  No digits found\n")
+            }
+            ReturnValue(0)
+        }
+        
+        Debug("IsNumeric.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.IsNumeric returning 1\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+Function.Cobol.IsAlphabetic {
+    Input: value: Address
+    Output: Integer
+    Body: {
+        Debug("IsAlphabetic.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.IsAlphabetic\n")
+        }
+        
+        len = StringLength(value)
+        
+        IfCondition EqualTo(len, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            ch = StringCharAt(value, i)
+            
+            // Check for uppercase (ASCII 65-90) or lowercase (ASCII 97-122) or space (ASCII 32)
+            is_upper = And(GreaterEqual(ch, 65), LessEqual(ch, 90))
+            is_lower = And(GreaterEqual(ch, 97), LessEqual(ch, 122))
+            is_space = EqualTo(ch, 32)
+            
+            is_valid = Or(is_upper, Or(is_lower, is_space))
+            
+            IfCondition Not(is_valid) ThenBlock: {
+                Debug("IsAlphabetic.invalid", level=2) {
+                    PrintMessage("  Invalid character at position ")
+                    PrintNumber(i)
+                    PrintMessage("\n")
+                }
+                ReturnValue(0)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        Debug("IsAlphabetic.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.IsAlphabetic returning 1\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+Function.Cobol.IsAlphabeticLower {
+    Input: value: Address
+    Output: Integer
+    Body: {
+        Debug("IsAlphabeticLower.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.IsAlphabeticLower\n")
+        }
+        
+        len = StringLength(value)
+        
+        IfCondition EqualTo(len, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            ch = StringCharAt(value, i)
+            
+            // Check for lowercase (ASCII 97-122) or space (ASCII 32)
+            is_lower = And(GreaterEqual(ch, 97), LessEqual(ch, 122))
+            is_space = EqualTo(ch, 32)
+            
+            is_valid = Or(is_lower, is_space)
+            
+            IfCondition Not(is_valid) ThenBlock: {
+                ReturnValue(0)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        Debug("IsAlphabeticLower.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.IsAlphabeticLower returning 1\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+Function.Cobol.IsAlphabeticUpper {
+    Input: value: Address
+    Output: Integer
+    Body: {
+        Debug("IsAlphabeticUpper.entry", level=1) {
+            PrintMessage(">>> ENTER: Cobol.IsAlphabeticUpper\n")
+        }
+        
+        len = StringLength(value)
+        
+        IfCondition EqualTo(len, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, len) {
+            ch = StringCharAt(value, i)
+            
+            // Check for uppercase (ASCII 65-90) or space (ASCII 32)
+            is_upper = And(GreaterEqual(ch, 65), LessEqual(ch, 90))
+            is_space = EqualTo(ch, 32)
+            
+            is_valid = Or(is_upper, is_space)
+            
+            IfCondition Not(is_valid) ThenBlock: {
+                ReturnValue(0)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        Debug("IsAlphabeticUpper.exit", level=1) {
+            PrintMessage("<<< EXIT: Cobol.IsAlphabeticUpper returning 1\n")
+        }
+        ReturnValue(1)
+    }
+}
+
+
+
+// =============================================================================
+// END OF LIBRARY.COBOL.AILANG
+// =============================================================================
+// This library implements:
+// - Circular memory pool for string results (10 slots, round-robin allocation)
+// - COBOL string operations (count, replace, split, substring)
+// - Decimal formatting functions with source_decimals support
+// - COBOL display-edited formats (currency, commas, asterisk fill, etc.)
+// - File I/O with PostgreSQL backend
+// - API file handlers (REQUEST/RESPONSE)
+// - Date/time formatting functions
+//
+// All functions instrumented with comprehensive Debug blocks for traceability
+// =============================================================================

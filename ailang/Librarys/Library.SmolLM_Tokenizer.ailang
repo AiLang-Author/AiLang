@@ -1,0 +1,154 @@
+
+// Library.SmolLM_Tokenizer.ailang
+// Tokenizer/Detokenizer for SmolLM-135M
+// Usage: LibraryImport.SmolLM_Tokenizer
+
+// ============================================================================
+// VOCABULARY (First 100 tokens from SmolLM)
+// ============================================================================
+
+FixedPool.TokenVocab {
+    "pad": Initialize=0
+    "bos": Initialize=1       
+    "eos": Initialize=2        
+    "unk": Initialize=3        
+    "the": Initialize=4
+    "a": Initialize=5
+    "to": Initialize=6
+    "of": Initialize=7
+    "and": Initialize=8
+    "in": Initialize=9
+    "is": Initialize=10
+    "it": Initialize=11
+    "that": Initialize=12
+    "for": Initialize=13
+    "you": Initialize=14
+    "on": Initialize=15
+    "with": Initialize=16
+    "as": Initialize=17
+    "be": Initialize=18
+    "at": Initialize=19
+    "this": Initialize=20
+}
+
+// Reverse mapping (token ID → string)
+FixedPool.TokenStrings {
+    "count": Initialize=21
+}
+
+// Tokenizer state
+FixedPool.TokenizerState {
+    "current_token_id": Initialize=0
+    "tokens_processed": Initialize=0
+}
+
+// Variables
+tok_input_hash = 0
+tok_output_id = 0
+word_hash = 0 
+
+// ============================================================================
+// PUBLIC API: TOKENIZATION
+// ============================================================================
+
+SubRoutine.Tokenizer_EncodeWord {
+    // Input: word_hash (integer hash of input word)
+    // Output: token_id (global variable)
+    
+    // For production: Load real tokenizer vocab from file
+    // For demo: Hash-based mapping to first 24K tokens
+    
+    tok_input_hash = word_hash
+    
+    // Simple hash to token ID (placeholder for real BPE tokenizer)
+    token_id = Modulo(tok_input_hash, 24000)
+    
+    TokenizerState.current_token_id = token_id
+    TokenizerState.tokens_processed = Add(TokenizerState.tokens_processed, 1)
+}
+
+SubRoutine.Tokenizer_EncodeBOS {
+    // Encode beginning-of-sequence token
+    token_id = TokenVocab.bos
+    TokenizerState.current_token_id = token_id
+}
+
+SubRoutine.Tokenizer_EncodeEOS {
+    // Encode end-of-sequence token
+    token_id = TokenVocab.eos
+    TokenizerState.current_token_id = token_id
+}
+
+// ============================================================================
+// PUBLIC API: DETOKENIZATION
+// ============================================================================
+
+SubRoutine.Tokenizer_DecodeToken {
+    // Input: token_id (global variable)
+    // Output: prints token text
+    
+    // Special tokens
+    Branch token_id {
+        Case 0: { PrintMessage("<pad>") }
+        Case 1: { PrintMessage("<s>") }
+        Case 2: { PrintMessage("</s>") }
+        Case 3: { PrintMessage("<unk>") }
+        Case 4: { PrintMessage("the") }
+        Case 5: { PrintMessage("a") }
+        Case 6: { PrintMessage("to") }
+        Case 7: { PrintMessage("of") }
+        Case 8: { PrintMessage("and") }
+        Case 9: { PrintMessage("in") }
+        Case 10: { PrintMessage("is") }
+        Case 11: { PrintMessage("it") }
+        Case 12: { PrintMessage("that") }
+        Case 13: { PrintMessage("for") }
+        Case 14: { PrintMessage("you") }
+        Case 15: { PrintMessage("on") }
+        Case 16: { PrintMessage("with") }
+        Case 17: { PrintMessage("as") }
+        Case 18: { PrintMessage("be") }
+        Case 19: { PrintMessage("at") }
+        Case 20: { PrintMessage("this") }
+        Default: {
+            // Unknown token - print ID
+            PrintMessage("tok_")
+            PrintNumber(token_id)
+        }
+    }
+    PrintMessage(" ")
+}
+
+SubRoutine.Tokenizer_DecodeTokenNewline {
+    // Same as DecodeToken but adds newline
+    RunTask(Tokenizer_DecodeToken)
+    PrintMessage("\n")
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+SubRoutine.Tokenizer_GetStats {
+    // Print tokenizer statistics
+    PrintMessage("[Tokenizer] Tokens processed: ")
+    PrintNumber(TokenizerState.tokens_processed)
+    PrintMessage("\n")
+}
+
+SubRoutine.Tokenizer_Reset {
+    // Reset tokenizer state
+    TokenizerState.current_token_id = 0
+    TokenizerState.tokens_processed = 0
+}
+
+// ============================================================================
+// BATCH ENCODING (for sequences)
+// ============================================================================
+
+SubRoutine.Tokenizer_EncodeSequence {
+    // Encode multiple words
+    // Input: Array of word hashes (needs XArrays)
+    // For now: placeholder
+    PrintMessage("[Tokenizer] Batch encoding not yet implemented\n")
+}

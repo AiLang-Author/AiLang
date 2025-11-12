@@ -1,0 +1,627 @@
+// Library.JCL_Worker.ailang
+// Container runtime - provides services to programs
+
+LibraryImport.XArrays
+LibraryImport.PostgreSQL_Complete
+LibraryImport.Cobol
+LibraryImport.JSON
+
+FixedPool.ContainerConfig {
+    "program_name": Initialize=0
+    "start_time": CanChange=True
+    "exit_code": CanChange=True
+    "log_file": CanChange=True
+    "db_conn": CanChange=True
+    "job_id": CanChange=True
+}
+
+FixedPool.DBConfig {
+    "host": Initialize="localhost"
+    "port": Initialize=5432
+    "database": Initialize="esrd_production"
+    "user": Initialize="esrd_worker"
+    "password": Initialize="esrd123"
+}
+
+
+Function.JCL.InitializeAPIContext {
+    Input: job_id: Integer
+    Input: db_conn: Address
+    Body: {
+        Cobol.api_job_id = job_id
+        Cobol.api_db_conn = db_conn
+        APIFileState.current_job_id = job_id
+        APIFileState.current_db_conn = db_conn
+    }
+}
+
+
+Function.GetUnixTime {
+    Output: Integer
+    Body: {
+        timespec = Allocate(16)
+        result = SystemCall(228, 0, timespec)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            unix_time = Dereference(timespec)
+            Deallocate(timespec, 16)
+            ReturnValue(unix_time)
+        } ElseBlock: {
+            Deallocate(timespec, 16)
+            ReturnValue(0)
+        }
+    }
+}
+
+Function.JCL_Worker.InitializeServices {
+    Body: {
+        PrintMessage("[CONTAINER] Initializing runtime services...\n")
+        
+        ContainerConfig.start_time = GetUnixTime()
+        
+        log_dir = "logs"
+        dir_exists = FileExists(log_dir)
+        
+        IfCondition EqualTo(dir_exists, 0) ThenBlock: {
+            PrintMessage("[CONTAINER]   - Creating logs directory\n")
+        }
+        
+        program_name = ContainerConfig.program_name
+        timestamp_str = StringConcat("_", "run")
+        log_filename = StringConcat(program_name, timestamp_str)
+        log_filename = StringConcat(log_filename, ".log")
+        log_path = StringConcat("logs/", log_filename)
+        
+        ContainerConfig.log_file = log_path
+        
+        PrintMessage("[CONTAINER]   - Log file: ")
+        PrintString(log_path)
+        PrintMessage("\n")
+        
+        PrintMessage("[CONTAINER]   - PostgreSQL: Connecting to ")
+        PrintString(DBConfig.database)
+        PrintMessage("@")
+        PrintString(DBConfig.host)
+        PrintMessage("...")
+        
+        db_conn = PG_Connect(DBConfig.host, DBConfig.port, DBConfig.database, DBConfig.user, DBConfig.password)
+        
+        IfCondition EqualTo(db_conn, 0) ThenBlock: {
+            PrintMessage(" FAILED\n")
+            PrintMessage("[CONTAINER]   - WARNING: PostgreSQL unavailable\n")
+            PrintMessage("[CONTAINER]   - Programs will run without database\n")
+        } ElseBlock: {
+            PrintMessage(" Connected!\n")
+            ContainerConfig.db_conn = db_conn
+            
+            // =================================================================
+            // CRITICAL FIX: Set SQL_ASCII encoding to accept COBOL binary data
+            // This allows any byte values (0x00-0xFF) without UTF-8 validation
+            // Mainframe DB2 doesn't validate encoding - we replicate that here
+            // =================================================================
+            PrintMessage("[CONTAINER]   - Setting SQL_ASCII encoding for COBOL data...\n")
+            encoding_result = PG_Query(db_conn, "SET client_encoding = 'SQL_ASCII'")
+            IfCondition NotEqual(encoding_result, 0) ThenBlock: {
+                PG_DestroyResult(encoding_result)
+                PrintMessage("[CONTAINER]   - Encoding set to SQL_ASCII (accepts binary data)\n")
+            } ElseBlock: {
+                PrintMessage("[CONTAINER]   - WARNING: Could not set encoding\n")
+            }
+            // =================================================================
+            
+            test_result = PG_Query(db_conn, "SELECT 1")
+            IfCondition NotEqual(test_result, 0) ThenBlock: {
+                PG_DestroyResult(test_result)
+                PrintMessage("[CONTAINER]   - PostgreSQL: Ready\n")
+            } ElseBlock: {
+                PrintMessage("[CONTAINER]   - WARNING: Test query failed\n")
+            }
+            
+            // Initialize COBOL file system (uses PostgreSQL for file storage)
+            PrintMessage("[CONTAINER]   - Initializing COBOL file system...")
+            Cobol.InitFileSystem(db_conn)
+            
+            // =================================================================
+            // CRITICAL FIX #2: Set Cobol.api_db_conn for transpiled programs
+            // Programs use Cobol.api_db_conn to access the database.
+            // Without this, all SQL operations will fail with "connection is 0"
+            // =================================================================
+            Cobol.api_db_conn = db_conn
+            Cobol.api_job_id = ContainerConfig.job_id 
+            PrintMessage(" Ready (db_conn passed to programs)\n")
+            
+
+PrintMessage("[CONTAINER]   - ContainerConfig.job_id = ")
+PrintNumber(ContainerConfig.job_id)
+PrintMessage("\n")
+
+Cobol.api_job_id = ContainerConfig.job_id
+
+PrintMessage("[CONTAINER]   - Cobol.api_job_id NOW = ")
+PrintNumber(Cobol.api_job_id)
+PrintMessage("\n")
+
+PrintMessage(" Ready (db_conn passed to programs)\n")
+            // =================================================================
+        }
+        
+        PrintMessage("[CONTAINER]   - Memory management: Ready\n")
+        PrintMessage("[CONTAINER] Services initialized\n\n")
+    }
+}
+
+Function.JCL_Worker.ShutdownServices {
+    Body: {
+        PrintMessage("\n[CONTAINER] Shutting down services...\n")
+        
+        ContainerConfig.end_time = GetUnixTime()
+        runtime = Subtract(ContainerConfig.end_time, ContainerConfig.start_time)
+        
+        PrintMessage("[CONTAINER]   - Runtime: ")
+        PrintNumber(runtime)
+        PrintMessage(" seconds\n")
+        
+        IfCondition NotEqual(ContainerConfig.db_conn, 0) ThenBlock: {
+            PrintMessage("[CONTAINER]   - PostgreSQL: Disconnecting...")
+            PG_Disconnect(ContainerConfig.db_conn)
+            PrintMessage(" Done\n")
+        }
+        
+        PrintMessage("[CONTAINER] Services shutdown complete\n")
+    }
+}
+
+
+
+// Main container entry point
+Function.JCL_Worker.Main {
+    Input: shared_mem_addr: Address
+    Input: job_id: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("[CONTAINER] Worker started\n")
+        
+        // COPY program name from shared memory
+        name_len = StringLength(shared_mem_addr)
+        program_to_run = Allocate(Add(name_len, 1))
+        
+        i = 0
+        WhileLoop LessThan(i, name_len) {
+            byte = GetByte(shared_mem_addr, i)
+            SetByte(program_to_run, i, byte)
+            i = Add(i, 1)
+        }
+        SetByte(program_to_run, name_len, 0)
+        
+        ContainerConfig.program_name = program_to_run
+        ContainerConfig.job_id = job_id
+        
+        PrintMessage("[CONTAINER] Starting container for: ")
+        PrintString(program_to_run)
+        PrintMessage("\n")
+        
+        PrintMessage("[CONTAINER] Job ID: ")
+        PrintNumber(job_id)
+        PrintMessage("\n")
+        
+        JCL_Worker.InitializeServices()
+        
+        exit_code = JCL_Worker.ExecuteProgram(program_to_run)
+        
+        ContainerConfig.exit_code = exit_code
+        
+        JCL_Worker.ShutdownServices()
+        
+        // Check if program prepared a response
+        IfCondition And(GreaterThan(job_id, 0), NotEqual(Cobol.api_response_data, 0)) ThenBlock: {
+            PrintMessage("[CONTAINER] Writing API response to database\n")
+            
+            // Build INSERT query
+            query = "INSERT INTO api_responses (job_id, response_data) VALUES ("
+            job_id_str = NumberToString(job_id)
+            query = StringConcat(query, job_id_str)
+            query = StringConcat(query, ", '")
+            query = StringConcat(query, Cobol.api_response_data)
+            query = StringConcat(query, "')")
+            
+            result = PG_Query(ContainerConfig.db_conn, query)
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                PG_DestroyResult(result)
+                PrintMessage("[CONTAINER] Response written successfully\n")
+            } ElseBlock: {
+                PrintMessage("[CONTAINER] ERROR: Failed to write response\n")
+            }
+            
+            // Clean up
+            Deallocate(query, 0)
+            Deallocate(job_id_str, 0)
+            
+            // Free response data
+            response_len = StringLength(Cobol.api_response_data)
+            Deallocate(Cobol.api_response_data, Add(response_len, 1))
+            Cobol.api_response_data = 0
+        }
+        
+        PrintMessage("\n════════════════════════════════════════\n")
+        
+        IfCondition EqualTo(exit_code, 0) ThenBlock: {
+            PrintMessage("✓ CONTAINER SUCCESS\n")
+        } ElseBlock: {
+            PrintMessage("✗ CONTAINER FAILED (RC=")
+            PrintNumber(exit_code)
+            PrintMessage(")\n")
+        }
+        
+        PrintMessage("════════════════════════════════════════\n")
+        
+        Deallocate(program_to_run, Add(name_len, 1))
+        
+        ReturnValue(exit_code)
+    }
+}
+
+
+Function.JCL_Worker.RegisterJob {
+    Input: job_id: Integer
+    Input: program_name: Address
+    Output: Integer  // Returns PID
+    Body: {
+        // Get current PID
+        pid = SystemCall(39)  // getpid()
+        
+        PrintMessage("[CONTAINER] Registering job_id ")
+        PrintNumber(job_id)
+        PrintMessage(" for PID ")
+        PrintNumber(pid)
+        PrintMessage("\n")
+        
+        // Build INSERT query
+        query = "INSERT INTO active_jobs (pid, job_id, program_name) VALUES ("
+        
+        pid_str = NumberToString(pid)
+        job_id_str = NumberToString(job_id)
+        
+        query = StringConcat(query, pid_str)
+        query = StringConcat(query, ", ")
+        query = StringConcat(query, job_id_str)
+        query = StringConcat(query, ", '")
+        query = StringConcat(query, program_name)
+        query = StringConcat(query, "')")
+        
+        db_conn = ContainerConfig.db_conn
+        result = PG_Query(db_conn, query)
+        
+        Deallocate(pid_str, 0)
+        Deallocate(job_id_str, 0)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("[CONTAINER] ERROR: Failed to register job\n")
+            ReturnValue(0)
+        }
+        
+        PG_DestroyResult(result)
+        PrintMessage("[CONTAINER] Job registered\n")
+        
+        ReturnValue(pid)
+    }
+}
+
+Function.JCL_Worker.UnregisterJob {
+    Input: pid: Integer
+    Body: {
+        PrintMessage("[CONTAINER] Unregistering PID ")
+        PrintNumber(pid)
+        PrintMessage("\n")
+        
+        query = "DELETE FROM active_jobs WHERE pid = "
+        pid_str = NumberToString(pid)
+        query = StringConcat(query, pid_str)
+        
+        db_conn = ContainerConfig.db_conn
+        result = PG_Query(db_conn, query)
+        
+        Deallocate(pid_str, 0)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+    }
+}
+
+
+// FIXED: Use simple relative path instead of getcwd complications
+Function.JCL_Worker.ExecuteProgram {
+    Input: program_name: Address
+    Output: Integer
+    Body: {
+        PrintMessage("[CONTAINER] Executing program: ")
+        PrintString(program_name)
+        PrintMessage("\n")
+
+        // Build path: PROGRAMS/program_name.jcl
+        temp1 = StringConcat("PROGRAMS/", program_name)
+        program_path = StringConcat(temp1, ".jcl")
+
+        PrintMessage("[DEBUG] Full path: ")
+        PrintString(program_path)
+        PrintMessage("\n")
+        
+        // Get job_id
+        job_id = ContainerConfig.job_id
+        job_id_str = NumberToString(job_id)
+        
+        PrintMessage("[CONTAINER] Job ID to pass: ")
+        PrintNumber(job_id)
+        PrintMessage("\n")
+        
+        PrintMessage("════════════════════════════════════════\n")
+        
+        // FORK
+        pid = SystemCall(57)
+        
+        PrintMessage("[DEBUG] Fork returned pid=")
+        PrintNumber(pid)
+        PrintMessage("\n")
+        
+        IfCondition EqualTo(pid, 0) ThenBlock: {
+            // CHILD PROCESS
+            PrintMessage("[CHILD] About to exec with job_id: ")
+            PrintString(job_id_str)
+            PrintMessage("\n")
+            
+            // Build argv array: [program_path, job_id_str, NULL]
+            argv = Allocate(24)
+            StoreValue(argv, program_path)           // argv[0] = program path
+            StoreValue(Add(argv, 8), job_id_str)     // argv[1] = job_id
+            StoreValue(Add(argv, 16), 0)             // argv[2] = NULL
+            
+            // Execute the program
+            exec_result = SystemCall(59, program_path, argv, 0)
+            
+            // Only reached if exec fails
+            PrintMessage("[CHILD] EXEC FAILED! Returned: ")
+            PrintNumber(exec_result)
+            PrintMessage("\n")
+            
+            Deallocate(argv, 24)
+            SystemCall(60, 127)  // exit(127)
+        } ElseBlock: {
+            // PARENT PROCESS
+            PrintMessage("[PARENT] Waiting for child pid=")
+            PrintNumber(pid)
+            PrintMessage("\n")
+            
+            // Wait for child to complete
+            status_ptr = Allocate(8)
+            SystemCall(61, pid, status_ptr, 0)
+            exit_code = Dereference(status_ptr)
+            Deallocate(status_ptr, 8)
+            
+            PrintMessage("[PARENT] Child exited with: ")
+            PrintNumber(exit_code)
+            PrintMessage("\n")
+            
+            // Cleanup
+            job_id_str_len = StringLength(job_id_str)
+            Deallocate(job_id_str, Add(job_id_str_len, 1))
+            
+            temp1_len = StringLength(temp1)
+            Deallocate(temp1, Add(temp1_len, 1))
+            
+            program_path_len = StringLength(program_path)
+            Deallocate(program_path, Add(program_path_len, 1))
+            
+            PrintMessage("════════════════════════════════════════\n")
+            
+            // After program completes, check if response data was prepared
+            has_job_id = GreaterThan(ContainerConfig.job_id, 0)
+            has_response = NotEqual(Cobol.api_response_data, 0)
+            should_write = And(has_job_id, has_response)
+            
+            IfCondition should_write ThenBlock: {
+                PrintMessage("[CONTAINER] Program prepared API response, writing to database\n")
+                
+                // Build INSERT query directly here since WriteAPIResponse doesn't exist yet
+                query = "INSERT INTO api_responses (job_id, response_data) VALUES ("
+                job_str = NumberToString(ContainerConfig.job_id)
+                query = StringConcat(query, job_str)
+                query = StringConcat(query, ", '")
+                query = StringConcat(query, Cobol.api_response_data)
+                query = StringConcat(query, "')")
+                
+                result = PG_Query(ContainerConfig.db_conn, query)
+                
+                IfCondition NotEqual(result, 0) ThenBlock: {
+                    PG_DestroyResult(result)
+                    PrintMessage("[CONTAINER] Response written successfully\n")
+                } ElseBlock: {
+                    PrintMessage("[CONTAINER] WARNING: Failed to write response\n")
+                }
+                
+                // Clean up query strings
+                query_len = StringLength(query)
+                Deallocate(query, Add(query_len, 1))
+                job_str_len = StringLength(job_str)
+                Deallocate(job_str, Add(job_str_len, 1))
+                
+                // Clean up response data
+                response_len = StringLength(Cobol.api_response_data)
+                Deallocate(Cobol.api_response_data, Add(response_len, 1))
+                Cobol.api_response_data = 0
+            }
+            
+            ReturnValue(exit_code)
+        }
+    }
+}
+
+
+// ============================================================================
+// Load job data and extract the "data" field
+// ============================================================================
+Function.JCL_DataLoader.LoadJobData {
+    Input: job_id: Integer
+    Input: db_conn: Address
+    Output: Address
+    Body: {
+        Debug("dataloader.entry", level=1) {
+            PrintMessage("[DATALOADER] Loading data for job_id: ")
+            PrintNumber(job_id)
+            PrintMessage("\n")
+        }
+        
+        IfCondition EqualTo(db_conn, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: No database connection\n")
+            ReturnValue(0)
+        }
+        
+        base_query = "SELECT request_data FROM jcl_job_data WHERE job_id = "
+        job_id_str = NumberToString(job_id)
+        query = StringConcat(base_query, job_id_str)
+        Deallocate(job_id_str, 0)
+        
+        result = PG_Query(db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: Query failed\n")
+            ReturnValue(0)
+        }
+        
+        row_count = XArray.XSize(result)
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: No data found\n")
+            PG_DestroyResult(result)
+            ReturnValue(0)
+        }
+        
+        row = XArray.XGet(result, 0)
+        json_data = HashMap.HGetSimple(row, "request_data")
+        PG_DestroyResult(result)
+        
+        IfCondition EqualTo(json_data, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: Empty request_data\n")
+            ReturnValue(0)
+        }
+        
+        parsed_json = ParseJSON(json_data)
+        
+        json_len = StringLength(json_data)
+        Deallocate(json_data, Add(json_len, 1))
+        
+        IfCondition EqualTo(parsed_json, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: JSON parse failed\n")
+            ReturnValue(0)
+        }
+        
+        PrintMessage("[DATALOADER] ✓ Data loaded successfully\n")
+        
+        // Return the parsed hashmap directly
+        ReturnValue(parsed_json)
+    }
+}
+
+// ============================================================================
+// Extract the "data" field value from JSON
+// ============================================================================
+Function.JCL_DataLoader.ExtractDataField {
+    Input: json: Address
+    Output: Address
+    Body: {
+        i = 0
+        json_len = StringLength(json)
+        
+        WhileLoop LessThan(i, json_len) {
+            ch = GetByte(json, i)
+            
+            IfCondition EqualTo(ch, 100) ThenBlock: {
+                match = 1
+                match = And(match, EqualTo(GetByte(json, Add(i, 1)), 97))
+                match = And(match, EqualTo(GetByte(json, Add(i, 2)), 116))
+                match = And(match, EqualTo(GetByte(json, Add(i, 3)), 97))
+                match = And(match, EqualTo(GetByte(json, Add(i, 4)), 34))
+                
+                IfCondition EqualTo(match, 1) ThenBlock: {
+                    j = Add(i, 5)
+                    
+                    WhileLoop LessThan(j, json_len) {
+                        skip_ch = GetByte(json, j)
+                        
+                        IfCondition EqualTo(skip_ch, 123) ThenBlock: {
+                            brace_count = 1
+                            start = j
+                            j = Add(j, 1)
+                            
+                            WhileLoop LessThan(j, json_len) {
+                                brace_ch = GetByte(json, j)
+                                
+                                IfCondition EqualTo(brace_ch, 123) ThenBlock: {
+                                    brace_count = Add(brace_count, 1)
+                                }
+                                
+                                IfCondition EqualTo(brace_ch, 125) ThenBlock: {
+                                    brace_count = Subtract(brace_count, 1)
+                                    
+                                    IfCondition EqualTo(brace_count, 0) ThenBlock: {
+                                        data_len = Add(Subtract(j, start), 1)
+                                        data_str = Allocate(Add(data_len, 1))
+                                        k = 0
+                                        
+                                        WhileLoop LessThan(k, data_len) {
+                                            SetByte(data_str, k, GetByte(json, Add(start, k)))
+                                            k = Add(k, 1)
+                                        }
+                                        
+                                        SetByte(data_str, data_len, 0)
+                                        ReturnValue(data_str)
+                                    }
+                                }
+                                
+                                j = Add(j, 1)
+                            }
+                            
+                            BreakLoop
+                        }
+                        
+                        j = Add(j, 1)
+                    }
+                    
+                    BreakLoop
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+
+// ============================================================================
+// Get a field value from the data JSON object
+// ============================================================================
+Function.JCL_DataLoader.GetField {
+    Input: hashmap: Address
+    Input: field_name: Address
+    Output: Address
+    Body: {
+        IfCondition EqualTo(hashmap, 0) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        // Look up field in hashmap using XSHash.XLookup
+        value = XSHash.XLookup(hashmap, field_name)
+        
+        // XSHash.XLookup returns XArrays.XNULL if not found
+        IfCondition EqualTo(value, XArrays.XNULL) ThenBlock: {
+            ReturnValue(0)
+        }
+        
+        ReturnValue(value)
+    }
+}

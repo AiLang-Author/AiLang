@@ -1,0 +1,530 @@
+// Library.JCL.ailang
+// Job Control Language - Shared queue and functions for daemon + gateway
+
+LibraryImport.XArrays
+LibraryImport.JCL_Worker
+
+
+FixedPool.JCL {
+    "QUEUE_SIZE": Initialize=8
+    "queue_head": Initialize=0
+    "queue_tail": Initialize=0
+    "queue_count": Initialize=0
+    "jobs_submitted": Initialize=0
+    "jobs_completed": Initialize=0
+    "jobs_failed": Initialize=0
+    "program_0": Initialize=0
+    "program_1": Initialize=0
+    "program_2": Initialize=0
+    "program_3": Initialize=0
+    "program_4": Initialize=0
+    "program_5": Initialize=0
+    "program_6": Initialize=0
+    "program_7": Initialize=0
+}
+
+// Enqueue a job
+Function.JCL.Enqueue {
+    Input: program_name: Address
+    Output: Integer
+    Body: {
+        Debug("jcl.queue", level=2) { PrintMessage("[DEBUG] JCL.Enqueue: Attempting to enqueue\n") }
+        IfCondition LessThan(JCL.queue_count, JCL.QUEUE_SIZE) ThenBlock: {
+            Debug("jcl.queue", level=3) { PrintMessage("[DEBUG] JCL.Enqueue: Queue has space\n") }
+            pos = JCL.queue_tail
+            
+            Branch pos {
+                Case 0: { JCL.program_0 = program_name }
+                Case 1: { JCL.program_1 = program_name }
+                Case 2: { JCL.program_2 = program_name }
+                Case 3: { JCL.program_3 = program_name }
+                Case 4: { JCL.program_4 = program_name }
+                Case 5: { JCL.program_5 = program_name }
+                Case 6: { JCL.program_6 = program_name }
+                Case 7: { JCL.program_7 = program_name }
+            }
+            
+            JCL.queue_tail = Modulo(Add(pos, 1), JCL.QUEUE_SIZE)
+            JCL.queue_count = Add(JCL.queue_count, 1)
+            JCL.jobs_submitted = Add(JCL.jobs_submitted, 1)
+            
+            Debug("jcl.queue", level=2) { PrintMessage("[DEBUG] JCL.Enqueue: Success\n") }
+            ReturnValue(1)
+        } ElseBlock: {
+            Debug("jcl.queue", level=2) { PrintMessage("[DEBUG] JCL.Enqueue: FAILED - Queue full\n") }
+            ReturnValue(0)
+        }
+    }
+}
+
+// Dequeue a job
+Function.JCL.Dequeue {
+    Output: Address
+    Body: {
+        Debug("jcl.queue", level=2) { PrintMessage("[DEBUG] JCL.Dequeue: Attempting to dequeue\n") }
+        IfCondition GreaterThan(JCL.queue_count, 0) ThenBlock: {
+            Debug("jcl.queue", level=3) { PrintMessage("[DEBUG] JCL.Dequeue: Queue has items\n") }
+            pos = JCL.queue_head
+            program = 0
+            
+            Branch pos {
+                Case 0: { program = JCL.program_0 }
+                Case 1: { program = JCL.program_1 }
+                Case 2: { program = JCL.program_2 }
+                Case 3: { program = JCL.program_3 }
+                Case 4: { program = JCL.program_4 }
+                Case 5: { program = JCL.program_5 }
+                Case 6: { program = JCL.program_6 }
+                Case 7: { program = JCL.program_7 }
+            }
+            
+            JCL.queue_head = Modulo(Add(pos, 1), JCL.QUEUE_SIZE)
+            JCL.queue_count = Subtract(JCL.queue_count, 1)
+            
+            Debug("jcl.queue", level=2) { PrintMessage("[DEBUG] JCL.Dequeue: Success\n") }
+            ReturnValue(program)
+        } ElseBlock: {
+            Debug("jcl.queue", level=2) { PrintMessage("[DEBUG] JCL.Dequeue: FAILED - Queue empty\n") }
+            ReturnValue(0)
+        }
+    }
+}
+
+// Get queue size
+Function.JCL.GetQueueSize {
+    Output: Integer
+    Body: {
+        ReturnValue(JCL.queue_count)
+    }
+}
+
+// Get stats
+Function.JCL.GetStats {
+    Output: Address
+    Body: {
+        stats = XArray.XCreate(4)
+        XArray.XPush(stats, JCL.jobs_submitted)
+        XArray.XPush(stats, JCL.jobs_completed)
+        XArray.XPush(stats, JCL.jobs_failed)
+        XArray.XPush(stats, JCL.queue_count)
+        ReturnValue(stats)
+    }
+}
+
+// Mark job as completed
+Function.JCL.MarkCompleted {
+    Output: Integer
+    Body: {
+        JCL.jobs_completed = Add(JCL.jobs_completed, 1)
+        ReturnValue(1)
+    }
+}
+
+// Mark job as failed
+Function.JCL.MarkFailed {
+    Output: Integer
+    Body: {
+        JCL.jobs_failed = Add(JCL.jobs_failed, 1)
+        ReturnValue(1)
+    }
+}
+
+// Execute job in container using mmap for IPC
+Function.JCL.ExecuteJobInContainer {
+    Input: program_name: Address
+    Input: job_id: Integer  
+    Output: Integer
+    Body: {
+        Debug("jcl.exec", level=1) {
+            PrintMessage("[DEBUG] JCL.ExecuteJobInContainer: Starting for '")
+            PrintString(program_name)
+            PrintMessage("'\n")
+        }
+
+        PrintMessage("  [EXEC] Starting container for: ")
+        PrintString(program_name)
+        PrintMessage(" (job_id: ")
+        PrintNumber(job_id) 
+        PrintMessage(")\n")
+        
+        exit_code = JCL_Worker.Main(program_name, job_id) 
+
+        Debug("jcl.exec", level=2) {
+            PrintMessage("[DEBUG] JCL.ExecuteJobInContainer: JCL_Worker.Main completed with RC=")
+            PrintNumber(exit_code)
+            PrintMessage("\n")
+        }
+
+        PrintMessage("  [EXEC] Container completed: ")
+        PrintString(program_name)
+        PrintMessage(" [RC=")
+        PrintNumber(exit_code)
+        PrintMessage("]\n")
+        
+        Debug("jcl.exec", level=1) { PrintMessage("[DEBUG] JCL.ExecuteJobInContainer: Finished\n") }
+        ReturnValue(exit_code)
+    }
+}
+
+// Parse JCL.conf file. This file is simple plain text, one program name per line.
+// This function reads each line, trims all leading/trailing whitespace,
+// and ignores empty lines or lines that start with '#'.
+Function.JCL.ParseConfig {
+    Input: config_content: Address
+    Output: Address
+    Body: {
+        Debug("jcl.config", level=1) { PrintMessage("[DEBUG] JCL.ParseConfig: Parsing JCL.conf content\n") }
+        program_list = XArray.XCreate(16)
+        content_len = StringLength(config_content)
+        pos = 0
+        line_start = 0
+        
+        WhileLoop LessEqual(pos, content_len) {
+            c = GetByte(config_content, pos)
+            
+            // Check for newline or end of string to process a line
+            IfCondition Or(EqualTo(c, 10), EqualTo(c, 0)) ThenBlock: {
+                // Find start of non-whitespace in the current line segment
+                start_idx = line_start
+                WhileLoop LessThan(start_idx, pos) {
+                    ch = GetByte(config_content, start_idx)
+                    // CRITICAL FIX: Add newline (10) to the whitespace check. This prevents a leading '\n' on program names, which was causing a segfault.
+                    is_whitespace = Or(EqualTo(ch, 10), Or(EqualTo(ch, 32), Or(EqualTo(ch, 9), EqualTo(ch, 13))))
+                    IfCondition EqualTo(is_whitespace, 0) ThenBlock: { BreakLoop }
+                    start_idx = Add(start_idx, 1)
+                }
+
+                // Find end of non-whitespace
+                end_idx = Subtract(pos, 1)
+                WhileLoop GreaterThan(end_idx, start_idx) {
+                    ch = GetByte(config_content, end_idx)
+                    is_whitespace = Or(EqualTo(ch, 32), Or(EqualTo(ch, 9), Or(EqualTo(ch, 13), EqualTo(ch, 10))))
+                    IfCondition EqualTo(is_whitespace, 0) ThenBlock: { BreakLoop }
+                    end_idx = Subtract(end_idx, 1)
+                }
+
+                // Calculate length of trimmed string
+                trimmed_len = Add(Subtract(end_idx, start_idx), 1)
+                
+                IfCondition GreaterThan(trimmed_len, 0) ThenBlock: {
+                    first_char = GetByte(config_content, start_idx)
+                    // Ignore comment lines
+                    IfCondition NotEqual(first_char, 35) ThenBlock: { // '#'
+                        program_name = StringSubstring(config_content, start_idx, trimmed_len)
+                        XArray.XPush(program_list, program_name)
+                    }
+                }
+                
+                line_start = Add(pos, 1)
+            }
+            
+            pos = Add(pos, 1)
+        }
+
+        Debug("jcl.config", level=1) {
+            PrintMessage("[DEBUG] JCL.ParseConfig: Found ")
+            PrintNumber(XArray.XSize(program_list))
+            PrintMessage(" jobs\n")
+        }
+        ReturnValue(program_list)
+    }
+}
+
+
+// Load job data and extract the "data" field
+Function.JCL.LoadJobData {
+    Input: job_id: Integer
+    Input: db_conn: Address
+    Output: Address  // Returns the "data" JSON object as string, or 0
+    Body: {
+        PrintMessage("[DATALOADER] Loading data for job_id: ")
+        PrintNumber(job_id)
+        PrintMessage("\n")
+        
+        // Get connection from container
+        IfCondition EqualTo(db_conn, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: No database connection\n")
+            ReturnValue(0)
+        }
+        
+        // Query for job data
+        query = "SELECT json_data FROM jcl_job_data WHERE job_id = "
+        job_id_str = NumberToString(job_id)
+        query = StringConcat(query, job_id_str)
+        Deallocate(job_id_str, 0)
+        
+        Debug("jcl.db", level=3) {
+            PrintMessage("[JCL.LoadJobData] Executing query: ")
+            PrintString(query)
+            PrintMessage("\n")
+        }
+        result = PG_Query(db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: Query failed\n")
+            ReturnValue(0)
+        }
+        
+        row_count = XArray.XSize(result)
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: No data found for job_id\n")
+            PG_DestroyResult(result)
+            ReturnValue(0)
+        }
+        
+        // Get the JSON data
+        row = XArray.XGet(result, 0)
+        json_data = HashMap.HGetSimple(row, "json_data")
+        
+        PG_DestroyResult(result)
+        
+        IfCondition EqualTo(json_data, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: Empty json_data\n")
+            ReturnValue(0)
+        }
+        
+        // Extract "data" field from JSON
+        data_value = JCL.ExtractDataField(json_data)
+        
+        IfCondition EqualTo(data_value, 0) ThenBlock: {
+            PrintMessage("[DATALOADER] ERROR: No 'data' field in JSON\n")
+            ReturnValue(0)
+        }
+        
+        PrintMessage("[DATALOADER] ✓ Data loaded successfully\n")
+        ReturnValue(data_value)
+    }
+}
+
+// Extract the "data" field value from JSON
+Function.JCL.ExtractDataField {
+    Input: json: Address
+    Output: Address
+    Body: {
+        // Find "data": in the JSON
+        i = 0
+        json_len = StringLength(json)
+        
+        WhileLoop LessThan(i, json_len) {
+            ch = GetByte(json, i)
+            
+            // Look for "data"
+            IfCondition EqualTo(ch, 100) ThenBlock: {  // 'd'
+                match = 1
+                match = And(match, EqualTo(GetByte(json, Add(i, 1)), 97))   // 'a'
+                match = And(match, EqualTo(GetByte(json, Add(i, 2)), 116))  // 't'
+                match = And(match, EqualTo(GetByte(json, Add(i, 3)), 97))   // 'a'
+                match = And(match, EqualTo(GetByte(json, Add(i, 4)), 34))   // ''
+                
+                IfCondition EqualTo(match, 1) ThenBlock: {
+                    // Found "data", now find the opening {
+                    j = Add(i, 5)
+                    WhileLoop LessThan(j, json_len) {
+                        skip_ch = GetByte(json, j)
+                        IfCondition EqualTo(skip_ch, 123) ThenBlock: {  // '{'
+                            // Found opening brace, now find matching closing brace
+                            brace_count = 1
+                            start = j
+                            j = Add(j, 1)
+                            
+                            WhileLoop LessThan(j, json_len) {
+                                brace_ch = GetByte(json, j)
+                                IfCondition EqualTo(brace_ch, 123) ThenBlock: {  // '{'
+                                    brace_count = Add(brace_count, 1)
+                                }
+                                IfCondition EqualTo(brace_ch, 125) ThenBlock: {  // '}'
+                                    brace_count = Subtract(brace_count, 1)
+                                    IfCondition EqualTo(brace_count, 0) ThenBlock: {
+                                        // Found matching brace, extract the data object
+                                        data_len = Add(Subtract(j, start), 1)
+                                        data_str = Allocate(Add(data_len, 1))
+                                        k = 0
+                                        WhileLoop LessThan(k, data_len) {
+                                            SetByte(data_str, k, GetByte(json, Add(start, k)))
+                                            k = Add(k, 1)
+                                        }
+                                        SetByte(data_str, data_len, 0)
+                                        ReturnValue(data_str)
+                                    }
+                                }
+                                j = Add(j, 1)
+                            }
+                            BreakLoop
+                        }
+                        j = Add(j, 1)
+                    }
+                    BreakLoop
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(0)
+    }
+}
+
+Function.JCL.LoadData {
+    Input: program_name: Address
+    Input: json_data_str: Address
+    Body: {
+        Debug("jcl.dataloader", level=1) {
+            PrintMessage("[DATA_LOADER] Loading data for program: ")
+            PrintString(program_name)
+            PrintMessage("\n")
+        }
+
+        // This is where the auto-generated mapping from JSON to COBOL variables will go.
+        // For the ESCAL056 demo, we will manually load the fields we need.
+
+        // Example: Load 'patient_age' from JSON into COBOL_ESCAL056_LINKAGE.B_PATIENT_AGE
+        patient_age_val = JCL.GetField(json_data_str, "patient_age")
+        IfCondition NotEqual(patient_age_val, 0) ThenBlock: {
+            COBOL_ESCAL056_LINKAGE.B_PATIENT_AGE = StringToNumber(patient_age_val)
+            Debug("jcl.dataloader", level=2) {
+                PrintMessage("[DATA_LOADER] Loaded B_PATIENT_AGE = ")
+                PrintString(patient_age_val)
+                PrintMessage("\n")
+            }
+            Deallocate(patient_age_val, 0)
+        }
+
+        // TODO: Repeat the GetField -> StringToNumber -> Set Linkage Variable pattern for all other input fields.
+    }
+}
+
+
+
+
+
+
+// Get a field value from the data JSON object
+Function.JCL.GetField {
+    Input: data_json: Address
+    Input: field_name: Address
+    Output: Address
+    Body: {
+        Debug("jcl.json", level=4) {
+            PrintMessage("[JCL.GetField] Searching for field '")
+            PrintString(field_name)
+            PrintMessage("'\n")
+        }
+        field_len = StringLength(field_name)
+        json_len = StringLength(data_json)
+        
+        i = 0
+        WhileLoop LessThan(i, json_len) {
+            ch = GetByte(data_json, i)
+            
+            // Look for opening quote of field name
+            IfCondition EqualTo(ch, 34) ThenBlock: {  // '"'
+                // Check if this matches our field name
+                match = 1
+                j = 0
+                WhileLoop LessThan(j, field_len) {
+                    field_ch = GetByte(field_name, j)
+                    json_ch = GetByte(data_json, Add(Add(i, 1), j))
+                    IfCondition NotEqual(field_ch, json_ch) ThenBlock: {
+                        match = 0
+                        BreakLoop
+                    }
+                    j = Add(j, 1)
+                }
+                
+                // Check if followed by closing quote and colon
+                IfCondition EqualTo(match, 1) ThenBlock: {
+                    check_pos = Add(Add(i, 1), field_len)
+                    check_quote = GetByte(data_json, check_pos)
+                    IfCondition EqualTo(check_quote, 34) ThenBlock: {  // '"'
+                        // Find the colon
+                        colon_pos = Add(check_pos, 1)
+                        WhileLoop LessThan(colon_pos, json_len) {
+                            colon_ch = GetByte(data_json, colon_pos)
+                            IfCondition EqualTo(colon_ch, 58) ThenBlock: {  // ':'
+                                // Found the field, now extract value
+                                value_start = Add(colon_pos, 1)
+                                
+                                // Skip whitespace
+                                WhileLoop LessThan(value_start, json_len) {
+                                    ws_ch = GetByte(data_json, value_start)
+                                    is_ws = Or(EqualTo(ws_ch, 32), EqualTo(ws_ch, 9))
+                                    IfCondition EqualTo(is_ws, 0) ThenBlock: {
+                                        BreakLoop
+                                    }
+                                    value_start = Add(value_start, 1)
+                                }
+                                
+                                // Check if value is quoted string
+                                first_ch = GetByte(data_json, value_start)
+                                IfCondition EqualTo(first_ch, 34) ThenBlock: {  // '"'
+                                    // Quoted string - find closing quote
+                                    value_start = Add(value_start, 1)
+                                    value_end = value_start
+                                    WhileLoop LessThan(value_end, json_len) {
+                                        end_ch = GetByte(data_json, value_end)
+                                        IfCondition EqualTo(end_ch, 34) ThenBlock: {  // '"'
+                                            // Found end, extract value
+                                            value_len = Subtract(value_end, value_start)
+                                            value_str = Allocate(Add(value_len, 1))
+                                            k = 0
+                                            WhileLoop LessThan(k, value_len) {
+                                                SetByte(value_str, k, GetByte(data_json, Add(value_start, k)))
+                                                k = Add(k, 1)
+                                            }
+                                            Debug("jcl.json", level=3) {
+                                                PrintMessage("[JCL.GetField] Found string value: ")
+                                                PrintString(value_str)
+                                                PrintMessage("\n")
+                                            }
+                                            SetByte(value_str, value_len, 0)
+                                            ReturnValue(value_str)
+                                        }
+                                        value_end = Add(value_end, 1)
+                                    }
+                                } ElseBlock: {
+                                    // Unquoted value (number) - find comma or }
+                                    value_end = value_start
+                                    WhileLoop LessThan(value_end, json_len) {
+                                        end_ch = GetByte(data_json, value_end)
+                                        is_end = Or(EqualTo(end_ch, 44), EqualTo(end_ch, 125))  // ',' or '}'
+                                        IfCondition EqualTo(is_end, 1) ThenBlock: {
+                                            // Found end, extract value
+                                            value_len = Subtract(value_end, value_start)
+                                            value_str = Allocate(Add(value_len, 1))
+                                            k = 0
+                                            WhileLoop LessThan(k, value_len) {
+                                                SetByte(value_str, k, GetByte(data_json, Add(value_start, k)))
+                                                k = Add(k, 1)
+                                            }
+                                            Debug("jcl.json", level=3) {
+                                                PrintMessage("[JCL.GetField] Found numeric value: ")
+                                                PrintString(value_str)
+                                                PrintMessage("\n")
+                                            }
+                                            SetByte(value_str, value_len, 0)
+                                            ReturnValue(value_str)
+                                        }
+                                        value_end = Add(value_end, 1)
+                                    }
+                                }
+                                BreakLoop
+                            }
+                            colon_pos = Add(colon_pos, 1)
+                        }
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        Debug("jcl.json", level=2) {
+            PrintMessage("[JCL.GetField] Field not found: '")
+            PrintString(field_name)
+            PrintMessage("'\n")
+        }
+        ReturnValue(0)
+    }
+}

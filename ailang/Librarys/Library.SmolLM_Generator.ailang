@@ -1,0 +1,124 @@
+
+// Library.SmolLM_Generator.ailang
+// Autoregressive text generation logic
+
+LibraryImport.SmolLM_SQL
+LibraryImport.SmolLM_Tokenizer
+
+// Generation state
+FixedPool.GeneratorState {
+    "tokens_generated": Initialize=0
+    "max_tokens": Initialize=50
+    "temperature": Initialize=100
+    "stop_on_eos": Initialize=1
+}
+
+// Transformer components
+FixedPool.CurrentEmbedding {
+    "d0": Initialize=0    "d1": Initialize=0    "d2": Initialize=0    "d3": Initialize=0
+    "d4": Initialize=0    "d5": Initialize=0    "d6": Initialize=0    "d7": Initialize=0
+    "d8": Initialize=0    "d9": Initialize=0    "d10": Initialize=0   "d11": Initialize=0
+    "d12": Initialize=0   "d13": Initialize=0   "d14": Initialize=0   "d15": Initialize=0
+    "d16": Initialize=0   "d17": Initialize=0   "d18": Initialize=0   "d19": Initialize=0
+    "d20": Initialize=0   "d21": Initialize=0   "d22": Initialize=0   "d23": Initialize=0
+    "d24": Initialize=0   "d25": Initialize=0   "d26": Initialize=0   "d27": Initialize=0
+    "d28": Initialize=0   "d29": Initialize=0   "d30": Initialize=0   "d31": Initialize=0
+}
+
+FixedPool.QueryWeights {
+    "w0": Initialize=100   "w1": Initialize=105   "w2": Initialize=95    "w3": Initialize=110
+}
+
+FixedPool.QueryVector {
+    "q0": Initialize=0   "q1": Initialize=0   "q2": Initialize=0   "q3": Initialize=0
+}
+
+FixedPool.OutputLogits {
+    "next_token_id": Initialize=0
+    "logit": Initialize=0
+}
+
+// Variables
+gen_i = 0
+gen_logit = 0
+gen_current_token = 0
+
+// ============================================================================
+// INFERENCE
+// ============================================================================
+
+SubRoutine.Generator_InferNextToken {
+    // Input: token_id (current token)
+    // Output: OutputLogits.next_token_id (predicted next token)
+    
+    // Load embeddings from SQL
+    RunTask(SmolLM_LoadEmbedding)
+    
+    // Simplified transformer inference (demo)
+    // In production: full Q/K/V attention + MLP
+    QueryVector.q0 = Add(
+        Multiply(CurrentEmbedding.d0, QueryWeights.w0),
+        Multiply(CurrentEmbedding.d1, QueryWeights.w1)
+    )
+    
+    QueryVector.q1 = Add(
+        Multiply(CurrentEmbedding.d2, QueryWeights.w2),
+        Multiply(CurrentEmbedding.d3, QueryWeights.w3)
+    )
+    
+    // Combine to predict next token
+    gen_logit = Add(QueryVector.q0, QueryVector.q1)
+    gen_logit = Add(gen_logit, CurrentEmbedding.d4)
+    
+    // Map to token ID (0-24000)
+    OutputLogits.logit = gen_logit
+    OutputLogits.next_token_id = Modulo(Divide(gen_logit, 100), 24000)
+}
+
+// ============================================================================
+// GENERATION LOOP
+// ============================================================================
+
+SubRoutine.Generator_Generate {
+    // Input: token_id (prompt token)
+    // Output: prints generated text
+    
+    gen_current_token = token_id
+    GeneratorState.tokens_generated = 0
+    
+    // Autoregressive loop
+    gen_i = 0
+    WhileLoop LessThan(gen_i, GeneratorState.max_tokens) {
+        // Infer next token
+        token_id = gen_current_token
+        RunTask(Generator_InferNextToken)
+        
+        // Get predicted token
+        gen_current_token = OutputLogits.next_token_id
+        
+        // Stop on EOS token
+        IfCondition EqualTo(gen_current_token, 2) ThenBlock: {
+            IfCondition EqualTo(GeneratorState.stop_on_eos, 1) ThenBlock: {
+                BreakLoop
+            }
+        }
+        
+        // Decode and print
+        token_id = gen_current_token
+        RunTask(Tokenizer_DecodeToken)
+        
+        GeneratorState.tokens_generated = Add(GeneratorState.tokens_generated, 1)
+        gen_i = Add(gen_i, 1)
+    }
+}
+
+SubRoutine.Generator_SetMaxTokens {
+    // Input: max_tokens (global var)
+    GeneratorState.max_tokens = max_tokens
+}
+
+SubRoutine.Generator_GetStats {
+    PrintMessage("\n[Generator] Tokens generated: ")
+    PrintNumber(GeneratorState.tokens_generated)
+    PrintMessage("\n")
+}
