@@ -6,7 +6,28 @@ AiLang is the first verb-first, low-level programming language with the capabili
 ---
 Ailang is crafted with built-in libraries to implment abstractions, and a deep set of key words and functions, differentiating it from traditional compilers like GCC, LLVM & Clang, that depend on implicit constructs and compiliation time resolution of many core primitives.  AiLang features its own x86_64 compiler reducing legacy dependency and allowing for a clean tight language that compiles 100% to spec everytime. This eliminates workarounds, supports a modular backend portable to new processor instruction sets, and reduces boilerplate code with an import model that requires no headers. Rich primitive functions, built-in debugging, a comprehensive keyword set, and cache-aware memory pools (replacing malloc) and many more 1st principle inclusions in the language allow for optimizing performance and development efficiency. This compiler can build small working demonstration programs and more now as of 9-10-2025.
 
+NEW NEW NEW 
+--- 
 
+🎯 New: Program Interface Console (PIC)
+Runtime introspection without the postmodern nonsense.
+AILANG now includes PIC (Program Interface Console) - a clean, explicit reflection system that gives you what you actually need:
+
+✅ Function registration and lookup - Find functions by name at runtime
+✅ Type introspection - Query type sizes and metadata
+✅ Dynamic invocation - Call functions by identifier (coming soon)
+✅ Interactive REPL - Explore your program's structure in real-time
+
+What PIC does: Lets you examine and interact with your program's structure (plugins, debugging, RPC, serialization).
+What PIC doesn't do: Redefine language semantics, monkey-patch, or create unpredictable runtime behavior.
+No magic. No security nightmares. No performance surprises. Just clean introspection and invocation that covers 95% of reflection use cases without the complexity.
+ailangLibraryImport.PIC
+
+PIC.Init()
+PIC.RegisterFunction(module: 1, func: 10, addr: 0x1000, params: 2)
+func_id = PIC.FindFunction(module: 1, func: 10)
+// That's it. Clean and explicit.
+See Library.PIC.ailang and the PIC manual for full documentation.
 
 The idea for AiLang emerged from frustration with redundant coding and poorly documented libraries,
 ---
