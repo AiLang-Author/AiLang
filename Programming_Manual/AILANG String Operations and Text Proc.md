@@ -6,27 +6,30 @@
 3. [String Analysis Functions](#string-analysis-functions)
 4. [String Manipulation Functions](#string-manipulation-functions)
 5. [String Conversion Operations](#string-conversion-operations)
-6. [Buffer and Memory Integration](#buffer-and-memory-integration)
-7. [Advanced Text Processing](#advanced-text-processing)
-8. [Performance Optimization](#performance-optimization)
-9. [String Pooling and Memory Management](#string-pooling-and-memory-management)
-10. [Real-World Examples and Patterns](#real-world-examples-and-patterns)
+6. [Advanced Text Processing](#advanced-text-processing)
+7. [Performance Optimization](#performance-optimization)
+8. [Real-World Examples](#real-world-examples)
+9. [Best Practices](#best-practices)
+
+---
 
 ## Overview
 
-AILANG provides a comprehensive string processing system designed for systems programming, text manipulation, and data processing tasks. The language treats strings as null-terminated byte sequences with full Unicode support and efficient memory management.
+AILANG provides a comprehensive string processing system designed for systems programming, text manipulation, and data processing tasks. All strings are null-terminated byte sequences with full UTF-8 compatibility and efficient memory management.
 
 ### String Representation
-- **Null-Terminated**: All strings end with a null byte (0x00)
+- **Null-Terminated**: All strings end with a null byte (`0x00`)
 - **UTF-8 Compatible**: Support for Unicode characters via UTF-8 encoding
 - **Memory Managed**: Automatic allocation and cleanup for string operations
-- **Buffer Integration**: Seamless interaction with raw memory buffers
+- **Pointer-Based**: Strings are memory addresses pointing to character data
 
 ### Core Design Principles
-- **Performance**: Optimized implementations for common operations
+- **Performance**: Optimized x86-64 assembly implementations
 - **Safety**: Memory-safe string handling with bounds checking
 - **Flexibility**: Both high-level functions and low-level buffer access
 - **Interoperability**: Easy conversion between strings, numbers, and raw data
+
+---
 
 ## Basic String Operations
 
@@ -47,16 +50,17 @@ quote_string = "She said \"Hello\""
 
 **Character to String Conversion:**
 ```ailang
-result = CharToString(ascii_code)
+result = StringFromChar(ascii_code)
 ```
 
 **Examples:**
 ```ailang
 // Convert ASCII codes to strings
-letter_a = CharToString(65)        // Returns "A"
-letter_z = CharToString(90)        // Returns "Z"
-space = CharToString(32)           // Returns " "
-newline = CharToString(10)         // Returns "\n"
+letter_a = StringFromChar(65)        // Returns "A"
+letter_z = StringFromChar(90)        // Returns "Z"
+space = StringFromChar(32)           // Returns " "
+newline = StringFromChar(10)         // Returns "\n"
+exclaim = StringFromChar(33)         // Returns "!"
 ```
 
 ### String Length
@@ -79,14 +83,14 @@ msg_len = StringLength(message)           // Returns 7
 
 // Length in loops and conditions
 text = "Process this text"
-IfCondition GreaterThan(StringLength(text), 10) ThenBlock {
+IfCondition GreaterThan(StringLength(text), 10) ThenBlock: {
     PrintMessage("Long text detected")
 }
 ```
 
 ### String Concatenation
 
-**Function Syntax:**
+**Basic Concatenation:**
 ```ailang
 result = StringConcat(string1, string2)
 ```
@@ -110,11 +114,13 @@ result1 = StringConcat("", "Test")            // Returns "Test"
 result2 = StringConcat("Test", "")            // Returns "Test"
 ```
 
-**Optimized Pool Concatenation:**
+**High-Performance Pool Concatenation:**
 ```ailang
-// For high-performance scenarios
+// For high-frequency operations, uses a memory pool
 result = StringConcatPooled(string1, string2)
 ```
+
+**Note:** `StringConcatPooled` uses a pre-allocated memory pool for faster concatenation in loops or repeated operations. Falls back to returning the first string if the pool is full.
 
 ### String Comparison
 
@@ -125,9 +131,9 @@ result = StringEquals(string1, string2)       // Returns 1 if equal, 0 if not
 
 **Examples:**
 ```ailang
-// Basic equality
+// Basic equality (case-sensitive)
 is_same = StringEquals("Hello", "Hello")      // Returns 1
-is_diff = StringEquals("Hello", "hello")      // Returns 0 (case sensitive)
+is_diff = StringEquals("Hello", "hello")      // Returns 0
 
 // Variable comparison
 username = "admin"
@@ -135,9 +141,9 @@ is_admin = StringEquals(username, "admin")    // Returns 1
 
 // Comparison in conditions
 password = GetPassword()
-IfCondition StringEquals(password, "secret123") ThenBlock {
+IfCondition StringEquals(password, "secret123") ThenBlock: {
     PrintMessage("Access granted")
-} ElseBlock {
+} ElseBlock: {
     PrintMessage("Access denied")
 }
 
@@ -145,13 +151,12 @@ IfCondition StringEquals(password, "secret123") ThenBlock {
 is_empty = StringEquals(input, "")            // Check if string is empty
 ```
 
-**Advanced Comparison:**
+**Lexicographical Comparison:**
 ```ailang
-result = StringCompare(string1, string2)      // Returns -1, 0, or 1
-result = StringContains(haystack, needle)     // Returns 1 if contains
-result = StringStartsWith(string, prefix)     // Returns 1 if starts with
-result = StringEndsWith(string, suffix)       // Returns 1 if ends with
+result = StringCompare(string1, string2)      // Returns 0 if equal, non-zero if different
 ```
+
+---
 
 ## String Analysis Functions
 
@@ -164,7 +169,7 @@ char_code = StringCharAt(string, index)
 
 **Examples:**
 ```ailang
-// Access individual characters
+// Access individual characters (returns ASCII code)
 text = "Hello"
 first_char = StringCharAt(text, 0)            // Returns 72 ('H')
 last_char = StringCharAt(text, 4)             // Returns 111 ('o')
@@ -175,8 +180,9 @@ i = 0
 digit_count = 0
 WhileLoop LessThan(i, StringLength(message)) {
     char_code = StringCharAt(message, i)
-    IfCondition And(GreaterEqual(char_code, 48), LessEqual(char_code, 57)) ThenBlock {
-        digit_count = Add(digit_count, 1)     // Count digits
+    // Check if digit (ASCII 48-57 = '0'-'9')
+    IfCondition And(GreaterEqual(char_code, 48), LessEqual(char_code, 57)) ThenBlock: {
+        digit_count = Add(digit_count, 1)
     }
     i = Add(i, 1)
 }
@@ -184,38 +190,43 @@ WhileLoop LessThan(i, StringLength(message)) {
 
 ### String Search Functions
 
-**Find Substring:**
+**Find Substring Position:**
 ```ailang
-position = StringIndexOf(string, substring)
+position = StringIndexOf(haystack, needle)
+position = StringIndexOf(haystack, needle, start_position)
 ```
 
 **Examples:**
 ```ailang
-// Find substring position
+// Find substring position (returns -1 if not found)
 text = "Hello World Programming"
 world_pos = StringIndexOf(text, "World")      // Returns 6
 missing_pos = StringIndexOf(text, "Missing")  // Returns -1
 
+// Search from specific position
+text = "apple, banana, apple, cherry"
+first_apple = StringIndexOf(text, "apple")    // Returns 0
+second_apple = StringIndexOf(text, "apple", 7) // Returns 15
+
 // Search-based logic
 email = "user@domain.com"
 at_pos = StringIndexOf(email, "@")
-IfCondition GreaterThan(at_pos, 0) ThenBlock {
-    PrintMessage("Valid email format")
+IfCondition GreaterThan(at_pos, 0) ThenBlock: {
+    domain_start = Add(at_pos, 1)
+    domain = StringSubstring(email, domain_start, StringLength(email))
+    PrintMessage("Domain: ")
+    PrintString(domain)
 }
-
-// Find and extract domain
-domain_start = Add(at_pos, 1)
-domain = StringSubstring(email, domain_start, StringLength(email))
 ```
 
 **Contains Check:**
 ```ailang
-has_substring = StringContains(string, substring)
+has_substring = StringContains(haystack, needle)
 ```
 
 **Examples:**
 ```ailang
-// Check for keywords
+// Check for keywords (returns 1 if found, 0 if not)
 message = "Error: File not found"
 is_error = StringContains(message, "Error")   // Returns 1
 is_warning = StringContains(message, "Warning") // Returns 0
@@ -223,17 +234,25 @@ is_warning = StringContains(message, "Warning") // Returns 0
 // Content filtering
 text = "This contains profanity"
 needs_filter = StringContains(text, "profanity")
+
+// URL validation
+url = "https://example.com"
+is_https = StringContains(url, "https://")    // Returns 1
 ```
+
+---
 
 ## String Manipulation Functions
 
 ### Substring Extraction
 
-**Extract by Position and Length:**
+**Extract by Start and End Position:**
 ```ailang
 result = StringSubstring(string, start_index, end_index)
-result = StringExtract(buffer, offset, length)
+result = StringExtract(string, start_index, end_index)  // Alias
 ```
+
+**Important:** `StringSubstring` uses **end position**, not length. The substring is from `start_index` to `end_index` (exclusive of end).
 
 **Examples:**
 ```ailang
@@ -246,10 +265,11 @@ second_word = StringSubstring(text, 12, 20)   // Returns "Language"
 filename = "document.pdf"
 dot_pos = StringIndexOf(filename, ".")
 extension = StringSubstring(filename, Add(dot_pos, 1), StringLength(filename))
+// Returns "pdf"
 
-// Buffer extraction (for raw data processing)
-buffer = CreateTextBuffer()
-header = StringExtract(buffer, 0, 16)         // Extract first 16 bytes as string
+// Extract middle portion
+full_text = "The quick brown fox"
+middle = StringSubstring(full_text, 4, 9)     // Returns "quick"
 ```
 
 **Extract Until Delimiter:**
@@ -260,16 +280,18 @@ result = StringExtractUntil(buffer, start_offset, delimiter)
 **Examples:**
 ```ailang
 // Parse line-by-line
-text_buffer = LoadTextFile("data.txt")
-line = StringExtractUntil(text_buffer, 0, "\n")
+text_buffer = "First line\nSecond line\nThird line"
+first_line = StringExtractUntil(text_buffer, 0, "\n")  // Returns "First line"
 
 // Parse CSV fields  
 csv_line = "name,age,city"
-field = StringExtractUntil(csv_line, 0, ",")   // Returns "name"
+field1 = StringExtractUntil(csv_line, 0, ",")  // Returns "name"
 
 // Protocol parsing
 http_header = "GET /index.html HTTP/1.1\r\n"
 method = StringExtractUntil(http_header, 0, " ")  // Returns "GET"
+
+// Returns empty string (NULL) if delimiter not found
 ```
 
 ### Case Conversion
@@ -288,12 +310,14 @@ normalized = StringToLower(username)          // Returns "johndoe"
 
 // Case-insensitive comparison helper
 Function.CaseInsensitiveEquals {
-    Input: str1: String, str2: String
+    Input: str1: Address
+    Input: str2: Address
     Output: Integer
     Body: {
         upper1 = StringToUpper(str1)
         upper2 = StringToUpper(str2)
-        ReturnValue(StringEquals(upper1, upper2))
+        result = StringEquals(upper1, upper2)
+        ReturnValue(result)
     }
 }
 
@@ -302,13 +326,13 @@ title = "programming guide"
 formatted_title = StringToUpper(title)        // Returns "PROGRAMMING GUIDE"
 
 // Command processing
-user_command = "QUIT"
-command_lower = StringToLower(user_command)   // Returns "quit"
+user_command = "quit"
+command_upper = StringToUpper(user_command)   // Returns "QUIT"
 ```
 
 ### String Trimming
 
-**Remove Whitespace:**
+**Remove Leading and Trailing Whitespace:**
 ```ailang
 result = StringTrim(string)
 ```
@@ -326,14 +350,20 @@ clean_value = StringTrim(config_value)        // Returns "SomeValue"
 // Data cleanup
 data_field = "   123.45   "
 clean_number = StringTrim(data_field)         // Returns "123.45"
+
+// Tab and space removal
+messy = "  \t  Text  \t  "
+neat = StringTrim(messy)                      // Returns "Text"
 ```
 
 ### String Replacement
 
-**Replace Substring:**
+**Replace First Occurrence:**
 ```ailang
 result = StringReplace(string, old_substring, new_substring)
 ```
+
+**Note:** Currently replaces only the **first occurrence** of the substring.
 
 **Examples:**
 ```ailang
@@ -345,14 +375,15 @@ modified = StringReplace(text, "World", "AILANG")  // Returns "Hello AILANG"
 windows_path = "C:\\Users\\Name"
 unix_path = StringReplace(windows_path, "\\", "/")  // Returns "C:/Users/Name"
 
-// Template processing
-template = "Welcome {USER} to {SYSTEM}"
-personalized = StringReplace(template, "{USER}", username)
-personalized = StringReplace(personalized, "{SYSTEM}", "AILANG")
+// Template processing (single replacement)
+template = "Welcome {USER} to the system"
+personalized = StringReplace(template, "{USER}", "Alice")
+// Returns "Welcome Alice to the system"
 
 // Data sanitization
 unsafe_data = "<script>alert('xss')</script>"
-safe_data = StringReplace(unsafe_data, "<script>", "&lt;script&gt;")
+safe_data = StringReplace(unsafe_data, "<", "&lt;")
+// Returns "&lt;script>alert('xss')</script>"
 ```
 
 ### String Splitting
@@ -362,28 +393,40 @@ safe_data = StringReplace(unsafe_data, "<script>", "&lt;script&gt;")
 array = StringSplit(string, delimiter)
 ```
 
+**Returns:** An array/list where each element is a substring between delimiters.
+
 **Examples:**
 ```ailang
 // Parse comma-separated values
 csv_row = "apple,banana,cherry"
 fruits = StringSplit(csv_row, ",")
-// fruits[0] = "apple", fruits[1] = "banana", fruits[2] = "cherry"
+// fruits contains: ["apple", "banana", "cherry"]
+
+first_fruit = ArrayGet(fruits, 0)  // "apple"
+second_fruit = ArrayGet(fruits, 1) // "banana"
 
 // Parse command line arguments
 command_line = "program --input file.txt --output result.txt"
 args = StringSplit(command_line, " ")
+// args contains: ["program", "--input", "file.txt", "--output", "result.txt"]
 
 // Split file path
 file_path = "/usr/local/bin/program"
 path_parts = StringSplit(file_path, "/")
-// path_parts = ["", "usr", "local", "bin", "program"]
+// path_parts contains: ["", "usr", "local", "bin", "program"]
 
 // Parse key-value pairs
 config_line = "setting=value"
 pair = StringSplit(config_line, "=")
-key = pair[0]     // "setting"
-value = pair[1]   // "value"
+key = ArrayGet(pair, 0)     // "setting"
+value = ArrayGet(pair, 1)   // "value"
+
+// Empty string handling
+empty_split = StringSplit("", ",")
+// Returns array with one empty string: [""]
 ```
+
+---
 
 ## String Conversion Operations
 
@@ -409,10 +452,11 @@ big_str = NumberToString(big_number)          // Returns "1000000"
 counter = 1
 message = StringConcat("Item ", NumberToString(counter))  // "Item 1"
 
-// Formatting output
+// Formatting output function
 Function.FormatNumber {
-    Input: num: Integer, label: String
-    Output: String
+    Input: num: Integer
+    Input: label: Address
+    Output: Address
     Body: {
         num_str = NumberToString(num)
         result = StringConcat(label, ": ")
@@ -422,6 +466,11 @@ Function.FormatNumber {
 }
 
 price_text = FormatNumber(299, "Price")       // Returns "Price: 299"
+
+// Building complex messages
+error_code = 404
+status = StringConcat("Error ", NumberToString(error_code))
+// Returns "Error 404"
 ```
 
 ### String to Number Conversion
@@ -439,7 +488,9 @@ negative = StringToNumber("-42")              // Returns -42
 zero = StringToNumber("0")                    // Returns 0
 
 // Parse user input
-user_input = GetUserInput("Enter age: ")
+PrintMessage("Enter age: ")
+user_input = ReadInput()
+user_input = StringTrim(user_input)           // Clean whitespace
 age = StringToNumber(user_input)
 
 // Configuration parsing
@@ -454,124 +505,49 @@ num2 = StringToNumber(str2)
 sum = Add(num1, num2)
 sum_str = NumberToString(sum)                 // "150"
 
-// Validation helper
-Function.IsValidNumber {
-    Input: str: String
-    Output: Integer
-    Body: {
-        // Try to convert and check if reasonable
-        num = StringToNumber(str)
-        // Basic validation: if string was "abc", conversion returns 0
-        str_back = NumberToString(num)
-        is_valid = StringEquals(str, str_back)
-        ReturnValue(is_valid)
-    }
-}
+// Parse integers from text
+price_text = "The cost is 299 dollars"
+// Would need manual extraction first
+start = StringIndexOf(price_text, "299")
+price_str = StringSubstring(price_text, start, Add(start, 3))
+price = StringToNumber(price_str)             // Returns 299
 ```
 
-## Buffer and Memory Integration
+**Important Notes:**
+- Invalid characters are ignored or cause conversion to stop
+- Non-numeric strings may return 0
+- Handles negative numbers with leading `-`
+- No decimal point support (integers only)
 
-### String-Buffer Interoperability
-
-AILANG strings integrate seamlessly with raw memory buffers for low-level text processing:
-
-**Creating Strings from Buffers:**
-```ailang
-// Manual string construction
-buffer = Allocate(100)
-StoreValue(buffer, 72)                        // 'H'
-StoreValue(Add(buffer, 1), 101)               // 'e'
-StoreValue(Add(buffer, 2), 108)               // 'l'
-StoreValue(Add(buffer, 3), 108)               // 'l'
-StoreValue(Add(buffer, 4), 111)               // 'o'
-StoreValue(Add(buffer, 5), 0)                 // Null terminator
-
-// Buffer can now be used as string
-length = StringLength(buffer)                 // Returns 5
-```
-
-**Reading String Data:**
-```ailang
-// Examine string bytes
-text = "Hello"
-first_byte = StringCharAt(text, 0)            // Returns 72 ('H')
-second_byte = StringCharAt(text, 1)           // Returns 101 ('e')
-
-// Process string as byte sequence
-Function.CountVowels {
-    Input: text: String
-    Output: Integer
-    Body: {
-        count = 0
-        i = 0
-        length = StringLength(text)
-        
-        WhileLoop LessThan(i, length) {
-            char_code = StringCharAt(text, i)
-            
-            // Check for vowels (A=65, E=69, I=73, O=79, U=85)
-            // and lowercase (a=97, e=101, i=105, o=111, u=117)
-            IfCondition Or(Or(Or(Or(EqualTo(char_code, 65), EqualTo(char_code, 69)), 
-                                  EqualTo(char_code, 73)), EqualTo(char_code, 79)), 
-                          EqualTo(char_code, 85)) ThenBlock {
-                count = Add(count, 1)
-            }
-            IfCondition Or(Or(Or(Or(EqualTo(char_code, 97), EqualTo(char_code, 101)), 
-                                  EqualTo(char_code, 105)), EqualTo(char_code, 111)), 
-                          EqualTo(char_code, 117)) ThenBlock {
-                count = Add(count, 1)
-            }
-            
-            i = Add(i, 1)
-        }
-        
-        ReturnValue(count)
-    }
-}
-```
-
-### Binary Data Processing
-
-**String as Binary Container:**
-```ailang
-// Process binary data as strings for certain operations
-binary_data = CreateBinaryBuffer(256)
-data_string = BufferToString(binary_data)
-data_length = StringLength(data_string)
-
-// Search for binary patterns
-pattern = "\xFF\xFE"  // BOM marker
-has_bom = StringContains(data_string, pattern)
-
-// Extract binary sections
-header_section = StringExtract(binary_data, 0, 16)
-```
+---
 
 ## Advanced Text Processing
 
 ### Line-by-Line Processing
 
-**Text File Processing:**
+**Text File Processing Pattern:**
 ```ailang
 Function.ProcessTextFile {
-    Input: filename: String
+    Input: content: Address
     Output: Integer
     Body: {
-        buffer = LoadFile(filename)
         offset = 0
         line_count = 0
+        content_length = StringLength(content)
         
-        WhileLoop LessThan(offset, GetBufferSize(buffer)) {
-            line = StringExtractUntil(buffer, offset, "\n")
+        WhileLoop LessThan(offset, content_length) {
+            // Extract line until newline
+            line = StringExtractUntil(content, offset, "\n")
             line_length = StringLength(line)
             
-            // Process line
-            IfCondition GreaterThan(line_length, 0) ThenBlock {
+            // Process non-empty lines
+            IfCondition GreaterThan(line_length, 0) ThenBlock: {
+                line = StringTrim(line)
                 ProcessLine(line)
                 line_count = Add(line_count, 1)
             }
             
-            // Move to next line
+            // Move to next line (+1 for newline character)
             offset = Add(offset, Add(line_length, 1))
         }
         
@@ -580,147 +556,222 @@ Function.ProcessTextFile {
 }
 ```
 
-### Protocol Implementation
+### CSV Parsing
 
-**HTTP Request Parsing:**
+**CSV Row Parser:**
 ```ailang
-Function.ParseHTTPRequest {
-    Input: request_data: String
-    Output: String
+Function.ParseCSVRow {
+    Input: row: Address
+    Output: Address
     Body: {
-        // Extract method
-        space_pos = StringIndexOf(request_data, " ")
-        method = StringSubstring(request_data, 0, space_pos)
+        fields = StringSplit(row, ",")
+        field_count = XArray.XSize(fields)
         
-        // Extract path
-        path_start = Add(space_pos, 1)
-        second_space = StringIndexOf(StringSubstring(request_data, path_start, 
-                                    StringLength(request_data)), " ")
-        path = StringSubstring(request_data, path_start, Add(path_start, second_space))
-        
-        // Build response
-        response = StringConcat("Method: ", method)
-        response = StringConcat(response, ", Path: ")
-        response = StringConcat(response, path)
-        
-        ReturnValue(response)
-    }
-}
-```
-
-**JSON-like Data Parsing:**
-```ailang
-Function.ExtractJSONValue {
-    Input: json_string: String, key: String
-    Output: String
-    Body: {
-        // Find key pattern: "key":
-        key_pattern = StringConcat("\"", key)
-        key_pattern = StringConcat(key_pattern, "\":")
-        
-        key_pos = StringIndexOf(json_string, key_pattern)
-        IfCondition EqualTo(key_pos, -1) ThenBlock {
-            ReturnValue("")  // Key not found
-        }
-        
-        // Find start of value (after colon and optional space)
-        value_start = Add(key_pos, StringLength(key_pattern))
-        
-        // Skip whitespace
-        WhileLoop EqualTo(StringCharAt(json_string, value_start), 32) {
-            value_start = Add(value_start, 1)
-        }
-        
-        // Extract until comma or end brace
-        comma_pos = StringIndexOf(StringSubstring(json_string, value_start,
-                                 StringLength(json_string)), ",")
-        brace_pos = StringIndexOf(StringSubstring(json_string, value_start,
-                                 StringLength(json_string)), "}")
-        
-        // Use the closer delimiter
-        end_pos = comma_pos
-        IfCondition And(GreaterThan(brace_pos, 0), LessThan(brace_pos, comma_pos)) ThenBlock {
-            end_pos = brace_pos
-        }
-        
-        value = StringSubstring(json_string, value_start, Add(value_start, end_pos))
-        value = StringTrim(value)  // Clean up whitespace
-        
-        ReturnValue(value)
-    }
-}
-```
-
-## Performance Optimization
-
-### String Pooling
-
-**High-Performance String Operations:**
-```ailang
-// Initialize string pool once
-pool = StringPool.Init(65536)  // 64KB pool
-
-// Use pooled operations for repeated concatenations
-Function.BuildLongString {
-    Input: count: Integer
-    Output: String
-    Body: {
-        result = "Start"
+        // Trim each field
         i = 0
-        
-        WhileLoop LessThan(i, count) {
-            // Use pooled concatenation for better performance
-            result = StringConcatPooled(result, "X")
+        WhileLoop LessThan(i, field_count) {
+            field = XArray.XGet(fields, i)
+            trimmed = StringTrim(field)
+            XArray.XSet(fields, i, trimmed)
             i = Add(i, 1)
+        }
+        
+        ReturnValue(fields)
+    }
+}
+
+// Usage:
+csv_line = "John Doe, 30, New York"
+fields = ParseCSVRow(csv_line)
+name = XArray.XGet(fields, 0)   // "John Doe"
+age_str = XArray.XGet(fields, 1) // "30"
+city = XArray.XGet(fields, 2)   // "New York"
+```
+
+### Configuration File Parser
+
+**INI-Style Config Parser:**
+```ailang
+Function.ParseConfig {
+    Input: config_text: Address
+    Output: Address
+    Body: {
+        config = XSHash.XCreate()
+        lines = StringSplit(config_text, "\n")
+        line_count = XArray.XSize(lines)
+        
+        i = 0
+        WhileLoop LessThan(i, line_count) {
+            line = XArray.XGet(lines, i)
+            line = StringTrim(line)
+            
+            // Skip empty lines and comments
+            line_len = StringLength(line)
+            IfCondition GreaterThan(line_len, 0) ThenBlock: {
+                first_char = StringCharAt(line, 0)
+                
+                // Skip comments (# = 35)
+                IfCondition NotEqual(first_char, 35) ThenBlock: {
+                    // Parse key=value
+                    equals_pos = StringIndexOf(line, "=")
+                    IfCondition GreaterThan(equals_pos, 0) ThenBlock: {
+                        key = StringSubstring(line, 0, equals_pos)
+                        key = StringTrim(key)
+                        
+                        value_start = Add(equals_pos, 1)
+                        value = StringSubstring(line, value_start, line_len)
+                        value = StringTrim(value)
+                        
+                        XSHash.XInsert(config, key, value)
+                    }
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        ReturnValue(config)
+    }
+}
+
+// Usage:
+config_text = "host=localhost\nport=8080\n# Comment line\ndebug=true"
+settings = ParseConfig(config_text)
+host = XSHash.XLookup(settings, "host")     // "localhost"
+port_str = XSHash.XLookup(settings, "port") // "8080"
+port = StringToNumber(port_str)             // 8080
+```
+
+### URL Parsing
+
+**Simple URL Parser:**
+```ailang
+Function.ParseURL {
+    Input: url: Address
+    Output: Address  // Returns hash table with components
+    Body: {
+        result = XSHash.XCreate()
+        
+        // Extract protocol
+        protocol_end = StringIndexOf(url, "://")
+        IfCondition GreaterThan(protocol_end, 0) ThenBlock: {
+            protocol = StringSubstring(url, 0, protocol_end)
+            XSHash.XInsert(result, "protocol", protocol)
+            
+            // Start of host
+            host_start = Add(protocol_end, 3)
+        } ElseBlock: {
+            host_start = 0
+        }
+        
+        // Extract host and path
+        slash_pos = StringIndexOf(url, "/", host_start)
+        url_len = StringLength(url)
+        
+        IfCondition GreaterThan(slash_pos, 0) ThenBlock: {
+            host = StringSubstring(url, host_start, slash_pos)
+            XSHash.XInsert(result, "host", host)
+            
+            path = StringSubstring(url, slash_pos, url_len)
+            XSHash.XInsert(result, "path", path)
+        } ElseBlock: {
+            host = StringSubstring(url, host_start, url_len)
+            XSHash.XInsert(result, "host", host)
+            XSHash.XInsert(result, "path", "/")
         }
         
         ReturnValue(result)
     }
 }
 
-// Regular concatenation vs pooled
-regular_result = BuildLongString(1000)      // Uses many allocations
-pooled_result = StringPool.BuildString(1000) // Uses single pool
+// Usage:
+url = "https://example.com/api/users"
+parsed = ParseURL(url)
+protocol = XSHash.XLookup(parsed, "protocol")  // "https"
+host = XSHash.XLookup(parsed, "host")          // "example.com"
+path = XSHash.XLookup(parsed, "path")          // "/api/users"
 ```
 
-### Memory-Efficient Patterns
+---
 
-**Avoid Temporary Strings:**
+## Performance Optimization
+
+### Use StringConcatPooled for Loops
+
+When concatenating strings repeatedly in loops, use `StringConcatPooled` for better performance:
+
+**Inefficient:**
 ```ailang
-// Less efficient - creates temporary strings
+result = ""
+i = 0
+WhileLoop LessThan(i, 1000) {
+    result = StringConcat(result, "X")  // Allocates every time
+    i = Add(i, 1)
+}
+```
+
+**Efficient:**
+```ailang
+result = ""
+i = 0
+WhileLoop LessThan(i, 1000) {
+    result = StringConcatPooled(result, "X")  // Uses memory pool
+    i = Add(i, 1)
+}
+```
+
+### Minimize Temporary Strings
+
+**Less Efficient:**
+```ailang
 temp1 = StringConcat("Hello", " ")
 temp2 = StringConcat(temp1, "World")
 temp3 = StringConcat(temp2, "!")
 result = temp3
+```
 
-// More efficient - direct chaining
+**More Efficient:**
+```ailang
 result = StringConcat(StringConcat(StringConcat("Hello", " "), "World"), "!")
+```
 
-// Most efficient - use StringBuilder pattern
-Function.StringBuilder {
-    Input: parts: Array
-    Output: String
+**Most Efficient (Using StringBuilder Pattern):**
+```ailang
+Function.BuildString {
+    Input: parts: Address  // Array of strings
+    Output: Address
     Body: {
-        total_length = 0
+        // Calculate total length
+        total_len = 0
+        part_count = XArray.XSize(parts)
         i = 0
         
-        // Calculate total length
-        WhileLoop LessThan(i, ArrayLength(parts)) {
-            part = ArrayGet(parts, i)
-            total_length = Add(total_length, StringLength(part))
+        WhileLoop LessThan(i, part_count) {
+            part = XArray.XGet(parts, i)
+            part_len = StringLength(part)
+            total_len = Add(total_len, part_len)
             i = Add(i, 1)
         }
         
         // Allocate once
-        buffer = Allocate(Add(total_length, 1))
+        buffer = Allocate(Add(total_len, 1))
         offset = 0
         i = 0
         
         // Copy all parts
-        WhileLoop LessThan(i, ArrayLength(parts)) {
-            part = ArrayGet(parts, i)
-            CopyString(buffer, offset, part)
-            offset = Add(offset, StringLength(part))
+        WhileLoop LessThan(i, part_count) {
+            part = XArray.XGet(parts, i)
+            part_len = StringLength(part)
+            
+            // Manual copy
+            j = 0
+            WhileLoop LessThan(j, part_len) {
+                char = StringCharAt(part, j)
+                StoreValue(Add(buffer, Add(offset, j)), char)
+                j = Add(j, 1)
+            }
+            
+            offset = Add(offset, part_len)
             i = Add(i, 1)
         }
         
@@ -732,208 +783,117 @@ Function.StringBuilder {
 }
 ```
 
-## String Pooling and Memory Management
+### Cache String Lengths
 
-### Pool-Based String Management
-
-**String Pool Operations:**
+**Inefficient:**
 ```ailang
-// Initialize a string pool
-pool = StringPool.Init(pool_size)
-
-// Pool status and monitoring
-used_bytes = StringPool.Status()
-remaining = Subtract(pool_size, used_bytes)
-
-// Pool-optimized operations
-result = StringConcatPooled(str1, str2)
-```
-
-**Custom Pool Management:**
-```ailang
-Function.ManagedStringPool {
-    Body: {
-        // Create fixed pool for strings
-        FixedPool.StringCache {
-            "buffer": Initialize=0
-            "next_offset": Initialize=0
-            "pool_size": Initialize=65536
-        }
-        
-        // Initialize buffer once
-        StringCache.buffer = Allocate(StringCache.pool_size)
-        StringCache.next_offset = 0
-        
-        PrintMessage("String pool initialized")
-        ReturnValue(1)
-    }
+i = 0
+WhileLoop LessThan(i, StringLength(text)) {
+    // StringLength called every iteration!
+    char = StringCharAt(text, i)
+    ProcessChar(char)
+    i = Add(i, 1)
 }
 ```
 
-### Memory Safety Patterns
-
-**Safe String Operations:**
+**Efficient:**
 ```ailang
-Function.SafeStringConcat {
-    Input: str1: String, str2: String, max_length: Integer
-    Output: String
-    Body: {
-        len1 = StringLength(str1)
-        len2 = StringLength(str2)
-        total = Add(len1, len2)
-        
-        IfCondition GreaterThan(total, max_length) ThenBlock {
-            // Truncate to fit
-            available = Subtract(max_length, len1)
-            truncated = StringSubstring(str2, 0, available)
-            ReturnValue(StringConcat(str1, truncated))
-        } ElseBlock {
-            ReturnValue(StringConcat(str1, str2))
-        }
-    }
-}
-
-// Buffer overflow protection
-Function.SafeStringCopy {
-    Input: dest_buffer: Address, src_string: String, buffer_size: Integer
-    Output: Integer
-    Body: {
-        src_length = StringLength(src_string)
-        max_copy = Subtract(buffer_size, 1)  // Reserve space for null
-        
-        copy_length = src_length
-        IfCondition GreaterThan(src_length, max_copy) ThenBlock {
-            copy_length = max_copy
-        }
-        
-        // Perform safe copy
-        i = 0
-        WhileLoop LessThan(i, copy_length) {
-            char_code = StringCharAt(src_string, i)
-            StoreValue(Add(dest_buffer, i), char_code)
-            i = Add(i, 1)
-        }
-        
-        // Null terminate
-        StoreValue(Add(dest_buffer, copy_length), 0)
-        
-        ReturnValue(copy_length)
-    }
+text_len = StringLength(text)  // Cache length
+i = 0
+WhileLoop LessThan(i, text_len) {
+    char = StringCharAt(text, i)
+    ProcessChar(char)
+    i = Add(i, 1)
 }
 ```
 
-## Real-World Examples and Patterns
+---
 
-### Configuration File Parser
-
-**INI File Processing:**
-```ailang
-Function.ParseINIFile {
-    Input: filename: String
-    Output: Integer
-    Body: {
-        buffer = LoadTextFile(filename)
-        offset = 0
-        
-        WhileLoop LessThan(offset, GetBufferSize(buffer)) {
-            line = StringExtractUntil(buffer, offset, "\n")
-            line = StringTrim(line)
-            
-            // Skip empty lines and comments
-            IfCondition And(GreaterThan(StringLength(line), 0), 
-                           NotEqual(StringCharAt(line, 0), 35)) ThenBlock {  // 35 = '#'
-                
-                // Check for section header [section]
-                IfCondition EqualTo(StringCharAt(line, 0), 91) ThenBlock {  // 91 = '['
-                    close_bracket = StringIndexOf(line, "]")
-                    section = StringSubstring(line, 1, close_bracket)
-                    ProcessSection(section)
-                } ElseBlock {
-                    // Parse key=value
-                    equals_pos = StringIndexOf(line, "=")
-                    IfCondition GreaterThan(equals_pos, 0) ThenBlock {
-                        key = StringTrim(StringSubstring(line, 0, equals_pos))
-                        value = StringTrim(StringSubstring(line, Add(equals_pos, 1), 
-                                                          StringLength(line)))
-                        ProcessKeyValue(key, value)
-                    }
-                }
-            }
-            
-            offset = Add(offset, Add(StringLength(line), 1))
-        }
-        
-        ReturnValue(1)
-    }
-}
-```
+## Real-World Examples
 
 ### Log File Analyzer
 
-**Log Processing System:**
 ```ailang
 Function.AnalyzeLogFile {
-    Input: log_file: String
-    Output: Integer
+    Input: log_content: Address
+    Output: Address
     Body: {
-        buffer = LoadTextFile(log_file)
-        offset = 0
-        error_count = 0
-        warning_count = 0
+        stats = XSHash.XCreate()
+        XSHash.XInsert(stats, "errors", NumberToString(0))
+        XSHash.XInsert(stats, "warnings", NumberToString(0))
+        XSHash.XInsert(stats, "info", NumberToString(0))
         
-        WhileLoop LessThan(offset, GetBufferSize(buffer)) {
-            line = StringExtractUntil(buffer, offset, "\n")
+        lines = StringSplit(log_content, "\n")
+        line_count = XArray.XSize(lines)
+        
+        i = 0
+        WhileLoop LessThan(i, line_count) {
+            line = XArray.XGet(lines, i)
+            line_upper = StringToUpper(line)
             
             // Count log levels
-            IfCondition StringContains(line, "ERROR") ThenBlock {
-                error_count = Add(error_count, 1)
-            }
-            IfCondition StringContains(line, "WARN") ThenBlock {
-                warning_count = Add(warning_count, 1)
-            }
-            
-            // Extract timestamp (assuming ISO format)
-            IfCondition GreaterThan(StringLength(line), 19) ThenBlock {
-                timestamp = StringSubstring(line, 0, 19)
-                IfCondition StringContains(timestamp, "-") ThenBlock {
-                    ProcessTimestamp(timestamp)
-                }
+            IfCondition StringContains(line_upper, "ERROR") ThenBlock: {
+                current = XSHash.XLookup(stats, "errors")
+                count = StringToNumber(current)
+                count = Add(count, 1)
+                XSHash.XInsert(stats, "errors", NumberToString(count))
             }
             
-            offset = Add(offset, Add(StringLength(line), 1))
+            IfCondition StringContains(line_upper, "WARNING") ThenBlock: {
+                current = XSHash.XLookup(stats, "warnings")
+                count = StringToNumber(current)
+                count = Add(count, 1)
+                XSHash.XInsert(stats, "warnings", NumberToString(count))
+            }
+            
+            IfCondition StringContains(line_upper, "INFO") ThenBlock: {
+                current = XSHash.XLookup(stats, "info")
+                count = StringToNumber(current)
+                count = Add(count, 1)
+                XSHash.XInsert(stats, "info", NumberToString(count))
+            }
+            
+            i = Add(i, 1)
         }
         
-        // Report results
-        PrintMessage("Errors found: ")
-        PrintNumber(error_count)
-        PrintMessage("Warnings found: ")
-        PrintNumber(warning_count)
-        
-        ReturnValue(Add(error_count, warning_count))
+        ReturnValue(stats)
     }
 }
+
+// Usage:
+log_data = "INFO: Starting application\nERROR: Connection failed\nWARNING: Retry attempt 1\nERROR: Max retries exceeded"
+stats = AnalyzeLogFile(log_data)
+
+errors = StringToNumber(XSHash.XLookup(stats, "errors"))     // 2
+warnings = StringToNumber(XSHash.XLookup(stats, "warnings")) // 1
+info = StringToNumber(XSHash.XLookup(stats, "info"))         // 1
 ```
 
-### Template Engine
+### Simple Template Engine
 
-**Simple Template Processor:**
 ```ailang
-Function.ProcessTemplate {
-    Input: template: String, variables: Array
-    Output: String
+Function.RenderTemplate {
+    Input: template: Address
+    Input: variables: Address  // Hash table
+    Output: Address
     Body: {
         result = template
-        i = 0
         
-        WhileLoop LessThan(i, ArrayLength(variables)) {
-            variable = ArrayGet(variables, i)
+        // Get all variable keys
+        keys = XSHash.XGetKeys(variables)
+        key_count = XArray.XSize(keys)
+        
+        i = 0
+        WhileLoop LessThan(i, key_count) {
+            key = XArray.XGet(keys, i)
+            value = XSHash.XLookup(variables, key)
             
-            // Expect format: ["{{KEY}}", "VALUE"]
-            key = ArrayGet(variable, 0)
-            value = ArrayGet(variable, 1)
+            // Create placeholder: {{KEY}}
+            placeholder = StringConcat("{{", key)
+            placeholder = StringConcat(placeholder, "}}")
             
-            // Replace all occurrences
-            result = StringReplace(result, key, value)
+            // Replace (note: replaces first occurrence only)
+            result = StringReplace(result, placeholder, value)
             
             i = Add(i, 1)
         }
@@ -942,40 +902,194 @@ Function.ProcessTemplate {
     }
 }
 
-// Usage example:
+// Usage:
 template_text = "Hello {{NAME}}, welcome to {{SYSTEM}}!"
-variables = ArrayCreate(2)
-ArraySet(variables, 0, ArrayFromStrings("{{NAME}}", "John"))
-ArraySet(variables, 1, ArrayFromStrings("{{SYSTEM}}", "AILANG"))
 
-personalized = ProcessTemplate(template_text, variables)
-// Returns: "Hello John, welcome to AILANG!"
+vars = XSHash.XCreate()
+XSHash.XInsert(vars, "NAME", "Alice")
+XSHash.XInsert(vars, "SYSTEM", "AILANG")
+
+rendered = RenderTemplate(template_text, vars)
+// Returns: "Hello Alice, welcome to AILANG!"
 ```
 
-## Best Practices and Guidelines
+### Email Address Validator
 
-### Performance Guidelines
+```ailang
+Function.IsValidEmail {
+    Input: email: Address
+    Output: Integer
+    Body: {
+        // Must contain @
+        at_pos = StringIndexOf(email, "@")
+        IfCondition LessEqual(at_pos, 0) ThenBlock: {
+            ReturnValue(0)  // Invalid: no @ or @ at start
+        }
+        
+        email_len = StringLength(email)
+        
+        // Must contain . after @
+        dot_pos = StringIndexOf(email, ".", at_pos)
+        IfCondition LessEqual(dot_pos, 0) ThenBlock: {
+            ReturnValue(0)  // Invalid: no . after @
+        }
+        
+        // . must not be immediately after @
+        IfCondition EqualTo(dot_pos, Add(at_pos, 1)) ThenBlock: {
+            ReturnValue(0)  // Invalid: @. pattern
+        }
+        
+        // Must have at least one char after final .
+        IfCondition GreaterEqual(dot_pos, Subtract(email_len, 1)) ThenBlock: {
+            ReturnValue(0)  // Invalid: . at end
+        }
+        
+        ReturnValue(1)  // Valid
+    }
+}
 
-1. **Use StringConcatPooled for repeated operations**
-2. **Avoid creating temporary strings in loops**
-3. **Pre-calculate string lengths when possible**
-4. **Use StringBuilder pattern for complex string building**
-5. **Pool string allocations for high-frequency operations**
+// Usage:
+valid1 = IsValidEmail("user@example.com")     // Returns 1
+valid2 = IsValidEmail("invalid.email")        // Returns 0
+valid3 = IsValidEmail("@example.com")         // Returns 0
+valid4 = IsValidEmail("user@example")         // Returns 0
+```
+
+---
+
+## Best Practices
 
 ### Memory Management
 
 1. **Always null-terminate manually created strings**
-2. **Use appropriate buffer sizes for string operations**
-3. **Clean up allocated string resources**
-4. **Validate string lengths before operations**
-5. **Use bounds checking for buffer operations**
+   ```ailang
+   buffer = Allocate(10)
+   StoreValue(Add(buffer, 0), 72)  // 'H'
+   StoreValue(Add(buffer, 1), 105) // 'i'
+   StoreValue(Add(buffer, 2), 0)   // NULL terminator
+   ```
+
+2. **Validate string lengths before operations**
+   ```ailang
+   IfCondition GreaterThan(StringLength(input), max_size) ThenBlock: {
+       PrintMessage("Input too long!")
+       ReturnValue(0)
+   }
+   ```
+
+3. **Clean up allocated strings** (if using manual memory management)
+
+### Performance Guidelines
+
+1. **Use `StringConcatPooled` for loops** - significantly faster for repeated concatenations
+2. **Cache `StringLength` results** - don't recalculate in loops
+3. **Prefer `StringCharAt` over repeated `StringSubstring`** for character iteration
+4. **Use `StringContains` before `StringIndexOf`** if you only need existence check
 
 ### Code Organization
 
-1. **Group related string operations into functions**
-2. **Create reusable string processing utilities**
-3. **Use descriptive names for string variables**
-4. **Document string format expectations**
-5. **Handle edge cases (empty strings, null inputs)**
+1. **Create reusable string utility functions**
+   ```ailang
+   Function.IsWhitespace {
+       Input: char_code: Integer
+       Output: Integer
+       Body: {
+           // Space=32, Tab=9, Newline=10, CR=13
+           is_space = EqualTo(char_code, 32)
+           is_tab = EqualTo(char_code, 9)
+           is_newline = EqualTo(char_code, 10)
+           is_cr = EqualTo(char_code, 13)
+           
+           result = Or(Or(is_space, is_tab), Or(is_newline, is_cr))
+           ReturnValue(result)
+       }
+   }
+   ```
 
-This comprehensive manual provides everything needed to effectively use AILANG's string processing capabilities, from basic operations to advanced text processing patterns. The system is designed for both high-level convenience and low-level performance optimization, making it suitable for systems programming, text processing, and data manipulation tasks.
+2. **Group related string operations into modules**
+3. **Use descriptive variable names**
+   ```ailang
+   // Good
+   user_email = "user@example.com"
+   domain_start = StringIndexOf(user_email, "@")
+   
+   // Avoid
+   s = "user@example.com"
+   p = StringIndexOf(s, "@")
+   ```
+
+4. **Document string format expectations**
+   ```ailang
+   // Expects: "YYYY-MM-DD" format
+   Function.ParseDate {
+       Input: date_string: Address
+       ...
+   }
+   ```
+
+### Error Handling
+
+1. **Check for NULL/empty strings**
+   ```ailang
+   IfCondition EqualTo(StringLength(input), 0) ThenBlock: {
+       PrintMessage("Error: Empty input")
+       ReturnValue(0)
+   }
+   ```
+
+2. **Validate search results**
+   ```ailang
+   pos = StringIndexOf(text, needle)
+   IfCondition EqualTo(pos, -1) ThenBlock: {
+       PrintMessage("Substring not found")
+       ReturnValue(0)
+   }
+   ```
+
+3. **Handle edge cases** (empty strings, single characters, etc.)
+
+---
+
+## Function Reference Summary
+
+| Function | Arguments | Returns | Description |
+|----------|-----------|---------|-------------|
+| `StringFromChar` | `(ascii_code)` | String | Convert ASCII code to 1-char string |
+| `StringLength` | `(string)` | Integer | Get length of string |
+| `StringConcat` | `(str1, str2)` | String | Concatenate two strings |
+| `StringConcatPooled` | `(str1, str2)` | String | Pool-based concatenation (faster) |
+| `StringEquals` | `(str1, str2)` | Integer | Returns 1 if equal, 0 if not |
+| `StringCompare` | `(str1, str2)` | Integer | Returns 0 if equal, non-zero if different |
+| `StringCharAt` | `(string, index)` | Integer | Get ASCII code at position |
+| `StringIndexOf` | `(haystack, needle[, start])` | Integer | Find position (-1 if not found) |
+| `StringContains` | `(haystack, needle)` | Integer | Returns 1 if contains, 0 if not |
+| `StringSubstring` | `(string, start, end)` | String | Extract substring (start to end) |
+| `StringExtract` | `(string, start, end)` | String | Alias for StringSubstring |
+| `StringExtractUntil` | `(buffer, offset, delim)` | String | Extract until delimiter |
+| `StringToUpper` | `(string)` | String | Convert to uppercase |
+| `StringToLower` | `(string)` | String | Convert to lowercase |
+| `StringTrim` | `(string)` | String | Remove leading/trailing whitespace |
+| `StringReplace` | `(str, old, new)` | String | Replace first occurrence |
+| `StringSplit` | `(string, delimiter)` | Array | Split into array of strings |
+| `StringToNumber` | `(string)` | Integer | Parse string to integer |
+| `NumberToString` | `(number)` | String | Convert integer to string |
+| `ReadInput` | `()` | String | Read line from stdin |
+| `PrintString` | `(string)` | void | Print string to stdout |
+
+---
+
+## ASCII Reference
+
+Common ASCII codes for string processing:
+
+- **Digits:** `'0'=48` to `'9'=57`
+- **Uppercase:** `'A'=65` to `'Z'=90`
+- **Lowercase:** `'a'=97` to `'z'=122`
+- **Whitespace:** Space=32, Tab=9, Newline=10, CR=13
+- **Punctuation:** `'!'=33`, `'.'=46`, `','=44`, `':'=58`, `';'=59`
+- **Operators:** `'+'=43`, `'-'=45`, `'*'=42`, `'/'=47`, `'='=61`
+- **Brackets:** `'('=40`, `')'=41`, `'['=91`, `']'=93`, `'{'=123`, `'}'=125`
+
+---
+
+This manual covers all currently implemented string operations in AILANG. For the latest updates and additional examples, see the official AILANG documentation and repository.
