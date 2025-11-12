@@ -1,0 +1,15 @@
+// Test pool initialization values
+
+FixedPool.Test {
+    "should_be_one": Initialize=1
+    "should_be_42": Initialize=42
+    "should_be_100": Initialize=100
+}
+
+PrintMessage("Testing pool initialization:")
+PrintMessage("should_be_one (expect 1):")
+PrintNumber(Test.should_be_one)
+PrintMessage("should_be_42 (expect 42):")
+PrintNumber(Test.should_be_42)
+PrintMessage("should_be_100 (expect 100):")
+PrintNumber(Test.should_be_100)

@@ -1,0 +1,28 @@
+PrintMessage("Testing returned array passing")
+
+Function.Test.CreateArray {
+    Body: {
+        arr = ArrayCreate(3)
+        ArraySet(arr, 0, 99)
+        PrintMessage("Created array in function")
+        ReturnValue(arr)
+    }
+}
+
+Function.Test.ProcessArray {
+    Input: buffer:
+    Body: {
+        PrintMessage("Processing array")
+        val = ArrayGet(buffer, 0)
+        PrintNumber(val)
+        ReturnValue(val)
+    }
+}
+
+PrintMessage("Creating array via function...")
+my_array = Test.CreateArray()
+
+PrintMessage("Passing returned array to another function...")
+result = Test.ProcessArray(my_array)
+
+PrintMessage("Success!")

@@ -1,0 +1,212 @@
+// test_returns.ailang
+// Fixed version with proper AILANG function syntax
+
+PrintMessage("Edge Case Test")
+
+// Test 1: Function with no explicit return
+Function.Edge.NoReturn {
+    Output: Integer
+    Body: {
+        x = 10
+        y = 20
+        // No ReturnValue - should return 0
+        ReturnValue(0)  // Adding explicit return for clarity
+    }
+}
+
+r1 = Edge.NoReturn()
+PrintMessage("No explicit return (should be 0):")
+PrintNumber(r1)
+
+// Test 2: Empty function body
+Function.Edge.Empty {
+    Output: Integer
+    Body: {
+        // Completely empty - needs explicit return
+        ReturnValue(0)
+    }
+}
+
+r2 = Edge.Empty()
+PrintMessage("Empty body (should be 0):")
+PrintNumber(r2)
+
+// Test 3: Function returning 0
+Function.Edge.Zero {
+    Output: Integer
+    Body: {
+        ReturnValue(0)
+    }
+}
+
+r3 = Edge.Zero()
+PrintMessage("Explicit zero return:")
+PrintNumber(r3)
+
+// Test 4: Function with large number
+Function.Edge.Large {
+    Output: Integer
+    Body: {
+        big = 1000000
+        ReturnValue(big)
+    }
+}
+
+r4 = Edge.Large()
+PrintMessage("Large number (1000000):")
+PrintNumber(r4)
+
+// Test 5: Negative number return
+Function.Edge.Negative {
+    Output: Integer
+    Body: {
+        neg = Subtract(0, 42)
+        ReturnValue(neg)
+    }
+}
+
+r5 = Edge.Negative()
+PrintMessage("Negative return (-42):")
+PrintNumber(r5)
+
+// Test 6: Multiple calls to same function
+Function.Edge.Counter {
+    Output: Integer
+    Body: {
+        // Just return a fixed value
+        // (No static vars in AIlang)
+        ReturnValue(7)
+    }
+}
+
+c1 = Edge.Counter()
+c2 = Edge.Counter()
+c3 = Edge.Counter()
+PrintMessage("Three calls (all should be 7):")
+PrintNumber(c1)
+PrintNumber(c2)
+PrintNumber(c3)
+
+// Test 7: Call function in expression
+Function.Edge.Ten {
+    Output: Integer
+    Body: {
+        ReturnValue(10)
+    }
+}
+
+expr = Add(Edge.Ten(), Edge.Ten())
+PrintMessage("Function in expression (10+10):")
+PrintNumber(expr)
+
+// Test 8: Pass function result as parameter
+Function.Edge.Double {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        d = Multiply(x, 2)
+        ReturnValue(d)
+    }
+}
+
+chain = Edge.Double(Edge.Ten())
+PrintMessage("Chained call Double(Ten()) = 20:")
+PrintNumber(chain)
+
+// Test 9: Early return pattern
+Function.Edge.Early {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        IfCondition LessThan(x, 0) ThenBlock: {
+            ReturnValue(-1)  // Early return for negative
+        }
+        
+        IfCondition EqualTo(x, 0) ThenBlock: {
+            ReturnValue(0)   // Early return for zero
+        }
+        
+        // Normal path
+        ReturnValue(1)
+    }
+}
+
+test1 = Edge.Early(-5)
+test2 = Edge.Early(0)
+test3 = Edge.Early(10)
+PrintMessage("Early return tests:")
+PrintMessage("Early(-5) should be -1:")
+PrintNumber(test1)
+PrintMessage("Early(0) should be 0:")
+PrintNumber(test2)
+PrintMessage("Early(10) should be 1:")
+PrintNumber(test3)
+
+// Test 10: Nested function calls
+Function.Edge.AddOne {
+    Input: n: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Add(n, 1))
+    }
+}
+
+Function.Edge.AddTwo {
+    Input: n: Integer
+    Output: Integer
+    Body: {
+        temp = Edge.AddOne(n)
+        ReturnValue(Edge.AddOne(temp))
+    }
+}
+
+nested = Edge.AddTwo(5)
+PrintMessage("Nested calls AddTwo(5) = 7:")
+PrintNumber(nested)
+
+// Test 11: Function with complex logic
+Function.Edge.Complex {
+    Input: a: Integer
+    Input: b: Integer
+    Output: Integer
+    Body: {
+        sum = Add(a, b)
+        diff = Subtract(a, b)
+        prod = Multiply(sum, diff)
+        
+        IfCondition GreaterThan(prod, 0) ThenBlock: {
+            ReturnValue(prod)
+        } ElseBlock: {
+            ReturnValue(Subtract(0, prod))  // Return absolute value
+        }
+    }
+}
+
+complex_result = Edge.Complex(5, 3)
+PrintMessage("Complex(5,3) = (5+3)*(5-3) = 16:")
+PrintNumber(complex_result)
+
+// Test 12: Boolean-like returns
+Function.Edge.IsPositive {
+    Input: n: Integer
+    Output: Integer
+    Body: {
+        IfCondition GreaterThan(n, 0) ThenBlock: {
+            ReturnValue(1)  // True
+        }
+        ReturnValue(0)  // False
+    }
+}
+
+bool1 = Edge.IsPositive(10)
+bool2 = Edge.IsPositive(-5)
+bool3 = Edge.IsPositive(0)
+PrintMessage("IsPositive tests:")
+PrintMessage("IsPositive(10) = 1:")
+PrintNumber(bool1)
+PrintMessage("IsPositive(-5) = 0:")
+PrintNumber(bool2)
+PrintMessage("IsPositive(0) = 0:")
+PrintNumber(bool3)
+
+PrintMessage("Edge cases complete!")

@@ -1,0 +1,290 @@
+// debug_flow_control_tests.ailang
+// Flow control tests with debug instrumentation to identify failures
+
+PrintMessage("========================================")
+PrintMessage("DEBUG FLOW CONTROL TEST SUITE")
+PrintMessage("========================================")
+PrintMessage("")
+
+// Global test tracking
+total_tests = 0
+passed_tests = 0
+failed_tests = 0
+test_name = ""
+expected = 0
+actual = 0
+
+// Test result helper with debug
+SubRoutine.RecordTest {
+    total_tests = Add(total_tests, 1)
+    PrintMessage("TEST: ")
+    PrintMessage(test_name)
+    PrintMessage("  Expected: ")
+    PrintNumber(expected)
+    PrintMessage("  Actual: ")
+    PrintNumber(actual)
+    
+    IfCondition EqualTo(expected, actual) ThenBlock: {
+        PrintMessage("  PASS")
+        passed_tests = Add(passed_tests, 1)
+    } ElseBlock: {
+        PrintMessage("  FAIL <<<< DEBUG THIS")
+        failed_tests = Add(failed_tests, 1)
+        
+        // Debug output for failures
+        Debug("test_failure", level=1) {
+            PrintMessage("    [DEBUG] Test failed:")
+            PrintMessage("    [DEBUG] Variable states at failure:")
+            PrintMessage("    [DEBUG] expected =")
+            PrintNumber(expected)
+            PrintMessage("    [DEBUG] actual =")
+            PrintNumber(actual)
+        }
+    }
+}
+
+PrintMessage("========================================")
+PrintMessage("SECTION: BRANCH DEBUG (was CHOOSEPATH)")
+PrintMessage("========================================")
+
+// Test Branch with extensive debugging
+PrintMessage("Testing Branch with value 2")
+choice = 2
+branch_result1 = 0
+
+// Add debug trace before Branch
+Debug("pre_branch", level=1) {
+    PrintMessage("[DEBUG] Before Branch:")
+    PrintMessage("[DEBUG] choice =")
+    PrintNumber(choice)
+    PrintMessage("[DEBUG] branch_result1 =")
+    PrintNumber(branch_result1)
+}
+
+// Test if Branch is executing at all
+PrintMessage("Entering Branch block...")
+Branch choice {
+    Case 1: {
+        PrintMessage("  [TRACE] Hit Case 1")
+        branch_result1 = 111
+        Debug("case1", level=1) {
+            PrintMessage("  [DEBUG] Set branch_result1 to 111")
+        }
+    }
+    Case 2: {
+        PrintMessage("  [TRACE] Hit Case 2")
+        branch_result1 = 222
+        Debug("case2", level=1) {
+            PrintMessage("  [DEBUG] Set branch_result1 to 222")
+        }
+    }
+    Case 3: {
+        PrintMessage("  [TRACE] Hit Case 3")
+        branch_result1 = 333
+        Debug("case3", level=1) {
+            PrintMessage("  [DEBUG] Set branch_result1 to 333")
+        }
+    }
+    Default: {
+        PrintMessage("  [TRACE] Hit Default")
+        branch_result1 = 444
+        Debug("default", level=1) {
+            PrintMessage("  [DEBUG] Set branch_result1 to 444")
+        }
+    }
+}
+PrintMessage("Exited Branch block")
+
+// Debug trace after Branch
+Debug("post_branch", level=1) {
+    PrintMessage("[DEBUG] After Branch:")
+    PrintMessage("[DEBUG] branch_result1 =")
+    PrintNumber(branch_result1)
+}
+
+test_name = "Branch Case 2"
+expected = 222
+actual = branch_result1
+RunTask(RecordTest)
+
+// Test Branch Default with debug
+PrintMessage("")
+PrintMessage("Testing Branch Default")
+choice2 = 99
+branch_result2 = 0
+
+Debug("pre_default", level=1) {
+    PrintMessage("[DEBUG] Before Branch with choice2 = 99")
+}
+
+Branch choice2 {
+    Case 1: {
+        PrintMessage("  [TRACE] Hit Case 1 (unexpected)")
+        branch_result2 = 10
+    }
+    Case 2: {
+        PrintMessage("  [TRACE] Hit Case 2 (unexpected)")
+        branch_result2 = 20
+    }
+    Default: {
+        PrintMessage("  [TRACE] Hit Default (expected)")
+        branch_result2 = 888
+    }
+}
+
+Debug("post_default", level=1) {
+    PrintMessage("[DEBUG] After Branch default:")
+    PrintMessage("[DEBUG] branch_result2 =")
+    PrintNumber(branch_result2)
+}
+
+test_name = "Branch Default"
+expected = 888
+actual = branch_result2
+RunTask(RecordTest)
+
+PrintMessage("")
+PrintMessage("========================================")
+PrintMessage("SECTION: TRYBLOCK DEBUG")
+PrintMessage("========================================")
+
+// Test TryBlock with debug
+PrintMessage("Testing TryBlock with no error")
+try_result1 = 0
+error_caught1 = 0
+
+Debug("pre_try", level=1) {
+    PrintMessage("[DEBUG] Before TryBlock:")
+    PrintMessage("[DEBUG] try_result1 =")
+    PrintNumber(try_result1)
+}
+
+TryBlock: {
+    PrintMessage("  [TRACE] Inside TryBlock")
+    try_result1 = 50
+    Debug("in_try", level=1) {
+        PrintMessage("  [DEBUG] Set try_result1 to 50")
+    }
+} CatchError: Any {
+    PrintMessage("  [TRACE] Inside CatchError (unexpected)")
+    error_caught1 = 1
+} FinallyBlock: {
+    PrintMessage("  [TRACE] Inside FinallyBlock")
+    try_result1 = Add(try_result1, 1)
+    Debug("in_finally", level=1) {
+        PrintMessage("  [DEBUG] Incremented try_result1")
+        PrintMessage("  [DEBUG] try_result1 now =")
+        PrintNumber(try_result1)
+    }
+}
+
+Debug("post_try", level=1) {
+    PrintMessage("[DEBUG] After TryBlock:")
+    PrintMessage("[DEBUG] try_result1 =")
+    PrintNumber(try_result1)
+    PrintMessage("[DEBUG] error_caught1 =")
+    PrintNumber(error_caught1)
+}
+
+test_name = "Try no error result"
+expected = 51
+actual = try_result1
+RunTask(RecordTest)
+
+PrintMessage("")
+PrintMessage("========================================")
+PrintMessage("DEBUGGING HYPOTHESIS")
+PrintMessage("========================================")
+
+// Test if the issue is with the constructs or variable assignment
+PrintMessage("Testing direct variable assignment as control")
+control_var = 0
+PrintMessage("Before assignment: control_var =")
+PrintNumber(control_var)
+
+control_var = 999
+PrintMessage("After assignment: control_var =")
+PrintNumber(control_var)
+
+test_name = "Control assignment"
+expected = 999
+actual = control_var
+RunTask(RecordTest)
+
+// Test if Branch works (as comparison to the old ChoosePath)
+PrintMessage("")
+PrintMessage("Testing Branch as comparison")
+branch_test = 2
+branch_result = 0
+
+Branch branch_test {
+    Case 1: {
+        PrintMessage("  [TRACE] Branch Case 1")
+        branch_result = 100
+    }
+    Case 2: {
+        PrintMessage("  [TRACE] Branch Case 2")
+        branch_result = 200
+    }
+    Default: {
+        PrintMessage("  [TRACE] Branch Default")
+        branch_result = 300
+    }
+}
+
+test_name = "Branch comparison"
+expected = 200
+actual = branch_result
+RunTask(RecordTest)
+
+// Test minimal Branch
+PrintMessage("")
+PrintMessage("Testing minimal Branch")
+min_choice = 1
+min_result = 0
+
+PrintMessage("Before minimal Branch")
+Branch min_choice {
+    Case 1: {
+        min_result = 777
+    }
+    Default: {
+        min_result = 0
+    }
+}
+PrintMessage("After minimal Branch")
+PrintMessage("min_result =")
+PrintNumber(min_result)
+
+test_name = "Minimal Branch"
+expected = 777
+actual = min_result
+RunTask(RecordTest)
+
+PrintMessage("")
+PrintMessage("========================================")
+PrintMessage("FINAL DEBUG SUMMARY")
+PrintMessage("========================================")
+
+PrintMessage("Total Tests: ")
+PrintNumber(total_tests)
+PrintMessage("Passed: ")
+PrintNumber(passed_tests)
+PrintMessage("Failed: ")
+PrintNumber(failed_tests)
+
+IfCondition EqualTo(failed_tests, 0) ThenBlock: {
+    PrintMessage("")
+    PrintMessage("ALL TESTS PASSED!")
+} ElseBlock: {
+    PrintMessage("")
+    PrintMessage("FAILURES DETECTED - Check debug output above")
+    PrintMessage("")
+    PrintMessage("Likely issues:")
+    PrintMessage("1. TryBlock may not be compiled/implemented")
+    PrintMessage("2. The construct may parse but not execute")
+    PrintMessage("3. Check compiler for Try support")
+}
+
+PrintMessage("")
+PrintMessage("Debug test complete.")

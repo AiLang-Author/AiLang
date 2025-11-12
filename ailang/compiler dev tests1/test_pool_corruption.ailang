@@ -1,0 +1,104 @@
+// test_pool_corruption.ailang
+// Test if pool values persist through the test
+
+PrintMessage("=== POOL CORRUPTION TEST ===")
+PrintMessage("")
+
+// Section 5 equivalent: Create pool
+PrintMessage("[Section 5] Creating Pool")
+FixedPool.TestPool {
+    "value1": Initialize=100
+    "value2": Initialize=200
+    "value3": Initialize=300
+}
+
+check1 = TestPool.value1
+PrintMessage("After creation: TestPool.value1 = ")
+PrintNumber(check1)
+PrintMessage("")
+
+// Section 6-10: Various operations
+PrintMessage("[Sections 6-10] Running various operations...")
+
+// Functions
+Function.Test.Dummy {
+    Body: {
+        ReturnValue(42)
+    }
+}
+dummy = Test.Dummy()
+
+// Arrays
+arr = ArrayCreate(10)
+ArraySet(arr, 0, 999)
+
+// Strings
+str = StringConcat("Hello", "World")
+
+// Check pool after basic operations
+check2 = TestPool.value1
+PrintMessage("After basic ops: TestPool.value1 = ")
+PrintNumber(check2)
+PrintMessage("")
+
+// Section 11-15: More operations
+PrintMessage("[Sections 11-15] More operations...")
+
+// String pool operations
+pool = StringPool.Init(4096)
+pooled = StringConcatPooled("ABC", "DEF")
+
+// Debug operations
+DebugAssert(EqualTo(1, 1), "test")
+
+// Check pool
+check3 = TestPool.value1
+PrintMessage("After string pool ops: TestPool.value1 = ")
+PrintNumber(check3)
+PrintMessage("")
+
+// Section 16: Complex expressions with functions
+PrintMessage("[Section 16] Complex expressions...")
+
+Function.Test.Add1 {
+    Input: x:
+    Body: {
+        ReturnValue(Add(x, 1))
+    }
+}
+
+// This is where Test.Add1 gets REDEFINED in your main test!
+deep = Test.Add1(Test.Add1(Test.Add1(0)))
+
+check4 = TestPool.value1
+PrintMessage("After Test.Add1 operations: TestPool.value1 = ")
+PrintNumber(check4)
+PrintMessage("")
+
+// Section 17: Large arrays
+PrintMessage("[Section 17] Large arrays...")
+
+big_arr = ArrayCreate(100)
+ArraySet(big_arr, 99, 999)
+
+// Array loop
+arr_loop = ArrayCreate(10)
+idx = 0
+WhileLoop LessThan(idx, 10) {
+    ArraySet(arr_loop, idx, Multiply(idx, 10))
+    idx = Add(idx, 1)
+}
+
+check5 = TestPool.value1
+PrintMessage("After array operations: TestPool.value1 = ")
+PrintNumber(check5)
+PrintMessage("")
+
+// Section 18: Where it fails
+PrintMessage("[Section 18] Final check...")
+final_check = TestPool.value1
+PrintMessage("Final: TestPool.value1 = ")
+PrintNumber(final_check)
+PrintMessage("")
+
+PrintMessage("=== END TEST ===")

@@ -1,0 +1,38 @@
+// test_weight_loading.ailang
+PrintMessage("Testing weight loading\n")
+
+// Check if file exists
+exists = FileExists("tiny_llm.weights")
+PrintMessage("FileExists returned: ")
+PrintNumber(exists)
+PrintMessage("\n")
+
+IfCondition EqualTo(exists, 1) ThenBlock: {
+    PrintMessage("File found - attempting to load\n")
+    
+    // Create small buffer to test
+    test_buffer = ArrayCreate(10)
+    
+    // Read first 40 bytes (10 integers)
+    bytes_read = ReadBinaryFile("tiny_llm.weights", test_buffer, 40)
+    
+    PrintMessage("Bytes read: ")
+    PrintNumber(bytes_read)
+    PrintMessage("\n")
+    
+    IfCondition GreaterThan(bytes_read, 0) ThenBlock: {
+        PrintMessage("First 5 weights:\n")
+        i = 0
+        WhileLoop LessThan(i, 5) {
+            val = ArrayGet(test_buffer, i)
+            PrintMessage("  [")
+            PrintNumber(i)
+            PrintMessage("] = ")
+            PrintNumber(val)
+            PrintMessage("\n")
+            i = Add(i, 1)
+        }
+    }
+    
+    ArrayDestroy(test_buffer)
+}

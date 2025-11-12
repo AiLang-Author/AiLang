@@ -1,0 +1,152 @@
+// test_xread_wrapper.ailang
+// Test the wrapper/dereference pattern used in XREAD
+
+LibraryImport.XArrays
+
+// Constants from redis_server
+TYPE_STREAM = 2
+
+PrintMessage("=== Testing XREAD Wrapper Pattern ===\n")
+
+// Create a mock wrapper like store uses
+// In AILANG, we simulate the wrapper with an array
+wrapper = ArrayCreate(3)  // [type, reserved, stream_ptr]
+ArraySet(wrapper, 0, TYPE_STREAM)  // type at index 0
+ArraySet(wrapper, 1, 0)    // reserved at index 1
+
+// Create the stream (XArray of entries)
+stream_ptr = XArray.XCreate(10)
+
+// Store stream pointer at index 2
+ArraySet(wrapper, 2, stream_ptr)
+
+PrintMessage("Created wrapper at: ")
+PrintNumber(wrapper)
+PrintMessage("\n")
+PrintMessage("Stream pointer stored at offset 16: ")
+PrintNumber(stream_ptr)
+PrintMessage("\n")
+
+// Test the array access pattern from XREAD
+type_check = ArrayGet(wrapper, 0)
+PrintMessage("\nType check (should be 2): ")
+PrintNumber(type_check)
+PrintMessage("\n")
+
+retrieved_stream = ArrayGet(wrapper, 2)
+PrintMessage("Retrieved stream pointer: ")
+PrintNumber(retrieved_stream)
+PrintMessage("\n")
+
+// Verify they match
+IfCondition EqualTo(retrieved_stream, stream_ptr) ThenBlock: {
+    PrintMessage("SUCCESS: Stream pointer retrieved correctly\n")
+} ElseBlock: {
+    PrintMessage("ERROR: Stream pointer mismatch!\n")
+}
+
+// Now test with actual entries like XREAD does
+PrintMessage("\n=== Testing with Stream Entries ===\n")
+
+// Create stream entries (each entry is [id, field, value])
+entry1 = XArray.XCreate(3)
+XArray.XPush(entry1, "1000-0")
+XArray.XPush(entry1, "field1")
+XArray.XPush(entry1, "value1")
+
+entry2 = XArray.XCreate(3)
+XArray.XPush(entry2, "2000-0")
+XArray.XPush(entry2, "field2") 
+XArray.XPush(entry2, "value2")
+
+// Add entries to stream
+XArray.XPush(stream_ptr, entry1)
+XArray.XPush(stream_ptr, entry2)
+
+stream_len = XArray.XSize(stream_ptr)
+PrintMessage("Stream has ")
+PrintNumber(stream_len)
+PrintMessage(" entries\n")
+
+// Test the iteration pattern from XREAD
+matching_entries = XArray.XCreate(8)
+
+i = 0
+WhileLoop LessThan(i, stream_len) {
+    PrintMessage("\nProcessing entry ")
+    PrintNumber(i)
+    PrintMessage(":\n")
+    
+    entry_ptr = XArray.XGet(stream_ptr, i)
+    PrintMessage("  Entry pointer: ")
+    PrintNumber(entry_ptr)
+    PrintMessage("\n")
+    
+    // Get the ID (first element)
+    entry_id_ptr = XArray.XGet(entry_ptr, 0)
+    PrintMessage("  Entry ID: ")
+    PrintMessage(entry_id_ptr)
+    PrintMessage("\n")
+    
+    // Simulate comparison (just add all for testing)
+    XArray.XPush(matching_entries, entry_ptr)
+    
+    i = Add(i, 1)
+}
+
+num_found = XArray.XSize(matching_entries)
+PrintMessage("\nFound ")
+PrintNumber(num_found)
+PrintMessage(" matching entries\n")
+
+// Build response like XREAD does
+IfCondition GreaterThan(num_found, 0) ThenBlock: {
+    first_entry = XArray.XGet(matching_entries, 0)
+    num_elements = XArray.XSize(first_entry)
+    
+    PrintMessage("Building response for entry with ")
+    PrintNumber(num_elements)
+    PrintMessage(" elements\n")
+    
+    // The response building pattern that might fail
+    response = "*3\r\n"
+    
+    j = 0
+    WhileLoop LessThan(j, num_elements) {
+        element_ptr = XArray.XGet(first_entry, j)
+        
+        PrintMessage("  Element ")
+        PrintNumber(j)
+        PrintMessage(": ")
+        PrintMessage(element_ptr)
+        PrintMessage(" at address: ")
+        PrintNumber(element_ptr)
+        PrintMessage("\n")
+        
+        // Build part (simplified)
+        part = StringConcat("$6\r\n", element_ptr, "\r\n")
+        temp = StringConcat(response, part)
+        
+        // The problematic pattern
+        Deallocate(response, 0)
+        Deallocate(part, 0)
+        response = temp
+        
+        j = Add(j, 1)
+    }
+    
+    PrintMessage("\nFinal response:\n")
+    PrintMessage(response)
+    PrintMessage("\n")
+    
+    Deallocate(response, 0)
+}
+
+// Cleanup
+XArray.XDestroy(matching_entries)
+XArray.XDestroy(stream_ptr)
+XArray.XDestroy(entry1)
+XArray.XDestroy(entry2)
+ArrayDestroy(wrapper)
+
+PrintMessage("\n=== Test Complete ===\n")

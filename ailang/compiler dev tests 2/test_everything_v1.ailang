@@ -1,0 +1,1105 @@
+// test_everything_v1_fixed.ailang
+// FIXED VERSION - All variables pre-declared at top
+
+PrintMessage("==================================================")
+PrintMessage("     AILANG COMPREHENSIVE FEATURE TEST v1.0")
+PrintMessage("==================================================")
+PrintMessage("")
+
+// ========================================
+// DECLARE ALL VARIABLES FIRST
+// ========================================
+// Test result variables
+test1 = 0
+test2 = 0
+test3 = 0
+test4 = 0
+test5 = 0
+test6 = 0
+test7 = 0
+test8 = 0
+test9 = 0
+test10 = 0
+test11 = 0
+test12 = 0
+test13 = 0
+test14 = 0
+test15 = 0
+test16 = 0
+test17 = 0
+test18 = 0
+test19 = 0
+test20 = 0
+test21 = 0
+test22 = 0
+test23 = 0
+test24 = 0
+test25 = 0
+test26 = 0
+test27 = 0
+test28 = 0
+test29 = 0
+test30 = 0
+test31 = 0
+test32 = 0
+test33 = 0
+test34 = 0
+test35 = 0
+test36 = 0
+test37 = 0
+test38 = 0
+test39 = 0
+test40 = 0
+test41 = 0
+test42 = 0
+
+// Section 5 variables
+counter = 0
+sum = 0
+
+// Section 6 variables
+arr = 0
+
+// Section 7 variables
+str1 = 0
+str2 = 0
+str3 = 0
+
+// Section 11 variables (if used)
+file = 0
+written = 0
+content = 0
+
+// Section 13 variables
+str_num = 0
+num_str = 0
+
+// Section 14 variables
+sub_var = 0
+
+// Section 15 variables
+dummy = 0
+
+// Section 16 variables
+complex1 = 0
+a = 0
+b = 0
+c = 0
+cond1 = 0
+cond2 = 0
+both = 0
+deep = 0
+
+// Section 17 variables
+big_arr = 0
+arr_loop = 0
+i = 0
+val = 0
+
+// Section 18 variables
+result = 0
+func_result = 0
+j = 0
+loop_str = 0
+
+// Test tracking
+total_tests = 0
+passed_tests = 0
+
+// ========================================
+// NOW CREATE POOLS
+// ========================================
+FixedPool.TestPool {
+    "value1": Initialize=100
+    "value2": Initialize=200
+    "value3": Initialize=300
+}
+
+FixedPool.StringPool {
+    "str1": Initialize=0
+    "str2": Initialize=0
+    "str3": Initialize=0
+}
+
+// ========================================
+// BEGIN ACTUAL TESTS
+// ========================================
+PrintMessage("Starting tests with properly declared variables...")
+PrintMessage("")
+PrintMessage("==================================================")
+PrintMessage("     AILANG FEATURE TEST - CLEAN")
+PrintMessage("==================================================")
+PrintMessage("")
+
+total_tests = 0
+passed_tests = 0
+
+// ========================================
+// SECTION 1: ARITHMETIC
+// ========================================
+PrintMessage("[1] Arithmetic")
+
+test1 = Add(10, 20)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test1, 30) ThenBlock: {
+    PrintMessage("  ✓ Add")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Add FAILED")
+}
+
+test2 = Subtract(50, 15)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test2, 35) ThenBlock: {
+    PrintMessage("  ✓ Subtract")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Subtract FAILED")
+}
+
+test3 = Multiply(7, 8)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test3, 56) ThenBlock: {
+    PrintMessage("  ✓ Multiply")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Multiply FAILED")
+}
+
+test4 = Divide(100, 4)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test4, 25) ThenBlock: {
+    PrintMessage("  ✓ Divide")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Divide FAILED")
+}
+
+test5 = Modulo(17, 5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test5, 2) ThenBlock: {
+    PrintMessage("  ✓ Modulo")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Modulo FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 2: COMPARISONS
+// ========================================
+PrintMessage("[2] Comparisons")
+
+test6 = LessThan(3, 5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test6, 1) ThenBlock: {
+    PrintMessage("  ✓ LessThan")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ LessThan FAILED")
+}
+
+test7 = GreaterThan(10, 5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test7, 1) ThenBlock: {
+    PrintMessage("  ✓ GreaterThan")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ GreaterThan FAILED")
+}
+
+test8 = EqualTo(42, 42)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test8, 1) ThenBlock: {
+    PrintMessage("  ✓ EqualTo")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ EqualTo FAILED")
+}
+
+test9 = NotEqual(10, 20)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test9, 1) ThenBlock: {
+    PrintMessage("  ✓ NotEqual")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ NotEqual FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 3: LOGICAL
+// ========================================
+PrintMessage("[3] Logical")
+
+test10 = And(1, 1)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test10, 1) ThenBlock: {
+    PrintMessage("  ✓ And")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ And FAILED")
+}
+
+test11 = Or(1, 0)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test11, 1) ThenBlock: {
+    PrintMessage("  ✓ Or")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Or FAILED")
+}
+
+test12 = Not(0)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test12, 1) ThenBlock: {
+    PrintMessage("  ✓ Not")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Not FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 4: BITWISE
+// ========================================
+PrintMessage("[4] Bitwise")
+
+test13 = BitwiseAnd(12, 10)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test13, 8) ThenBlock: {
+    PrintMessage("  ✓ BitwiseAnd")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ BitwiseAnd FAILED")
+}
+
+test14 = BitwiseOr(12, 10)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test14, 14) ThenBlock: {
+    PrintMessage("  ✓ BitwiseOr")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ BitwiseOr FAILED")
+}
+
+test15 = BitwiseXor(12, 10)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test15, 6) ThenBlock: {
+    PrintMessage("  ✓ BitwiseXor")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ BitwiseXor FAILED")
+}
+
+test16 = BitwiseNot(0)
+total_tests = Add(total_tests, 1)
+IfCondition NotEqual(test16, 0) ThenBlock: {
+    PrintMessage("  ✓ BitwiseNot")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ BitwiseNot FAILED")
+}
+
+test17 = LeftShift(3, 2)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test17, 12) ThenBlock: {
+    PrintMessage("  ✓ LeftShift")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ LeftShift FAILED")
+}
+
+test18 = RightShift(12, 2)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test18, 3) ThenBlock: {
+    PrintMessage("  ✓ RightShift")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ RightShift FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 5: POOLS
+// ========================================
+PrintMessage("[5] Pools")
+
+
+test19 = TestPool.value1
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test19, 100) ThenBlock: {
+    PrintMessage("  ✓ Pool access")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Pool access FAILED")
+}
+
+test20 = Add(TestPool.value2, TestPool.value3)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test20, 500) ThenBlock: {
+    PrintMessage("  ✓ Pool arithmetic")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Pool arithmetic FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 6: FUNCTIONS
+// ========================================
+PrintMessage("[6] Functions")
+
+Function.Test.GetConstant {
+    Body: {
+        ReturnValue(42)
+    }
+}
+
+test21 = Test.GetConstant()
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test21, 42) ThenBlock: {
+    PrintMessage("  ✓ Simple function")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Simple function FAILED")
+}
+
+Function.Test.AddTwo {
+    Input: a:
+    Input: b:
+    Body: {
+        result = Add(a, b)
+        ReturnValue(result)
+    }
+}
+
+test22 = Test.AddTwo(15, 25)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test22, 40) ThenBlock: {
+    PrintMessage("  ✓ Function with params")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Function with params FAILED")
+}
+
+Function.Test.Factorial {
+    Input: n:
+    Body: {
+        IfCondition LessEqual(n, 1) ThenBlock: {
+            ReturnValue(1)
+        }
+        n_minus_1 = Subtract(n, 1)
+        fact = Test.Factorial(n_minus_1)
+        result = Multiply(n, fact)
+        ReturnValue(result)
+    }
+}
+
+test23 = Test.Factorial(5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test23, 120) ThenBlock: {
+    PrintMessage("  ✓ Recursive function")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Recursive function FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 7: LOOPS
+// ========================================
+PrintMessage("[7] Loops")
+
+loop_sum = 0
+i = 0
+WhileLoop LessThan(i, 5) {
+    loop_sum = Add(loop_sum, i)
+    i = Add(i, 1)
+}
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(loop_sum, 10) ThenBlock: {
+    PrintMessage("  ✓ WhileLoop")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ WhileLoop FAILED")
+}
+
+nested_count = 0
+j = 0
+WhileLoop LessThan(j, 3) {
+    k = 0
+    WhileLoop LessThan(k, 2) {
+        nested_count = Add(nested_count, 1)
+        k = Add(k, 1)
+    }
+    j = Add(j, 1)
+}
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(nested_count, 6) ThenBlock: {
+    PrintMessage("  ✓ Nested loops")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Nested loops FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 8: ARRAYS
+// ========================================
+PrintMessage("[8] Arrays")
+
+arr = ArrayCreate(10)
+ArraySet(arr, 0, 100)
+ArraySet(arr, 5, 500)
+
+test24 = ArrayGet(arr, 0)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test24, 100) ThenBlock: {
+    PrintMessage("  ✓ Array get/set")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Array get/set FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 9: STRINGS
+// ========================================
+PrintMessage("[9] Strings")
+
+test25 = StringLength("Hello")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test25, 5) ThenBlock: {
+    PrintMessage("  ✓ StringLength")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringLength FAILED")
+}
+
+concat = StringConcat("Hello", "World")
+test26 = StringLength(concat)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test26, 10) ThenBlock: {
+    PrintMessage("  ✓ StringConcat")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringConcat FAILED")
+}
+
+test27 = StringEquals("test", "test")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test27, 1) ThenBlock: {
+    PrintMessage("  ✓ StringEquals")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringEquals FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 10: ADVANCED MATH
+// ========================================
+PrintMessage("[10] Advanced Math")
+
+test28 = Min(5, 3)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test28, 3) ThenBlock: {
+    PrintMessage("  ✓ Min")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Min FAILED")
+}
+
+test29 = Max(5, 3)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test29, 5) ThenBlock: {
+    PrintMessage("  ✓ Max")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Max FAILED")
+}
+
+test30 = Power(2, 8)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test30, 256) ThenBlock: {
+    PrintMessage("  ✓ Power")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Power FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 11: EDGE CASES
+// ========================================
+PrintMessage("[11] Edge Cases")
+
+// Negative numbers
+test31 = Add(-5, -3)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test31, -8) ThenBlock: {
+    PrintMessage("  ✓ Negative addition")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Negative addition FAILED")
+}
+
+// Division by 1
+test32 = Divide(42, 1)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test32, 42) ThenBlock: {
+    PrintMessage("  ✓ Divide by 1")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Divide by 1 FAILED")
+}
+
+// Zero operations
+test33 = Multiply(0, 999999)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test33, 0) ThenBlock: {
+    PrintMessage("  ✓ Multiply by zero")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Multiply by zero FAILED")
+}
+
+// Empty string
+test34 = StringLength("")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test34, 0) ThenBlock: {
+    PrintMessage("  ✓ Empty string length")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Empty string FAILED")
+}
+
+// Zero iteration loop
+zero_loop = 0
+m = 10
+WhileLoop LessThan(m, 5) {
+    zero_loop = Add(zero_loop, 1)
+    m = Add(m, 1)
+}
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(zero_loop, 0) ThenBlock: {
+    PrintMessage("  ✓ Zero iteration loop")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Zero iteration loop FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 12: STRING POOL
+// ========================================
+PrintMessage("[12] String Pool")
+
+pool = StringPool.Init(4096)
+total_tests = Add(total_tests, 1)
+IfCondition GreaterThan(pool, 0) ThenBlock: {
+    PrintMessage("  ✓ StringPool.Init")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringPool.Init FAILED")
+}
+
+pooled = StringConcatPooled("ABC", "DEF")
+test35 = StringEquals(pooled, "ABCDEF")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test35, 1) ThenBlock: {
+    PrintMessage("  ✓ StringConcatPooled")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringConcatPooled FAILED")
+}
+
+usage = StringPool.Status()
+total_tests = Add(total_tests, 1)
+IfCondition GreaterThan(usage, 0) ThenBlock: {
+    PrintMessage("  ✓ StringPool.Status")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringPool.Status FAILED")
+}
+
+// DEBUG: Check if TestPool is still valid after StringPool operations
+pool_debug = TestPool.value1
+PrintMessage("  DEBUG: TestPool.value1 after StringPool = ")
+PrintNumber(pool_debug)
+
+PrintMessage("")
+
+
+
+// ========================================
+// SECTION 13: NUMBER CONVERSIONS
+// ========================================
+PrintMessage("[13] Number Conversions")
+
+str_num = NumberToString(123)
+test36 = StringEquals(str_num, "123")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test36, 1) ThenBlock: {
+    PrintMessage("  ✓ NumberToString")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ NumberToString FAILED")
+}
+
+test37 = StringToNumber("456")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test37, 456) ThenBlock: {
+    PrintMessage("  ✓ StringToNumber")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringToNumber FAILED")
+}
+
+// Negative number conversion
+neg_str = NumberToString(-789)
+test38 = StringEquals(neg_str, "-789")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test38, 1) ThenBlock: {
+    PrintMessage("  ✓ Negative NumberToString")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Negative NumberToString FAILED")
+}
+
+test39 = StringToNumber("-321")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test39, -321) ThenBlock: {
+    PrintMessage("  ✓ Negative StringToNumber")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Negative StringToNumber FAILED")
+}
+
+PrintMessage("")
+
+
+
+
+
+// ========================================
+// SECTION 14: SUBROUTINES
+// ========================================
+PrintMessage("[14] SubRoutines")
+
+sub_var = 0
+
+SubRoutine.TestTask {
+    sub_var = 123
+}
+
+RunTask(TestTask)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(sub_var, 123) ThenBlock: {
+    PrintMessage("  ✓ SubRoutine execution")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ SubRoutine FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 15: DEBUG FEATURES
+// ========================================
+PrintMessage("[15] Debug Features")
+
+// DebugAssert (should not crash when passing)
+DebugAssert(EqualTo(1, 1), "Basic assertion")
+PrintMessage("  ✓ DebugAssert passed")
+total_tests = Add(total_tests, 1)
+passed_tests = Add(passed_tests, 1)
+
+// DebugPerf timing
+DebugPerf.Start("test_timing")
+dummy = Add(1, 1)
+DebugPerf.End("test_timing")
+PrintMessage("  ✓ DebugPerf executed")
+total_tests = Add(total_tests, 1)
+passed_tests = Add(passed_tests, 1)
+
+PrintMessage("")
+
+// ========================================
+// SECTION 16: COMPLEX EXPRESSIONS
+// ========================================
+PrintMessage("[16] Complex Expressions")
+
+// Nested arithmetic
+complex1 = Add(Multiply(3, 4), Subtract(10, 5))
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(complex1, 17) ThenBlock: {
+    PrintMessage("  ✓ Nested arithmetic")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Nested arithmetic FAILED")
+}
+
+// Multiple comparisons
+a = 5
+b = 10
+c = 15
+cond1 = LessThan(a, b)
+cond2 = GreaterThan(c, b)
+both = And(cond1, cond2)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(both, 1) ThenBlock: {
+    PrintMessage("  ✓ Complex boolean")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Complex boolean FAILED")
+}
+
+// Deep function nesting
+Function.Test.Add1 {
+    Input: x:
+    Body: {
+        ReturnValue(Add(x, 1))
+    }
+}
+
+deep = Test.Add1(Test.Add1(Test.Add1(0)))
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(deep, 3) ThenBlock: {
+    PrintMessage("  ✓ Deep function nesting")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Deep function nesting FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 17: ARRAYS ADVANCED - WITH DEBUG
+// ========================================
+PrintMessage("[17] Arrays Advanced")
+
+PrintMessage("  DEBUG: TestPool.value1 at section start = ")
+PrintNumber(TestPool.value1)
+
+// Large array operations
+PrintMessage("  DEBUG: Creating ArrayCreate(100)...")
+big_arr = ArrayCreate(100)
+PrintMessage("  DEBUG: TestPool.value1 after ArrayCreate = ")
+PrintNumber(TestPool.value1)
+
+PrintMessage("  DEBUG: ArraySet(big_arr, 0, 111)...")
+ArraySet(big_arr, 0, 111)
+PrintMessage("  DEBUG: TestPool.value1 after first ArraySet = ")
+PrintNumber(TestPool.value1)
+
+PrintMessage("  DEBUG: ArraySet(big_arr, 50, 555)...")
+ArraySet(big_arr, 50, 555)
+PrintMessage("  DEBUG: TestPool.value1 after second ArraySet = ")
+PrintNumber(TestPool.value1)
+
+PrintMessage("  DEBUG: ArraySet(big_arr, 99, 999)...")
+ArraySet(big_arr, 99, 999)
+PrintMessage("  DEBUG: TestPool.value1 after third ArraySet = ")
+PrintNumber(TestPool.value1)
+
+PrintMessage("  DEBUG: ArrayGet(big_arr, 50)...")
+test40 = ArrayGet(big_arr, 50)
+PrintMessage("  DEBUG: TestPool.value1 after ArrayGet = ")
+PrintNumber(TestPool.value1)
+PrintMessage("  DEBUG: test40 value = ")
+PrintNumber(test40)
+
+test41 = 50
+PrintMessage("  DEBUG: TestPool.value1 after test41 = 50: ")
+PrintNumber(TestPool.value1)
+
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test40, 555) ThenBlock: {
+    PrintMessage("  ✓ Large array access")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Large array access FAILED")
+}
+
+// Array with loop
+PrintMessage("  DEBUG: Creating ArrayCreate(10) for loop...")
+arr_loop = ArrayCreate(10)
+PrintMessage("  DEBUG: TestPool.value1 after second ArrayCreate = ")
+PrintNumber(TestPool.value1)
+
+PrintMessage("  DEBUG: Starting loop to fill array...")
+i = 0
+WhileLoop LessThan(i, 10) {
+    PrintMessage("    DEBUG: Loop iteration ")
+    PrintNumber(i)
+    PrintMessage("      TestPool.value1 = ")
+    PrintNumber(TestPool.value1)
+    
+    val = Multiply(i, 11)
+    ArraySet(arr_loop, i, val)
+    
+    PrintMessage("      TestPool.value1 after ArraySet = ")
+    PrintNumber(TestPool.value1)
+    
+    i = Add(i, 1)
+}
+
+PrintMessage("  DEBUG: Loop complete")
+PrintMessage("  DEBUG: Final TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Verify loop filled correctly
+check = ArrayGet(arr_loop, 5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(check, 55) ThenBlock: {
+    PrintMessage("  ✓ Array loop fill")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Array loop fill FAILED")
+}
+
+PrintMessage("")
+PrintMessage("DEBUG after Arrays Advanced: TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+
+
+
+
+// DEBUG: Check pool after Section 17
+debug_check_17 = TestPool.value1
+PrintMessage("DEBUG after Arrays Advanced: TestPool.value1 = ")
+PrintNumber(debug_check_17)
+
+// Debug Section 18 - EXACTLY what's happening
+PrintMessage("=== SECTION 18 DEBUG ===")
+
+// Pre-declare ALL variables
+test42 = 0
+test43 = 0
+total_tests = 0
+passed_tests = 0
+str_build = 0
+n = 0
+i = 0
+sum = 0
+
+
+
+PrintMessage("Initial state:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+PrintMessage("[18] Combined Features - DETAILED DEBUG")
+PrintMessage("=========================================")
+
+// Check pool value BEFORE function definition
+PrintMessage("BEFORE function definition:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Function using pool in loop
+Function.Combined.PoolLoopTest {
+    Body: {
+        PrintMessage("  >> Inside function start")
+        PrintMessage("  >> TestPool.value1 inside function = ")
+        PrintNumber(TestPool.value1)
+        
+        sum = 0
+        i = 0
+        PrintMessage("  >> Starting loop...")
+        
+        WhileLoop LessThan(i, 3) {
+            PrintMessage("    >> Loop iteration ")
+            PrintNumber(i)
+            PrintMessage("    >> TestPool.value1 in loop = ")
+            PrintNumber(TestPool.value1)
+            PrintMessage("    >> sum before add = ")
+            PrintNumber(sum)
+            
+            sum = Add(sum, TestPool.value1)
+            
+            PrintMessage("    >> sum after add = ")
+            PrintNumber(sum)
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  >> Loop complete")
+        PrintMessage("  >> Final sum = ")
+        PrintNumber(sum)
+        PrintMessage("  >> About to return...")
+        
+        ReturnValue(sum)
+    }
+}
+
+// Check pool value AFTER function definition
+PrintMessage("AFTER function definition:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Call the function
+PrintMessage("")
+PrintMessage("Calling Combined.PoolLoopTest()...")
+test42 = Combined.PoolLoopTest()
+
+PrintMessage("")
+PrintMessage("Function returned:")
+PrintMessage("  test42 = ")
+PrintNumber(test42)
+PrintMessage("  Expected = 300")
+
+// Check pool value AFTER function call
+PrintMessage("")
+PrintMessage("AFTER function call:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Verdict
+PrintMessage("")
+PrintMessage("TEST RESULT:")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test42, 300) ThenBlock: {
+    PrintMessage("  ✓ Function+Pool+Loop PASSED")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Function+Pool+Loop FAILED")
+    PrintMessage("  Got: ")
+    PrintNumber(test42)
+    PrintMessage("  Expected: 300")
+}
+
+// Also test direct access for comparison
+PrintMessage("")
+PrintMessage("DIRECT ACCESS TEST:")
+direct_sum = 0
+k = 0
+WhileLoop LessThan(k, 3) {
+    PrintMessage("  Direct loop ")
+    PrintNumber(k)
+    PrintMessage("  TestPool.value1 = ")
+    PrintNumber(TestPool.value1)
+    direct_sum = Add(direct_sum, TestPool.value1)
+    k = Add(k, 1)
+}
+PrintMessage("  Direct sum = ")
+PrintNumber(direct_sum)
+
+PrintMessage("")
+PrintMessage("=== END DEBUG ===")
+PrintMessage("TestPool final values:")
+PrintMessage("  value1 = ")
+PrintNumber(TestPool.value1)
+PrintMessage("  value2 = ")
+PrintNumber(TestPool.value2)
+PrintMessage("  value3 = ")
+PrintNumber(TestPool.value3)
+
+// ========================================
+// SECTION 19: MORE COMPARISONS
+// ========================================
+PrintMessage("[19] More Comparisons")
+
+test44 = LessEqual(5, 5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test44, 1) ThenBlock: {
+    PrintMessage("  ✓ LessEqual")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ LessEqual FAILED")
+}
+
+test45 = GreaterEqual(5, 5)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test45, 1) ThenBlock: {
+    PrintMessage("  ✓ GreaterEqual")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ GreaterEqual FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SECTION 20: BIT OPERATIONS ADVANCED
+// ========================================
+PrintMessage("[20] Bit Operations Advanced")
+
+// PopCount
+test46 = PopCount(7)  // Binary: 111
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test46, 3) ThenBlock: {
+    PrintMessage("  ✓ PopCount")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ PopCount FAILED")
+}
+
+// IsPowerOfTwo
+test47 = IsPowerOfTwo(8)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test47, 1) ThenBlock: {
+    PrintMessage("  ✓ IsPowerOfTwo(8)")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ IsPowerOfTwo FAILED")
+}
+
+test48 = IsPowerOfTwo(7)
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test48, 0) ThenBlock: {
+    PrintMessage("  ✓ IsPowerOfTwo(7)")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ IsPowerOfTwo(7) FAILED")
+}
+
+PrintMessage("")
+
+// ========================================
+// SUMMARY
+// ========================================
+PrintMessage("==================================================")
+PrintMessage("SUMMARY")
+PrintMessage("==================================================")
+PrintMessage("Total tests: ")
+PrintNumber(total_tests)
+PrintMessage("Passed: ")
+PrintNumber(passed_tests)
+PrintMessage("Failed: ")
+failed = Subtract(total_tests, passed_tests)
+PrintNumber(failed)
+PrintMessage("")
+
+percentage = Multiply(passed_tests, 100)
+percentage = Divide(percentage, total_tests)
+PrintMessage("Success rate: ")
+PrintNumber(percentage)
+PrintMessage("%")
+
+IfCondition EqualTo(passed_tests, total_tests) ThenBlock: {
+    PrintMessage("")
+    PrintMessage("ALL TESTS PASSED!")
+} ElseBlock: {
+    PrintMessage("")
+    PrintMessage("Some tests failed - check output above")
+}
+
+PrintMessage("==================================================")
+PrintMessage("END OF TEST")
+PrintMessage("==================================================")

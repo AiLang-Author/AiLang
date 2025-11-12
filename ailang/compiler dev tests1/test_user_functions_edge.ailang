@@ -1,0 +1,108 @@
+// test_user_functions_edge.ailang
+// Edge cases for user-defined functions
+
+PrintMessage("User Function Tests - Edge Cases")
+PrintMessage("================================")
+
+// Test 1: Multiple return paths
+Function.Test.EarlyReturn {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        IfCondition EqualTo(x, 0) ThenBlock: {
+            ReturnValue(999)
+        }
+        result = Multiply(x, 2)
+        ReturnValue(result)
+    }
+}
+
+early1 = Test.EarlyReturn(0)
+early2 = Test.EarlyReturn(5)
+PrintMessage("Test 1 - EarlyReturn(0):")
+PrintNumber(early1)
+PrintMessage("        EarlyReturn(5):")
+PrintNumber(early2)
+DebugAssert(EqualTo(early1, 999), "Early return path")
+DebugAssert(EqualTo(early2, 10), "Normal return path")
+
+// Test 2: Six parameters (register limit)
+Function.Math.Sum6 {
+    Input: a: Integer
+    Input: b: Integer
+    Input: c: Integer
+    Input: d: Integer
+    Input: e: Integer
+    Input: f: Integer
+    Output: Integer
+    Body: {
+        sum1 = Add(a, b)
+        sum2 = Add(c, d)
+        sum3 = Add(e, f)
+        sum4 = Add(sum1, sum2)
+        total = Add(sum4, sum3)
+        ReturnValue(total)
+    }
+}
+
+sum_result = Math.Sum6(1, 2, 3, 4, 5, 6)
+PrintMessage("Test 2 - Sum6(1,2,3,4,5,6):")
+PrintNumber(sum_result)
+DebugAssert(EqualTo(sum_result, 21), "Six parameter function")
+
+// Test 3: Recursive-like pattern (not true recursion)
+Function.Test.Countdown {
+    Input: n: Integer
+    Output: Integer
+    Body: {
+        PrintMessage("Counting:")
+        PrintNumber(n)
+        IfCondition GreaterThan(n, 0) ThenBlock: {
+            next = Subtract(n, 1)
+            // Would be recursive here, but we return instead
+            ReturnValue(next)
+        }
+        ReturnValue(0)
+    }
+}
+
+countdown = Test.Countdown(3)
+PrintMessage("Test 3 - Countdown result:")
+PrintNumber(countdown)
+DebugAssert(EqualTo(countdown, 2), "Countdown function")
+
+// Test 4: Function name variations
+Function.SimpleAdd {  // No category
+    Input: x: Integer
+    Input: y: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Add(x, y))
+    }
+}
+
+simple = SimpleAdd(7, 3)
+PrintMessage("Test 4 - SimpleAdd(7,3):")
+PrintNumber(simple)
+DebugAssert(EqualTo(simple, 10), "No category function")
+
+// Test 5: Shadow variables
+global_x = 100
+Function.Test.UseShadow {
+    Input: x: Integer  // Shadows global_x
+    Output: Integer
+    Body: {
+        // Should use parameter x, not global_x
+        ReturnValue(Add(x, 1))
+    }
+}
+
+shadow = Test.UseShadow(5)
+PrintMessage("Test 5 - Shadow variable:")
+PrintNumber(shadow)
+PrintMessage("        Global unchanged:")
+PrintNumber(global_x)
+DebugAssert(EqualTo(shadow, 6), "Parameter shadows global")
+DebugAssert(EqualTo(global_x, 100), "Global unchanged")
+
+PrintMessage("Edge case tests PASSED")

@@ -1,0 +1,315 @@
+// Test cumulative effect of sections 1-17
+PrintMessage("=== CUMULATIVE SECTIONS TEST ===")
+
+// Pre-declare ALL test variables (mimicking full test)
+test1 = 0
+test2 = 0
+test3 = 0
+test4 = 0
+test5 = 0
+test6 = 0
+test7 = 0
+test8 = 0
+test9 = 0
+test10 = 0
+test11 = 0
+test12 = 0
+test13 = 0
+test14 = 0
+test15 = 0
+test16 = 0
+test17 = 0
+test18 = 0
+test19 = 0
+test20 = 0
+test21 = 0
+test22 = 0
+test23 = 0
+test24 = 0
+test25 = 0
+test26 = 0
+test27 = 0
+test28 = 0
+test29 = 0
+test30 = 0
+test31 = 0
+test32 = 0
+test33 = 0
+test34 = 0
+test35 = 0
+test36 = 0
+test37 = 0
+test38 = 0
+test39 = 0
+test40 = 0
+test41 = 0
+test42 = 0
+complex1 = 0
+a = 0
+b = 0
+c = 0
+cond1 = 0
+cond2 = 0
+both = 0
+deep = 0
+total_tests = 0
+passed_tests = 0
+counter = 0
+sum = 0
+arr = 0
+str1 = 0
+str2 = 0
+str3 = 0
+sub_var = 0
+dummy = 0
+big_arr = 0
+arr_loop = 0
+i = 0
+val = 0
+
+// NOW create pools (AFTER all variable declarations)
+FixedPool.TestPool {
+    "value1": Initialize=100
+    "value2": Initialize=200
+    "value3": Initialize=300
+}
+
+FixedPool.StringPool {
+    "str1": Initialize=0
+    "str2": Initialize=0
+    "str3": Initialize=0
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ========================================
+// SECTION 13: NUMBER CONVERSIONS
+// ========================================
+PrintMessage("[13] Number Conversions")
+
+str_num = NumberToString(123)
+test36 = StringEquals(str_num, "123")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test36, 1) ThenBlock: {
+    PrintMessage("  ✓ NumberToString")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ NumberToString FAILED")
+}
+
+test37 = StringToNumber("456")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test37, 456) ThenBlock: {
+    PrintMessage("  ✓ StringToNumber")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ StringToNumber FAILED")
+}
+
+// Negative number conversion
+neg_str = NumberToString(-789)
+test38 = StringEquals(neg_str, "-789")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test38, 1) ThenBlock: {
+    PrintMessage("  ✓ Negative NumberToString")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Negative NumberToString FAILED")
+}
+
+test39 = StringToNumber("-321")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test39, -321) ThenBlock: {
+    PrintMessage("  ✓ Negative StringToNumber")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Negative StringToNumber FAILED")
+}
+
+PrintMessage("")
+
+
+
+
+
+
+// DEBUG: Check pool after Section 17
+debug_check_17 = TestPool.value1
+PrintMessage("DEBUG after Arrays Advanced: TestPool.value1 = ")
+PrintNumber(debug_check_17)
+
+// Debug Section 18 - EXACTLY what's happening
+PrintMessage("=== SECTION 18 DEBUG ===")
+
+// Pre-declare ALL variables
+test42 = 0
+test43 = 0
+total_tests = 0
+passed_tests = 0
+str_build = 0
+n = 0
+i = 0
+sum = 0
+
+
+
+PrintMessage("Initial state:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+PrintMessage("")
+
+PrintMessage("[18] Combined Features - DETAILED DEBUG")
+PrintMessage("=========================================")
+
+// Check pool value BEFORE function definition
+PrintMessage("BEFORE function definition:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Function using pool in loop
+Function.Combined.PoolLoopTest {
+    Body: {
+        PrintMessage("  >> Inside function start")
+        PrintMessage("  >> TestPool.value1 inside function = ")
+        PrintNumber(TestPool.value1)
+        
+        sum = 0
+        i = 0
+        PrintMessage("  >> Starting loop...")
+        
+        WhileLoop LessThan(i, 3) {
+            PrintMessage("    >> Loop iteration ")
+            PrintNumber(i)
+            PrintMessage("    >> TestPool.value1 in loop = ")
+            PrintNumber(TestPool.value1)
+            PrintMessage("    >> sum before add = ")
+            PrintNumber(sum)
+            
+            sum = Add(sum, TestPool.value1)
+            
+            PrintMessage("    >> sum after add = ")
+            PrintNumber(sum)
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  >> Loop complete")
+        PrintMessage("  >> Final sum = ")
+        PrintNumber(sum)
+        PrintMessage("  >> About to return...")
+        
+        ReturnValue(sum)
+    }
+}
+
+// Check pool value AFTER function definition
+PrintMessage("AFTER function definition:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Call the function
+PrintMessage("")
+PrintMessage("Calling Combined.PoolLoopTest()...")
+test42 = Combined.PoolLoopTest()
+
+PrintMessage("")
+PrintMessage("Function returned:")
+PrintMessage("  test42 = ")
+PrintNumber(test42)
+PrintMessage("  Expected = 300")
+
+// Check pool value AFTER function call
+PrintMessage("")
+PrintMessage("AFTER function call:")
+PrintMessage("  TestPool.value1 = ")
+PrintNumber(TestPool.value1)
+
+// Verdict
+PrintMessage("")
+PrintMessage("TEST RESULT:")
+total_tests = Add(total_tests, 1)
+IfCondition EqualTo(test42, 300) ThenBlock: {
+    PrintMessage("  ✓ Function+Pool+Loop PASSED")
+    passed_tests = Add(passed_tests, 1)
+} ElseBlock: {
+    PrintMessage("  ✗ Function+Pool+Loop FAILED")
+    PrintMessage("  Got: ")
+    PrintNumber(test42)
+    PrintMessage("  Expected: 300")
+}
+
+// Also test direct access for comparison
+PrintMessage("")
+PrintMessage("DIRECT ACCESS TEST:")
+direct_sum = 0
+k = 0
+WhileLoop LessThan(k, 3) {
+    PrintMessage("  Direct loop ")
+    PrintNumber(k)
+    PrintMessage("  TestPool.value1 = ")
+    PrintNumber(TestPool.value1)
+    direct_sum = Add(direct_sum, TestPool.value1)
+    k = Add(k, 1)
+}
+PrintMessage("  Direct sum = ")
+PrintNumber(direct_sum)
+
+PrintMessage("")
+PrintMessage("=== END DEBUG ===")
+PrintMessage("TestPool final values:")
+PrintMessage("  value1 = ")
+PrintNumber(TestPool.value1)
+PrintMessage("  value2 = ")
+PrintNumber(TestPool.value2)
+PrintMessage("  value3 = ")
+PrintNumber(TestPool.value3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

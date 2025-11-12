@@ -1,0 +1,10 @@
+LibraryImport.Cobol
+
+SubRoutine.Main {
+    test_str = "HELLO WORLD"
+    result = Cobol.GetSubstring(test_str, 1, 5)
+    PrintMessage(result)
+    ReturnValue(0)
+}
+
+RunTask(Main)

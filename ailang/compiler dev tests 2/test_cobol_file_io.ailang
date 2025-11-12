@@ -1,0 +1,107 @@
+// test_cobol_file_io.ailang
+LibraryImport.Cobol
+LibraryImport.SQL
+
+PrintMessage("╔════════════════════════════════════════╗\n")
+PrintMessage("║   COBOL FILE I/O TEST                 ║\n")
+PrintMessage("╚════════════════════════════════════════╝\n\n")
+
+LoopMain.Test {
+    // Initialize database connection
+    PrintMessage("Connecting to PostgreSQL...\n")
+    conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+    
+    IfCondition EqualTo(conn, 0) ThenBlock: {
+        PrintMessage("ERROR: Failed to connect to database\n")
+        SystemCall(60, 1)
+    }
+    
+    PrintMessage("✓ Connected\n\n")
+    
+    // Initialize COBOL file system
+    PrintMessage("Initializing COBOL file system...\n")
+    Cobol.InitFileSystem(conn)
+    PrintMessage("✓ File system ready\n\n")
+    
+    // Test 1: Write a file
+    PrintMessage("Test 1: Writing file...\n")
+    fd = FileOpen("test_output.txt", "w")
+    
+    IfCondition EqualTo(fd, 0) ThenBlock: {
+        PrintMessage("ERROR: Failed to open file for writing\n")
+        SystemCall(60, 1)
+    }
+    
+    Cobol.WriteLine(fd, "Hello from COBOL!")
+    Cobol.WriteLine(fd, "This is line 2")
+    Cobol.WriteLine(fd, "Final line with numbers: 12345")
+    FileClose(fd)
+    
+    PrintMessage("✓ File written to database\n\n")
+    
+    // Test 2: Read the file back
+    PrintMessage("Test 2: Reading file from database...\n")
+    fd2 = FileOpen("test_output.txt", "r")
+    
+    IfCondition EqualTo(fd2, 0) ThenBlock: {
+        PrintMessage("ERROR: Failed to open file for reading\n")
+        SystemCall(60, 1)
+    }
+    
+    content = FileRead(fd2)
+    FileClose(fd2)
+    
+    PrintMessage("File contents:\n")
+    PrintMessage("---\n")
+    PrintString(content)
+    PrintMessage("---\n\n")
+    
+    // Test 3: Append to file
+    PrintMessage("Test 3: Appending to file...\n")
+    fd3 = FileOpen("test_output.txt", "a")
+    Cobol.WriteLine(fd3, "Appended line!")
+    FileClose(fd3)
+    
+    PrintMessage("✓ Appended\n\n")
+    
+    // Test 4: Read line by line
+    PrintMessage("Test 4: Reading line by line...\n")
+    fd4 = FileOpen("test_output.txt", "r")
+    
+    line_num = 1
+    WhileLoop True {
+        line = Cobol.ReadLine(fd4)
+        
+        IfCondition EqualTo(StringLength(line), 0) ThenBlock: {
+            BreakLoop
+        }
+        
+        PrintMessage("Line ")
+        PrintNumber(line_num)
+        PrintMessage(": ")
+        PrintString(line)
+        PrintMessage("\n")
+        
+        line_num = Add(line_num, 1)
+    }
+    
+    FileClose(fd4)
+    
+    // Test 5: Check if file exists
+    PrintMessage("\nTest 5: File existence check...\n")
+    exists = Cobol.CheckFileExists("test_output.txt")
+    PrintMessage("File exists: ")
+    PrintNumber(exists)
+    PrintMessage("\n")
+    
+    exists2 = Cobol.CheckFileExists("nonexistent.txt")
+    PrintMessage("Nonexistent file: ")
+    PrintNumber(exists2)
+    PrintMessage("\n")
+    
+    // Cleanup
+    PG_Disconnect(conn)
+    
+    PrintMessage("\n✓ All tests passed!\n")
+    PrintMessage("Files are stored in PostgreSQL table 'cobol_files'\n")
+}

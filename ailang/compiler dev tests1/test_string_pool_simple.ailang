@@ -1,0 +1,116 @@
+// test_string_pool_simple.ailang
+// Test string pool operations - start very simple
+
+PrintMessage("=== STRING POOL TEST ===")
+PrintMessage("")
+
+// Test 1: Initialize string pool
+PrintMessage("[1] Initialize String Pool")
+pool = StringPool.Init(4096)  // 4KB pool
+PrintMessage("Pool initialized (4KB)")
+PrintMessage("")
+
+// Test 2: Simple pooled concat
+PrintMessage("[2] Simple StringConcatPooled")
+str1 = "ABC"
+str2 = "DEF"
+PrintMessage("str1: ")
+PrintMessage(str1)
+PrintMessage("str2: ")
+PrintMessage(str2)
+
+pooled_result = StringConcatPooled(str1, str2)
+PrintMessage("Pooled concat result: ")
+PrintMessage(pooled_result)
+
+pooled_len = StringLength(pooled_result)
+PrintMessage("Length: ")
+PrintNumber(pooled_len)
+
+// Check if it's correct
+check = StringEquals(pooled_result, "ABCDEF")
+PrintMessage("Equals 'ABCDEF': ")
+PrintNumber(check)
+DebugAssert(EqualTo(pooled_len, 6), "Pooled concat length")
+DebugAssert(EqualTo(check, 1), "Pooled concat value")
+PrintMessage("")
+
+// Test 3: Compare with regular concat
+PrintMessage("[3] Compare regular vs pooled")
+regular_result = StringConcat(str1, str2)
+PrintMessage("Regular concat: ")
+PrintMessage(regular_result)
+
+are_same = StringEquals(regular_result, pooled_result)
+PrintMessage("Results equal: ")
+PrintNumber(are_same)
+DebugAssert(EqualTo(are_same, 1), "Regular == Pooled")
+PrintMessage("")
+
+// Test 4: Multiple pooled concats
+PrintMessage("[4] Multiple pooled concats")
+p1 = StringConcatPooled("One", "Two")
+PrintMessage("'One' + 'Two': ")
+PrintMessage(p1)
+
+p2 = StringConcatPooled(p1, "Three")
+PrintMessage("+ 'Three': ")
+PrintMessage(p2)
+
+p3 = StringConcatPooled(p2, "Four")
+PrintMessage("+ 'Four': ")
+PrintMessage(p3)
+
+expected_check = StringEquals(p3, "OneTwoThreeFour")
+PrintMessage("Equals 'OneTwoThreeFour': ")
+PrintNumber(expected_check)
+DebugAssert(EqualTo(expected_check, 1), "Multiple pooled concats")
+PrintMessage("")
+
+// Test 5: Pool usage check
+PrintMessage("[5] Check pool usage")
+usage = StringPool.Status()
+PrintMessage("Bytes used: ")
+PrintNumber(usage)
+PrintMessage(" of 4096")
+PrintMessage("")
+
+// Test 6: Pooled concat in loop
+PrintMessage("[6] Pooled concat in loop")
+loop_result = "Start"
+i = 0
+WhileLoop (i < 10) {
+    
+        loop_result = StringConcatPooled(loop_result, "X")
+        i = Add(i, 1)
+    }
+PrintMessage("After 10 pooled concats: ")
+PrintMessage(loop_result)
+loop_len = StringLength(loop_result)
+PrintMessage("Length: ")
+PrintNumber(loop_len)
+DebugAssert(EqualTo(loop_len, 15), "Loop pooled length")
+PrintMessage("")
+
+// Test 7: Empty string handling
+PrintMessage("[7] Empty strings with pool")
+empty1 = StringConcatPooled("", "Test")
+empty2 = StringConcatPooled("Test", "")
+empty3 = StringConcatPooled("", "")
+PrintMessage("'' + 'Test': ")
+PrintMessage(empty1)
+PrintMessage("'Test' + '': ")
+PrintMessage(empty2)
+PrintMessage("'' + '': ")
+PrintMessage(empty3)
+PrintMessage("")
+
+// Test 8: Final pool status
+PrintMessage("[8] Final pool status")
+final_usage = StringPool.Status()
+PrintMessage("Final bytes used: ")
+PrintNumber(final_usage)
+PrintMessage(" of 4096")
+PrintMessage("")
+
+PrintMessage("=== STRING POOL TEST COMPLETE ===")

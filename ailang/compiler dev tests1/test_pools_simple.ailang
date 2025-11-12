@@ -1,0 +1,93 @@
+// test_pools_workaround.ailang
+// Test pools with manual initialization as a workaround
+
+PrintMessage("Pool Test with Workaround")
+PrintMessage("=========================")
+
+// Declare FixedPool (initialization values may not work due to compiler bug)
+FixedPool.Config {
+    "counter": Initialize=42
+    "flag": Initialize=1
+    "max_value": Initialize=100
+}
+
+PrintMessage("Initial values (may be 0 due to compiler bug):")
+PrintMessage("Counter:")
+PrintNumber(Config.counter)
+PrintMessage("Flag:")
+PrintNumber(Config.flag)
+PrintMessage("Max:")
+PrintNumber(Config.max_value)
+
+PrintMessage("")
+PrintMessage("Manually setting values as workaround:")
+
+// Workaround: Manually set the values
+Config.counter = 42
+Config.flag = 1
+Config.max_value = 100
+
+PrintMessage("After manual initialization:")
+PrintMessage("Counter:")
+PrintNumber(Config.counter)
+PrintMessage("Flag:")
+PrintNumber(Config.flag)
+PrintMessage("Max:")
+PrintNumber(Config.max_value)
+
+// Test pool operations work correctly
+PrintMessage("")
+PrintMessage("Testing pool operations:")
+
+// Test arithmetic with pool variables
+Config.counter = Add(Config.counter, 8)
+PrintMessage("Counter after adding 8 (should be 50):")
+PrintNumber(Config.counter)
+
+// Test conditional with pool variables
+IfCondition EqualTo(Config.flag, 1) ThenBlock: {
+    PrintMessage("Flag is set (working correctly)")
+    Config.flag = 0
+}
+
+PrintMessage("Flag after clearing (should be 0):")
+PrintNumber(Config.flag)
+
+// Test using pool variables in expressions
+result = Multiply(Config.counter, 2)
+PrintMessage("Counter * 2 (should be 100):")
+PrintNumber(result)
+
+// Complex operation
+Config.max_value = Add(Config.counter, 50)
+PrintMessage("Max after update (should be 100):")
+PrintNumber(Config.max_value)
+
+// Test multiple pools
+FixedPool.Settings {
+    "timeout": Initialize=30
+    "retries": Initialize=3
+}
+
+// Manual initialization for Settings pool
+Settings.timeout = 30
+Settings.retries = 3
+
+PrintMessage("")
+PrintMessage("Second pool (Settings):")
+PrintMessage("Timeout:")
+PrintNumber(Settings.timeout)
+PrintMessage("Retries:")
+PrintNumber(Settings.retries)
+
+// Test cross-pool operations
+combined = Add(Config.counter, Settings.timeout)
+PrintMessage("")
+PrintMessage("Cross-pool operation (Config.counter + Settings.timeout):")
+PrintNumber(combined)
+
+PrintMessage("")
+PrintMessage("Pool test with workaround complete!")
+PrintMessage("")
+PrintMessage("Note: Initialize= values don't work due to compiler bug.")
+PrintMessage("Use manual assignment after declaration as workaround.")

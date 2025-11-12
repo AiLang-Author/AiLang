@@ -1,0 +1,27 @@
+// Simple binary I/O test
+PrintMessage("Testing binary file operations\n")
+
+// Create a small buffer
+buffer = ArrayCreate(10)
+
+// Try to read a file (will fail if file doesn't exist, that's OK)
+PrintMessage("Attempting ReadBinaryFile...\n")
+bytes_read = ReadBinaryFile("test.bin", buffer, 40)
+
+PrintMessage("ReadBinaryFile returned: ")
+PrintNumber(bytes_read)
+PrintMessage("\n")
+
+// Try to write
+ArraySet(buffer, 0, 42)
+ArraySet(buffer, 1, 100)
+
+PrintMessage("Attempting WriteBinaryFile...\n")
+bytes_written = WriteBinaryFile("output.bin", buffer, 8)
+
+PrintMessage("WriteBinaryFile returned: ")
+PrintNumber(bytes_written)
+PrintMessage("\n")
+
+ArrayDestroy(buffer)
+PrintMessage("Test complete\n")

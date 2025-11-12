@@ -1,0 +1,27 @@
+// Test debug features
+
+PrintMessage("Debug Test Program")
+
+x = 10
+y = 20
+
+Debug("Input validation", level=1) {
+    PrintMessage("Debug: Checking inputs")
+    PrintNumber(x)
+    PrintNumber(y)
+}
+
+DebugAssert(GreaterThan(x, 0), "x must be positive")
+DebugAssert(LessThan(y, 100), "y must be less than 100")
+
+result = Add(x, y)
+
+Debug("Result check", level=2) {
+    PrintMessage("Debug: Result computed")
+    PrintNumber(result)
+}
+
+PrintMessage("Final result:")
+PrintNumber(result)
+
+PrintMessage("Debug test complete")

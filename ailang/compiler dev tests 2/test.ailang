@@ -1,0 +1,1119 @@
+// ============================================================================
+// COBOL PROGRAM INFORMATION
+// ============================================================================
+// Program: BANKING
+// Author: BOB'S BANK & TRUST.
+// ============================================================================
+
+// --- HEADER ---
+// Record transaction
+// Check sufficient funds
+// Record transaction
+LibraryImport.Cobol
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+
+// Set I/O backend: jcl
+Cobol.io_backend_type = "jcl"
+
+// Generated from COBOL source
+
+FixedPool.BANKING_VARS {
+    "WS_BANKING_VARS": Initialize=""
+    "WS_REQUEST_DATA": Initialize=""
+    "WS_RESPONSE_DATA": Initialize=""
+    "WS_OPERATION": Initialize=""
+    "WS_ACCOUNT_ID": Initialize=""
+    "WS_AMOUNT": Initialize=0
+    "WS_BALANCE": Initialize=0
+    "WS_FROM_ACCOUNT": Initialize=""
+    "WS_TO_ACCOUNT": Initialize=""
+    "WS_RESULT": Initialize=""
+    "WS_MESSAGE": Initialize=""
+    "WS_ACCOUNT_NAME": Initialize=""
+    "WS_TRANSACTION_ID": Initialize=0
+    "WS_FILE_STATUS": Initialize=""
+    "REQ_FD": Initialize=0
+    "RESP_FD": Initialize=0
+    "ACCT_FILE_STATUS": Initialize=""
+    "TRANS_FILE_STATUS": Initialize=""
+    "WS_WORK_VARS": Initialize=""
+    "WS_IDX": Initialize=0
+    "WS_LEN": Initialize=0
+    "WS_CHAR": Initialize=""
+    "WS_MATCH_FLAG": Initialize=0
+    "WS_STR_POS": Initialize=0
+    "WS_STR_LEN": Initialize=0
+    "WS_TEMP_STR": Initialize=""
+    "WS_OLD_BALANCE": Initialize=0
+    "WS_NEW_BALANCE": Initialize=0
+    "WS_TIMESTAMP": Initialize=""
+    "WS_COUNTERS": Initialize=""
+    "WS_NEXT_TRANS_ID": Initialize=1
+}
+
+SubRoutine.BANKING {
+    RunTask(BANKING_MAIN)
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_MAIN {
+    DebugPerf.Start("cobol.para.BANKING_MAIN")
+    PrintMessage("===========================================")
+    PrintMessage("   BOB'S BANK & TRUST - BANKING SYSTEM")
+    PrintMessage("===========================================")
+    PrintMessage(" ")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-OPEN-FILES")
+        }
+    RunTask(BANKING_OPEN_FILES)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-READ-REQUEST")
+        }
+    RunTask(BANKING_READ_REQUEST)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-OPERATION")
+        }
+    RunTask(BANKING_PARSE_OPERATION)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-ROUTE-OPERATION")
+        }
+    RunTask(BANKING_ROUTE_OPERATION)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-BUILD-RESPONSE")
+        }
+    RunTask(BANKING_BUILD_RESPONSE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-WRITE-RESPONSE")
+        }
+    RunTask(BANKING_WRITE_RESPONSE)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-CLOSE-FILES")
+        }
+    RunTask(BANKING_CLOSE_FILES)
+    PrintMessage(" ")
+    PrintMessage("===========================================")
+    PrintMessage("   BANKING OPERATION COMPLETE")
+    PrintMessage("===========================================")
+    DebugPerf.End("cobol.para.BANKING_MAIN")
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_OPEN_FILES {
+    DebugPerf.Start("cobol.para.BANKING_OPEN_FILES")
+    PrintMessage("[1] Opening files...")
+    BANKING_VARS.REQ_FD = 1
+    IfCondition NotEqual(BANKING_VARS.REQ_FD, 0) ThenBlock: {
+            PrintMessage("[ERROR] Failed to open REQUEST")
+        }
+    BANKING_VARS.RESP_FD = 1
+    IfCondition NotEqual(BANKING_VARS.RESP_FD, 0) ThenBlock: {
+            PrintMessage("[ERROR] Failed to open RESPONSE")
+        }
+    DebugPerf.End("cobol.para.BANKING_OPEN_FILES")
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_READ_REQUEST {
+    DebugPerf.Start("cobol.para.BANKING_READ_REQUEST")
+    PrintMessage("[2] Reading request...")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_REQUEST_DATA")
+        }
+    BANKING_VARS.WS_REQUEST_DATA = Cobol.api_request_data
+    IfCondition Or(EqualTo(BANKING_VARS.WS_REQUEST_DATA, 0), EqualTo(BANKING_VARS.WS_REQUEST_DATA, " ")) ThenBlock: {
+            PrintMessage("Warning: Empty request")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_REQUEST_DATA")
+                    }
+            BANKING_VARS.WS_REQUEST_DATA = " "
+        }
+    PrintMessage(StringConcat("[3] Request: ", BANKING_VARS.WS_REQUEST_DATA))
+    PrintMessage(" ")
+    DebugPerf.End("cobol.para.BANKING_READ_REQUEST")
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_PARSE_OPERATION {
+    DebugPerf.Start("cobol.para.BANKING_PARSE_OPERATION")
+    PrintMessage("[4] Parsing operation...")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_LEN")
+        }
+    BANKING_VARS.WS_LEN = StringLength(BANKING_VARS.WS_REQUEST_DATA)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = 1
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, Subtract(BANKING_VARS.WS_LEN, 12))) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] MOVE  WS_MATCH_FLAG")
+                                    }
+                        BANKING_VARS.WS_MATCH_FLAG = 1
+                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 1), 9), "operation") ThenBlock: {
+                                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 10), 1), "\"") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM EXTRACT-OPERATION-VALUE")
+                                                                                }
+                                                            RunTask(EXTRACT_OPERATION_VALUE)
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] EXIT PERFORM")
+                                                                                }
+                                                            BreakLoop
+                                                        }
+                                    }
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    PrintMessage(StringConcat("  Operation: ", BANKING_VARS.WS_OPERATION))
+    PrintMessage(" ")
+    DebugPerf.End("cobol.para.BANKING_PARSE_OPERATION")
+    ReturnValue(0)
+}
+
+SubRoutine.EXTRACT_OPERATION_VALUE {
+    BANKING_VARS.WS_STR_POS = Add(12, BANKING_VARS.WS_IDX)
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_LEN)) {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_CHAR")
+                    }
+            BANKING_VARS.WS_CHAR = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1)
+            IfCondition Or(Or(Or(EqualTo(BANKING_VARS.WS_CHAR, 0), EqualTo(BANKING_VARS.WS_CHAR, " ")), EqualTo(BANKING_VARS.WS_CHAR, ":")), EqualTo(BANKING_VARS.WS_CHAR, "	")) ThenBlock: {
+                        BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+        }
+    IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1), "\"") ThenBlock: {
+            BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = BANKING_VARS.WS_STR_POS
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, BANKING_VARS.WS_LEN)) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    BANKING_VARS.WS_STR_LEN = Subtract(BANKING_VARS.WS_IDX, BANKING_VARS.WS_STR_POS)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_OPERATION")
+        }
+    BANKING_VARS.WS_OPERATION = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_STR_LEN)
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_ROUTE_OPERATION {
+    PrintMessage("[5] Routing to operation handler...")
+    IfCondition StringEquals(BANKING_VARS.WS_OPERATION, "VALIDATE") ThenBlock: {
+            PrintMessage("  -> Validate Transaction")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] PERFORM BANKING-VALIDATE-TRANSACTION")
+                    }
+            RunTask(BANKING_VALIDATE_TRANSACTION)
+        } ElseBlock: {
+            IfCondition StringEquals(BANKING_VARS.WS_OPERATION, "BALANCE") ThenBlock: {
+                        PrintMessage("  -> Check Balance")
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] PERFORM BANKING-CHECK-BALANCE")
+                                    }
+                        RunTask(BANKING_CHECK_BALANCE)
+                    } ElseBlock: {
+                        IfCondition StringEquals(BANKING_VARS.WS_OPERATION, "DEPOSIT") ThenBlock: {
+                                        PrintMessage("  -> Deposit Funds")
+                                        Debug("cobol.trace", level=3) {
+                                                            PrintMessage("[COBOL] PERFORM BANKING-DEPOSIT-FUNDS")
+                                                        }
+                                        RunTask(BANKING_DEPOSIT_FUNDS)
+                                    } ElseBlock: {
+                                        IfCondition StringEquals(BANKING_VARS.WS_OPERATION, "WITHDRAW") ThenBlock: {
+                                                            PrintMessage("  -> Withdraw Funds")
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM BANKING-WITHDRAW-FUNDS")
+                                                                                }
+                                                            RunTask(BANKING_WITHDRAW_FUNDS)
+                                                        } ElseBlock: {
+                                                            IfCondition StringEquals(BANKING_VARS.WS_OPERATION, "TRANSFER") ThenBlock: {
+                                                                                    PrintMessage("  -> Transfer Funds")
+                                                                                    Debug("cobol.trace", level=3) {
+                                                                                                                PrintMessage("[COBOL] PERFORM BANKING-TRANSFER-FUNDS")
+                                                                                                            }
+                                                                                    RunTask(BANKING_TRANSFER_FUNDS)
+                                                                                } ElseBlock: {
+                                                                                    IfCondition StringEquals(BANKING_VARS.WS_OPERATION, "CREATE") ThenBlock: {
+                                                                                                                PrintMessage("  -> Create Account")
+                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                PrintMessage("[COBOL] PERFORM BANKING-CREATE-ACCOUNT")
+                                                                                                                                            }
+                                                                                                                RunTask(BANKING_CREATE_ACCOUNT)
+                                                                                                            } ElseBlock: {
+                                                                                                                PrintMessage("  -> Unknown Operation")
+                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                PrintMessage("[COBOL] MOVE  WS_RESULT")
+                                                                                                                                            }
+                                                                                                                BANKING_VARS.WS_RESULT = "ERROR"
+                                                                                                                Debug("cobol.trace", level=3) {
+                                                                                                                                                PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                                                                                                                                            }
+                                                                                                                BANKING_VARS.WS_MESSAGE = "Unknown operation"
+                                                                                                            }
+                                                                                }
+                                                        }
+                                    }
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_PARSE_ACCOUNT_ID {
+    DebugPerf.Start("cobol.para.BANKING_PARSE_ACCOUNT_ID")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_LEN")
+        }
+    BANKING_VARS.WS_LEN = StringLength(BANKING_VARS.WS_REQUEST_DATA)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = 1
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, Subtract(BANKING_VARS.WS_LEN, 12))) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 1), 10), "account_id") ThenBlock: {
+                                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 11), 1), "\"") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM EXTRACT-ACCOUNT-ID-VALUE")
+                                                                                }
+                                                            RunTask(EXTRACT_ACCOUNT_ID_VALUE)
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] EXIT PERFORM")
+                                                                                }
+                                                            BreakLoop
+                                                        }
+                                    }
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    DebugPerf.End("cobol.para.BANKING_PARSE_ACCOUNT_ID")
+    ReturnValue(0)
+}
+
+SubRoutine.EXTRACT_ACCOUNT_ID_VALUE {
+    BANKING_VARS.WS_STR_POS = Add(12, BANKING_VARS.WS_IDX)
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_LEN)) {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_CHAR")
+                    }
+            BANKING_VARS.WS_CHAR = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1)
+            IfCondition Or(Or(Or(EqualTo(BANKING_VARS.WS_CHAR, 0), EqualTo(BANKING_VARS.WS_CHAR, " ")), EqualTo(BANKING_VARS.WS_CHAR, ":")), EqualTo(BANKING_VARS.WS_CHAR, "	")) ThenBlock: {
+                        BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+        }
+    IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1), "\"") ThenBlock: {
+            BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = BANKING_VARS.WS_STR_POS
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, BANKING_VARS.WS_LEN)) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    BANKING_VARS.WS_STR_LEN = Subtract(BANKING_VARS.WS_IDX, BANKING_VARS.WS_STR_POS)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_ACCOUNT_ID")
+        }
+    BANKING_VARS.WS_ACCOUNT_ID = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_STR_LEN)
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_PARSE_ACCOUNT_NAME {
+    DebugPerf.Start("cobol.para.BANKING_PARSE_ACCOUNT_NAME")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_LEN")
+        }
+    BANKING_VARS.WS_LEN = StringLength(BANKING_VARS.WS_REQUEST_DATA)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = 1
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, Subtract(BANKING_VARS.WS_LEN, 15))) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 1), 12), "account_name") ThenBlock: {
+                                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 13), 1), "\"") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM EXTRACT-ACCOUNT-NAME-VALUE")
+                                                                                }
+                                                            RunTask(EXTRACT_ACCOUNT_NAME_VALUE)
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] EXIT PERFORM")
+                                                                                }
+                                                            BreakLoop
+                                                        }
+                                    }
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    DebugPerf.End("cobol.para.BANKING_PARSE_ACCOUNT_NAME")
+    ReturnValue(0)
+}
+
+SubRoutine.EXTRACT_ACCOUNT_NAME_VALUE {
+    BANKING_VARS.WS_STR_POS = Add(14, BANKING_VARS.WS_IDX)
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_LEN)) {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_CHAR")
+                    }
+            BANKING_VARS.WS_CHAR = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1)
+            IfCondition Or(Or(Or(EqualTo(BANKING_VARS.WS_CHAR, 0), EqualTo(BANKING_VARS.WS_CHAR, " ")), EqualTo(BANKING_VARS.WS_CHAR, ":")), EqualTo(BANKING_VARS.WS_CHAR, "	")) ThenBlock: {
+                        BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+        }
+    IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1), "\"") ThenBlock: {
+            BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = BANKING_VARS.WS_STR_POS
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, BANKING_VARS.WS_LEN)) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    BANKING_VARS.WS_STR_LEN = Subtract(BANKING_VARS.WS_IDX, BANKING_VARS.WS_STR_POS)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_ACCOUNT_NAME")
+        }
+    BANKING_VARS.WS_ACCOUNT_NAME = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_STR_LEN)
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_PARSE_AMOUNT {
+    DebugPerf.Start("cobol.para.BANKING_PARSE_AMOUNT")
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_LEN")
+        }
+    BANKING_VARS.WS_LEN = StringLength(BANKING_VARS.WS_REQUEST_DATA)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = 1
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_AMOUNT")
+        }
+    BANKING_VARS.WS_AMOUNT = 0
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_IDX, Subtract(BANKING_VARS.WS_LEN, 10))) {
+            IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_IDX, 1), "\"") ThenBlock: {
+                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 1), 6), "amount") ThenBlock: {
+                                        IfCondition EqualTo(Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, Add(BANKING_VARS.WS_IDX, 7), 1), "\"") ThenBlock: {
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] PERFORM EXTRACT-AMOUNT-VALUE")
+                                                                                }
+                                                            RunTask(EXTRACT_AMOUNT_VALUE)
+                                                            Debug("cobol.trace", level=3) {
+                                                                                    PrintMessage("[COBOL] EXIT PERFORM")
+                                                                                }
+                                                            BreakLoop
+                                                        }
+                                    }
+                    }
+            BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+        }
+    DebugPerf.End("cobol.para.BANKING_PARSE_AMOUNT")
+    ReturnValue(0)
+}
+
+SubRoutine.EXTRACT_AMOUNT_VALUE {
+    BANKING_VARS.WS_STR_POS = Add(8, BANKING_VARS.WS_IDX)
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_LEN)) {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_CHAR")
+                    }
+            BANKING_VARS.WS_CHAR = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1)
+            IfCondition Or(Or(Or(EqualTo(BANKING_VARS.WS_CHAR, 0), EqualTo(BANKING_VARS.WS_CHAR, " ")), EqualTo(BANKING_VARS.WS_CHAR, ":")), EqualTo(BANKING_VARS.WS_CHAR, "	")) ThenBlock: {
+                        BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_TEMP_STR")
+        }
+    BANKING_VARS.WS_TEMP_STR = " "
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_IDX")
+        }
+    BANKING_VARS.WS_IDX = 1
+    WhileLoop Not(GreaterThan(BANKING_VARS.WS_STR_POS, BANKING_VARS.WS_LEN)) {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_CHAR")
+                    }
+            BANKING_VARS.WS_CHAR = Cobol.GetSubstring(BANKING_VARS.WS_REQUEST_DATA, BANKING_VARS.WS_STR_POS, 1)
+            IfCondition And(GreaterEqual(BANKING_VARS.WS_CHAR, "0"), LessEqual(BANKING_VARS.WS_CHAR, "9")) ThenBlock: {
+                        BANKING_VARS.WS_TEMP_STR = Cobol.SetSubstring(BANKING_VARS.WS_TEMP_STR, BANKING_VARS.WS_IDX, 1, BANKING_VARS.WS_CHAR)
+                        BANKING_VARS.WS_IDX = Add(BANKING_VARS.WS_IDX, 1)
+                        BANKING_VARS.WS_STR_POS = Add(BANKING_VARS.WS_STR_POS, 1)
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] EXIT PERFORM")
+                                    }
+                        BreakLoop
+                    }
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_AMOUNT")
+        }
+    BANKING_VARS.WS_AMOUNT = StringToNumber(BANKING_VARS.WS_TEMP_STR)
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_VALIDATE_TRANSACTION {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-AMOUNT")
+        }
+    RunTask(BANKING_PARSE_AMOUNT)
+    PrintMessage(StringConcat("  Amount: $", FormatDecimal(BANKING_VARS.WS_AMOUNT, 4, 2)))
+    IfCondition GreaterThan(BANKING_VARS.WS_AMOUNT, 10000) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "FLAGGED"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "Amount exceeds $10,000 limit"
+            PrintMessage("  Status: FLAGGED")
+        } ElseBlock: {
+            IfCondition LessThan(BANKING_VARS.WS_AMOUNT, 1) ThenBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                                    }
+                        BANKING_VARS.WS_RESULT = "REJECTED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                                    }
+                        BANKING_VARS.WS_MESSAGE = "Invalid amount"
+                        PrintMessage("  Status: REJECTED")
+                    } ElseBlock: {
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                                    }
+                        BANKING_VARS.WS_RESULT = "APPROVED"
+                        Debug("cobol.trace", level=3) {
+                                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                                    }
+                        BANKING_VARS.WS_MESSAGE = "Transaction approved"
+                        PrintMessage("  Status: APPROVED")
+                    }
+        }
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_CHECK_BALANCE {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-ACCOUNT-ID")
+        }
+    RunTask(BANKING_PARSE_ACCOUNT_ID)
+    PrintMessage(StringConcat("  Account: ", BANKING_VARS.WS_ACCOUNT_ID))
+    ACCOUNT_FILE_FD = 1
+    IfCondition NotEqual(BANKING_VARS.ACCT_FILE_STATUS, "00") ThenBlock: {
+            PrintMessage("[ERROR] Failed to open ACCOUNT-FILE")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "System error"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_ID")
+        }
+    BANKING_VARS.ACCT_ID = BANKING_VARS.WS_ACCOUNT_ID
+    db_conn = Cobol.api_db_conn
+    query = "SELECT * FROM accounts WHERE acct_id = '"
+    query = StringConcat(query, BANKING_VARS.ACCT_ID)
+    query = StringConcat(query, "'")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    IfCondition EqualTo(result, 0) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "Account not found"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_BALANCE")
+                    }
+            BANKING_VARS.WS_BALANCE = 0
+            ACCOUNT_FILE_FD = 0
+        }
+    row_count = XArray.XSize(result)
+    row_map = XArray.XGet(result, 0)
+    ACCT_ID_str = HashMap.HGetSimple(row_map, "acct_id")
+    BANKING_VARS.ACCT_ID = ACCT_ID_str
+    ACCT_NAME_str = HashMap.HGetSimple(row_map, "acct_name")
+    BANKING_VARS.ACCT_NAME = ACCT_NAME_str
+    ACCT_BALANCE_str = HashMap.HGetSimple(row_map, "acct_balance")
+    BANKING_VARS.ACCT_BALANCE = StringToNumber(ACCT_BALANCE_str)
+    ACCT_CREATED_str = HashMap.HGetSimple(row_map, "created_at")
+    BANKING_VARS.ACCT_CREATED = ACCT_CREATED_str
+    ACCT_UPDATED_str = HashMap.HGetSimple(row_map, "updated_at")
+    BANKING_VARS.ACCT_UPDATED = ACCT_UPDATED_str
+    PG_DestroyResult(result)
+    PrintMessage(StringConcat("  Balance: $", FormatDecimal(BANKING_VARS.WS_BALANCE, 4, 2)))
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "SUCCESS"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Balance retrieved"
+    ACCOUNT_FILE_FD = 0
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_CREATE_ACCOUNT {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-ACCOUNT-ID")
+        }
+    RunTask(BANKING_PARSE_ACCOUNT_ID)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-ACCOUNT-NAME")
+        }
+    RunTask(BANKING_PARSE_ACCOUNT_NAME)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-AMOUNT")
+        }
+    RunTask(BANKING_PARSE_AMOUNT)
+    PrintMessage(StringConcat("  Account ID: ", BANKING_VARS.WS_ACCOUNT_ID))
+    PrintMessage(StringConcat("  Name: ", BANKING_VARS.WS_ACCOUNT_NAME))
+    PrintMessage(StringConcat("  Initial Balance: $", FormatDecimal(BANKING_VARS.WS_AMOUNT, 4, 2)))
+    ACCOUNT_FILE_FD = 1
+    IfCondition NotEqual(BANKING_VARS.ACCT_FILE_STATUS, "00") ThenBlock: {
+            PrintMessage("[ERROR] Failed to open ACCOUNT-FILE")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "System error"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_ID")
+        }
+    BANKING_VARS.ACCT_ID = BANKING_VARS.WS_ACCOUNT_ID
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_NAME")
+        }
+    BANKING_VARS.ACCT_NAME = BANKING_VARS.WS_ACCOUNT_NAME
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_BALANCE")
+        }
+    BANKING_VARS.ACCT_BALANCE = BANKING_VARS.WS_AMOUNT
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_CREATED")
+        }
+    BANKING_VARS.ACCT_CREATED = Time.CurrentDate()
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_UPDATED")
+        }
+    BANKING_VARS.ACCT_UPDATED = Time.CurrentDate()
+    db_conn = Cobol.api_db_conn
+    query = "INSERT INTO accounts (acct_id, acct_name, acct_balance, created_at, updated_at) VALUES ('"
+    query = StringConcat(query, BANKING_VARS.ACCT_ID)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.ACCT_NAME)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, NumberToString(BANKING_VARS.ACCT_BALANCE))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.ACCT_CREATED)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.ACCT_UPDATED)
+    query = StringConcat(query, "')")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    PG_DestroyResult(result)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "ERROR"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Account already exists"
+    ACCOUNT_FILE_FD = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_BALANCE")
+        }
+    BANKING_VARS.WS_BALANCE = BANKING_VARS.WS_AMOUNT
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "SUCCESS"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Account created successfully"
+    PrintMessage("  Account Created!")
+    ACCOUNT_FILE_FD = 0
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_DEPOSIT_FUNDS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-ACCOUNT-ID")
+        }
+    RunTask(BANKING_PARSE_ACCOUNT_ID)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-AMOUNT")
+        }
+    RunTask(BANKING_PARSE_AMOUNT)
+    PrintMessage(StringConcat("  Account: ", BANKING_VARS.WS_ACCOUNT_ID))
+    PrintMessage(StringConcat("  Deposit: $", FormatDecimal(BANKING_VARS.WS_AMOUNT, 4, 2)))
+    IfCondition LessThan(BANKING_VARS.WS_AMOUNT, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "Invalid deposit amount"
+        }
+    ACCOUNT_FILE_FD = 1
+    IfCondition NotEqual(BANKING_VARS.ACCT_FILE_STATUS, "00") ThenBlock: {
+            PrintMessage("[ERROR] Failed to open ACCOUNT-FILE")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "System error"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_ID")
+        }
+    BANKING_VARS.ACCT_ID = BANKING_VARS.WS_ACCOUNT_ID
+    db_conn = Cobol.api_db_conn
+    query = "SELECT * FROM accounts WHERE acct_id = '"
+    query = StringConcat(query, BANKING_VARS.ACCT_ID)
+    query = StringConcat(query, "'")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    IfCondition EqualTo(result, 0) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "Account not found"
+            ACCOUNT_FILE_FD = 0
+        }
+    row_count = XArray.XSize(result)
+    row_map = XArray.XGet(result, 0)
+    ACCT_ID_str = HashMap.HGetSimple(row_map, "acct_id")
+    BANKING_VARS.ACCT_ID = ACCT_ID_str
+    ACCT_NAME_str = HashMap.HGetSimple(row_map, "acct_name")
+    BANKING_VARS.ACCT_NAME = ACCT_NAME_str
+    ACCT_BALANCE_str = HashMap.HGetSimple(row_map, "acct_balance")
+    BANKING_VARS.ACCT_BALANCE = StringToNumber(ACCT_BALANCE_str)
+    ACCT_CREATED_str = HashMap.HGetSimple(row_map, "created_at")
+    BANKING_VARS.ACCT_CREATED = ACCT_CREATED_str
+    ACCT_UPDATED_str = HashMap.HGetSimple(row_map, "updated_at")
+    BANKING_VARS.ACCT_UPDATED = ACCT_UPDATED_str
+    PG_DestroyResult(result)
+    db_conn = Cobol.api_db_conn
+    query = "UPDATE accounts SET "
+    query = StringConcat(query, "acct_name='")
+    query = StringConcat(query, BANKING_VARS.ACCT_NAME)
+    query = StringConcat(query, "', ")
+    query = StringConcat(query, "acct_balance='")
+    query = StringConcat(query, NumberToString(BANKING_VARS.ACCT_BALANCE))
+    query = StringConcat(query, "', ")
+    query = StringConcat(query, "created_at='")
+    query = StringConcat(query, BANKING_VARS.ACCT_CREATED)
+    query = StringConcat(query, "', ")
+    query = StringConcat(query, "updated_at='")
+    query = StringConcat(query, BANKING_VARS.ACCT_UPDATED)
+    query = StringConcat(query, "'")
+    query = StringConcat(query, " WHERE acct_id='")
+    query = StringConcat(query, BANKING_VARS.ACCT_ID)
+    query = StringConcat(query, "'")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    PG_DestroyResult(result)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "ERROR"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Failed to update account"
+    ACCOUNT_FILE_FD = 0
+    ACCOUNT_FILE_FD = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM RECORD-TRANSACTION-DEPOSIT")
+        }
+    RunTask(RECORD_TRANSACTION_DEPOSIT)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_BALANCE")
+        }
+    BANKING_VARS.WS_BALANCE = BANKING_VARS.WS_NEW_BALANCE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "SUCCESS"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Deposit completed"
+    PrintMessage(StringConcat("  New Balance: $", FormatDecimal(BANKING_VARS.WS_NEW_BALANCE, 4, 2)))
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_WITHDRAW_FUNDS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-ACCOUNT-ID")
+        }
+    RunTask(BANKING_PARSE_ACCOUNT_ID)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM BANKING-PARSE-AMOUNT")
+        }
+    RunTask(BANKING_PARSE_AMOUNT)
+    PrintMessage(StringConcat("  Account: ", BANKING_VARS.WS_ACCOUNT_ID))
+    PrintMessage(StringConcat("  Withdraw: $", FormatDecimal(BANKING_VARS.WS_AMOUNT, 4, 2)))
+    IfCondition LessThan(BANKING_VARS.WS_AMOUNT, 1) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "Invalid withdrawal amount"
+        }
+    ACCOUNT_FILE_FD = 1
+    IfCondition NotEqual(BANKING_VARS.ACCT_FILE_STATUS, "00") ThenBlock: {
+            PrintMessage("[ERROR] Failed to open ACCOUNT-FILE")
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "System error"
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_ID")
+        }
+    BANKING_VARS.ACCT_ID = BANKING_VARS.WS_ACCOUNT_ID
+    db_conn = Cobol.api_db_conn
+    query = "SELECT * FROM accounts WHERE acct_id = '"
+    query = StringConcat(query, BANKING_VARS.ACCT_ID)
+    query = StringConcat(query, "'")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    IfCondition EqualTo(result, 0) ThenBlock: {
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_RESULT")
+                    }
+            BANKING_VARS.WS_RESULT = "ERROR"
+            Debug("cobol.trace", level=3) {
+                        PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+                    }
+            BANKING_VARS.WS_MESSAGE = "Account not found"
+            ACCOUNT_FILE_FD = 0
+        }
+    row_count = XArray.XSize(result)
+    row_map = XArray.XGet(result, 0)
+    ACCT_ID_str = HashMap.HGetSimple(row_map, "acct_id")
+    BANKING_VARS.ACCT_ID = ACCT_ID_str
+    ACCT_NAME_str = HashMap.HGetSimple(row_map, "acct_name")
+    BANKING_VARS.ACCT_NAME = ACCT_NAME_str
+    ACCT_BALANCE_str = HashMap.HGetSimple(row_map, "acct_balance")
+    BANKING_VARS.ACCT_BALANCE = StringToNumber(ACCT_BALANCE_str)
+    ACCT_CREATED_str = HashMap.HGetSimple(row_map, "created_at")
+    BANKING_VARS.ACCT_CREATED = ACCT_CREATED_str
+    ACCT_UPDATED_str = HashMap.HGetSimple(row_map, "updated_at")
+    BANKING_VARS.ACCT_UPDATED = ACCT_UPDATED_str
+    PG_DestroyResult(result)
+    BANKING_VARS.WS_NEW_BALANCE = FixedPoint.Subtract(BANKING_VARS.WS_OLD_BALANCE, BANKING_VARS.WS_AMOUNT)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_BALANCE")
+        }
+    BANKING_VARS.ACCT_BALANCE = BANKING_VARS.WS_NEW_BALANCE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  ACCT_UPDATED")
+        }
+    BANKING_VARS.ACCT_UPDATED = Time.CurrentDate()
+    db_conn = Cobol.api_db_conn
+    query = "UPDATE accounts SET "
+    query = StringConcat(query, "acct_name='")
+    query = StringConcat(query, BANKING_VARS.ACCT_NAME)
+    query = StringConcat(query, "', ")
+    query = StringConcat(query, "acct_balance='")
+    query = StringConcat(query, NumberToString(BANKING_VARS.ACCT_BALANCE))
+    query = StringConcat(query, "', ")
+    query = StringConcat(query, "created_at='")
+    query = StringConcat(query, BANKING_VARS.ACCT_CREATED)
+    query = StringConcat(query, "', ")
+    query = StringConcat(query, "updated_at='")
+    query = StringConcat(query, BANKING_VARS.ACCT_UPDATED)
+    query = StringConcat(query, "'")
+    query = StringConcat(query, " WHERE acct_id='")
+    query = StringConcat(query, BANKING_VARS.ACCT_ID)
+    query = StringConcat(query, "'")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    PG_DestroyResult(result)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "ERROR"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Failed to update account"
+    ACCOUNT_FILE_FD = 0
+    ACCOUNT_FILE_FD = 0
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] PERFORM RECORD-TRANSACTION-WITHDRAW")
+        }
+    RunTask(RECORD_TRANSACTION_WITHDRAW)
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_BALANCE")
+        }
+    BANKING_VARS.WS_BALANCE = BANKING_VARS.WS_NEW_BALANCE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "SUCCESS"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Withdrawal completed"
+    PrintMessage(StringConcat("  New Balance: $", FormatDecimal(BANKING_VARS.WS_NEW_BALANCE, 4, 2)))
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_TRANSFER_FUNDS {
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_RESULT")
+        }
+    BANKING_VARS.WS_RESULT = "ERROR"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  WS_MESSAGE")
+        }
+    BANKING_VARS.WS_MESSAGE = "Transfer not yet implemented"
+    ReturnValue(0)
+}
+
+SubRoutine.RECORD_TRANSACTION_DEPOSIT {
+    TRANSACTION_FILE_FD = FileOpen("TRANSACTION_FILE", "r+")
+    IfCondition LessThan(TRANSACTION_FILE_FD, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to open file TRANSACTION_FILE\n")
+        }
+    IfCondition NotEqual(BANKING_VARS.TRANS_FILE_STATUS, "00") ThenBlock: {
+            PrintMessage("[WARNING] Could not open TRANSACTION-FILE")
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_ID")
+        }
+    BANKING_VARS.TRANS_ID = BANKING_VARS.WS_NEXT_TRANS_ID
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_ACCT_ID")
+        }
+    BANKING_VARS.TRANS_ACCT_ID = BANKING_VARS.WS_ACCOUNT_ID
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_TYPE")
+        }
+    BANKING_VARS.TRANS_TYPE = "DEPOSIT"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_AMOUNT")
+        }
+    BANKING_VARS.TRANS_AMOUNT = BANKING_VARS.WS_AMOUNT
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_BALANCE")
+        }
+    BANKING_VARS.TRANS_BALANCE = BANKING_VARS.WS_NEW_BALANCE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_DESCRIPTION")
+        }
+    BANKING_VARS.TRANS_DESCRIPTION = "Deposit via API"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_TIMESTAMP")
+        }
+    BANKING_VARS.TRANS_TIMESTAMP = Time.CurrentDate()
+    db_conn = Cobol.api_db_conn
+    query = "INSERT INTO trans (trans_id, trans_acct_id, trans_type, trans_amount, trans_balance, trans_description, timestamp) VALUES ('"
+    query = StringConcat(query, NumberToString(BANKING_VARS.TRANS_ID))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_ACCT_ID)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_TYPE)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, NumberToString(BANKING_VARS.TRANS_AMOUNT))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, NumberToString(BANKING_VARS.TRANS_BALANCE))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_DESCRIPTION)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_TIMESTAMP)
+    query = StringConcat(query, "')")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    PG_DestroyResult(result)
+    BANKING_VARS.WS_NEXT_TRANS_ID = Add(BANKING_VARS.WS_NEXT_TRANS_ID, 1)
+    FileClose(TRANSACTION_FILE_FD)
+    TRANSACTION_FILE_FD = 0
+    ReturnValue(0)
+}
+
+SubRoutine.RECORD_TRANSACTION_WITHDRAW {
+    TRANSACTION_FILE_FD = FileOpen("TRANSACTION_FILE", "r+")
+    IfCondition LessThan(TRANSACTION_FILE_FD, 0) ThenBlock: {
+            PrintMessage("ERROR: Failed to open file TRANSACTION_FILE\n")
+        }
+    IfCondition NotEqual(BANKING_VARS.TRANS_FILE_STATUS, "00") ThenBlock: {
+            PrintMessage("[WARNING] Could not open TRANSACTION-FILE")
+        }
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_ID")
+        }
+    BANKING_VARS.TRANS_ID = BANKING_VARS.WS_NEXT_TRANS_ID
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_ACCT_ID")
+        }
+    BANKING_VARS.TRANS_ACCT_ID = BANKING_VARS.WS_ACCOUNT_ID
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_TYPE")
+        }
+    BANKING_VARS.TRANS_TYPE = "WITHDRAW"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_AMOUNT")
+        }
+    BANKING_VARS.TRANS_AMOUNT = BANKING_VARS.WS_AMOUNT
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_BALANCE")
+        }
+    BANKING_VARS.TRANS_BALANCE = BANKING_VARS.WS_NEW_BALANCE
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_DESCRIPTION")
+        }
+    BANKING_VARS.TRANS_DESCRIPTION = "Withdrawal via API"
+    Debug("cobol.trace", level=3) {
+            PrintMessage("[COBOL] MOVE  TRANS_TIMESTAMP")
+        }
+    BANKING_VARS.TRANS_TIMESTAMP = Time.CurrentDate()
+    db_conn = Cobol.api_db_conn
+    query = "INSERT INTO trans (trans_id, trans_acct_id, trans_type, trans_amount, trans_balance, trans_description, timestamp) VALUES ('"
+    query = StringConcat(query, NumberToString(BANKING_VARS.TRANS_ID))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_ACCT_ID)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_TYPE)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, NumberToString(BANKING_VARS.TRANS_AMOUNT))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, NumberToString(BANKING_VARS.TRANS_BALANCE))
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_DESCRIPTION)
+    query = StringConcat(query, "', '")
+    query = StringConcat(query, BANKING_VARS.TRANS_TIMESTAMP)
+    query = StringConcat(query, "')")
+    result = PG_Query(db_conn, query)
+    Deallocate(query, 0)
+    PG_DestroyResult(result)
+    BANKING_VARS.WS_NEXT_TRANS_ID = Add(BANKING_VARS.WS_NEXT_TRANS_ID, 1)
+    FileClose(TRANSACTION_FILE_FD)
+    TRANSACTION_FILE_FD = 0
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_BUILD_RESPONSE {
+    PrintMessage("[6] Building response...")
+    IfCondition EqualTo(BANKING_VARS.WS_OPERATION, "BALANCE") ThenBlock: {
+            Debug("cobol.trace", level=2) {
+                        PrintMessage("[COBOL] STRING -> WS-RESPONSE-DATA")
+                    }
+            BANKING_VARS.WS_RESPONSE_DATA = StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat("{operation:BALANCE,result:", BANKING_VARS.WS_RESULT), ",account_id:"), BANKING_VARS.WS_ACCOUNT_ID), ",account_name:"), BANKING_VARS.WS_ACCOUNT_NAME), ",balance:"), BANKING_VARS.WS_BALANCE), ",message:"), BANKING_VARS.WS_MESSAGE), "}")
+        } ElseBlock: {
+            Debug("cobol.trace", level=2) {
+                        PrintMessage("[COBOL] STRING -> WS-RESPONSE-DATA")
+                    }
+            BANKING_VARS.WS_RESPONSE_DATA = StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat(StringConcat("{operation:", BANKING_VARS.WS_OPERATION), ",result:"), BANKING_VARS.WS_RESULT), ",amount:"), BANKING_VARS.WS_AMOUNT), ",balance:"), BANKING_VARS.WS_BALANCE), ",message:"), BANKING_VARS.WS_MESSAGE), "}")
+        }
+    PrintMessage(StringConcat("[7] Response: ", BANKING_VARS.WS_RESPONSE_DATA))
+    PrintMessage(" ")
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_WRITE_RESPONSE {
+    DebugPerf.Start("cobol.para.BANKING_WRITE_RESPONSE")
+    PrintMessage("[8] Writing response...")
+    Cobol.api_response_data = BANKING_VARS.WS_RESPONSE_DATA
+    Cobol.api_response_data = "WS-RESPONSE-DATA"
+    DebugPerf.End("cobol.para.BANKING_WRITE_RESPONSE")
+    ReturnValue(0)
+}
+
+SubRoutine.BANKING_CLOSE_FILES {
+    DebugPerf.Start("cobol.para.BANKING_CLOSE_FILES")
+    PrintMessage("[9] Closing files...")
+    BANKING_VARS.REQ_FD = 0
+    BANKING_VARS.RESP_FD = 0
+    DebugPerf.End("cobol.para.BANKING_CLOSE_FILES")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(BANKING)
+}
+
+RunTask(Main)

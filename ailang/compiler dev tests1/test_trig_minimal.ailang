@@ -1,0 +1,24 @@
+// test_trig_minimal.ailang
+// Minimal test to debug library loading
+
+PrintMessage("=== MINIMAL TRIG TEST ===")
+
+// First, test if we can access anything without the library
+// This should fail if library isn't loaded
+scale = 10000
+PrintMessage("Hardcoded scale: ")
+PrintNumber(scale)
+
+// Now try a basic sin calculation manually
+// sin(30°) = 0.5, so in fixed-point with scale 10000 = 5000
+sin30_manual = 5000
+PrintMessage("Manual sin(30): ")
+PrintNumber(sin30_manual)
+
+// Test basic multiply
+result = Multiply(sin30_manual, 2)
+PrintMessage("sin30 * 2: ")
+PrintNumber(result)
+PrintMessage("Expected: 10000")
+
+PrintMessage("=== END MINIMAL TEST ===")

@@ -1,0 +1,16 @@
+// test_pool_overflow.ailang
+pool = StringPool.Init(1024)  // Tiny pool
+
+DebugPerf.Start("overflow_test")
+i = 0
+WhileLoop LessThan(i, 1000) {
+    // This should overflow the pool
+    str = StringConcatPooled("X", "Y")
+    i = Add(i, 1)
+}
+
+DebugPerf.End("overflow_test")
+
+used = StringPool.Status()
+PrintMessage("Used after overflow attempt:")
+PrintNumber(used)

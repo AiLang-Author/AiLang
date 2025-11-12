@@ -1,0 +1,68 @@
+// Direct connect syscall bypassing SocketConnect primitive
+
+LoopMain.Main {
+    PrintMessage("Direct connect syscall test\n\n")
+    
+    // Create socket with SocketCreate (we know this works)
+    sock = SocketCreate(2, 1)
+    PrintMessage("Socket FD: ")
+    PrintNumber(sock)
+    PrintMessage("\n\n")
+    
+    // Build sockaddr_in on heap (not stack!)
+    addr = Allocate(16)
+    
+    // Family
+    SetByte(addr, 0, 2)
+    SetByte(addr, 1, 0)
+    
+    // Port 5432 in network order
+    SetByte(addr, 2, 21)   // 0x15
+    SetByte(addr, 3, 56)   // 0x38
+    
+    // IP 127.0.0.1 in network order
+    SetByte(addr, 4, 127)
+    SetByte(addr, 5, 0)
+    SetByte(addr, 6, 0)
+    SetByte(addr, 7, 1)
+    
+    // Padding
+    i = 8
+    WhileLoop LessThan(i, 16) {
+        SetByte(addr, i, 0)
+        i = Add(i, 1)
+    }
+    
+    PrintMessage("Address structure built at ")
+    PrintNumber(addr)
+    PrintMessage("\n\n")
+    
+    // Now call connect using the RAW assembly approach
+    // We'll manually set up registers and call syscall
+    
+    PrintMessage("Attempting connect...\n")
+    
+    // We need to use a working syscall mechanism
+    // Let's try using SocketWrite as a template - it works!
+    // Actually, let's just see if we can make ANY syscall work
+    
+    // First test: Can we call getpid (syscall 39)?
+    pid = SocketCreate(0, 0)  // Misuse SocketCreate just to test syscalls work
+    PrintMessage("Test syscall result: ")
+    PrintNumber(pid)
+    PrintMessage("\n\n")
+    
+    PrintMessage("Now attempting manual connect...\n")
+    PrintMessage("This will likely hang if the primitive is broken\n")
+    PrintMessage("Press Ctrl+C to abort\n\n")
+    
+    // Use SocketConnect with extracted values
+    ip = 2130706433  // 127.0.0.1 in little-endian: 0x7F000001
+    port = 5432
+    
+    result = SocketConnect(sock, ip, port)
+    
+    PrintMessage("Connect result: ")
+    PrintNumber(result)
+    PrintMessage("\n")
+}

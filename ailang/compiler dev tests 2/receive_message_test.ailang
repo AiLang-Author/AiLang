@@ -1,0 +1,21 @@
+// receive_message_test.ailang
+// Test ReceiveMessage syntax
+
+PrintMessage("Testing ReceiveMessage...")
+
+SubRoutine.TestReceive {
+    PrintMessage("Before receive")
+    
+    // ReceiveMessage has a body block
+    ReceiveMessage.DataChannel {
+        PrintMessage("Processing received message")
+        x = 100
+        y = 200
+    }
+    
+    PrintMessage("After receive")
+}
+
+RunTask(TestReceive)
+
+PrintMessage("Test complete")

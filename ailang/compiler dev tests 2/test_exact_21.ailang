@@ -1,0 +1,13 @@
+PrintMessage("Testing exactly 21 chars")
+
+Function.ABCD.EFGHIJKLMNOPQR {
+    Body: {
+        PrintMessage("This is 21 chars: ABCD.EFGHIJKLMNOPQR")
+        ReturnValue(21)
+    }
+}
+
+PrintMessage("Calling 21 char function...")
+result = ABCD.EFGHIJKLMNOPQR()
+PrintMessage("Success!")
+PrintNumber(result)

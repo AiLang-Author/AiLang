@@ -1,0 +1,418 @@
+// test_postgresql_stress.ailang
+// NUCLEAR STRESS TEST - Maximum leak detection
+// Hammers the database with no sleep to expose memory leaks fast
+
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+LibraryImport.StringUtils
+
+FixedPool.StressStats {
+    "total_iterations": Initialize=0
+    "total_errors": Initialize=0
+    "start_rss": Initialize=0
+    "current_rss": Initialize=0
+}
+
+Function.Print_Memory_Stats {
+    Body: {
+        PrintMessage("\n=== Memory Stats ===\n")
+        PrintMessage("Total iterations: ")
+        PrintNumber(StressStats.total_iterations)
+        PrintMessage("\nTotal errors: ")
+        PrintNumber(StressStats.total_errors)
+        PrintMessage("\n")
+    }
+}
+
+Function.Nuclear_SimpleQuery {
+    Input: conn: Address
+    Input: iterations: Integer
+    Body: {
+        PrintMessage("\n=== TEST 1: Simple SELECT queries ===\n")
+        
+        i = 0
+        WhileLoop LessThan(i, iterations) {
+            result = PG_Query(conn, "SELECT 1")
+            
+            IfCondition EqualTo(result, 0) ThenBlock: {
+                StressStats.total_errors = Add(StressStats.total_errors, 1)
+            } ElseBlock: {
+                PG_DestroyResult(result)
+            }
+            
+            StressStats.total_iterations = Add(StressStats.total_iterations, 1)
+            
+            // Progress every 1000
+            IfCondition EqualTo(Modulo(i, 1000), 0) ThenBlock: {
+                PrintMessage("  Progress: ")
+                PrintNumber(i)
+                PrintMessage(" / ")
+                PrintNumber(iterations)
+                PrintMessage("\n")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  COMPLETE: ")
+        PrintNumber(iterations)
+        PrintMessage(" queries\n")
+    }
+}
+
+Function.Nuclear_PreparedStatements {
+    Input: conn: Address
+    Input: iterations: Integer
+    Body: {
+        PrintMessage("\n=== TEST 2: Prepared statements ===\n")
+        
+        Debug("prep_stmt_test", level=1) {
+            PrintMessage("DEBUG: Creating temp table\n")
+        }
+        
+        // Create temp table
+        result = PG_Query(conn, "CREATE TEMP TABLE nuclear_test (id INT, value TEXT)")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        Debug("prep_stmt_test", level=1) {
+            PrintMessage("DEBUG: Calling PG_Prepare...\n")
+        }
+        
+        // Prepare statement ONCE
+        stmt = PG_Prepare(conn, "nuclear_insert", "INSERT INTO nuclear_test VALUES ($1, $2)")
+        
+        Debug("prep_stmt_test", level=1) {
+            PrintMessage("DEBUG: PG_Prepare returned stmt=")
+            PrintNumber(stmt)
+            PrintMessage("\n")
+        }
+        
+        IfCondition EqualTo(stmt, 0) ThenBlock: {
+            PrintMessage("  ERROR: Failed to prepare statement\n")
+            StressStats.total_errors = Add(StressStats.total_errors, 1)
+            ReturnValue(0)
+        }
+        
+        Debug("prep_stmt_test", level=1) {
+            PrintMessage("DEBUG: Statement prepared successfully, starting execution loop\n")
+        }
+        
+        // Execute it many times
+        i = 0
+        WhileLoop LessThan(i, iterations) {
+            Debug("prep_stmt_test", level=2) {
+                PrintMessage("DEBUG: Iteration ")
+                PrintNumber(i)
+                PrintMessage(" - Creating params array\n")
+            }
+            
+            params = XArray.XCreate(16)
+            
+            id_str = NumberToString(i)
+            value_str = NumberToString(Multiply(i, 100))
+            
+            XArray.XPush(params, id_str)
+            XArray.XPush(params, value_str)
+            
+            Debug("prep_stmt_test", level=2) {
+                PrintMessage("DEBUG: Calling PG_Execute...\n")
+            }
+            
+            exec_result = PG_Execute(stmt, params)
+            
+            Debug("prep_stmt_test", level=2) {
+                PrintMessage("DEBUG: PG_Execute returned ")
+                PrintNumber(exec_result)
+                PrintMessage("\n")
+            }
+            
+            IfCondition EqualTo(exec_result, 0) ThenBlock: {
+                StressStats.total_errors = Add(StressStats.total_errors, 1)
+                Debug("prep_stmt_test", level=1) {
+                    PrintMessage("DEBUG: Execute failed at iteration ")
+                    PrintNumber(i)
+                    PrintMessage("\n")
+                }
+            } ElseBlock: {
+                PG_DestroyResult(exec_result)
+            }
+            
+            // Clean up params and strings
+            XArray.XDestroy(params)
+            Deallocate(id_str, Add(StringLength(id_str), 1))
+            Deallocate(value_str, Add(StringLength(value_str), 1))
+            
+            StressStats.total_iterations = Add(StressStats.total_iterations, 1)
+            
+            Debug("prep_stmt_test", level=2) {
+                PrintMessage("DEBUG: Iteration ")
+                PrintNumber(i)
+                PrintMessage(" complete\n")
+            }
+            
+            // Progress every 1000
+            IfCondition EqualTo(Modulo(i, 1000), 0) ThenBlock: {
+                PrintMessage("  Progress: ")
+                PrintNumber(i)
+                PrintMessage(" / ")
+                PrintNumber(iterations)
+                PrintMessage("\n")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        Debug("prep_stmt_test", level=1) {
+            PrintMessage("DEBUG: Execution loop complete, destroying statement\n")
+        }
+        
+        // Destroy the prepared statement
+        PG_DestroyStatement(stmt)
+        
+        Debug("prep_stmt_test", level=1) {
+            PrintMessage("DEBUG: Statement destroyed, dropping table\n")
+        }
+        
+        // Drop table
+        result = PG_Query(conn, "DROP TABLE nuclear_test")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PrintMessage("  COMPLETE: ")
+        PrintNumber(iterations)
+        PrintMessage(" executions\n")
+    }
+}
+
+Function.Nuclear_LargeResultSet {
+    Input: conn: Address
+    Input: num_rows: Integer
+    Body: {
+        PrintMessage("\n=== TEST 3: Large result set ===\n")
+        
+        // Create temp table with many rows
+        result = PG_Query(conn, "CREATE TEMP TABLE nuclear_large (id INT, data TEXT)")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PrintMessage("  Inserting ")
+        PrintNumber(num_rows)
+        PrintMessage(" rows...\n")
+        
+        // Insert rows
+        i = 0
+        WhileLoop LessThan(i, num_rows) {
+            id_str = NumberToString(i)
+            
+            query1 = StringConcat("INSERT INTO nuclear_large VALUES (", id_str)
+            query2 = StringConcat(query1, ", 'data")
+            query3 = StringConcat(query2, id_str)
+            query4 = StringConcat(query3, "')")
+            
+            result = PG_Query(conn, query4)
+            
+            // Clean up strings
+            Deallocate(query1, Add(StringLength(query1), 1))
+            Deallocate(query2, Add(StringLength(query2), 1))
+            Deallocate(query3, Add(StringLength(query3), 1))
+            Deallocate(query4, Add(StringLength(query4), 1))
+            Deallocate(id_str, Add(StringLength(id_str), 1))
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                PG_DestroyResult(result)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  Retrieving all rows...\n")
+        
+        // Fetch all rows multiple times
+        j = 0
+        WhileLoop LessThan(j, 10) {
+            result = PG_Query(conn, "SELECT * FROM nuclear_large")
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                row_count = XArray.XSize(result)
+                PrintMessage("    Fetch ")
+                PrintNumber(j)
+                PrintMessage(": got ")
+                PrintNumber(row_count)
+                PrintMessage(" rows\n")
+                PG_DestroyResult(result)
+            } ElseBlock: {
+                StressStats.total_errors = Add(StressStats.total_errors, 1)
+            }
+            
+            StressStats.total_iterations = Add(StressStats.total_iterations, 1)
+            j = Add(j, 1)
+        }
+        
+        // Drop table
+        result = PG_Query(conn, "DROP TABLE nuclear_large")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PrintMessage("  COMPLETE\n")
+    }
+}
+
+Function.Nuclear_Transactions {
+    Input: conn: Address
+    Input: iterations: Integer
+    Body: {
+        PrintMessage("\n=== TEST 4: Transactions ===\n")
+        
+        // Create temp table
+        result = PG_Query(conn, "CREATE TEMP TABLE nuclear_tx (id INT)")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, iterations) {
+            // Begin transaction
+            PG_Begin(conn)
+            
+            // Insert
+            id_str = NumberToString(i)
+            query1 = StringConcat("INSERT INTO nuclear_tx VALUES (", id_str)
+            query2 = StringConcat(query1, ")")
+            
+            result = PG_Query(conn, query2)
+            
+            // Clean up
+            Deallocate(query1, Add(StringLength(query1), 1))
+            Deallocate(query2, Add(StringLength(query2), 1))
+            Deallocate(id_str, Add(StringLength(id_str), 1))
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                PG_DestroyResult(result)
+            }
+            
+            // Randomly commit or rollback
+            should_commit = Modulo(i, 3)
+            IfCondition EqualTo(should_commit, 0) ThenBlock: {
+                PG_Commit(conn)
+            } ElseBlock: {
+                PG_Rollback(conn)
+            }
+            
+            StressStats.total_iterations = Add(StressStats.total_iterations, 1)
+            
+            // Progress every 500
+            IfCondition EqualTo(Modulo(i, 500), 0) ThenBlock: {
+                PrintMessage("  Progress: ")
+                PrintNumber(i)
+                PrintMessage(" / ")
+                PrintNumber(iterations)
+                PrintMessage("\n")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        // Drop table
+        result = PG_Query(conn, "DROP TABLE nuclear_tx")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PrintMessage("  COMPLETE: ")
+        PrintNumber(iterations)
+        PrintMessage(" transactions\n")
+    }
+}
+
+Function.Nuclear_ConnectionChurn {
+    Input: iterations: Integer
+    Body: {
+        PrintMessage("\n=== TEST 5: Connection churn ===\n")
+        
+        i = 0
+        WhileLoop LessThan(i, iterations) {
+            conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+            
+            IfCondition EqualTo(conn, 0) ThenBlock: {
+                StressStats.total_errors = Add(StressStats.total_errors, 1)
+            } ElseBlock: {
+                // Do one query
+                result = PG_Query(conn, "SELECT 1")
+                IfCondition NotEqual(result, 0) ThenBlock: {
+                    PG_DestroyResult(result)
+                }
+                
+                PG_Disconnect(conn)
+            }
+            
+            StressStats.total_iterations = Add(StressStats.total_iterations, 1)
+            
+            // Progress every 100
+            IfCondition EqualTo(Modulo(i, 100), 0) ThenBlock: {
+                PrintMessage("  Progress: ")
+                PrintNumber(i)
+                PrintMessage(" / ")
+                PrintNumber(iterations)
+                PrintMessage("\n")
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        PrintMessage("  COMPLETE: ")
+        PrintNumber(iterations)
+        PrintMessage(" connect/disconnect cycles\n")
+    }
+}
+
+LoopMain.StressTestMain {
+    PrintMessage("╔════════════════════════════════════════╗\n")
+    PrintMessage("║   NUCLEAR STRESS TEST - NO MERCY      ║\n")
+    PrintMessage("║   Watch RSS with: watch -n 0.5 \\      ║\n")
+    PrintMessage("║   'ps aux | grep stress'              ║\n")
+    PrintMessage("╚════════════════════════════════════════╝\n\n")
+    
+    PrintMessage("Connecting to database...\n")
+    conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+    
+    IfCondition EqualTo(conn, 0) ThenBlock: {
+        PrintMessage("FATAL: Cannot connect to database\n")
+        SystemCall(60, 1)
+    }
+    
+    PrintMessage("Connected successfully!\n")
+    
+    // Run all nuclear tests
+    Nuclear_SimpleQuery(conn, 10000)          // 10k simple queries
+    Print_Memory_Stats()
+    
+    Nuclear_PreparedStatements(conn, 100)     // 100 executions (was 5000) - test if it completes
+    Print_Memory_Stats()
+    
+    Nuclear_LargeResultSet(conn, 1000)        // 1k row table, fetched 10 times
+    Print_Memory_Stats()
+    
+    Nuclear_Transactions(conn, 2000)          // 2k transactions
+    Print_Memory_Stats()
+    
+    PG_Disconnect(conn)
+    
+    Nuclear_ConnectionChurn(500)              // 500 connect/disconnect cycles
+    Print_Memory_Stats()
+    
+    PrintMessage("\n╔════════════════════════════════════════╗\n")
+    PrintMessage("║        NUCLEAR TEST COMPLETE           ║\n")
+    PrintMessage("╚════════════════════════════════════════╝\n\n")
+    
+    PrintMessage("FINAL STATS:\n")
+    Print_Memory_Stats()
+    
+    PrintMessage("\nIf RSS grew significantly during the test,\n")
+    PrintMessage("you have a memory leak. Check strace output.\n")
+}

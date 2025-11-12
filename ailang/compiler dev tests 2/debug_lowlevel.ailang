@@ -1,0 +1,58 @@
+// debug_lowlevel.ailang
+// Test the fundamental operations XArray relies on
+
+PrintMessage("=== Low-Level Debug Test ===")
+
+// Test 1: Basic allocation
+PrintMessage("Test 1: Allocate")
+buffer = Allocate(24)
+PrintMessage("Allocated buffer at:")
+PrintNumber(buffer)
+
+// Test 2: StoreValue
+PrintMessage("Test 2: StoreValue")
+StoreValue(buffer, 100)
+PrintMessage("Stored value 100")
+
+// Test 3: Dereference
+PrintMessage("Test 3: Dereference")
+value = Dereference(buffer)
+PrintMessage("Retrieved value:")
+PrintNumber(value)
+
+// Test 4: Store and retrieve at offset
+PrintMessage("Test 4: Offset operations")
+StoreValue(Add(buffer, 8), 200)
+value2 = Dereference(Add(buffer, 8))
+PrintMessage("Retrieved from offset 8:")
+PrintNumber(value2)
+
+// Test 5: ArrayCreate
+PrintMessage("Test 5: ArrayCreate")
+arr = ArrayCreate(4)
+PrintMessage("Created array at:")
+PrintNumber(arr)
+
+// Test 6: ArraySet
+PrintMessage("Test 6: ArraySet")
+ArraySet(arr, 0, 42)
+PrintMessage("Set array[0] = 42")
+
+// Test 7: ArrayGet
+PrintMessage("Test 7: ArrayGet")
+val = ArrayGet(arr, 0)
+PrintMessage("Got array[0]:")
+PrintNumber(val)
+
+// Test 8: Multiple array operations
+PrintMessage("Test 8: Multiple array ops")
+ArraySet(arr, 1, 84)
+ArraySet(arr, 2, 126)
+val1 = ArrayGet(arr, 1)
+val2 = ArrayGet(arr, 2)
+PrintMessage("array[1]:")
+PrintNumber(val1)
+PrintMessage("array[2]:")
+PrintNumber(val2)
+
+PrintMessage("=== Tests Complete ===")

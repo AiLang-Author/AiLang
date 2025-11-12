@@ -1,0 +1,335 @@
+// test_postgresql_stress.ailang
+// Overnight stress test - CONSOLE ONLY (no file logging)
+
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+LibraryImport.StringUtils
+
+FixedPool.StressConfig {
+    "iteration": Initialize=0
+    "total_queries": Initialize=0
+    "total_connections": Initialize=0
+    "total_errors": Initialize=0
+    "test_interval": Initialize=10
+    "max_iterations": Initialize=0
+}
+
+Function.Log_Message {
+    Input: msg: Address
+    Body: {
+        PrintMessage("[Iter ")
+        PrintNumber(StressConfig.iteration)
+        PrintMessage("] ")
+        PrintString(msg)
+    }
+}
+
+Function.Log_Iteration {
+    Body: {
+        PrintMessage("Iteration ")
+        PrintNumber(StressConfig.iteration)
+        PrintMessage(": ")
+        PrintNumber(StressConfig.total_queries)
+        PrintMessage(" queries, ")
+        PrintNumber(StressConfig.total_connections)
+        PrintMessage(" connections, ")
+        PrintNumber(StressConfig.total_errors)
+        PrintMessage(" errors\n")
+    }
+}
+
+Function.Stress_RapidConnections {
+    Body: {
+        Log_Message("  -> Rapid connection test\n")
+        
+        i = 0
+        WhileLoop LessThan(i, 10) {
+            conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+            
+            IfCondition EqualTo(conn, 0) ThenBlock: {
+                Log_Message("  ERROR: Connection failed!\n")
+                StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            } ElseBlock: {
+                StressConfig.total_connections = Add(StressConfig.total_connections, 1)
+                PG_Disconnect(conn)
+            }
+            
+            i = Add(i, 1)
+        }
+    }
+}
+
+Function.Stress_LargeResultSets {
+    Body: {
+        Log_Message("  -> Large result set test (100 rows)\n")
+        
+        conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            ReturnValue(0)
+        }
+        
+        PG_Query(conn, "CREATE TEMP TABLE stress_large (id INT, data TEXT)")
+        result = PG_Query(conn, "CREATE TEMP TABLE stress_large (id INT, data TEXT)")
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        } ElseBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, 100) {
+            id_str = NumberToString(i)
+            query = StringConcat("INSERT INTO stress_large VALUES (", id_str)
+            query = StringConcat(query, ", 'data")
+            query = StringConcat(query, id_str)
+            query = StringConcat(query, "')")
+            
+            result = PG_Query(conn, query)
+            
+            IfCondition EqualTo(result, 0) ThenBlock: {
+                StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            } ElseBlock: {
+                PG_DestroyResult(result)
+                StressConfig.total_queries = Add(StressConfig.total_queries, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        result = PG_Query(conn, "SELECT * FROM stress_large")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row_count = XArray.XSize(result)
+            PrintMessage("  Retrieved ")
+            PrintNumber(row_count)
+            PrintMessage(" rows\n")
+            PG_DestroyResult(result)
+            StressConfig.total_queries = Add(StressConfig.total_queries, 1)
+        } ElseBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        }
+        
+        PG_Query(conn, "DROP TABLE stress_large")
+        result = PG_Query(conn, "DROP TABLE stress_large")
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        } ElseBlock: {
+            PG_DestroyResult(result)
+        }
+        PG_Disconnect(conn)
+    }
+}
+
+Function.Stress_PreparedStatements {
+    Body: {
+        Log_Message("  -> Prepared statement test (100 executions)\n")
+        
+        conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            ReturnValue(0)
+        }
+        
+        PG_Query(conn, "CREATE TEMP TABLE stress_prep (id INT, value INT)")
+        result = PG_Query(conn, "CREATE TEMP TABLE stress_prep (id INT, value INT)")
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        } ElseBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        stmt = PG_Prepare(conn, "stress_insert", "INSERT INTO stress_prep VALUES ($1, $2)")
+        
+        IfCondition NotEqual(stmt, 0) ThenBlock: {
+            i = 0
+            WhileLoop LessThan(i, 100) {
+                params = XArray.XCreate(16)
+                
+                id_str = NumberToString(i)
+                value_str = NumberToString(Multiply(i, 10))
+                
+                XArray.XPush(params, id_str)
+                XArray.XPush(params, value_str)
+                
+                result = PG_Execute(stmt, params)
+                
+                IfCondition EqualTo(result, 0) ThenBlock: {
+                    StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+                } ElseBlock: {
+                    PG_DestroyResult(result)
+                    StressConfig.total_queries = Add(StressConfig.total_queries, 1)
+                }
+                
+                XArray.XDestroy(params)
+                i = Add(i, 1)
+            }
+            
+            PG_DestroyStatement(stmt)
+        }
+        
+        PG_Query(conn, "DROP TABLE stress_prep")
+        result = PG_Query(conn, "DROP TABLE stress_prep")
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        } ElseBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PG_Disconnect(conn)
+    }
+}
+
+Function.Stress_Transactions {
+    Body: {
+        Log_Message("  -> Transaction test\n")
+        
+        conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            ReturnValue(0)
+        }
+        
+        PG_Query(conn, "CREATE TEMP TABLE stress_tx (id INT)")
+        result = PG_Query(conn, "CREATE TEMP TABLE stress_tx (id INT)")
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        } ElseBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, 10) {
+            PG_Begin(conn)
+            
+            id_str = NumberToString(i)
+            query = StringConcat("INSERT INTO stress_tx VALUES (", id_str)
+            query = StringConcat(query, ")")
+            
+            result = PG_Query(conn, query)
+            
+            IfCondition EqualTo(result, 0) ThenBlock: {
+                StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+                PG_Rollback(conn)
+            } ElseBlock: {
+                PG_DestroyResult(result)
+                StressConfig.total_queries = Add(StressConfig.total_queries, 1)
+                
+                should_commit = Modulo(i, 2)
+                IfCondition EqualTo(should_commit, 0) ThenBlock: {
+                    PG_Commit(conn)
+                } ElseBlock: {
+                    PG_Rollback(conn)
+                }
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        PG_Query(conn, "DROP TABLE stress_tx")
+        result = PG_Query(conn, "DROP TABLE stress_tx")
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+        } ElseBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PG_Disconnect(conn)
+    }
+}
+
+Function.Stress_ConcurrentConnections {
+    Body: {
+        Log_Message("  -> Concurrent connections test\n")
+        
+        conns = XArray.XCreate(16)
+        
+        i = 0
+        WhileLoop LessThan(i, 5) {
+            conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+            
+            IfCondition NotEqual(conn, 0) ThenBlock: {
+                XArray.XPush(conns, conn)
+                StressConfig.total_connections = Add(StressConfig.total_connections, 1)
+            } ElseBlock: {
+                StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        count = XArray.XSize(conns)
+        i = 0
+        WhileLoop LessThan(i, count) {
+            conn = XArray.XGet(conns, i)
+            result = PG_Query(conn, "SELECT 1")
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                PG_DestroyResult(result)
+                StressConfig.total_queries = Add(StressConfig.total_queries, 1)
+            } ElseBlock: {
+                StressConfig.total_errors = Add(StressConfig.total_errors, 1)
+            }
+            
+            i = Add(i, 1)
+        }
+        
+        i = 0
+        WhileLoop LessThan(i, count) {
+            conn = XArray.XGet(conns, i)
+            PG_Disconnect(conn)
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(conns)
+    }
+}
+
+Function.Run_Stress_Iteration {
+    Body: {
+        StressConfig.iteration = Add(StressConfig.iteration, 1)
+        
+        Log_Iteration()
+        
+        Stress_RapidConnections()
+        Stress_LargeResultSets()
+        Stress_PreparedStatements()
+        Stress_Transactions()
+        Stress_ConcurrentConnections()
+        
+        PrintMessage("  Iteration complete\n\n")
+    }
+}
+
+Function.Sleep_Seconds {
+    Input: seconds: Integer
+    Body: {
+        timespec = Allocate(16)
+        StoreValue(timespec, seconds)
+        StoreValue(Add(timespec, 8), 0)
+        
+        SystemCall(35, timespec, 0)
+        
+        Deallocate(timespec, 16)
+    }
+}
+
+LoopMain.StressTestMain {
+    PrintMessage("=== PostgreSQL Stress Test Started ===\n")
+    PrintMessage("Press Ctrl+C to stop\n\n")
+    
+    WhileLoop EqualTo(1, 1) {
+        Run_Stress_Iteration()
+        
+        IfCondition GreaterThan(StressConfig.max_iterations, 0) ThenBlock: {
+            IfCondition GreaterEqual(StressConfig.iteration, StressConfig.max_iterations) ThenBlock: {
+                BreakLoop
+            }
+        }
+        
+        Sleep_Seconds(StressConfig.test_interval)
+    }
+    
+    PrintMessage("=== Stress Test Complete ===\n")
+}

@@ -1,0 +1,524 @@
+// test_postgresql.ailang
+// Comprehensive test suite for PostgreSQL library
+// Tests all functionality: connection, queries, transactions, prepared statements
+
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+LibraryImport.StringUtils
+
+
+
+ // Declare all variables upfront
+    conn = 0
+    result = 0
+    row_count = 0
+    row = 0
+    value = 0
+    tx_result = 0
+    stmt = 0
+    params = 0
+
+// ============================================================================
+// TEST CONFIGURATION
+// ============================================================================
+
+FixedPool.TestConfig {
+    "test_host": Initialize="localhost"
+    "test_port": Initialize=5432
+    "test_db": Initialize="testdb"
+    "test_user": Initialize="testuser"
+    "test_pass": Initialize="testpass"
+    "test_count": Initialize=0
+    "pass_count": Initialize=0
+    "fail_count": Initialize=0
+}
+
+// ============================================================================
+// TEST UTILITIES
+// ============================================================================
+
+Function.Test_Assert {
+    Input: condition: Integer
+    Input: message: Address
+    Body: {
+        TestConfig.test_count = Add(TestConfig.test_count, 1)
+        
+        IfCondition EqualTo(condition, 1) ThenBlock: {
+            TestConfig.pass_count = Add(TestConfig.pass_count, 1)
+            PrintMessage("  PASS ")
+            PrintString(message)
+            PrintMessage("\n")
+        } ElseBlock: {
+            TestConfig.fail_count = Add(TestConfig.fail_count, 1)
+            PrintMessage("  FAIL ")
+            PrintString(message)
+            PrintMessage("\n")
+        }
+    }
+}
+
+Function.Test_AssertNotNull {
+    Input: value: Address
+    Input: message: Address
+    Body: {
+        Test_Assert(NotEqual(value, 0), message)
+    }
+}
+
+Function.Test_AssertEqual {
+    Input: actual: Integer
+    Input: expected: Integer
+    Input: message: Address
+    Body: {
+        Test_Assert(EqualTo(actual, expected), message)
+    }
+}
+
+Function.Test_AssertStringEqual {
+    Input: actual: Address
+    Input: expected: Address
+    Input: message: Address
+    Body: {
+        equals = StrCompare(actual, expected)
+        Test_Assert(EqualTo(equals, 0), message)
+    }
+}
+
+// ============================================================================
+// TEST 1: CONNECTION
+// ============================================================================
+
+Function.Test_Connection {
+    Body: {
+        conn = 0
+        sock = 0
+        connected = 0
+        
+        PrintMessage("\n=== TEST 1: Connection ===\n")
+        
+        conn = PG_Connect(TestConfig.test_host, TestConfig.test_port, TestConfig.test_db, TestConfig.test_user, TestConfig.test_pass)
+        Test_AssertNotNull(conn, "Connect to PostgreSQL")
+        
+        IfCondition NotEqual(conn, 0) ThenBlock: {
+            sock = Dereference(conn)
+            Test_Assert(GreaterThan(sock, 0), "Socket fd is valid")
+            
+            connected = Dereference(Add(conn, 32))
+            Test_AssertEqual(connected, 1, "Connection marked as connected")
+            
+            PG_Disconnect(conn)
+            Test_Assert(1, "Disconnect successful")
+        }
+    }
+}
+
+// ============================================================================
+// TEST 2: SIMPLE QUERIES
+// ============================================================================
+
+Function.Test_SimpleQueries {
+    Body: {
+        conn = 0
+        result = 0
+        row_count = 0
+        row = 0
+        value = 0
+        num = 0
+        str = 0
+        bool_val = 0
+        null_val = 0
+        str_val = 0
+        
+        PrintMessage("\n=== TEST 2: Simple Queries ===\n")
+        
+        conn = PG_Connect(TestConfig.test_host, TestConfig.test_port, TestConfig.test_db, TestConfig.test_user, TestConfig.test_pass)
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            PrintMessage("ERROR: Cannot connect for query tests\n")
+            ReturnValue(0)
+        }
+        
+        result = PG_Query(conn, "SELECT 1 AS test")
+        Test_AssertNotNull(result, "SELECT 1 query")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row_count = XArray.XSize(result)
+            Test_AssertEqual(row_count, 1, "One row returned")
+            
+            IfCondition GreaterThan(row_count, 0) ThenBlock: {
+                row = XArray.XGet(result, 0)
+                Test_AssertNotNull(row, "First row exists")
+                
+                value = HashMap.HGetSimple(row, "test")
+                Test_AssertNotNull(value, "Column 'test' exists")
+                
+                IfCondition NotEqual(value, 0) ThenBlock: {
+                    Test_AssertStringEqual(value, "1", "Value is '1'")
+                }
+            }
+            
+            XArray.XDestroy(result)
+        }
+        
+        result = PG_Query(conn, "SELECT 42 AS num, 'hello' AS str, TRUE AS bool")
+        Test_AssertNotNull(result, "SELECT multiple columns")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row_count = XArray.XSize(result)
+            Test_AssertEqual(row_count, 1, "One row returned")
+            
+            IfCondition GreaterThan(row_count, 0) ThenBlock: {
+                row = XArray.XGet(result, 0)
+                
+                num = HashMap.HGetSimple(row, "num")
+                Test_AssertStringEqual(num, "42", "num = '42'")
+                
+                str = HashMap.HGetSimple(row, "str")
+                Test_AssertStringEqual(str, "hello", "str = 'hello'")
+                
+                bool_val = HashMap.HGetSimple(row, "bool")
+                Test_AssertStringEqual(bool_val, "t", "bool = 't'")
+            }
+            
+            XArray.XDestroy(result)
+        }
+        
+        result = PG_Query(conn, "SELECT NULL AS nullval, 'not null' AS strval")
+        Test_AssertNotNull(result, "SELECT with NULL")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row = XArray.XGet(result, 0)
+            
+            null_val = HashMap.HGetSimple(row, "nullval")
+            Test_Assert(EqualTo(null_val, 0), "NULL value is 0")
+            
+            str_val = HashMap.HGetSimple(row, "strval")
+            Test_AssertStringEqual(str_val, "not null", "String value correct")
+            
+            XArray.XDestroy(result)
+        }
+        
+        PG_Disconnect(conn)
+    }
+}
+
+// ============================================================================
+// TEST 3: TABLE OPERATIONS  
+// ============================================================================
+
+Function.Test_TableOperations {
+    Body: {
+        conn = 0
+        result = 0
+        row_count = 0
+        row1 = 0
+        row2 = 0
+        row = 0
+        id1 = 0
+        id2 = 0
+        name1 = 0
+        name2 = 0
+        value1 = 0
+        value = 0
+        count = 0
+        
+        PrintMessage("\n=== TEST 3: Table Operations ===\n")
+        
+        conn = PG_Connect(TestConfig.test_host, TestConfig.test_port, TestConfig.test_db, TestConfig.test_user, TestConfig.test_pass)
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            PrintMessage("ERROR: Cannot connect for table tests\n")
+            ReturnValue(0)
+        }
+        
+        result = PG_Query(conn, "CREATE TEMP TABLE test_table (id INTEGER, name TEXT, value DECIMAL)")
+        Test_AssertNotNull(result, "CREATE TABLE")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        result = PG_Query(conn, "INSERT INTO test_table VALUES (1, 'Alice', 100.50)")
+        Test_AssertNotNull(result, "INSERT row 1")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        result = PG_Query(conn, "INSERT INTO test_table VALUES (2, 'Bob', 200.75)")
+        Test_AssertNotNull(result, "INSERT row 2")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        result = PG_Query(conn, "INSERT INTO test_table VALUES (3, 'Charlie', 300.25)")
+        Test_AssertNotNull(result, "INSERT row 3")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        result = PG_Query(conn, "SELECT * FROM test_table ORDER BY id")
+        Test_AssertNotNull(result, "SELECT all rows")
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row_count = XArray.XSize(result)
+            Test_AssertEqual(row_count, 3, "Three rows returned")
+            
+            row1 = XArray.XGet(result, 0)
+            id1 = HashMap.HGetSimple(row1, "id")
+            name1 = HashMap.HGetSimple(row1, "name")
+            value1 = HashMap.HGetSimple(row1, "value")
+            
+            Test_AssertStringEqual(id1, "1", "Row 1: id = 1")
+            Test_AssertStringEqual(name1, "Alice", "Row 1: name = Alice")
+            Test_AssertStringEqual(value1, "100.50", "Row 1: value = 100.50")
+            
+            row2 = XArray.XGet(result, 1)
+            id2 = HashMap.HGetSimple(row2, "id")
+            name2 = HashMap.HGetSimple(row2, "name")
+            
+            Test_AssertStringEqual(id2, "2", "Row 2: id = 2")
+            Test_AssertStringEqual(name2, "Bob", "Row 2: name = Bob")
+            
+            XArray.XDestroy(result)
+        }
+        
+        result = PG_Query(conn, "UPDATE test_table SET value = 150.00 WHERE id = 1")
+        Test_AssertNotNull(result, "UPDATE row")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        result = PG_Query(conn, "SELECT value FROM test_table WHERE id = 1")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row = XArray.XGet(result, 0)
+            value = HashMap.HGetSimple(row, "value")
+            Test_AssertStringEqual(value, "150.00", "Value updated to 150.00")
+            XArray.XDestroy(result)
+        }
+        
+        result = PG_Query(conn, "DELETE FROM test_table WHERE id = 3")
+        Test_AssertNotNull(result, "DELETE row")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        result = PG_Query(conn, "SELECT COUNT(*) AS count FROM test_table")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row = XArray.XGet(result, 0)
+            count = HashMap.HGetSimple(row, "count")
+            Test_AssertStringEqual(count, "2", "Two rows remain after DELETE")
+            XArray.XDestroy(result)
+        }
+        
+        result = PG_Query(conn, "DROP TABLE test_table")
+        Test_AssertNotNull(result, "DROP TABLE")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        PG_Disconnect(conn)
+    }
+}
+
+// ============================================================================
+// TEST 4: TRANSACTIONS
+// ============================================================================
+
+Function.Test_Transactions {
+    Body: {
+        conn = 0
+        result = 0
+        begin_result = 0
+        commit_result = 0
+        rollback_result = 0
+        row_count = 0
+        row = 0
+        count = 0
+        
+        PrintMessage("\n=== TEST 4: Transactions ===\n")
+        
+        conn = PG_Connect(TestConfig.test_host, TestConfig.test_port, TestConfig.test_db, TestConfig.test_user, TestConfig.test_pass)
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            PrintMessage("ERROR: Cannot connect for transaction tests\n")
+            ReturnValue(0)
+        }
+        
+        result = PG_Query(conn, "CREATE TEMP TABLE tx_test (id INTEGER, value INTEGER)")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        begin_result = PG_Begin(conn)
+        Test_AssertEqual(begin_result, 1, "BEGIN transaction")
+        
+        result = PG_Query(conn, "INSERT INTO tx_test VALUES (1, 100)")
+        Test_AssertNotNull(result, "INSERT in transaction")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        commit_result = PG_Commit(conn)
+        Test_AssertEqual(commit_result, 1, "COMMIT transaction")
+        
+        result = PG_Query(conn, "SELECT value FROM tx_test WHERE id = 1")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row_count = XArray.XSize(result)
+            Test_AssertEqual(row_count, 1, "Committed data persisted")
+            XArray.XDestroy(result)
+        }
+        
+        PG_Begin(conn)
+        result = PG_Query(conn, "INSERT INTO tx_test VALUES (2, 200)")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        rollback_result = PG_Rollback(conn)
+        Test_AssertEqual(rollback_result, 1, "ROLLBACK transaction")
+        
+        result = PG_Query(conn, "SELECT COUNT(*) AS count FROM tx_test WHERE id = 2")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row = XArray.XGet(result, 0)
+            count = HashMap.HGetSimple(row, "count")
+            Test_AssertStringEqual(count, "0", "Rolled back data not present")
+            XArray.XDestroy(result)
+        }
+        
+        result = PG_Query(conn, "DROP TABLE tx_test")
+        IfCondition NotEqual(result, 0) ThenBlock: { XArray.XDestroy(result) }
+        
+        PG_Disconnect(conn)
+    }
+}
+
+// ============================================================================
+// TEST 5: PREPARED STATEMENTS
+// ============================================================================
+
+Function.Test_PreparedStatements {
+    Body: {
+        conn = 0
+        result = 0
+        stmt = 0
+        select_stmt = 0
+        params = 0
+        row_count = 0
+        row = 0
+        name = 0
+        count = 0
+        
+        PrintMessage("\n=== TEST 5: Prepared Statements ===\n")
+        
+        conn = PG_Connect(TestConfig.test_host, TestConfig.test_port, TestConfig.test_db, TestConfig.test_user, TestConfig.test_pass)
+        IfCondition EqualTo(conn, 0) ThenBlock: {
+            PrintMessage("ERROR: Cannot connect for prepared statement tests\n")
+            ReturnValue(0)
+        }
+        
+        result = PG_Query(conn, "CREATE TEMP TABLE prep_test (id INTEGER, name TEXT, value INTEGER)")
+        IfCondition NotEqual(result, 0) ThenBlock: { 
+            PG_DestroyResult(result)
+        }
+        
+        stmt = PG_Prepare(conn, "insert_stmt", "INSERT INTO prep_test VALUES ($1, $2, $3)")
+        Test_AssertNotNull(stmt, "Prepare INSERT statement")
+        
+        IfCondition NotEqual(stmt, 0) ThenBlock: {
+            params = XArray.XCreate(16)
+            XArray.XPush(params, "1")
+            XArray.XPush(params, "Alice")
+            XArray.XPush(params, "100")
+            
+            result = PG_Execute(stmt, params)
+            Test_AssertNotNull(result, "Execute prepared INSERT")
+            IfCondition NotEqual(result, 0) ThenBlock: { 
+                PG_DestroyResult(result)
+            }
+            
+            XArray.XDestroy(params)
+            
+            params = XArray.XCreate(16)
+            XArray.XPush(params, "2")
+            XArray.XPush(params, "Bob")
+            XArray.XPush(params, "200")
+            
+            result = PG_Execute(stmt, params)
+            Test_AssertNotNull(result, "Execute prepared INSERT again")
+            IfCondition NotEqual(result, 0) ThenBlock: { 
+                PG_DestroyResult(result)
+            }
+            
+            XArray.XDestroy(params)
+        }
+        
+        select_stmt = PG_Prepare(conn, "select_stmt", "SELECT * FROM prep_test WHERE id = $1")
+        Test_AssertNotNull(select_stmt, "Prepare SELECT statement")
+        
+        IfCondition NotEqual(select_stmt, 0) ThenBlock: {
+            params = XArray.XCreate(16)
+            XArray.XPush(params, "1")
+            
+            result = PG_Execute(select_stmt, params)
+            Test_AssertNotNull(result, "Execute prepared SELECT")
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                row_count = XArray.XSize(result)
+                Test_AssertEqual(row_count, 1, "One row returned")
+                
+                IfCondition GreaterThan(row_count, 0) ThenBlock: {
+                    row = XArray.XGet(result, 0)
+                    name = HashMap.HGetSimple(row, "name")
+                    Test_AssertStringEqual(name, "Alice", "Correct name retrieved")
+                }
+                
+                PG_DestroyResult(result)
+            }
+            
+            XArray.XDestroy(params)
+        }
+        
+        // FIX: Check row_count BEFORE accessing row!
+        result = PG_Query(conn, "SELECT COUNT(*) AS count FROM prep_test")
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            row_count = XArray.XSize(result)
+            
+            IfCondition GreaterThan(row_count, 0) ThenBlock: {
+                row = XArray.XGet(result, 0)
+                count = HashMap.HGetSimple(row, "count")
+                Test_AssertStringEqual(count, "2", "Two rows inserted via prepared statement")
+            } ElseBlock: {
+                Test_Assert(0, "Two rows inserted via prepared statement")
+            }
+            
+            PG_DestroyResult(result)
+        }
+        
+        result = PG_Query(conn, "DROP TABLE prep_test")
+        IfCondition NotEqual(result, 0) ThenBlock: { 
+            PG_DestroyResult(result)
+        }
+        
+        PG_Disconnect(conn)
+    }
+}
+
+// ============================================================================
+// MAIN TEST RUNNER
+// ============================================================================
+
+Function.RunAllTests {
+    Body: {
+        PrintMessage("\n")
+        PrintMessage("========================================\n")
+        PrintMessage("   PostgreSQL Wire Protocol Test Suite\n")
+        PrintMessage("========================================\n")
+        
+        Test_Connection()
+        Test_SimpleQueries()
+        Test_TableOperations()
+        Test_Transactions()
+        Test_PreparedStatements()
+        
+        PrintMessage("\n")
+        PrintMessage("========================================\n")
+        PrintMessage("   TEST SUMMARY\n")
+        PrintMessage("========================================\n")
+        PrintMessage("Total tests:  ")
+        PrintNumber(TestConfig.test_count)
+        PrintMessage("\n")
+        PrintMessage("Passed:       ")
+        PrintNumber(TestConfig.pass_count)
+        PrintMessage("\n")
+        PrintMessage("Failed:       ")
+        PrintNumber(TestConfig.fail_count)
+        PrintMessage("\n")
+        
+        IfCondition EqualTo(TestConfig.fail_count, 0) ThenBlock: {
+            PrintMessage("\nALL TESTS PASSED!\n\n")
+        } ElseBlock: {
+            PrintMessage("\nSOME TESTS FAILED\n\n")
+        }
+    }
+}
+
+LoopMain.TestMain {
+    RunAllTests()
+}

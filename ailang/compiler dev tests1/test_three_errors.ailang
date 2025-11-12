@@ -1,0 +1,18 @@
+LibraryImport.Cobol
+
+// Generated from COBOL source
+
+FixedPool.COBOL_TEST_DISPLAY_NUM_VARS {
+    "WS_VAR": Initialize=""
+}
+
+SubRoutine.TEST_DISPLAY_NUM {
+    PrintMessage("")
+    ReturnValue(0)
+}
+
+SubRoutine.Main {
+    RunTask(TEST_DISPLAY_NUM)
+}
+
+RunTask(Main)

@@ -1,0 +1,36 @@
+// test_pools_comprehensive.ailang
+// Test all pool types and operations
+
+PrintMessage("Comprehensive Pool Test")
+PrintMessage("========================")
+
+// Test FixedPool
+FixedPool.Static {
+    "counter": Initialize=42
+    "flag": Initialize=1
+}
+
+PrintMessage("FixedPool counter:")
+PrintNumber(Static.counter)
+
+// Test DynamicPool  
+DynamicPool.Dynamic {
+    "buffer": Initialize=0
+    "size": Initialize=256
+}
+
+PrintMessage("DynamicPool size:")
+PrintNumber(Dynamic.size)
+
+// Test pool variable updates
+Static.counter = Add(Static.counter, 8)
+PrintMessage("Updated counter (should be 50):")
+PrintNumber(Static.counter)
+
+// Test pool operations
+new_size = 512
+Dynamic.size = new_size
+PrintMessage("Updated size (should be 512):")
+PrintNumber(Dynamic.size)
+
+PrintMessage("All pool tests passed!")

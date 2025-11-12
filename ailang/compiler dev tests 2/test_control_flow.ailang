@@ -1,0 +1,33 @@
+// test_control_flow.ailang
+// Test control flow constructs
+
+PrintMessage("Control Flow Test")
+PrintMessage("=================")
+
+// Test if-then-else
+x = 5
+is_small = LessThan(x, 10)
+IfCondition is_small ThenBlock: {
+    PrintMessage("x is less than 10 - correct!")
+}
+
+// Test nested conditions
+y = 15
+in_range = GreaterThan(y, 10)
+IfCondition in_range ThenBlock: {
+    under_20 = LessThan(y, 20)
+    IfCondition under_20 ThenBlock: {
+        PrintMessage("y is between 10 and 20 - correct!")
+    }
+}
+
+// Test simple loop
+counter = 0
+PrintMessage("Counting to 3:")
+WhileLoop LessThan(counter, 3) {
+    
+        PrintNumber(counter)
+        counter = Add(counter, 1)
+    }
+
+PrintMessage("Control flow test complete!")

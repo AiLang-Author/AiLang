@@ -1,0 +1,106 @@
+// test_user_functions_advanced.ailang
+// Advanced user-defined function tests
+
+PrintMessage("User Function Tests - Advanced")
+PrintMessage("==============================")
+
+// Test 1: No parameter function
+Function.Utility.GetMagicNumber {
+    Output: Integer
+    Body: {
+        ReturnValue(42)
+    }
+}
+
+magic = Utility.GetMagicNumber()
+PrintMessage("Test 1 - No params:")
+PrintNumber(magic)
+DebugAssert(EqualTo(magic, 42), "No parameter function")
+
+// Test 2: Functions calling other functions
+Function.Math.AddOne {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        ReturnValue(Add(x, 1))
+    }
+}
+
+Function.Math.AddThree {
+    Input: x: Integer
+    Output: Integer
+    Body: {
+        temp = Math.AddOne(x)
+        temp2 = Math.AddOne(temp)
+        result = Math.AddOne(temp2)
+        ReturnValue(result)
+    }
+}
+
+result = Math.AddThree(10)
+PrintMessage("Test 2 - AddThree(10):")
+PrintNumber(result)
+DebugAssert(EqualTo(result, 13), "Function calling function")
+
+// Test 3: Function with local variables
+Function.Math.Calculate {
+    Input: x: Integer
+    Input: y: Integer
+    Output: Integer
+    Body: {
+        sum = Add(x, y)
+        doubled = Multiply(sum, 2)
+        final = Add(doubled, 10)
+        ReturnValue(final)
+    }
+}
+
+calc_result = Math.Calculate(3, 4)
+PrintMessage("Test 3 - Calculate(3,4):")
+PrintNumber(calc_result)
+DebugAssert(EqualTo(calc_result, 24), "Function with locals")
+
+// Test 4: Function with conditionals
+Function.Logic.Max {
+    Input: a: Integer
+    Input: b: Integer
+    Output: Integer
+    Body: {
+        IfCondition GreaterThan(a, b) ThenBlock: {
+            ReturnValue(a)
+        } ElseBlock: {
+            ReturnValue(b)
+        }
+    }
+}
+
+max1 = Logic.Max(10, 5)
+max2 = Logic.Max(3, 8)
+PrintMessage("Test 4 - Max(10,5):")
+PrintNumber(max1)
+PrintMessage("        Max(3,8):")
+PrintNumber(max2)
+DebugAssert(EqualTo(max1, 10), "Max function test 1")
+DebugAssert(EqualTo(max2, 8), "Max function test 2")
+
+// Test 5: Function with loop (FIXED: LessEqual instead of LessThanOrEqual)
+Function.Math.Factorial {
+    Input: n: Integer
+    Output: Integer
+    Body: {
+        result = 1
+        i = 1
+        WhileLoop LessEqual(i, n) {
+            result = Multiply(result, i)
+            i = Add(i, 1)
+        }
+        ReturnValue(result)
+    }
+}
+
+fact5 = Math.Factorial(5)
+PrintMessage("Test 5 - Factorial(5):")
+PrintNumber(fact5)
+DebugAssert(EqualTo(fact5, 120), "Factorial function")
+
+PrintMessage("Advanced tests PASSED")
