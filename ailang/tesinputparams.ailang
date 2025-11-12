@@ -1,0 +1,267 @@
+
+LibraryImport.Cobol
+LibraryImport.COBOL_ControlFlow
+LibraryImport.PostgreSQL_Complete
+LibraryImport.XArrays
+LibraryImport.HashMap
+
+
+// Set I/O backend: jcl
+Cobol.io_backend_type = "jcl"
+
+// Generated from COBOL source
+
+LinkagePool.ESCAL056_Linkage {
+    "FILLER": Initialize=""
+    "OLD_TEST_CASE": Initialize=0
+    "NEW_TEST_CASE": Initialize=0
+    "PRODUCTION_MODE": Initialize=0
+    "VALID_COMORBID_CWF_RETURN_CD": Initialize=0
+    "BUNDLED_TEST": Initialize=0
+    "TEST_CASE_INDICATOR": Initialize=""
+    "BILL_PORTION": Initialize=""
+    "B_COND_CODE": Initialize=""
+    "B_REV_CODE": Initialize=""
+    "B_REV_CODE3": Initialize=""
+    "B_PATIENT_HGT": Initialize=0
+    "B_PATIENT_HEIGHT": Initialize=0
+    "B_PATIENT_WGT": Initialize=0
+    "B_PATIENT_WEIGHT": Initialize=0
+    "B_THRU_DATE": Initialize=""
+    "B_THRU_CCYY": Initialize=0
+    "B_THRU_MM": Initialize=0
+    "B_THRU_DD": Initialize=0
+    "B_DOB_DATE": Initialize=""
+    "B_DOB_CCYY": Initialize=0
+    "B_DOB_MM": Initialize=0
+    "B_DOB_DD": Initialize=0
+    "PROVIDER_SPECIFIC_FILE_PORTION": Initialize=""
+    "P_NPI": Initialize=""
+    "P_NPI_FILLER": Initialize=""
+    "P_PROV_OSCAR": Initialize=""
+    "P_GEO_MSA": Initialize=""
+    "P_GEO_CBSA": Initialize=""
+    "P_SPEC_PYMT_IND": Initialize=""
+    "P_PROV_TYPE": Initialize=""
+    "P_SPEC_WAGE_INDX": Initialize=0
+    "P_ESRD_RATE": Initialize=0
+    "P_PROV_WAIVE_BLEND_PAY_INDIC": Initialize=""
+    "P_PROV_LOW_VOLUME_INDIC": Initialize=""
+    "P_PACIFIC_IS_TRUST_TERR": Initialize=""
+    "P_QIP_REDUCTION": Initialize=""
+    "OLD_TEST_INDICATOR": Initialize=""
+    "BUNDLED_BILL_PORTION": Initialize=""
+    "B_CLAIM_NUM_DIALYSIS_SESSIONS": Initialize=0
+    "B_LINE_ITEM_DATE_SERVICE": Initialize=""
+    "B_LINE_ITEM_DT_SVC_CCYY": Initialize=0
+    "B_LINE_ITEM_DT_SVC_MM": Initialize=0
+    "B_LINE_ITEM_DT_SVC_DD": Initialize=0
+    "B_DIALYSIS_START_DATE": Initialize=""
+    "B_DIALYSIS_START_DT_CCYY": Initialize=0
+    "B_DIALYSIS_START_DT_MM": Initialize=0
+    "B_DIALYSIS_START_DT_DD": Initialize=0
+    "B_TOT_PRICE_SB_OUTLIER": Initialize=0
+    "B_PAYER_ONLY_VC_Q8": Initialize=0
+    "COMORBIDITIES_PORTION": Initialize=""
+    "COMORBID_DATA": Initialize=""
+    "COMORBID_INDEX": Initialize=0
+    "COMORBID_RECURRENCE_COND_CODE": Initialize=""
+    "COMORBID_CWF_RETURN_CODE": Initialize=""
+    "BILL_DATA_TEST": Initialize=""
+    "DRUG_ADD_ON_RETURN": Initialize=0
+    "MSA_WAGE_ADJ": Initialize=0
+    "COMP_CBSA_WAGE_ADJ": Initialize=0
+    "CBSA_WAGE_ADJ": Initialize=0
+    "BUND_CBSA_WAGE_ADJ": Initialize=0
+    "CBSA_WAGE_PMT_RATE": Initialize=0
+    "COND_CD_73": Initialize=""
+    "AMT_INDIC": Initialize=""
+    "BLOOD_DOLLAR": Initialize=0
+    "COND_CD_74": Initialize=""
+    "HEMO_CCPD_CAPD": Initialize=0
+    "AGE_RETURN": Initialize=0
+    "MSA_WAGE_AMT": Initialize=0
+    "CBSA_WAGE_INDEX": Initialize=0
+    "LABOR_PCT": Initialize=0
+    "PPS_BMI": Initialize=0
+    "PPS_BSA": Initialize=0
+    "MSA_PCT": Initialize=0
+    "CBSA_PCT": Initialize=0
+    "COM_CBSA_PCT_BLEND": Initialize=0
+    "BUN_CBSA_PCT_BLEND": Initialize=0
+    "CASE_MIX_FCTR_ADJ_RATE": Initialize=0
+    "BUN_BSA": Initialize=0
+    "BUN_BMI": Initialize=0
+    "BUN_ONSET_FACTOR": Initialize=0
+    "BUN_COMORBID_MULTIPLIER": Initialize=0
+    "BUN_WAGE_ADJ_TRAINING_AMT": Initialize=0
+    "BUN_LOW_VOL_MULTIPLIER": Initialize=0
+    "OUT_AGE_FACTOR": Initialize=0
+    "OUT_BSA": Initialize=0
+    "OUT_BSA_FACTOR": Initialize=0
+    "OUT_BMI": Initialize=0
+    "OUT_BMI_FACTOR": Initialize=0
+    "OUT_ONSET_FACTOR": Initialize=0
+    "OUT_COMORBID_MULTIPLIER": Initialize=0
+    "OUT_LOW_VOL_MULTIPLIER": Initialize=0
+    "OUT_ADJ_AVG_MAP_AMT": Initialize=0
+    "OUT_LOSS_SHARING_PCT": Initialize=0
+    "OUT_IMPUTED_MAP": Initialize=0
+    "OUT_FIX_DOLLAR_LOSS": Initialize=0
+    "OUT_PREDICTED_MAP": Initialize=0
+    "OUT_PREDICTED_SERVICES_MAP": Initialize=0
+    "BUNDLED_TEST_INDIC": Initialize=""
+    "PPS_DATA_ALL": Initialize=""
+    "PPS_RTC": Initialize=0
+    "PPS_DATA": Initialize=""
+    "PPS_MSA": Initialize=""
+    "PPS_CBSA": Initialize=""
+    "PPS_WAGE_ADJ_RATE": Initialize=0
+    "PPS_FINAL_PAY_AMT": Initialize=0
+    "PPS_CALC_VERS_CD": Initialize=""
+    "PPS_COND_CODE": Initialize=""
+    "PPS_REV_CODE": Initialize=""
+    "PPS_2011_WAGE_ADJ_RATE": Initialize=0
+    "PPS_2011_NAT_LABOR_PCT": Initialize=0
+    "PPS_2011_NAT_NONLABOR_PCT": Initialize=0
+    "PPS_OTHER_DATA": Initialize=""
+    "PPS_NAT_LABOR_PCT": Initialize=0
+    "PPS_NAT_NONLABOR_PCT": Initialize=0
+    "PPS_AGE_FACTOR": Initialize=0
+    "PPS_BSA_FACTOR": Initialize=0
+    "PPS_BMI_FACTOR": Initialize=0
+    "PPS_BDGT_NEUT_RATE": Initialize=0
+    "PPS_2011_AGE_FACTOR": Initialize=0
+    "PPS_2011_BSA_FACTOR": Initialize=0
+    "PPS_2011_BMI_FACTOR": Initialize=0
+    "PPS_2011_BDGT_NEUT_RATE": Initialize=0
+    "PPS_BUNDLED_DATA": Initialize=""
+    "PPS_2011_COMORBID_DATA": Initialize=""
+    "PPS_2011_COMORBID_MA": Initialize=""
+    "PPS_2011_COMORBID_MA_CC": Initialize=""
+    "PPS_2011_COMORBID_PAY": Initialize=""
+    "PPS_2011_FULL_COMP_RATE": Initialize=0
+    "PPS_2011_BLEND_COMP_RATE": Initialize=0
+    "PPS_2011_FULL_PPS_RATE": Initialize=0
+    "PPS_2011_BLEND_PPS_RATE": Initialize=0
+    "PPS_2011_FULL_OUTLIER_RATE": Initialize=0
+    "PPS_2011_BLEND_OUTLIER_RATE": Initialize=0
+    "MSA_ADJ_YEAR_AMT": Initialize=0
+    "PPS_LOW_VOL_AMT": Initialize=0
+    "OUT_CASE_MIX_PREDICTED_MAP": Initialize=0
+    "OUT_HEMO_EQUIV_DIAL_SESSIONS": Initialize=0
+    "OUT_SB_BSA": Initialize=0
+    "OUT_SB_BMI": Initialize=0
+    "A_49_CENT_DRUG_ADJ": Initialize=0
+    "PPS_CM_BSA": Initialize=0
+    "PPS_CM_BMI_LT_18_5": Initialize=0
+    "PPS_BUN_BASE_PMT_RATE": Initialize=0
+    "BUN_ADJUSTED_BASE_WAGE_AMT": Initialize=0
+    "CR_BSA_MULTIPLIER": Initialize=0
+    "CR_BMI_MULTIPLIER": Initialize=0
+    "PPS_BUN_CBSA_W_INDEX": Initialize=0
+    "PPS_BUN_WAGE_ADJ_TRAIN_AMT": Initialize=0
+    "PPS_TRAINING_ADD_ON_PMT_AMT": Initialize=0
+    "OUT_NON_PER_DIEM_PAYMENT": Initialize=0
+    "COM_PAYMENT_RATE": Initialize=0
+    "TDAPA_RETURN": Initialize=0
+    "W_NEW_MSA": Initialize=0
+    "W_NEW_EFF_DATE": Initialize=""
+    "W_NEW_EFF_DATE_CC": Initialize=0
+    "W_NEW_EFF_DATE_YMD": Initialize=""
+    "W_NEW_EFF_DATE_YY": Initialize=0
+    "W_NEW_EFF_DATE_MM": Initialize=0
+    "W_NEW_EFF_DATE_DD": Initialize=0
+    "W_NEW_RATE1_RECORD": Initialize=0
+    "W_NEW_RATE2_RECORD": Initialize=0
+    "COM_CBSA_WAGE_RECORD": Initialize=""
+    "COM_CBSA": Initialize=0
+    "COM_CBSA_DATE": Initialize=""
+    "COM_CBSA_DATE_CC": Initialize=0
+    "COM_CBSA_DATE_YMD": Initialize=""
+    "COM_CBSA_DATE_YY": Initialize=0
+    "COM_CBSA_DATE_MM": Initialize=0
+    "COM_CBSA_DATE_DD": Initialize=0
+    "COM_CBSA_W_INDEX": Initialize=0
+    "BUN_CBSA_WAGE_RECORD": Initialize=""
+    "BUN_CBSA": Initialize=0
+    "BUN_CBSA_DATE": Initialize=""
+    "BUN_CBSA_DATE_CC": Initialize=0
+    "BUN_CBSA_DATE_YMD": Initialize=""
+    "BUN_CBSA_DATE_YY": Initialize=0
+    "BUN_CBSA_DATE_MM": Initialize=0
+    "BUN_CBSA_DATE_DD": Initialize=0
+    "BUN_CBSA_W_INDEX": Initialize=0
+}
+
+FixedPool.ESCAL056_VARS {
+    "W_STORAGE_REF": Initialize="ESCAL056      - W O R K I N G   S T O R A G E"
+    "CAL_VERSION": Initialize="C05.6"
+    "DISPLAY_LINE_MEASUREMENT": Initialize=""
+    "PRINT_LINE_MEASUREMENT": Initialize=""
+    "HOLD_PPS_COMPONENTS": Initialize=""
+    "H_PYMT_AMT": Initialize=0
+    "H_WAGE_ADJ_PYMT_AMT": Initialize=0
+    "H_FIXED_LOSS_AMT": Initialize=0
+    "H_ESRD_FAC_RATE": Initialize=0
+    "H_PATIENT_AGE": Initialize=0
+    "H_AGE_FACTOR": Initialize=0
+    "H_BSA_FACTOR": Initialize=0
+    "H_BMI_FACTOR": Initialize=0
+    "H_BSA": Initialize=0
+    "H_BMI": Initialize=0
+    "H_DRUG_ADDON": Initialize=0
+    "DRUG_ADDON": Initialize=10870
+    "MSA_BLEND_PCT": Initialize=10000
+    "CBSA_BLEND_PCT": Initialize=0
+    "NAT_LABOR_PCT": Initialize=0
+    "NAT_NONLABOR_PCT": Initialize=0
+    "HEMO_PERI_CCPD_AMT": Initialize=20
+    "CAPD_AMT": Initialize=12
+    "CAPD_OR_CCPD_FACTOR": Initialize=0
+    "CASE_MIX_BDGT_NEUT_FACTOR": Initialize=9116
+}
+
+SubRoutine.Main {
+    escal056_linkage = AllocateLinkage(LinkagePool.ESCAL056_Linkage)
+    job_id = Cobol.GetJobIdFromCommandLine()
+    Cobol.api_job_id = job_id
+    ContainerConfig.job_id = job_id
+    Cobol.api_db_conn = PG_Connect(DBConfig.host, DBConfig.port, DBConfig.database, DBConfig.user, DBConfig.password)
+    ContainerConfig.db_conn = Cobol.api_db_conn
+    job_id = ContainerConfig.job_id
+    IfCondition GreaterThan(job_id, 0) ThenBlock: {
+    data_json = JCL_DataLoader.LoadJobData(job_id, ContainerConfig.db_conn)
+    IfCondition NotEqual(data_json, 0) ThenBlock: {
+    escal056_linkage.W_NEW_MSA = StringToNumber(JCL_DataLoader.GetField(data_json, "W-NEW-MSA"))
+    escal056_linkage.W_NEW_RATE1_RECORD = StringToNumber(JCL_DataLoader.GetField(data_json, "W-NEW-RATE1-RECORD"))
+    escal056_linkage.W_NEW_RATE2_RECORD = StringToNumber(JCL_DataLoader.GetField(data_json, "W-NEW-RATE2-RECORD"))
+    Deallocate(data_json, 0)
+            } ElseBlock: {
+    PrintMessage("[JCL] Warning: No job data found for job_id ")
+    PrintNumber(job_id)
+    PrintMessage("\n")
+            }
+        }
+    ESCAL056_0000_MAINLINE_CONTROL(escal056_linkage)
+    IfCondition And(GreaterThan(ContainerConfig.job_id, 0), EqualTo(Cobol.api_response_data, 0)) ThenBlock: {
+    Cobol.api_response_data = BuildResponse_ESCAL056(escal056_linkage)
+        }
+    ReturnValue(0)
+}
+
+Function.ESCAL056_0000_MAINLINE_CONTROL {
+    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage
+    Body: {
+    ESCAL056_0100_INITIAL_ROUTINE(escal056_linkage)
+    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {
+    ESCAL056_1000_EDIT_THE_BILL_INFO(escal056_linkage)
+        }
+    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {
+    ESCAL056_2000_ASSEMBLE_PPS_VARIABLES(escal056_linkage)
+    ESCAL056_3000_CALC_PAYMENT(escal056_linkage)
+        }
+    ESCAL056_9000_MOVE_RESULTS(escal056_linkage)
+    ReturnValue(0)
+    }
+}
