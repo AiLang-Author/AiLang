@@ -1,0 +1,859 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-05T20:26:40.740330",
+    "generator_version": "1.0.0",
+    "artifact_type": "cobol_to_ailang_forensic"
+  },
+  "cobol_source": {
+    "files": [
+      "/mnt/c/Users/Sean/Documents/AiLang/ailang/cobol_frontend/tests/medicare/ESCAL056.cbl"
+    ],
+    "combined_source": "000100 IDENTIFICATION DIVISION.\n000200 PROGRAM-ID. ESCAL056.\n000300*AUTHORS.    CMS.\n000400*       EFFECTIVE APRIL 1, 2005\n000500******************************************************************\n000600* 4/06/05 - Allow provider type '05' for pediatric hosp          *\n000700*         - To be effective with the next release                *\n000800*         - Changed in 0100-INITIAL-ROUTINE with provider        *\n000900*           type '40'                                            *\n001000* 1/01/06 - NEW CBSA TABLE FOR CY2006                            *\n001100*         - UPDATE RATES WITH 1.6% INCREASE                      *\n001200* 1/18/07 - THIS PROGRAM WAS ENHANCED IN ORDER TO VERIFY MORE    *\n001300*           INFORMATION (VIA THE MASTER DRIVER).  VERY CLOSE     *\n001400*           ATTENTION HAS BEEN PAID TO ENSURE THAT ALL VARIABLES *\n001500*           THAT CHANGE FROM YEAR TO YEAR CONTINUE TO HAVE THE   *\n001600*           SAME VALUES AS IN THE ORIGINAL VERSION.  NO CHANGES  *\n001700*           WERE MADE IN THE CORE LOGIC OF THE PROCEDURE DIVISION*\n001800*           WHERE THE ACTUAL CALCULATIONS OCCUR.  THOROUGH       *\n001900*           TESTING USING THE ORIGINAL SET OF TEST CASES WAS MADE*\n002000*           AND THERE ARE ABSOLUTELY NO DIFFERENCES IN CALCULATED*\n002100*           AMOUNTS.  THE ORIGINAL CODE THAT WAS SENT OUT TO THE *\n002200*           FISCAL INTERMEDIARIES IN 2006 REMAINS INTACT UNDER   *\n002300*           THE MU00 ACCOUNT.                                    *\n002400* 1/18/07 - MSA-CBSA BLEND PERCENT SET AT 100% MSA 0% CBSA       *\n002500*         - ADDITIONAL VARIABLES WERE CREATED IN ORDER TO MAKE   *\n002600*           CHANGING VALUES EASIER (IN WORKING STORAGE RATHER    *\n002700*           THAN IN THE PROCEDURE DIVISION)                      *\n002800*         - THIS PROGRAM NOW REFLECTS ENHANCEMENTS MADE SO THAT  *\n002900*           TESTING OF THE CODE DOES NOT REQUIRE COMMENTING      *\n003000*           IN/OUT LINES OF CODE.  IN ADDITION CALCULATED        *\n003100*           VARIABLES ARE NOW PASSED BACK WHEN TEST CASES ARE    *\n003200*           ENCOUNTERED IN ORDER FOR THE MASTER DRIVER TO PRINT  *\n003300*           MORE INFORMATION ABOUT WHAT WENT ON IN THIS PROGRAM  *\n003400******************************************************************\n003500 DATE-COMPILED.\n003600 ENVIRONMENT DIVISION.\n003700 CONFIGURATION SECTION.\n003800 SOURCE-COMPUTER.            IBM-Z990.\n003900 OBJECT-COMPUTER.            ITTY-BITTY-MACHINE-CORPORATION.\n004000 INPUT-OUTPUT  SECTION.\n004100 FILE-CONTROL.\n004200\n004300 DATA DIVISION.\n004400 FILE SECTION.\n004500/\n004600 WORKING-STORAGE SECTION.\n004700 01  W-STORAGE-REF                  PIC X(46)  VALUE\n004800   'ESCAL056      - W O R K I N G   S T O R A G E'.\n004900\n005000 01  CAL-VERSION                    PIC X(05)  VALUE 'C05.6'.\n005100\n005200 01  DISPLAY-LINE-MEASUREMENT.\n005300     05  FILLER                     PIC X(50) VALUE\n005400         '....:...10....:...20....:...30....:...40....:...50'.\n005500     05  FILLER                     PIC X(50) VALUE\n005600         '....:...60....:...70....:...80....:...90....:..100'.\n005700     05  FILLER                     PIC X(20) VALUE\n005800         '....:..110....:..120'.\n005900\n006000 01  PRINT-LINE-MEASUREMENT.\n006100     05  FILLER                     PIC X(51) VALUE\n006200         'X....:...10....:...20....:...30....:...40....:...50'.\n006300     05  FILLER                     PIC X(50) VALUE\n006400         '....:...60....:...70....:...80....:...90....:..100'.\n006500     05  FILLER                     PIC X(32) VALUE\n006600         '....:..110....:..120....:..130..'.\n006700\n006800 01  HOLD-PPS-COMPONENTS.\n006900     05  H-PYMT-AMT                 PIC 9(07)V9(02).\n007000     05  H-WAGE-ADJ-PYMT-AMT        PIC 9(07)V9(02).\n007100     05  H-FIXED-LOSS-AMT           PIC 9(07)V9(02).\n007200     05  H-ESRD-FAC-RATE            PIC 9(07)V9(02).\n007300     05  H-PATIENT-AGE              PIC 9(03).\n007400     05  H-AGE-FACTOR               PIC 9(01)V9(03).\n007500     05  H-BSA-FACTOR               PIC 9(01)V9(04).\n007600     05  H-BMI-FACTOR               PIC 9(01)V9(04).\n007700     05  H-BSA                      PIC 9(03)V9(04).\n007800     05  H-BMI                      PIC 9(03)V9(04).\n007900     05  H-DRUG-ADDON               PIC 9(01)V9(04).\n008000\n008100*   THE FOLLOWING THREE VARIABLES WILL CHANGE FROM YEAR TO YEAR\n008200 01  DRUG-ADDON                     PIC 9(01)V9(04) VALUE 1.0870.\n008300\n008400*   THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n008500*   THEY WILL CONTINUE TO CHANGE UNTIL 2009 WHEN CBSA WILL BE 1.00\n008600 01  MSA-BLEND-PCT                  PIC 9(01)V9(02) VALUE 1.00.\n008700 01  CBSA-BLEND-PCT                 PIC 9(01)V9(02) VALUE 0.00.\n008800\n008900*  CONSTANTS AREA\n009000*   THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n009100 01  NAT-LABOR-PCT                  PIC 9(01)V9(05) VALUE 0.53711.\n009200 01  NAT-NONLABOR-PCT               PIC 9(01)V9(05) VALUE 0.46289.\n009300\n009400 01  HEMO-PERI-CCPD-AMT             PIC 9(02)       VALUE 20.\n009500 01  CAPD-AMT                       PIC 9(02)       VALUE 12.\n009600 01  CAPD-OR-CCPD-FACTOR            PIC 9(01)V9(06) VALUE\n009700                                                       0.428571.\n009800\n009900*  THE FOLLOWING NUMBER THAT IS LOADED INTO THE PAYMENT EQUATION\n010000*  IS MEANT TO BUDGET NEUTRALIZE CHANGES IN THE CASE MIX INDEX\n010100*  AND   --DOES NOT CHANGE--\n010200 01  CASE-MIX-BDGT-NEUT-FACTOR      PIC 9(01)V9(04) VALUE 0.9116.\n010300\n010400\n010500******************************************************************\n010600*                                                                *\n010700*   ******** POSSIBLE RETURN CODES FROM THIS PROGRAM ********    *\n010800*                                                                *\n010900*    ****  PPS-RTC 00-49 = BILL PAYMENT INFORMATION CODES        *\n011000*                                                                *\n011100*            00 = ESRD PPS PAYMENT CALCULATED                    *\n011200*                                                                *\n011300*    ****  PPS-RTC 50-99 = WHY THE BILL WAS NOT PAID             *\n011400*                                                                *\n011500*            52 = PROVIDER TYPE NOT = '40' OR '41'               *\n011600*            53 = SPECIAL PAYMENT INDICATOR NOT = '1' OR BLANK   *\n011700*            54 = DATE OF BIRTH  NOT NUMERIC OR = ZERO           *\n011800*            55 = PATIENT WEIGHT NOT NUMERIC OR = ZERO           *\n011900*            56 = PATIENT HEIGHT NOT NUMERIC OR = ZERO           *\n012000*            57 = REVENUE CENTER CODE NOT IN RANGE               *\n012100*            58 = CONDITION CODE NOT = '73' OR '74' OR BLANK     *\n012200*            71 = EXCEEDS MAXIMUM HEIGHT ALLOWANCE               *\n012300*            72 = EXCEEDS MAXIMUM WEIGHT ALLOWANCE               *\n012400******************************************************************\n012500/\n012600 LINKAGE SECTION.\n012550 COPY K1W02.\n012600*COPY \"K1W02.CPY\". \n012700 COPY BILLCPY.\n012800*COPY \"BILLCPY.CPY\".\n012900/\n013000 COPY WAGECPY.\n013100*COPY \"WAGECPY.CPY\".\n013200/\n013300 PROCEDURE DIVISION  USING BILL-NEW-DATA\n013400                           PPS-DATA-ALL\n013500                           WAGE-NEW-RATE-RECORD.\n013600\n013700******************************************************************\n013800* THERE ARE VARIOUS WAYS TO COMPUTE A FINAL DOLLAR AMOUNT.  THE  *\n013900* METHOD USED IN THIS PROGRAM IS TO USE ROUNDED INTERMEDIATE     *\n014000* VARIABLES.  THIS WAS DONE TO SIMPLIFY THE CALCULATIONS SO THAT *\n014100* WHEN SOMETHING GOES AWRY, ONE IS NOT LEFT WONDERING WHERE IN   *\n014200* A VAST COMPUTE STATEMENT, THINGS HAVE GONE AWRY.  THE METHOD   *\n014300* UTILIZED HERE HAS BEEN APPROVED BY WIL GEHNE AND JOEY BRYSON   *\n014400* BOTH OF WHOM WORK IN THE DIVISION OF INSTITUTIONAL CLAIMS      *\n014500* PROCESSING (DICP).                                             *\n014600*                                                                *\n014700*                                                                *\n014800*    PROCESSING:                                                 *\n014900*        A. WILL PROCESS CLAIMS BASED ON AGE/HEIGHT/WEIGHT       *\n015000*        B. INITIALIZE ESCAL HOLD VARIABLES.                     *\n015100*        C. EDIT THE DATA PASSED FROM THE CLAIM BEFORE           *\n015200*           ATTEMPTING TO CALCULATE PPS. IF THIS CLAIM           *\n015300*           CANNOT BE PROCESSED, SET A RETURN CODE AND           *\n015400*           GOBACK.                                              *\n015500*        D. ASSEMBLE PRICING COMPONENTS.                         *\n015600*        E. CALCULATE THE PRICE.                                 *\n015700******************************************************************\n015800\n015900 0000-MAINLINE-CONTROL.\n016000\n016100     PERFORM 0100-INITIAL-ROUTINE.\n016200\n016300     IF PPS-RTC = 00\n016400        PERFORM 1000-EDIT-THE-BILL-INFO\n016500     END-IF.\n016600\n016700     IF PPS-RTC = 00\n016800        PERFORM 2000-ASSEMBLE-PPS-VARIABLES\n016900        PERFORM 3000-CALC-PAYMENT\n017000     END-IF.\n017100\n017200     PERFORM 9000-MOVE-RESULTS.\n017300\n017400     GOBACK.\n017500/\n017600 0100-INITIAL-ROUTINE.\n017700\n017800******************************************************************\n017900**   NEW PAYMENT RATES FOR NEW LEGISLATION                      **\n018000******************************************************************\n018100     INITIALIZE PPS-DATA-ALL.\n018200     INITIALIZE BILL-DATA-TEST.\n018300     INITIALIZE HOLD-PPS-COMPONENTS.\n018400     MOVE ZEROS                        TO PPS-RTC.\n018500     MOVE CAL-VERSION                  TO PPS-CALC-VERS-CD.\n018600\n018700* PROVIDER TYPE '40' IS A HOSPITAL BASED ESRD FACILITY\n018800     IF P-PROV-TYPE = '40'\n018900        MOVE ZERO                      TO PPS-NAT-LABOR-PCT\n019000        MOVE ZERO                      TO PPS-NAT-NONLABOR-PCT\n019100        MOVE W-NEW-RATE1-RECORD        TO PPS-WAGE-ADJ-RATE\n019200        MOVE W-NEW-RATE1-RECORD        TO MSA-WAGE-AMT\n019300     ELSE\n019400* PROVIDER TYPE '41' IS AN INDEPENDENT ESRD FACILITY\n019500        IF P-PROV-TYPE = '41'\n019600           MOVE ZERO                   TO PPS-NAT-LABOR-PCT\n019700           MOVE ZERO                   TO PPS-NAT-NONLABOR-PCT\n019800           MOVE W-NEW-RATE2-RECORD     TO PPS-WAGE-ADJ-RATE\n019900           MOVE W-NEW-RATE2-RECORD     TO MSA-WAGE-AMT\n020000        ELSE\n020100           MOVE 52                     TO PPS-RTC\n020200           MOVE ZERO                   TO PPS-WAGE-ADJ-RATE\n020300        END-IF\n020400     END-IF.\n020500\n020600     MOVE PPS-WAGE-ADJ-RATE            TO MSA-ADJ-YEAR-AMT.\n020700\n020800******************************************************************\n020900**  NEW DRUG ADD-ON FOR NEW LEGISLATION                         **\n021000******************************************************************\n021100\n021200     MOVE CASE-MIX-BDGT-NEUT-FACTOR    TO PPS-BDGT-NEUT-RATE.\n021300     MOVE DRUG-ADDON                   TO H-DRUG-ADDON.\n021400/\n021500******************************************************************\n021600***  BILL DATA EDITS IF ANY FAIL SET PPS-RTC                   ***\n021700***  AND DO NOT ATTEMPT TO PRICE.                              ***\n021800******************************************************************\n021900 1000-EDIT-THE-BILL-INFO.\n022000\n022100     IF PPS-RTC = 00\n022200        IF P-SPEC-PYMT-IND NOT = '1' AND ' '\n022300           MOVE 53                     TO PPS-RTC\n022400        END-IF\n022500     END-IF.\n022600\n022700     IF PPS-RTC = 00\n022800        IF (B-DOB-DATE = ZERO) OR (B-DOB-DATE NOT NUMERIC)\n022900           MOVE 54                     TO PPS-RTC\n023000        END-IF\n023100     END-IF.\n023200\n023300     IF PPS-RTC = 00\n023400        IF (B-PATIENT-WGT = 0) OR (B-PATIENT-WGT NOT NUMERIC)\n023500           MOVE 55                     TO PPS-RTC\n023600        END-IF\n023700     END-IF.\n023800\n023900     IF PPS-RTC = 00\n024000        IF (B-PATIENT-HGT = 0) OR (B-PATIENT-HGT NOT NUMERIC)\n024100           MOVE 56                     TO PPS-RTC\n024200        END-IF\n024300     END-IF.\n024400\n024500     IF PPS-RTC = 00\n024600        IF B-REV-CODE  = '0821' OR '0831' OR '0841' OR '0851'\n024700                                OR '0880' OR '0881'\n024800           NEXT SENTENCE\n024900        ELSE\n025000           MOVE 57                     TO PPS-RTC\n025100        END-IF\n025200     END-IF.\n025300\n025400     IF PPS-RTC = 00\n025500        IF B-COND-CODE NOT = '73' AND '74' AND '  '\n025600           MOVE 58                     TO PPS-RTC\n025700        END-IF\n025800     END-IF.\n025900\n026000     IF PPS-RTC = 00\n026100        IF B-PATIENT-HGT > 300.00\n026200           MOVE 71                     TO PPS-RTC\n026300        END-IF\n026400     END-IF.\n026500\n026600     IF PPS-RTC = 00\n026700        IF B-PATIENT-WGT > 500.00\n026800           MOVE 72                     TO PPS-RTC\n026900        END-IF\n027000     END-IF.\n027100\n027200     IF PPS-RTC = 00\n027300        PERFORM 1200-CALC-AGE\n027400     END-IF.\n027500\n027600\n027700 1200-CALC-AGE.\n027800******************************************************************\n027900***  CALCULATE PATIENT AGE                                     ***\n028000******************************************************************\n028100\n028200     COMPUTE H-PATIENT-AGE = B-THRU-CCYY - B-DOB-CCYY.\n028300\n028400     IF B-DOB-MM > B-THRU-MM\n028500        COMPUTE H-PATIENT-AGE = H-PATIENT-AGE - 1\n028600     END-IF.\n028700\n028800******************************************************************\n028900***  SET AGE ADJUSTMENT FACTOR                                 ***\n029000******************************************************************\n029100\n029200     IF H-PATIENT-AGE < 18\n029300        MOVE 1.620                     TO H-AGE-FACTOR\n029400     ELSE\n029500        IF H-PATIENT-AGE > 17 AND H-PATIENT-AGE < 45\n029600           MOVE 1.223                  TO H-AGE-FACTOR\n029700        ELSE\n029800           IF H-PATIENT-AGE > 44 AND H-PATIENT-AGE < 60\n029900              MOVE 1.055               TO H-AGE-FACTOR\n030000           ELSE\n030100              IF H-PATIENT-AGE > 59 AND H-PATIENT-AGE < 70\n030200                 MOVE 1.000            TO H-AGE-FACTOR\n030300              ELSE\n030400                 IF H-PATIENT-AGE > 69 AND H-PATIENT-AGE < 80\n030500                    MOVE 1.094         TO H-AGE-FACTOR\n030600                 ELSE\n030700                    IF H-PATIENT-AGE > 79\n030800                       MOVE 1.174      TO H-AGE-FACTOR\n030900                    END-IF\n031000                 END-IF\n031100              END-IF\n031200           END-IF\n031300        END-IF\n031400     END-IF.\n031500\n031600/\n031700 2000-ASSEMBLE-PPS-VARIABLES.\n031800******************************************************************\n031900***  CALCULATE PPS PRICING VARIABLES                           ***\n032000******************************************************************\n032100\n032200     MOVE PPS-WAGE-ADJ-RATE            TO H-WAGE-ADJ-PYMT-AMT.\n032300\n032400     COMPUTE H-BSA ROUNDED = (.007184 *\n032500         (B-PATIENT-HGT ** .725) * (B-PATIENT-WGT ** .425))\n032600\n032700     COMPUTE H-BMI ROUNDED = (B-PATIENT-WGT /\n032800         (B-PATIENT-HGT ** 2)) * 10000.\n032900\n033000     IF H-PATIENT-AGE > 17\n033100        COMPUTE H-BSA-FACTOR ROUNDED =\n033200             1.037 ** ((H-BSA - 1.84) / .1)\n033300     ELSE\n033400        MOVE 1.000                     TO H-BSA-FACTOR\n033500     END-IF.\n033600\n033700     IF (H-PATIENT-AGE > 17) AND (H-BMI < 18.5)\n033800        MOVE 1.112                     TO H-BMI-FACTOR\n033900     ELSE\n034000        MOVE 1.000                     TO H-BMI-FACTOR\n034100     END-IF.\n034200\n034300/\n034400******************************************************************\n034500***  IF THE BILL DATA HAS PASSED ALL EDITS (RTC=00)            ***\n034600***      CALCULATE THE STANDARD PAYMENT AMOUNT.                ***\n034700***    - BLEND 50% OLD RATE (MSA) WITH 50% NEW RATE (CBSA).    ***\n034800******************************************************************\n034900 3000-CALC-PAYMENT.\n035000\n035100     COMPUTE H-PYMT-AMT ROUNDED = H-WAGE-ADJ-PYMT-AMT *\n035200          H-BMI-FACTOR * H-BSA-FACTOR * PPS-BDGT-NEUT-RATE *\n035300          H-AGE-FACTOR * H-DRUG-ADDON.\n035400\n035500     MOVE H-PYMT-AMT                   TO CASE-MIX-FCTR-ADJ-RATE.\n035600     MOVE SPACES                       TO COND-CD-73.\n035700\n035800     IF (B-COND-CODE = '73') AND (B-REV-CODE = '0821' OR '0831'\n035900                                                      OR '0851')\n036000        COMPUTE H-PYMT-AMT = H-PYMT-AMT + HEMO-PERI-CCPD-AMT\n036100        MOVE 'A'                       TO AMT-INDIC\n036200        MOVE HEMO-PERI-CCPD-AMT        TO BLOOD-DOLLAR\n036300     ELSE\n036400        IF (B-COND-CODE = '73')  AND  (B-REV-CODE = '0841')  THEN\n036500           COMPUTE H-PYMT-AMT = H-PYMT-AMT + CAPD-AMT\n036600           MOVE 'A'                    TO AMT-INDIC\n036700           MOVE CAPD-AMT               TO BLOOD-DOLLAR\n036800        ELSE\n036900           IF (B-COND-CODE = '74')  AND\n037000              (B-REV-CODE = '0841' OR '0851')  THEN\n037100              COMPUTE H-PYMT-AMT ROUNDED = H-PYMT-AMT *\n037200                                           CAPD-OR-CCPD-FACTOR\n037300              MOVE CAPD-OR-CCPD-FACTOR TO HEMO-CCPD-CAPD\n037400           ELSE\n037500              MOVE 'A'                 TO AMT-INDIC\n037600              MOVE ZERO                TO BLOOD-DOLLAR\n037700           END-IF\n037800        END-IF\n037900     END-IF.\n038000\n038100     MOVE H-PYMT-AMT                   TO PPS-FINAL-PAY-AMT.\n038200     MOVE ZERO                         TO PPS-WAGE-ADJ-RATE.\n038300/\n038400 9000-MOVE-RESULTS.\n038500\n038600     IF PPS-RTC < 50  THEN\n038700        MOVE B-COND-CODE               TO PPS-COND-CODE\n038800        MOVE B-REV-CODE                TO PPS-REV-CODE\n038900        MOVE P-GEO-MSA                 TO PPS-MSA\n039000        MOVE P-GEO-CBSA                TO PPS-CBSA\n039100        MOVE H-AGE-FACTOR              TO PPS-AGE-FACTOR\n039200        MOVE H-BSA-FACTOR              TO PPS-BSA-FACTOR\n039300        MOVE H-BMI-FACTOR              TO PPS-BMI-FACTOR\n039400        IF OLD-TEST-CASE  THEN\n039500           MOVE H-DRUG-ADDON           TO DRUG-ADD-ON-RETURN\n039600           IF P-PROV-TYPE = '40' OR '05'  THEN\n039700              MOVE W-NEW-RATE1-RECORD  TO PPS-WAGE-ADJ-RATE\n039800              MOVE W-NEW-RATE1-RECORD  TO MSA-WAGE-AMT\n039900              MOVE W-NEW-RATE1-RECORD  TO MSA-WAGE-ADJ\n040000           ELSE\n040100              MOVE W-NEW-RATE2-RECORD  TO PPS-WAGE-ADJ-RATE\n040200              MOVE W-NEW-RATE2-RECORD  TO MSA-WAGE-AMT\n040300              MOVE W-NEW-RATE2-RECORD  TO MSA-WAGE-ADJ\n040400           END-IF\n040500           MOVE ZERO                   TO CBSA-WAGE-ADJ\n040600           MOVE CBSA-BLEND-PCT         TO CBSA-PCT\n040700           MOVE MSA-BLEND-PCT          TO MSA-PCT\n040800           MOVE ZERO                   TO CBSA-WAGE-PMT-RATE\n040900           MOVE H-PATIENT-AGE          TO AGE-RETURN\n041000           MOVE ZERO                   TO CBSA-WAGE-INDEX\n041100           MOVE NAT-LABOR-PCT          TO LABOR-PCT\n041200        END-IF\n041300     ELSE\n041400        IF OLD-TEST-CASE  THEN\n041500           INITIALIZE PPS-COND-CODE\n041600           INITIALIZE PPS-REV-CODE\n041700           INITIALIZE PPS-MSA\n041800           INITIALIZE PPS-CBSA\n041900           INITIALIZE PPS-AGE-FACTOR\n042000           INITIALIZE PPS-BSA-FACTOR\n042100           INITIALIZE PPS-BMI-FACTOR\n042200           INITIALIZE DRUG-ADD-ON-RETURN\n042300           INITIALIZE MSA-WAGE-ADJ\n042400           INITIALIZE CBSA-WAGE-ADJ\n042500           INITIALIZE CBSA-PCT\n042600           INITIALIZE MSA-PCT\n042700           INITIALIZE CASE-MIX-FCTR-ADJ-RATE\n042800           INITIALIZE CBSA-WAGE-PMT-RATE\n042900           INITIALIZE HEMO-CCPD-CAPD\n043000           INITIALIZE AGE-RETURN\n043100        END-IF\n043200     END-IF.\n043300\n043400******        L A S T   S O U R C E   S T A T E M E N T      *****\n\n",
+    "sha256": "8ee9a77666e9bf7b843b701980d9276a3e81d6eb22815e3ccf800ee4659f659f",
+    "line_count": 438,
+    "size_bytes": 20171
+  },
+  "comments": {
+    "total_count": 120,
+    "by_context": {
+      "IN-PARAGRAPH: 000200": [
+        {
+          "line": 3,
+          "text": "AUTHORS.    CMS.",
+          "type": "line"
+        },
+        {
+          "line": 4,
+          "text": "EFFECTIVE APRIL 1, 2005",
+          "type": "line"
+        },
+        {
+          "line": 5,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 6,
+          "text": "4/06/05 - Allow provider type '05' for pediatric hosp          *",
+          "type": "line"
+        },
+        {
+          "line": 7,
+          "text": "- To be effective with the next release                *",
+          "type": "line"
+        },
+        {
+          "line": 8,
+          "text": "- Changed in 0100-INITIAL-ROUTINE with provider        *",
+          "type": "line"
+        },
+        {
+          "line": 9,
+          "text": "type '40'                                            *",
+          "type": "line"
+        },
+        {
+          "line": 10,
+          "text": "1/01/06 - NEW CBSA TABLE FOR CY2006                            *",
+          "type": "line"
+        },
+        {
+          "line": 11,
+          "text": "- UPDATE RATES WITH 1.6% INCREASE                      *",
+          "type": "line"
+        },
+        {
+          "line": 12,
+          "text": "1/18/07 - THIS PROGRAM WAS ENHANCED IN ORDER TO VERIFY MORE    *",
+          "type": "line"
+        },
+        {
+          "line": 13,
+          "text": "INFORMATION (VIA THE MASTER DRIVER).  VERY CLOSE     *",
+          "type": "line"
+        },
+        {
+          "line": 14,
+          "text": "ATTENTION HAS BEEN PAID TO ENSURE THAT ALL VARIABLES *",
+          "type": "line"
+        },
+        {
+          "line": 15,
+          "text": "THAT CHANGE FROM YEAR TO YEAR CONTINUE TO HAVE THE   *",
+          "type": "line"
+        },
+        {
+          "line": 16,
+          "text": "SAME VALUES AS IN THE ORIGINAL VERSION.  NO CHANGES  *",
+          "type": "line"
+        }
+      ],
+      "PROCEDURE DIVISION": [
+        {
+          "line": 17,
+          "text": "WERE MADE IN THE CORE LOGIC OF THE PROCEDURE DIVISION*",
+          "type": "line"
+        },
+        {
+          "line": 18,
+          "text": "WHERE THE ACTUAL CALCULATIONS OCCUR.  THOROUGH       *",
+          "type": "line"
+        },
+        {
+          "line": 19,
+          "text": "TESTING USING THE ORIGINAL SET OF TEST CASES WAS MADE*",
+          "type": "line"
+        },
+        {
+          "line": 20,
+          "text": "AND THERE ARE ABSOLUTELY NO DIFFERENCES IN CALCULATED*",
+          "type": "line"
+        },
+        {
+          "line": 21,
+          "text": "AMOUNTS.  THE ORIGINAL CODE THAT WAS SENT OUT TO THE *",
+          "type": "line"
+        },
+        {
+          "line": 22,
+          "text": "FISCAL INTERMEDIARIES IN 2006 REMAINS INTACT UNDER   *",
+          "type": "line"
+        },
+        {
+          "line": 23,
+          "text": "THE MU00 ACCOUNT.                                    *",
+          "type": "line"
+        },
+        {
+          "line": 24,
+          "text": "1/18/07 - MSA-CBSA BLEND PERCENT SET AT 100% MSA 0% CBSA       *",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 003500": [
+        {
+          "line": 25,
+          "text": "- ADDITIONAL VARIABLES WERE CREATED IN ORDER TO MAKE   *",
+          "type": "line"
+        },
+        {
+          "line": 26,
+          "text": "CHANGING VALUES EASIER (IN WORKING STORAGE RATHER    *",
+          "type": "line"
+        },
+        {
+          "line": 27,
+          "text": "THAN IN THE PROCEDURE DIVISION)                      *",
+          "type": "line"
+        },
+        {
+          "line": 28,
+          "text": "- THIS PROGRAM NOW REFLECTS ENHANCEMENTS MADE SO THAT  *",
+          "type": "line"
+        },
+        {
+          "line": 29,
+          "text": "TESTING OF THE CODE DOES NOT REQUIRE COMMENTING      *",
+          "type": "line"
+        },
+        {
+          "line": 30,
+          "text": "IN/OUT LINES OF CODE.  IN ADDITION CALCULATED        *",
+          "type": "line"
+        },
+        {
+          "line": 31,
+          "text": "VARIABLES ARE NOW PASSED BACK WHEN TEST CASES ARE    *",
+          "type": "line"
+        },
+        {
+          "line": 32,
+          "text": "ENCOUNTERED IN ORDER FOR THE MASTER DRIVER TO PRINT  *",
+          "type": "line"
+        },
+        {
+          "line": 33,
+          "text": "MORE INFORMATION ABOUT WHAT WENT ON IN THIS PROGRAM  *",
+          "type": "line"
+        },
+        {
+          "line": 34,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 005400": [
+        {
+          "line": 45,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 006800": [
+        {
+          "line": 81,
+          "text": "THE FOLLOWING THREE VARIABLES WILL CHANGE FROM YEAR TO YEAR",
+          "type": "line"
+        },
+        {
+          "line": 84,
+          "text": "THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)",
+          "type": "line"
+        },
+        {
+          "line": 85,
+          "text": "THEY WILL CONTINUE TO CHANGE UNTIL 2009 WHEN CBSA WILL BE 1.00",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 009700": [
+        {
+          "line": 89,
+          "text": "CONSTANTS AREA",
+          "type": "line"
+        },
+        {
+          "line": 90,
+          "text": "THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 009700": [
+        {
+          "line": 99,
+          "text": "THE FOLLOWING NUMBER THAT IS LOADED INTO THE PAYMENT EQUATION",
+          "type": "line"
+        },
+        {
+          "line": 100,
+          "text": "IS MEANT TO BUDGET NEUTRALIZE CHANGES IN THE CASE MIX INDEX",
+          "type": "line"
+        },
+        {
+          "line": 101,
+          "text": "AND   --DOES NOT CHANGE--",
+          "type": "line"
+        },
+        {
+          "line": 105,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 106,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 107,
+          "text": "******** POSSIBLE RETURN CODES FROM THIS PROGRAM ********    *",
+          "type": "line"
+        },
+        {
+          "line": 108,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 109,
+          "text": "****  PPS-RTC 00-49 = BILL PAYMENT INFORMATION CODES        *",
+          "type": "line"
+        },
+        {
+          "line": 110,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 111,
+          "text": "00 = ESRD PPS PAYMENT CALCULATED                    *",
+          "type": "line"
+        },
+        {
+          "line": 112,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 113,
+          "text": "****  PPS-RTC 50-99 = WHY THE BILL WAS NOT PAID             *",
+          "type": "line"
+        },
+        {
+          "line": 114,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 115,
+          "text": "52 = PROVIDER TYPE NOT = '40' OR '41'               *",
+          "type": "line"
+        },
+        {
+          "line": 116,
+          "text": "53 = SPECIAL PAYMENT INDICATOR NOT = '1' OR BLANK   *",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 012550": [
+        {
+          "line": 117,
+          "text": "54 = DATE OF BIRTH  NOT NUMERIC OR = ZERO           *",
+          "type": "line"
+        },
+        {
+          "line": 118,
+          "text": "55 = PATIENT WEIGHT NOT NUMERIC OR = ZERO           *",
+          "type": "line"
+        },
+        {
+          "line": 119,
+          "text": "56 = PATIENT HEIGHT NOT NUMERIC OR = ZERO           *",
+          "type": "line"
+        },
+        {
+          "line": 120,
+          "text": "57 = REVENUE CENTER CODE NOT IN RANGE               *",
+          "type": "line"
+        },
+        {
+          "line": 121,
+          "text": "58 = CONDITION CODE NOT = '73' OR '74' OR BLANK     *",
+          "type": "line"
+        },
+        {
+          "line": 122,
+          "text": "71 = EXCEEDS MAXIMUM HEIGHT ALLOWANCE               *",
+          "type": "line"
+        },
+        {
+          "line": 123,
+          "text": "72 = EXCEEDS MAXIMUM WEIGHT ALLOWANCE               *",
+          "type": "line"
+        },
+        {
+          "line": 124,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 125,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 012700": [
+        {
+          "line": 128,
+          "text": "COPY \"K1W02.CPY\".",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 013000": [
+        {
+          "line": 130,
+          "text": "COPY \"BILLCPY.CPY\".",
+          "type": "line"
+        },
+        {
+          "line": 131,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 013500": [
+        {
+          "line": 133,
+          "text": "COPY \"WAGECPY.CPY\".",
+          "type": "line"
+        },
+        {
+          "line": 134,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 013500": [
+        {
+          "line": 139,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 140,
+          "text": "THERE ARE VARIOUS WAYS TO COMPUTE A FINAL DOLLAR AMOUNT.  THE  *",
+          "type": "line"
+        },
+        {
+          "line": 141,
+          "text": "METHOD USED IN THIS PROGRAM IS TO USE ROUNDED INTERMEDIATE     *",
+          "type": "line"
+        },
+        {
+          "line": 142,
+          "text": "VARIABLES.  THIS WAS DONE TO SIMPLIFY THE CALCULATIONS SO THAT *",
+          "type": "line"
+        },
+        {
+          "line": 143,
+          "text": "WHEN SOMETHING GOES AWRY, ONE IS NOT LEFT WONDERING WHERE IN   *",
+          "type": "line"
+        },
+        {
+          "line": 144,
+          "text": "A VAST COMPUTE STATEMENT, THINGS HAVE GONE AWRY.  THE METHOD   *",
+          "type": "line"
+        },
+        {
+          "line": 145,
+          "text": "UTILIZED HERE HAS BEEN APPROVED BY WIL GEHNE AND JOEY BRYSON   *",
+          "type": "line"
+        },
+        {
+          "line": 146,
+          "text": "BOTH OF WHOM WORK IN THE DIVISION OF INSTITUTIONAL CLAIMS      *",
+          "type": "line"
+        },
+        {
+          "line": 147,
+          "text": "PROCESSING (DICP).                                             *",
+          "type": "line"
+        },
+        {
+          "line": 148,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 149,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 150,
+          "text": "PROCESSING:                                                 *",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 015900": [
+        {
+          "line": 151,
+          "text": "A. WILL PROCESS CLAIMS BASED ON AGE/HEIGHT/WEIGHT       *",
+          "type": "line"
+        },
+        {
+          "line": 152,
+          "text": "B. INITIALIZE ESCAL HOLD VARIABLES.                     *",
+          "type": "line"
+        },
+        {
+          "line": 153,
+          "text": "C. EDIT THE DATA PASSED FROM THE CLAIM BEFORE           *",
+          "type": "line"
+        },
+        {
+          "line": 154,
+          "text": "ATTEMPTING TO CALCULATE PPS. IF THIS CLAIM           *",
+          "type": "line"
+        },
+        {
+          "line": 155,
+          "text": "CANNOT BE PROCESSED, SET A RETURN CODE AND           *",
+          "type": "line"
+        },
+        {
+          "line": 156,
+          "text": "GOBACK.                                              *",
+          "type": "line"
+        },
+        {
+          "line": 157,
+          "text": "D. ASSEMBLE PRICING COMPONENTS.                         *",
+          "type": "line"
+        },
+        {
+          "line": 158,
+          "text": "E. CALCULATE THE PRICE.                                 *",
+          "type": "line"
+        },
+        {
+          "line": 159,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 017600": [
+        {
+          "line": 177,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 018100": [
+        {
+          "line": 180,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 181,
+          "text": "*   NEW PAYMENT RATES FOR NEW LEGISLATION                      **",
+          "type": "line"
+        },
+        {
+          "line": 182,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 018300": [
+        {
+          "line": 189,
+          "text": "PROVIDER TYPE '40' IS A HOSPITAL BASED ESRD FACILITY",
+          "type": "line"
+        },
+        {
+          "line": 196,
+          "text": "PROVIDER TYPE '41' IS AN INDEPENDENT ESRD FACILITY",
+          "type": "line"
+        },
+        {
+          "line": 210,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 021900": [
+        {
+          "line": 211,
+          "text": "*  NEW DRUG ADD-ON FOR NEW LEGISLATION                         **",
+          "type": "line"
+        },
+        {
+          "line": 212,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 216,
+          "text": "",
+          "type": "line"
+        },
+        {
+          "line": 217,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 218,
+          "text": "**  BILL DATA EDITS IF ANY FAIL SET PPS-RTC                   ***",
+          "type": "line"
+        },
+        {
+          "line": 219,
+          "text": "**  AND DO NOT ATTEMPT TO PRICE.                              ***",
+          "type": "line"
+        },
+        {
+          "line": 220,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 027700": [
+        {
+          "line": 280,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 281,
+          "text": "**  CALCULATE PATIENT AGE                                     ***",
+          "type": "line"
+        },
+        {
+          "line": 282,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 290,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 291,
+          "text": "**  SET AGE ADJUSTMENT FACTOR                                 ***",
+          "type": "line"
+        },
+        {
+          "line": 292,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 031700": [
+        {
+          "line": 318,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 031700": [
+        {
+          "line": 320,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 321,
+          "text": "**  CALCULATE PPS PRICING VARIABLES                           ***",
+          "type": "line"
+        },
+        {
+          "line": 322,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 034900": [
+        {
+          "line": 345,
+          "text": "",
+          "type": "line"
+        },
+        {
+          "line": 346,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 347,
+          "text": "**  IF THE BILL DATA HAS PASSED ALL EDITS (RTC=00)            ***",
+          "type": "line"
+        },
+        {
+          "line": 348,
+          "text": "**      CALCULATE THE STANDARD PAYMENT AMOUNT.                ***",
+          "type": "line"
+        },
+        {
+          "line": 349,
+          "text": "**    - BLEND 50% OLD RATE (MSA) WITH 50% NEW RATE (CBSA).    ***",
+          "type": "line"
+        },
+        {
+          "line": 350,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "HEADER": [
+        {
+          "line": 385,
+          "text": "",
+          "type": "line"
+        },
+        {
+          "line": 436,
+          "text": "*****        L A S T   S O U R C E   S T A T E M E N T      *****",
+          "type": "line"
+        }
+      ]
+    },
+    "paragraph_associations": {
+      "003500": 10,
+      "005400": 1,
+      "009700": 2,
+      "012550": 9,
+      "012700": 1,
+      "013000": 2,
+      "013500": 2,
+      "015900": 9,
+      "017600": 1,
+      "018100": 3,
+      "021900": 7,
+      "031700": 1,
+      "034900": 6
+    }
+  },
+  "lexing": {
+    "token_count": 0,
+    "tokens": []
+  },
+  "cobol_ast": {
+    "program_count": 1,
+    "programs": [
+      {
+        "program_id": "ESCAL056",
+        "is_nested": false,
+        "metadata": [],
+        "statistics": {
+          "working_storage_vars": 14,
+          "linkage_vars": 14,
+          "file_descriptors": 0,
+          "paragraphs": 7,
+          "statements": 41
+        },
+        "structure": {
+          "paragraphs": [
+            {
+              "name": "0000-MAINLINE-CONTROL",
+              "statement_count": 5,
+              "line": 73
+            },
+            {
+              "name": "0100-INITIAL-ROUTINE",
+              "statement_count": 6,
+              "line": 89
+            },
+            {
+              "name": "1000-EDIT-THE-BILL-INFO",
+              "statement_count": 9,
+              "line": 119
+            },
+            {
+              "name": "1200-CALC-AGE",
+              "statement_count": 7,
+              "line": 177
+            },
+            {
+              "name": "2000-ASSEMBLE-PPS-VARIABLES",
+              "statement_count": 5,
+              "line": 210
+            },
+            {
+              "name": "3000-CALC-PAYMENT",
+              "statement_count": 7,
+              "line": 233
+            },
+            {
+              "name": "9000-MOVE-RESULTS",
+              "statement_count": 2,
+              "line": 267
+            }
+          ]
+        }
+      }
+    ],
+    "statistics": {
+      "total_programs": 1,
+      "total_paragraphs": 7,
+      "total_statements": 41,
+      "total_variables": 28
+    }
+  },
+  "conversion_mapping": {
+    "paragraphs_to_subroutines": {
+      "0000-MAINLINE-CONTROL": {
+        "ailang_name": "ESCAL056_0000_MAINLINE_CONTROL",
+        "statement_count": 5,
+        "has_comments": false
+      },
+      "0100-INITIAL-ROUTINE": {
+        "ailang_name": "ESCAL056_0100_INITIAL_ROUTINE",
+        "statement_count": 6,
+        "has_comments": false
+      },
+      "1000-EDIT-THE-BILL-INFO": {
+        "ailang_name": "ESCAL056_1000_EDIT_THE_BILL_INFO",
+        "statement_count": 9,
+        "has_comments": false
+      },
+      "1200-CALC-AGE": {
+        "ailang_name": "ESCAL056_1200_CALC_AGE",
+        "statement_count": 7,
+        "has_comments": false
+      },
+      "2000-ASSEMBLE-PPS-VARIABLES": {
+        "ailang_name": "ESCAL056_2000_ASSEMBLE_PPS_VARIABLES",
+        "statement_count": 5,
+        "has_comments": false
+      },
+      "3000-CALC-PAYMENT": {
+        "ailang_name": "ESCAL056_3000_CALC_PAYMENT",
+        "statement_count": 7,
+        "has_comments": false
+      },
+      "9000-MOVE-RESULTS": {
+        "ailang_name": "ESCAL056_9000_MOVE_RESULTS",
+        "statement_count": 2,
+        "has_comments": false
+      }
+    },
+    "variables": {},
+    "statements": []
+  },
+  "ailang_ast": {
+    "subroutine_count": 1,
+    "pool_count": 2,
+    "structure": {
+      "declarations": [
+        {
+          "type": "Pool",
+          "name": "ESCAL056_Linkage"
+        },
+        {
+          "type": "Pool",
+          "name": "ESCAL056_VARS"
+        },
+        {
+          "type": "Function",
+          "name": "BuildResponse_ESCAL056"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "Main"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_0000_MAINLINE_CONTROL"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_0100_INITIAL_ROUTINE"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_1000_EDIT_THE_BILL_INFO"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_1200_CALC_AGE"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_2000_ASSEMBLE_PPS_VARIABLES"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_3000_CALC_PAYMENT"
+        },
+        {
+          "type": "Function",
+          "name": "ESCAL056_9000_MOVE_RESULTS"
+        }
+      ]
+    }
+  },
+  "ailang_source": {
+    "code": "// ============================================================================\n// COBOL PROGRAM INFORMATION\n// ============================================================================\n// Program: ESCAL056\n// ============================================================================\n\n// --- HEADER ---\n// *****        L A S T   S O U R C E   S T A T E M E N T      *****\n\n// --- IN-PARAGRAPH: 000200 ---\n// AUTHORS.    CMS.\n// EFFECTIVE APRIL 1, 2005\n// *****************************************************************\n// 4/06/05 - Allow provider type '05' for pediatric hosp          *\n// - To be effective with the next release                *\n// - Changed in 0100-INITIAL-ROUTINE with provider        *\n// type '40'                                            *\n// 1/01/06 - NEW CBSA TABLE FOR CY2006                            *\n// - UPDATE RATES WITH 1.6% INCREASE                      *\n// 1/18/07 - THIS PROGRAM WAS ENHANCED IN ORDER TO VERIFY MORE    *\n// INFORMATION (VIA THE MASTER DRIVER).  VERY CLOSE     *\n// ATTENTION HAS BEEN PAID TO ENSURE THAT ALL VARIABLES *\n// THAT CHANGE FROM YEAR TO YEAR CONTINUE TO HAVE THE   *\n// SAME VALUES AS IN THE ORIGINAL VERSION.  NO CHANGES  *\n\n// --- IN-PARAGRAPH: 006800 ---\n// THE FOLLOWING THREE VARIABLES WILL CHANGE FROM YEAR TO YEAR\n// THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n// THEY WILL CONTINUE TO CHANGE UNTIL 2009 WHEN CBSA WILL BE 1.00\n\n// --- IN-PARAGRAPH: 009700 ---\n// THE FOLLOWING NUMBER THAT IS LOADED INTO THE PAYMENT EQUATION\n// IS MEANT TO BUDGET NEUTRALIZE CHANGES IN THE CASE MIX INDEX\n// AND   --DOES NOT CHANGE--\n// *****************************************************************\n// *\n// ******** POSSIBLE RETURN CODES FROM THIS PROGRAM ********    *\n// *\n// ****  PPS-RTC 00-49 = BILL PAYMENT INFORMATION CODES        *\n// *\n// 00 = ESRD PPS PAYMENT CALCULATED                    *\n// *\n// ****  PPS-RTC 50-99 = WHY THE BILL WAS NOT PAID             *\n// *\n// 52 = PROVIDER TYPE NOT = '40' OR '41'               *\n// 53 = SPECIAL PAYMENT INDICATOR NOT = '1' OR BLANK   *\n\n// --- IN-PARAGRAPH: 013500 ---\n// *****************************************************************\n// THERE ARE VARIOUS WAYS TO COMPUTE A FINAL DOLLAR AMOUNT.  THE  *\n// METHOD USED IN THIS PROGRAM IS TO USE ROUNDED INTERMEDIATE     *\n// VARIABLES.  THIS WAS DONE TO SIMPLIFY THE CALCULATIONS SO THAT *\n// WHEN SOMETHING GOES AWRY, ONE IS NOT LEFT WONDERING WHERE IN   *\n// A VAST COMPUTE STATEMENT, THINGS HAVE GONE AWRY.  THE METHOD   *\n// UTILIZED HERE HAS BEEN APPROVED BY WIL GEHNE AND JOEY BRYSON   *\n// BOTH OF WHOM WORK IN THE DIVISION OF INSTITUTIONAL CLAIMS      *\n// PROCESSING (DICP).                                             *\n// *\n// *\n// PROCESSING:                                                 *\n\n// --- IN-PARAGRAPH: 018300 ---\n// PROVIDER TYPE '40' IS A HOSPITAL BASED ESRD FACILITY\n// PROVIDER TYPE '41' IS AN INDEPENDENT ESRD FACILITY\n// *****************************************************************\n\n// --- IN-PARAGRAPH: 027700 ---\n// *****************************************************************\n// **  CALCULATE PATIENT AGE                                     ***\n// *****************************************************************\n// *****************************************************************\n// **  SET AGE ADJUSTMENT FACTOR                                 ***\n// *****************************************************************\n\n// --- IN-PARAGRAPH: 031700 ---\n// *****************************************************************\n// **  CALCULATE PPS PRICING VARIABLES                           ***\n// *****************************************************************\n\n// --- PARAGRAPH: 003500 ---\n// - ADDITIONAL VARIABLES WERE CREATED IN ORDER TO MAKE   *\n// CHANGING VALUES EASIER (IN WORKING STORAGE RATHER    *\n// THAN IN THE PROCEDURE DIVISION)                      *\n// - THIS PROGRAM NOW REFLECTS ENHANCEMENTS MADE SO THAT  *\n// TESTING OF THE CODE DOES NOT REQUIRE COMMENTING      *\n// IN/OUT LINES OF CODE.  IN ADDITION CALCULATED        *\n// VARIABLES ARE NOW PASSED BACK WHEN TEST CASES ARE    *\n// ENCOUNTERED IN ORDER FOR THE MASTER DRIVER TO PRINT  *\n// MORE INFORMATION ABOUT WHAT WENT ON IN THIS PROGRAM  *\n// *****************************************************************\n\n// --- PARAGRAPH: 005400 ---\n\n// --- PARAGRAPH: 009700 ---\n// CONSTANTS AREA\n// THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n\n// --- PARAGRAPH: 012550 ---\n// 54 = DATE OF BIRTH  NOT NUMERIC OR = ZERO           *\n// 55 = PATIENT WEIGHT NOT NUMERIC OR = ZERO           *\n// 56 = PATIENT HEIGHT NOT NUMERIC OR = ZERO           *\n// 57 = REVENUE CENTER CODE NOT IN RANGE               *\n// 58 = CONDITION CODE NOT = '73' OR '74' OR BLANK     *\n// 71 = EXCEEDS MAXIMUM HEIGHT ALLOWANCE               *\n// 72 = EXCEEDS MAXIMUM WEIGHT ALLOWANCE               *\n// *****************************************************************\n\n// --- PARAGRAPH: 012700 ---\n// COPY \"K1W02.CPY\".\n\n// --- PARAGRAPH: 013000 ---\n// COPY \"BILLCPY.CPY\".\n\n// --- PARAGRAPH: 013500 ---\n// COPY \"WAGECPY.CPY\".\n\n// --- PARAGRAPH: 015900 ---\n// A. WILL PROCESS CLAIMS BASED ON AGE/HEIGHT/WEIGHT       *\n// B. INITIALIZE ESCAL HOLD VARIABLES.                     *\n// C. EDIT THE DATA PASSED FROM THE CLAIM BEFORE           *\n// ATTEMPTING TO CALCULATE PPS. IF THIS CLAIM           *\n// CANNOT BE PROCESSED, SET A RETURN CODE AND           *\n// GOBACK.                                              *\n// D. ASSEMBLE PRICING COMPONENTS.                         *\n// E. CALCULATE THE PRICE.                                 *\n// *****************************************************************\n\n// --- PARAGRAPH: 017600 ---\n\n// --- PARAGRAPH: 018100 ---\n// *****************************************************************\n// *   NEW PAYMENT RATES FOR NEW LEGISLATION                      **\n// *****************************************************************\n\n// --- PARAGRAPH: 021900 ---\n// *  NEW DRUG ADD-ON FOR NEW LEGISLATION                         **\n// *****************************************************************\n// *****************************************************************\n// **  BILL DATA EDITS IF ANY FAIL SET PPS-RTC                   ***\n// **  AND DO NOT ATTEMPT TO PRICE.                              ***\n// *****************************************************************\n\n// --- PARAGRAPH: 031700 ---\n\n// --- PARAGRAPH: 034900 ---\n// *****************************************************************\n// **  IF THE BILL DATA HAS PASSED ALL EDITS (RTC=00)            ***\n// **      CALCULATE THE STANDARD PAYMENT AMOUNT.                ***\n// **    - BLEND 50% OLD RATE (MSA) WITH 50% NEW RATE (CBSA).    ***\n// *****************************************************************\n\n// --- PROCEDURE DIVISION ---\n// WERE MADE IN THE CORE LOGIC OF THE PROCEDURE DIVISION*\n// WHERE THE ACTUAL CALCULATIONS OCCUR.  THOROUGH       *\n// TESTING USING THE ORIGINAL SET OF TEST CASES WAS MADE*\n// AND THERE ARE ABSOLUTELY NO DIFFERENCES IN CALCULATED*\n// AMOUNTS.  THE ORIGINAL CODE THAT WAS SENT OUT TO THE *\n// FISCAL INTERMEDIARIES IN 2006 REMAINS INTACT UNDER   *\n// THE MU00 ACCOUNT.                                    *\n// 1/18/07 - MSA-CBSA BLEND PERCENT SET AT 100% MSA 0% CBSA       *\nLibraryImport.Cobol\nLibraryImport.COBOL_ControlFlow\nLibraryImport.PostgreSQL_Complete\nLibraryImport.XArrays\nLibraryImport.HashMap\n\n// Set I/O backend: jcl\nCobol.io_backend_type = \"jcl\"\n\n// Generated from COBOL source\n\nLinkagePool.ESCAL056_Linkage {\n    \"FILLER\": Initialize=\"\"\n    \"OLD_TEST_CASE\": Initialize=0\n    \"NEW_TEST_CASE\": Initialize=0\n    \"PRODUCTION_MODE\": Initialize=0\n    \"VALID_COMORBID_CWF_RETURN_CD\": Initialize=0\n    \"BUNDLED_TEST\": Initialize=0\n    \"TEST_CASE_INDICATOR\": Initialize=\"\"\n    \"BILL_PORTION\": Initialize=\"\"\n    \"B_COND_CODE\": Initialize=\"\"\n    \"B_REV_CODE\": Initialize=\"\"\n    \"B_REV_CODE3\": Initialize=\"\"\n    \"B_PATIENT_HGT\": Initialize=0\n    \"B_PATIENT_HEIGHT\": Initialize=0\n    \"B_PATIENT_WGT\": Initialize=0\n    \"B_PATIENT_WEIGHT\": Initialize=0\n    \"B_THRU_DATE\": Initialize=\"\"\n    \"B_THRU_CCYY\": Initialize=0\n    \"B_THRU_MM\": Initialize=0\n    \"B_THRU_DD\": Initialize=0\n    \"B_DOB_DATE\": Initialize=\"\"\n    \"B_DOB_CCYY\": Initialize=0\n    \"B_DOB_MM\": Initialize=0\n    \"B_DOB_DD\": Initialize=0\n    \"PROVIDER_SPECIFIC_FILE_PORTION\": Initialize=\"\"\n    \"P_NPI\": Initialize=\"\"\n    \"P_NPI_FILLER\": Initialize=\"\"\n    \"P_PROV_OSCAR\": Initialize=\"\"\n    \"P_GEO_MSA\": Initialize=\"\"\n    \"P_GEO_CBSA\": Initialize=\"\"\n    \"P_SPEC_PYMT_IND\": Initialize=\"\"\n    \"P_PROV_TYPE\": Initialize=\"\"\n    \"P_SPEC_WAGE_INDX\": Initialize=0\n    \"P_ESRD_RATE\": Initialize=0\n    \"P_PROV_WAIVE_BLEND_PAY_INDIC\": Initialize=\"\"\n    \"P_PROV_LOW_VOLUME_INDIC\": Initialize=\"\"\n    \"P_PACIFIC_IS_TRUST_TERR\": Initialize=\"\"\n    \"P_QIP_REDUCTION\": Initialize=\"\"\n    \"OLD_TEST_INDICATOR\": Initialize=\"\"\n    \"BUNDLED_BILL_PORTION\": Initialize=\"\"\n    \"B_CLAIM_NUM_DIALYSIS_SESSIONS\": Initialize=0\n    \"B_LINE_ITEM_DATE_SERVICE\": Initialize=\"\"\n    \"B_LINE_ITEM_DT_SVC_CCYY\": Initialize=0\n    \"B_LINE_ITEM_DT_SVC_MM\": Initialize=0\n    \"B_LINE_ITEM_DT_SVC_DD\": Initialize=0\n    \"B_DIALYSIS_START_DATE\": Initialize=\"\"\n    \"B_DIALYSIS_START_DT_CCYY\": Initialize=0\n    \"B_DIALYSIS_START_DT_MM\": Initialize=0\n    \"B_DIALYSIS_START_DT_DD\": Initialize=0\n    \"B_TOT_PRICE_SB_OUTLIER\": Initialize=0\n    \"B_PAYER_ONLY_VC_Q8\": Initialize=0\n    \"COMORBIDITIES_PORTION\": Initialize=\"\"\n    \"COMORBID_DATA\": Initialize=\"\"\n    \"COMORBID_INDEX\": Initialize=0\n    \"COMORBID_RECURRENCE_COND_CODE\": Initialize=\"\"\n    \"COMORBID_CWF_RETURN_CODE\": Initialize=\"\"\n    \"BILL_DATA_TEST\": Initialize=\"\"\n    \"DRUG_ADD_ON_RETURN\": Initialize=0\n    \"MSA_WAGE_ADJ\": Initialize=0\n    \"COMP_CBSA_WAGE_ADJ\": Initialize=0\n    \"CBSA_WAGE_ADJ\": Initialize=0\n    \"BUND_CBSA_WAGE_ADJ\": Initialize=0\n    \"CBSA_WAGE_PMT_RATE\": Initialize=0\n    \"COND_CD_73\": Initialize=\"\"\n    \"AMT_INDIC\": Initialize=\"\"\n    \"BLOOD_DOLLAR\": Initialize=0\n    \"COND_CD_74\": Initialize=\"\"\n    \"HEMO_CCPD_CAPD\": Initialize=0\n    \"AGE_RETURN\": Initialize=0\n    \"MSA_WAGE_AMT\": Initialize=0\n    \"CBSA_WAGE_INDEX\": Initialize=0\n    \"LABOR_PCT\": Initialize=0\n    \"PPS_BMI\": Initialize=0\n    \"PPS_BSA\": Initialize=0\n    \"MSA_PCT\": Initialize=0\n    \"CBSA_PCT\": Initialize=0\n    \"COM_CBSA_PCT_BLEND\": Initialize=0\n    \"BUN_CBSA_PCT_BLEND\": Initialize=0\n    \"CASE_MIX_FCTR_ADJ_RATE\": Initialize=0\n    \"BUN_BSA\": Initialize=0\n    \"BUN_BMI\": Initialize=0\n    \"BUN_ONSET_FACTOR\": Initialize=0\n    \"BUN_COMORBID_MULTIPLIER\": Initialize=0\n    \"BUN_WAGE_ADJ_TRAINING_AMT\": Initialize=0\n    \"BUN_LOW_VOL_MULTIPLIER\": Initialize=0\n    \"OUT_AGE_FACTOR\": Initialize=0\n    \"OUT_BSA\": Initialize=0\n    \"OUT_BSA_FACTOR\": Initialize=0\n    \"OUT_BMI\": Initialize=0\n    \"OUT_BMI_FACTOR\": Initialize=0\n    \"OUT_ONSET_FACTOR\": Initialize=0\n    \"OUT_COMORBID_MULTIPLIER\": Initialize=0\n    \"OUT_LOW_VOL_MULTIPLIER\": Initialize=0\n    \"OUT_ADJ_AVG_MAP_AMT\": Initialize=0\n    \"OUT_LOSS_SHARING_PCT\": Initialize=0\n    \"OUT_IMPUTED_MAP\": Initialize=0\n    \"OUT_FIX_DOLLAR_LOSS\": Initialize=0\n    \"OUT_PREDICTED_MAP\": Initialize=0\n    \"OUT_PREDICTED_SERVICES_MAP\": Initialize=0\n    \"BUNDLED_TEST_INDIC\": Initialize=\"\"\n    \"PPS_DATA_ALL\": Initialize=\"\"\n    \"PPS_RTC\": Initialize=0\n    \"PPS_DATA\": Initialize=\"\"\n    \"PPS_MSA\": Initialize=\"\"\n    \"PPS_CBSA\": Initialize=\"\"\n    \"PPS_WAGE_ADJ_RATE\": Initialize=0\n    \"PPS_FINAL_PAY_AMT\": Initialize=0\n    \"PPS_CALC_VERS_CD\": Initialize=\"\"\n    \"PPS_COND_CODE\": Initialize=\"\"\n    \"PPS_REV_CODE\": Initialize=\"\"\n    \"PPS_2011_WAGE_ADJ_RATE\": Initialize=0\n    \"PPS_2011_NAT_LABOR_PCT\": Initialize=0\n    \"PPS_2011_NAT_NONLABOR_PCT\": Initialize=0\n    \"PPS_OTHER_DATA\": Initialize=\"\"\n    \"PPS_NAT_LABOR_PCT\": Initialize=0\n    \"PPS_NAT_NONLABOR_PCT\": Initialize=0\n    \"PPS_AGE_FACTOR\": Initialize=0\n    \"PPS_BSA_FACTOR\": Initialize=0\n    \"PPS_BMI_FACTOR\": Initialize=0\n    \"PPS_BDGT_NEUT_RATE\": Initialize=0\n    \"PPS_2011_AGE_FACTOR\": Initialize=0\n    \"PPS_2011_BSA_FACTOR\": Initialize=0\n    \"PPS_2011_BMI_FACTOR\": Initialize=0\n    \"PPS_2011_BDGT_NEUT_RATE\": Initialize=0\n    \"PPS_BUNDLED_DATA\": Initialize=\"\"\n    \"PPS_2011_COMORBID_DATA\": Initialize=\"\"\n    \"PPS_2011_COMORBID_MA\": Initialize=\"\"\n    \"PPS_2011_COMORBID_MA_CC\": Initialize=\"\"\n    \"PPS_2011_COMORBID_PAY\": Initialize=\"\"\n    \"PPS_2011_FULL_COMP_RATE\": Initialize=0\n    \"PPS_2011_BLEND_COMP_RATE\": Initialize=0\n    \"PPS_2011_FULL_PPS_RATE\": Initialize=0\n    \"PPS_2011_BLEND_PPS_RATE\": Initialize=0\n    \"PPS_2011_FULL_OUTLIER_RATE\": Initialize=0\n    \"PPS_2011_BLEND_OUTLIER_RATE\": Initialize=0\n    \"MSA_ADJ_YEAR_AMT\": Initialize=0\n    \"PPS_LOW_VOL_AMT\": Initialize=0\n    \"OUT_CASE_MIX_PREDICTED_MAP\": Initialize=0\n    \"OUT_HEMO_EQUIV_DIAL_SESSIONS\": Initialize=0\n    \"OUT_SB_BSA\": Initialize=0\n    \"OUT_SB_BMI\": Initialize=0\n    \"A_49_CENT_DRUG_ADJ\": Initialize=0\n    \"PPS_CM_BSA\": Initialize=0\n    \"PPS_CM_BMI_LT_18_5\": Initialize=0\n    \"PPS_BUN_BASE_PMT_RATE\": Initialize=0\n    \"BUN_ADJUSTED_BASE_WAGE_AMT\": Initialize=0\n    \"CR_BSA_MULTIPLIER\": Initialize=0\n    \"CR_BMI_MULTIPLIER\": Initialize=0\n    \"PPS_BUN_CBSA_W_INDEX\": Initialize=0\n    \"PPS_BUN_WAGE_ADJ_TRAIN_AMT\": Initialize=0\n    \"PPS_TRAINING_ADD_ON_PMT_AMT\": Initialize=0\n    \"OUT_NON_PER_DIEM_PAYMENT\": Initialize=0\n    \"COM_PAYMENT_RATE\": Initialize=0\n    \"TDAPA_RETURN\": Initialize=0\n    \"W_NEW_MSA\": Initialize=0\n    \"W_NEW_EFF_DATE\": Initialize=\"\"\n    \"W_NEW_EFF_DATE_CC\": Initialize=0\n    \"W_NEW_EFF_DATE_YMD\": Initialize=\"\"\n    \"W_NEW_EFF_DATE_YY\": Initialize=0\n    \"W_NEW_EFF_DATE_MM\": Initialize=0\n    \"W_NEW_EFF_DATE_DD\": Initialize=0\n    \"W_NEW_RATE1_RECORD\": Initialize=0\n    \"W_NEW_RATE2_RECORD\": Initialize=0\n    \"COM_CBSA_WAGE_RECORD\": Initialize=\"\"\n    \"COM_CBSA\": Initialize=0\n    \"COM_CBSA_DATE\": Initialize=\"\"\n    \"COM_CBSA_DATE_CC\": Initialize=0\n    \"COM_CBSA_DATE_YMD\": Initialize=\"\"\n    \"COM_CBSA_DATE_YY\": Initialize=0\n    \"COM_CBSA_DATE_MM\": Initialize=0\n    \"COM_CBSA_DATE_DD\": Initialize=0\n    \"COM_CBSA_W_INDEX\": Initialize=0\n    \"BUN_CBSA_WAGE_RECORD\": Initialize=\"\"\n    \"BUN_CBSA\": Initialize=0\n    \"BUN_CBSA_DATE\": Initialize=\"\"\n    \"BUN_CBSA_DATE_CC\": Initialize=0\n    \"BUN_CBSA_DATE_YMD\": Initialize=\"\"\n    \"BUN_CBSA_DATE_YY\": Initialize=0\n    \"BUN_CBSA_DATE_MM\": Initialize=0\n    \"BUN_CBSA_DATE_DD\": Initialize=0\n    \"BUN_CBSA_W_INDEX\": Initialize=0\n}\n\nFixedPool.ESCAL056_VARS {\n    \"W_STORAGE_REF\": Initialize=\"ESCAL056      - W O R K I N G   S T O R A G E\"\n    \"CAL_VERSION\": Initialize=\"C05.6\"\n    \"DISPLAY_LINE_MEASUREMENT\": Initialize=\"\"\n    \"PRINT_LINE_MEASUREMENT\": Initialize=\"\"\n    \"HOLD_PPS_COMPONENTS\": Initialize=\"\"\n    \"H_PYMT_AMT\": Initialize=0\n    \"H_WAGE_ADJ_PYMT_AMT\": Initialize=0\n    \"H_FIXED_LOSS_AMT\": Initialize=0\n    \"H_ESRD_FAC_RATE\": Initialize=0\n    \"H_PATIENT_AGE\": Initialize=0\n    \"H_AGE_FACTOR\": Initialize=0\n    \"H_BSA_FACTOR\": Initialize=0\n    \"H_BMI_FACTOR\": Initialize=0\n    \"H_BSA\": Initialize=0\n    \"H_BMI\": Initialize=0\n    \"H_DRUG_ADDON\": Initialize=0\n    \"DRUG_ADDON\": Initialize=10870\n    \"MSA_BLEND_PCT\": Initialize=10000\n    \"CBSA_BLEND_PCT\": Initialize=0\n    \"NAT_LABOR_PCT\": Initialize=0\n    \"NAT_NONLABOR_PCT\": Initialize=0\n    \"HEMO_PERI_CCPD_AMT\": Initialize=20\n    \"CAPD_AMT\": Initialize=12\n    \"CAPD_OR_CCPD_FACTOR\": Initialize=0\n    \"CASE_MIX_BDGT_NEUT_FACTOR\": Initialize=9116\n}\n\nFunction.BuildResponse_ESCAL056 {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    obj = XSHash.XCreate(64)\n    IfCondition NotEqual(escal056_linkage.OLD_TEST_CASE, 0) ThenBlock: {\n    str_OLD_TEST_CASE = NumberToString(escal056_linkage.OLD_TEST_CASE)\n    XSHash.XInsert(obj, \"OLD-TEST-CASE\", str_OLD_TEST_CASE)\n        }\n    IfCondition NotEqual(escal056_linkage.NEW_TEST_CASE, 0) ThenBlock: {\n    str_NEW_TEST_CASE = NumberToString(escal056_linkage.NEW_TEST_CASE)\n    XSHash.XInsert(obj, \"NEW-TEST-CASE\", str_NEW_TEST_CASE)\n        }\n    IfCondition NotEqual(escal056_linkage.PRODUCTION_MODE, 0) ThenBlock: {\n    str_PRODUCTION_MODE = NumberToString(escal056_linkage.PRODUCTION_MODE)\n    XSHash.XInsert(obj, \"PRODUCTION-MODE\", str_PRODUCTION_MODE)\n        }\n    IfCondition NotEqual(escal056_linkage.VALID_COMORBID_CWF_RETURN_CD, 0) ThenBlock: {\n    str_VALID_COMORBID_CWF_RETURN_CD = NumberToString(escal056_linkage.VALID_COMORBID_CWF_RETURN_CD)\n    XSHash.XInsert(obj, \"VALID-COMORBID-CWF-RETURN-CD\", str_VALID_COMORBID_CWF_RETURN_CD)\n        }\n    IfCondition NotEqual(escal056_linkage.BUNDLED_TEST, 0) ThenBlock: {\n    str_BUNDLED_TEST = NumberToString(escal056_linkage.BUNDLED_TEST)\n    XSHash.XInsert(obj, \"BUNDLED-TEST\", str_BUNDLED_TEST)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.TEST_CASE_INDICATOR), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"TEST-CASE-INDICATOR\", escal056_linkage.TEST_CASE_INDICATOR)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BILL_PORTION), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BILL-PORTION\", escal056_linkage.BILL_PORTION)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_COND_CODE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-COND-CODE\", escal056_linkage.B_COND_CODE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_REV_CODE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-REV-CODE\", escal056_linkage.B_REV_CODE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_REV_CODE3), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-REV-CODE3\", escal056_linkage.B_REV_CODE3)\n        }\n    IfCondition NotEqual(escal056_linkage.B_PATIENT_HGT, 0) ThenBlock: {\n    str_B_PATIENT_HGT = NumberToString(escal056_linkage.B_PATIENT_HGT)\n    XSHash.XInsert(obj, \"B-PATIENT-HGT\", str_B_PATIENT_HGT)\n        }\n    IfCondition NotEqual(escal056_linkage.B_PATIENT_HEIGHT, 0) ThenBlock: {\n    str_B_PATIENT_HEIGHT = NumberToString(escal056_linkage.B_PATIENT_HEIGHT)\n    XSHash.XInsert(obj, \"B-PATIENT-HEIGHT\", str_B_PATIENT_HEIGHT)\n        }\n    IfCondition NotEqual(escal056_linkage.B_PATIENT_WGT, 0) ThenBlock: {\n    str_B_PATIENT_WGT = NumberToString(escal056_linkage.B_PATIENT_WGT)\n    XSHash.XInsert(obj, \"B-PATIENT-WGT\", str_B_PATIENT_WGT)\n        }\n    IfCondition NotEqual(escal056_linkage.B_PATIENT_WEIGHT, 0) ThenBlock: {\n    str_B_PATIENT_WEIGHT = NumberToString(escal056_linkage.B_PATIENT_WEIGHT)\n    XSHash.XInsert(obj, \"B-PATIENT-WEIGHT\", str_B_PATIENT_WEIGHT)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_THRU_DATE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-THRU-DATE\", escal056_linkage.B_THRU_DATE)\n        }\n    IfCondition NotEqual(escal056_linkage.B_THRU_CCYY, 0) ThenBlock: {\n    str_B_THRU_CCYY = NumberToString(escal056_linkage.B_THRU_CCYY)\n    XSHash.XInsert(obj, \"B-THRU-CCYY\", str_B_THRU_CCYY)\n        }\n    IfCondition NotEqual(escal056_linkage.B_THRU_MM, 0) ThenBlock: {\n    str_B_THRU_MM = NumberToString(escal056_linkage.B_THRU_MM)\n    XSHash.XInsert(obj, \"B-THRU-MM\", str_B_THRU_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.B_THRU_DD, 0) ThenBlock: {\n    str_B_THRU_DD = NumberToString(escal056_linkage.B_THRU_DD)\n    XSHash.XInsert(obj, \"B-THRU-DD\", str_B_THRU_DD)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_DOB_DATE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-DOB-DATE\", escal056_linkage.B_DOB_DATE)\n        }\n    IfCondition NotEqual(escal056_linkage.B_DOB_CCYY, 0) ThenBlock: {\n    str_B_DOB_CCYY = NumberToString(escal056_linkage.B_DOB_CCYY)\n    XSHash.XInsert(obj, \"B-DOB-CCYY\", str_B_DOB_CCYY)\n        }\n    IfCondition NotEqual(escal056_linkage.B_DOB_MM, 0) ThenBlock: {\n    str_B_DOB_MM = NumberToString(escal056_linkage.B_DOB_MM)\n    XSHash.XInsert(obj, \"B-DOB-MM\", str_B_DOB_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.B_DOB_DD, 0) ThenBlock: {\n    str_B_DOB_DD = NumberToString(escal056_linkage.B_DOB_DD)\n    XSHash.XInsert(obj, \"B-DOB-DD\", str_B_DOB_DD)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PROVIDER_SPECIFIC_FILE_PORTION), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PROVIDER-SPECIFIC-FILE-PORTION\", escal056_linkage.PROVIDER_SPECIFIC_FILE_PORTION)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_NPI), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-NPI\", escal056_linkage.P_NPI)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_NPI_FILLER), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-NPI-FILLER\", escal056_linkage.P_NPI_FILLER)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_PROV_OSCAR), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-PROV-OSCAR\", escal056_linkage.P_PROV_OSCAR)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_GEO_MSA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-GEO-MSA\", escal056_linkage.P_GEO_MSA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_GEO_CBSA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-GEO-CBSA\", escal056_linkage.P_GEO_CBSA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_SPEC_PYMT_IND), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-SPEC-PYMT-IND\", escal056_linkage.P_SPEC_PYMT_IND)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_PROV_TYPE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-PROV-TYPE\", escal056_linkage.P_PROV_TYPE)\n        }\n    IfCondition NotEqual(escal056_linkage.P_SPEC_WAGE_INDX, 0) ThenBlock: {\n    str_P_SPEC_WAGE_INDX = NumberToString(escal056_linkage.P_SPEC_WAGE_INDX)\n    XSHash.XInsert(obj, \"P-SPEC-WAGE-INDX\", str_P_SPEC_WAGE_INDX)\n        }\n    IfCondition NotEqual(escal056_linkage.P_ESRD_RATE, 0) ThenBlock: {\n    str_P_ESRD_RATE = NumberToString(escal056_linkage.P_ESRD_RATE)\n    XSHash.XInsert(obj, \"P-ESRD-RATE\", str_P_ESRD_RATE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_PROV_WAIVE_BLEND_PAY_INDIC), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-PROV-WAIVE-BLEND-PAY-INDIC\", escal056_linkage.P_PROV_WAIVE_BLEND_PAY_INDIC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_PROV_LOW_VOLUME_INDIC), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-PROV-LOW-VOLUME-INDIC\", escal056_linkage.P_PROV_LOW_VOLUME_INDIC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_PACIFIC_IS_TRUST_TERR), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-PACIFIC-IS-TRUST-TERR\", escal056_linkage.P_PACIFIC_IS_TRUST_TERR)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.P_QIP_REDUCTION), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"P-QIP-REDUCTION\", escal056_linkage.P_QIP_REDUCTION)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.OLD_TEST_INDICATOR), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"OLD-TEST-INDICATOR\", escal056_linkage.OLD_TEST_INDICATOR)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BUNDLED_BILL_PORTION), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BUNDLED-BILL-PORTION\", escal056_linkage.BUNDLED_BILL_PORTION)\n        }\n    IfCondition NotEqual(escal056_linkage.B_CLAIM_NUM_DIALYSIS_SESSIONS, 0) ThenBlock: {\n    str_B_CLAIM_NUM_DIALYSIS_SESSIONS = NumberToString(escal056_linkage.B_CLAIM_NUM_DIALYSIS_SESSIONS)\n    XSHash.XInsert(obj, \"B-CLAIM-NUM-DIALYSIS-SESSIONS\", str_B_CLAIM_NUM_DIALYSIS_SESSIONS)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_LINE_ITEM_DATE_SERVICE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-LINE-ITEM-DATE-SERVICE\", escal056_linkage.B_LINE_ITEM_DATE_SERVICE)\n        }\n    IfCondition NotEqual(escal056_linkage.B_LINE_ITEM_DT_SVC_CCYY, 0) ThenBlock: {\n    str_B_LINE_ITEM_DT_SVC_CCYY = NumberToString(escal056_linkage.B_LINE_ITEM_DT_SVC_CCYY)\n    XSHash.XInsert(obj, \"B-LINE-ITEM-DT-SVC-CCYY\", str_B_LINE_ITEM_DT_SVC_CCYY)\n        }\n    IfCondition NotEqual(escal056_linkage.B_LINE_ITEM_DT_SVC_MM, 0) ThenBlock: {\n    str_B_LINE_ITEM_DT_SVC_MM = NumberToString(escal056_linkage.B_LINE_ITEM_DT_SVC_MM)\n    XSHash.XInsert(obj, \"B-LINE-ITEM-DT-SVC-MM\", str_B_LINE_ITEM_DT_SVC_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.B_LINE_ITEM_DT_SVC_DD, 0) ThenBlock: {\n    str_B_LINE_ITEM_DT_SVC_DD = NumberToString(escal056_linkage.B_LINE_ITEM_DT_SVC_DD)\n    XSHash.XInsert(obj, \"B-LINE-ITEM-DT-SVC-DD\", str_B_LINE_ITEM_DT_SVC_DD)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.B_DIALYSIS_START_DATE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"B-DIALYSIS-START-DATE\", escal056_linkage.B_DIALYSIS_START_DATE)\n        }\n    IfCondition NotEqual(escal056_linkage.B_DIALYSIS_START_DT_CCYY, 0) ThenBlock: {\n    str_B_DIALYSIS_START_DT_CCYY = NumberToString(escal056_linkage.B_DIALYSIS_START_DT_CCYY)\n    XSHash.XInsert(obj, \"B-DIALYSIS-START-DT-CCYY\", str_B_DIALYSIS_START_DT_CCYY)\n        }\n    IfCondition NotEqual(escal056_linkage.B_DIALYSIS_START_DT_MM, 0) ThenBlock: {\n    str_B_DIALYSIS_START_DT_MM = NumberToString(escal056_linkage.B_DIALYSIS_START_DT_MM)\n    XSHash.XInsert(obj, \"B-DIALYSIS-START-DT-MM\", str_B_DIALYSIS_START_DT_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.B_DIALYSIS_START_DT_DD, 0) ThenBlock: {\n    str_B_DIALYSIS_START_DT_DD = NumberToString(escal056_linkage.B_DIALYSIS_START_DT_DD)\n    XSHash.XInsert(obj, \"B-DIALYSIS-START-DT-DD\", str_B_DIALYSIS_START_DT_DD)\n        }\n    IfCondition NotEqual(escal056_linkage.B_TOT_PRICE_SB_OUTLIER, 0) ThenBlock: {\n    str_B_TOT_PRICE_SB_OUTLIER = NumberToString(escal056_linkage.B_TOT_PRICE_SB_OUTLIER)\n    XSHash.XInsert(obj, \"B-TOT-PRICE-SB-OUTLIER\", str_B_TOT_PRICE_SB_OUTLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.B_PAYER_ONLY_VC_Q8, 0) ThenBlock: {\n    str_B_PAYER_ONLY_VC_Q8 = NumberToString(escal056_linkage.B_PAYER_ONLY_VC_Q8)\n    XSHash.XInsert(obj, \"B-PAYER-ONLY-VC-Q8\", str_B_PAYER_ONLY_VC_Q8)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COMORBIDITIES_PORTION), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COMORBIDITIES-PORTION\", escal056_linkage.COMORBIDITIES_PORTION)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COMORBID_DATA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COMORBID-DATA\", escal056_linkage.COMORBID_DATA)\n        }\n    IfCondition NotEqual(escal056_linkage.COMORBID_INDEX, 0) ThenBlock: {\n    str_COMORBID_INDEX = NumberToString(escal056_linkage.COMORBID_INDEX)\n    XSHash.XInsert(obj, \"COMORBID-INDEX\", str_COMORBID_INDEX)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COMORBID_RECURRENCE_COND_CODE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COMORBID-RECURRENCE-COND-CODE\", escal056_linkage.COMORBID_RECURRENCE_COND_CODE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COMORBID_CWF_RETURN_CODE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COMORBID-CWF-RETURN-CODE\", escal056_linkage.COMORBID_CWF_RETURN_CODE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BILL_DATA_TEST), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BILL-DATA-TEST\", escal056_linkage.BILL_DATA_TEST)\n        }\n    IfCondition NotEqual(escal056_linkage.DRUG_ADD_ON_RETURN, 0) ThenBlock: {\n    str_DRUG_ADD_ON_RETURN = NumberToString(escal056_linkage.DRUG_ADD_ON_RETURN)\n    XSHash.XInsert(obj, \"DRUG-ADD-ON-RETURN\", str_DRUG_ADD_ON_RETURN)\n        }\n    IfCondition NotEqual(escal056_linkage.MSA_WAGE_ADJ, 0) ThenBlock: {\n    str_MSA_WAGE_ADJ = NumberToString(escal056_linkage.MSA_WAGE_ADJ)\n    XSHash.XInsert(obj, \"MSA-WAGE-ADJ\", str_MSA_WAGE_ADJ)\n        }\n    IfCondition NotEqual(escal056_linkage.COMP_CBSA_WAGE_ADJ, 0) ThenBlock: {\n    str_COMP_CBSA_WAGE_ADJ = NumberToString(escal056_linkage.COMP_CBSA_WAGE_ADJ)\n    XSHash.XInsert(obj, \"COMP-CBSA-WAGE-ADJ\", str_COMP_CBSA_WAGE_ADJ)\n        }\n    IfCondition NotEqual(escal056_linkage.CBSA_WAGE_ADJ, 0) ThenBlock: {\n    str_CBSA_WAGE_ADJ = NumberToString(escal056_linkage.CBSA_WAGE_ADJ)\n    XSHash.XInsert(obj, \"CBSA-WAGE-ADJ\", str_CBSA_WAGE_ADJ)\n        }\n    IfCondition NotEqual(escal056_linkage.BUND_CBSA_WAGE_ADJ, 0) ThenBlock: {\n    str_BUND_CBSA_WAGE_ADJ = NumberToString(escal056_linkage.BUND_CBSA_WAGE_ADJ)\n    XSHash.XInsert(obj, \"BUND-CBSA-WAGE-ADJ\", str_BUND_CBSA_WAGE_ADJ)\n        }\n    IfCondition NotEqual(escal056_linkage.CBSA_WAGE_PMT_RATE, 0) ThenBlock: {\n    str_CBSA_WAGE_PMT_RATE = NumberToString(escal056_linkage.CBSA_WAGE_PMT_RATE)\n    XSHash.XInsert(obj, \"CBSA-WAGE-PMT-RATE\", str_CBSA_WAGE_PMT_RATE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COND_CD_73), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COND-CD-73\", escal056_linkage.COND_CD_73)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.AMT_INDIC), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"AMT-INDIC\", escal056_linkage.AMT_INDIC)\n        }\n    IfCondition NotEqual(escal056_linkage.BLOOD_DOLLAR, 0) ThenBlock: {\n    str_BLOOD_DOLLAR = NumberToString(escal056_linkage.BLOOD_DOLLAR)\n    XSHash.XInsert(obj, \"BLOOD-DOLLAR\", str_BLOOD_DOLLAR)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COND_CD_74), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COND-CD-74\", escal056_linkage.COND_CD_74)\n        }\n    IfCondition NotEqual(escal056_linkage.HEMO_CCPD_CAPD, 0) ThenBlock: {\n    str_HEMO_CCPD_CAPD = NumberToString(escal056_linkage.HEMO_CCPD_CAPD)\n    XSHash.XInsert(obj, \"HEMO-CCPD-CAPD\", str_HEMO_CCPD_CAPD)\n        }\n    IfCondition NotEqual(escal056_linkage.AGE_RETURN, 0) ThenBlock: {\n    str_AGE_RETURN = NumberToString(escal056_linkage.AGE_RETURN)\n    XSHash.XInsert(obj, \"AGE-RETURN\", str_AGE_RETURN)\n        }\n    IfCondition NotEqual(escal056_linkage.MSA_WAGE_AMT, 0) ThenBlock: {\n    str_MSA_WAGE_AMT = NumberToString(escal056_linkage.MSA_WAGE_AMT)\n    XSHash.XInsert(obj, \"MSA-WAGE-AMT\", str_MSA_WAGE_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.CBSA_WAGE_INDEX, 0) ThenBlock: {\n    str_CBSA_WAGE_INDEX = NumberToString(escal056_linkage.CBSA_WAGE_INDEX)\n    XSHash.XInsert(obj, \"CBSA-WAGE-INDEX\", str_CBSA_WAGE_INDEX)\n        }\n    IfCondition NotEqual(escal056_linkage.LABOR_PCT, 0) ThenBlock: {\n    str_LABOR_PCT = NumberToString(escal056_linkage.LABOR_PCT)\n    XSHash.XInsert(obj, \"LABOR-PCT\", str_LABOR_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BMI, 0) ThenBlock: {\n    str_PPS_BMI = NumberToString(escal056_linkage.PPS_BMI)\n    XSHash.XInsert(obj, \"PPS-BMI\", str_PPS_BMI)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BSA, 0) ThenBlock: {\n    str_PPS_BSA = NumberToString(escal056_linkage.PPS_BSA)\n    XSHash.XInsert(obj, \"PPS-BSA\", str_PPS_BSA)\n        }\n    IfCondition NotEqual(escal056_linkage.MSA_PCT, 0) ThenBlock: {\n    str_MSA_PCT = NumberToString(escal056_linkage.MSA_PCT)\n    XSHash.XInsert(obj, \"MSA-PCT\", str_MSA_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.CBSA_PCT, 0) ThenBlock: {\n    str_CBSA_PCT = NumberToString(escal056_linkage.CBSA_PCT)\n    XSHash.XInsert(obj, \"CBSA-PCT\", str_CBSA_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA_PCT_BLEND, 0) ThenBlock: {\n    str_COM_CBSA_PCT_BLEND = NumberToString(escal056_linkage.COM_CBSA_PCT_BLEND)\n    XSHash.XInsert(obj, \"COM-CBSA-PCT-BLEND\", str_COM_CBSA_PCT_BLEND)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA_PCT_BLEND, 0) ThenBlock: {\n    str_BUN_CBSA_PCT_BLEND = NumberToString(escal056_linkage.BUN_CBSA_PCT_BLEND)\n    XSHash.XInsert(obj, \"BUN-CBSA-PCT-BLEND\", str_BUN_CBSA_PCT_BLEND)\n        }\n    IfCondition NotEqual(escal056_linkage.CASE_MIX_FCTR_ADJ_RATE, 0) ThenBlock: {\n    str_CASE_MIX_FCTR_ADJ_RATE = NumberToString(escal056_linkage.CASE_MIX_FCTR_ADJ_RATE)\n    XSHash.XInsert(obj, \"CASE-MIX-FCTR-ADJ-RATE\", str_CASE_MIX_FCTR_ADJ_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_BSA, 0) ThenBlock: {\n    str_BUN_BSA = NumberToString(escal056_linkage.BUN_BSA)\n    XSHash.XInsert(obj, \"BUN-BSA\", str_BUN_BSA)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_BMI, 0) ThenBlock: {\n    str_BUN_BMI = NumberToString(escal056_linkage.BUN_BMI)\n    XSHash.XInsert(obj, \"BUN-BMI\", str_BUN_BMI)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_ONSET_FACTOR, 0) ThenBlock: {\n    str_BUN_ONSET_FACTOR = NumberToString(escal056_linkage.BUN_ONSET_FACTOR)\n    XSHash.XInsert(obj, \"BUN-ONSET-FACTOR\", str_BUN_ONSET_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_COMORBID_MULTIPLIER, 0) ThenBlock: {\n    str_BUN_COMORBID_MULTIPLIER = NumberToString(escal056_linkage.BUN_COMORBID_MULTIPLIER)\n    XSHash.XInsert(obj, \"BUN-COMORBID-MULTIPLIER\", str_BUN_COMORBID_MULTIPLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_WAGE_ADJ_TRAINING_AMT, 0) ThenBlock: {\n    str_BUN_WAGE_ADJ_TRAINING_AMT = NumberToString(escal056_linkage.BUN_WAGE_ADJ_TRAINING_AMT)\n    XSHash.XInsert(obj, \"BUN-WAGE-ADJ-TRAINING-AMT\", str_BUN_WAGE_ADJ_TRAINING_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_LOW_VOL_MULTIPLIER, 0) ThenBlock: {\n    str_BUN_LOW_VOL_MULTIPLIER = NumberToString(escal056_linkage.BUN_LOW_VOL_MULTIPLIER)\n    XSHash.XInsert(obj, \"BUN-LOW-VOL-MULTIPLIER\", str_BUN_LOW_VOL_MULTIPLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_AGE_FACTOR, 0) ThenBlock: {\n    str_OUT_AGE_FACTOR = NumberToString(escal056_linkage.OUT_AGE_FACTOR)\n    XSHash.XInsert(obj, \"OUT-AGE-FACTOR\", str_OUT_AGE_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_BSA, 0) ThenBlock: {\n    str_OUT_BSA = NumberToString(escal056_linkage.OUT_BSA)\n    XSHash.XInsert(obj, \"OUT-BSA\", str_OUT_BSA)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_BSA_FACTOR, 0) ThenBlock: {\n    str_OUT_BSA_FACTOR = NumberToString(escal056_linkage.OUT_BSA_FACTOR)\n    XSHash.XInsert(obj, \"OUT-BSA-FACTOR\", str_OUT_BSA_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_BMI, 0) ThenBlock: {\n    str_OUT_BMI = NumberToString(escal056_linkage.OUT_BMI)\n    XSHash.XInsert(obj, \"OUT-BMI\", str_OUT_BMI)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_BMI_FACTOR, 0) ThenBlock: {\n    str_OUT_BMI_FACTOR = NumberToString(escal056_linkage.OUT_BMI_FACTOR)\n    XSHash.XInsert(obj, \"OUT-BMI-FACTOR\", str_OUT_BMI_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_ONSET_FACTOR, 0) ThenBlock: {\n    str_OUT_ONSET_FACTOR = NumberToString(escal056_linkage.OUT_ONSET_FACTOR)\n    XSHash.XInsert(obj, \"OUT-ONSET-FACTOR\", str_OUT_ONSET_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_COMORBID_MULTIPLIER, 0) ThenBlock: {\n    str_OUT_COMORBID_MULTIPLIER = NumberToString(escal056_linkage.OUT_COMORBID_MULTIPLIER)\n    XSHash.XInsert(obj, \"OUT-COMORBID-MULTIPLIER\", str_OUT_COMORBID_MULTIPLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_LOW_VOL_MULTIPLIER, 0) ThenBlock: {\n    str_OUT_LOW_VOL_MULTIPLIER = NumberToString(escal056_linkage.OUT_LOW_VOL_MULTIPLIER)\n    XSHash.XInsert(obj, \"OUT-LOW-VOL-MULTIPLIER\", str_OUT_LOW_VOL_MULTIPLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_ADJ_AVG_MAP_AMT, 0) ThenBlock: {\n    str_OUT_ADJ_AVG_MAP_AMT = NumberToString(escal056_linkage.OUT_ADJ_AVG_MAP_AMT)\n    XSHash.XInsert(obj, \"OUT-ADJ-AVG-MAP-AMT\", str_OUT_ADJ_AVG_MAP_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_LOSS_SHARING_PCT, 0) ThenBlock: {\n    str_OUT_LOSS_SHARING_PCT = NumberToString(escal056_linkage.OUT_LOSS_SHARING_PCT)\n    XSHash.XInsert(obj, \"OUT-LOSS-SHARING-PCT\", str_OUT_LOSS_SHARING_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_IMPUTED_MAP, 0) ThenBlock: {\n    str_OUT_IMPUTED_MAP = NumberToString(escal056_linkage.OUT_IMPUTED_MAP)\n    XSHash.XInsert(obj, \"OUT-IMPUTED-MAP\", str_OUT_IMPUTED_MAP)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_FIX_DOLLAR_LOSS, 0) ThenBlock: {\n    str_OUT_FIX_DOLLAR_LOSS = NumberToString(escal056_linkage.OUT_FIX_DOLLAR_LOSS)\n    XSHash.XInsert(obj, \"OUT-FIX-DOLLAR-LOSS\", str_OUT_FIX_DOLLAR_LOSS)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_PREDICTED_MAP, 0) ThenBlock: {\n    str_OUT_PREDICTED_MAP = NumberToString(escal056_linkage.OUT_PREDICTED_MAP)\n    XSHash.XInsert(obj, \"OUT-PREDICTED-MAP\", str_OUT_PREDICTED_MAP)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_PREDICTED_SERVICES_MAP, 0) ThenBlock: {\n    str_OUT_PREDICTED_SERVICES_MAP = NumberToString(escal056_linkage.OUT_PREDICTED_SERVICES_MAP)\n    XSHash.XInsert(obj, \"OUT-PREDICTED-SERVICES-MAP\", str_OUT_PREDICTED_SERVICES_MAP)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BUNDLED_TEST_INDIC), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BUNDLED-TEST-INDIC\", escal056_linkage.BUNDLED_TEST_INDIC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_DATA_ALL), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-DATA-ALL\", escal056_linkage.PPS_DATA_ALL)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    str_PPS_RTC = NumberToString(escal056_linkage.PPS_RTC)\n    XSHash.XInsert(obj, \"PPS-RTC\", str_PPS_RTC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_DATA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-DATA\", escal056_linkage.PPS_DATA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_MSA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-MSA\", escal056_linkage.PPS_MSA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_CBSA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-CBSA\", escal056_linkage.PPS_CBSA)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_WAGE_ADJ_RATE, 0) ThenBlock: {\n    str_PPS_WAGE_ADJ_RATE = NumberToString(escal056_linkage.PPS_WAGE_ADJ_RATE)\n    XSHash.XInsert(obj, \"PPS-WAGE-ADJ-RATE\", str_PPS_WAGE_ADJ_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_FINAL_PAY_AMT, 0) ThenBlock: {\n    str_PPS_FINAL_PAY_AMT = NumberToString(escal056_linkage.PPS_FINAL_PAY_AMT)\n    XSHash.XInsert(obj, \"PPS-FINAL-PAY-AMT\", str_PPS_FINAL_PAY_AMT)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_CALC_VERS_CD), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-CALC-VERS-CD\", escal056_linkage.PPS_CALC_VERS_CD)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_COND_CODE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-COND-CODE\", escal056_linkage.PPS_COND_CODE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_REV_CODE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-REV-CODE\", escal056_linkage.PPS_REV_CODE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_WAGE_ADJ_RATE, 0) ThenBlock: {\n    str_PPS_2011_WAGE_ADJ_RATE = NumberToString(escal056_linkage.PPS_2011_WAGE_ADJ_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-WAGE-ADJ-RATE\", str_PPS_2011_WAGE_ADJ_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_NAT_LABOR_PCT, 0) ThenBlock: {\n    str_PPS_2011_NAT_LABOR_PCT = NumberToString(escal056_linkage.PPS_2011_NAT_LABOR_PCT)\n    XSHash.XInsert(obj, \"PPS-2011-NAT-LABOR-PCT\", str_PPS_2011_NAT_LABOR_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_NAT_NONLABOR_PCT, 0) ThenBlock: {\n    str_PPS_2011_NAT_NONLABOR_PCT = NumberToString(escal056_linkage.PPS_2011_NAT_NONLABOR_PCT)\n    XSHash.XInsert(obj, \"PPS-2011-NAT-NONLABOR-PCT\", str_PPS_2011_NAT_NONLABOR_PCT)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_OTHER_DATA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-OTHER-DATA\", escal056_linkage.PPS_OTHER_DATA)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_NAT_LABOR_PCT, 0) ThenBlock: {\n    str_PPS_NAT_LABOR_PCT = NumberToString(escal056_linkage.PPS_NAT_LABOR_PCT)\n    XSHash.XInsert(obj, \"PPS-NAT-LABOR-PCT\", str_PPS_NAT_LABOR_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_NAT_NONLABOR_PCT, 0) ThenBlock: {\n    str_PPS_NAT_NONLABOR_PCT = NumberToString(escal056_linkage.PPS_NAT_NONLABOR_PCT)\n    XSHash.XInsert(obj, \"PPS-NAT-NONLABOR-PCT\", str_PPS_NAT_NONLABOR_PCT)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_AGE_FACTOR, 0) ThenBlock: {\n    str_PPS_AGE_FACTOR = NumberToString(escal056_linkage.PPS_AGE_FACTOR)\n    XSHash.XInsert(obj, \"PPS-AGE-FACTOR\", str_PPS_AGE_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BSA_FACTOR, 0) ThenBlock: {\n    str_PPS_BSA_FACTOR = NumberToString(escal056_linkage.PPS_BSA_FACTOR)\n    XSHash.XInsert(obj, \"PPS-BSA-FACTOR\", str_PPS_BSA_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BMI_FACTOR, 0) ThenBlock: {\n    str_PPS_BMI_FACTOR = NumberToString(escal056_linkage.PPS_BMI_FACTOR)\n    XSHash.XInsert(obj, \"PPS-BMI-FACTOR\", str_PPS_BMI_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BDGT_NEUT_RATE, 0) ThenBlock: {\n    str_PPS_BDGT_NEUT_RATE = NumberToString(escal056_linkage.PPS_BDGT_NEUT_RATE)\n    XSHash.XInsert(obj, \"PPS-BDGT-NEUT-RATE\", str_PPS_BDGT_NEUT_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_AGE_FACTOR, 0) ThenBlock: {\n    str_PPS_2011_AGE_FACTOR = NumberToString(escal056_linkage.PPS_2011_AGE_FACTOR)\n    XSHash.XInsert(obj, \"PPS-2011-AGE-FACTOR\", str_PPS_2011_AGE_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_BSA_FACTOR, 0) ThenBlock: {\n    str_PPS_2011_BSA_FACTOR = NumberToString(escal056_linkage.PPS_2011_BSA_FACTOR)\n    XSHash.XInsert(obj, \"PPS-2011-BSA-FACTOR\", str_PPS_2011_BSA_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_BMI_FACTOR, 0) ThenBlock: {\n    str_PPS_2011_BMI_FACTOR = NumberToString(escal056_linkage.PPS_2011_BMI_FACTOR)\n    XSHash.XInsert(obj, \"PPS-2011-BMI-FACTOR\", str_PPS_2011_BMI_FACTOR)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_BDGT_NEUT_RATE, 0) ThenBlock: {\n    str_PPS_2011_BDGT_NEUT_RATE = NumberToString(escal056_linkage.PPS_2011_BDGT_NEUT_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-BDGT-NEUT-RATE\", str_PPS_2011_BDGT_NEUT_RATE)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_BUNDLED_DATA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-BUNDLED-DATA\", escal056_linkage.PPS_BUNDLED_DATA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_2011_COMORBID_DATA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-2011-COMORBID-DATA\", escal056_linkage.PPS_2011_COMORBID_DATA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_2011_COMORBID_MA), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-2011-COMORBID-MA\", escal056_linkage.PPS_2011_COMORBID_MA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_2011_COMORBID_MA_CC), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-2011-COMORBID-MA-CC\", escal056_linkage.PPS_2011_COMORBID_MA_CC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.PPS_2011_COMORBID_PAY), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"PPS-2011-COMORBID-PAY\", escal056_linkage.PPS_2011_COMORBID_PAY)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_FULL_COMP_RATE, 0) ThenBlock: {\n    str_PPS_2011_FULL_COMP_RATE = NumberToString(escal056_linkage.PPS_2011_FULL_COMP_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-FULL-COMP-RATE\", str_PPS_2011_FULL_COMP_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_BLEND_COMP_RATE, 0) ThenBlock: {\n    str_PPS_2011_BLEND_COMP_RATE = NumberToString(escal056_linkage.PPS_2011_BLEND_COMP_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-BLEND-COMP-RATE\", str_PPS_2011_BLEND_COMP_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_FULL_PPS_RATE, 0) ThenBlock: {\n    str_PPS_2011_FULL_PPS_RATE = NumberToString(escal056_linkage.PPS_2011_FULL_PPS_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-FULL-PPS-RATE\", str_PPS_2011_FULL_PPS_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_BLEND_PPS_RATE, 0) ThenBlock: {\n    str_PPS_2011_BLEND_PPS_RATE = NumberToString(escal056_linkage.PPS_2011_BLEND_PPS_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-BLEND-PPS-RATE\", str_PPS_2011_BLEND_PPS_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_FULL_OUTLIER_RATE, 0) ThenBlock: {\n    str_PPS_2011_FULL_OUTLIER_RATE = NumberToString(escal056_linkage.PPS_2011_FULL_OUTLIER_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-FULL-OUTLIER-RATE\", str_PPS_2011_FULL_OUTLIER_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_2011_BLEND_OUTLIER_RATE, 0) ThenBlock: {\n    str_PPS_2011_BLEND_OUTLIER_RATE = NumberToString(escal056_linkage.PPS_2011_BLEND_OUTLIER_RATE)\n    XSHash.XInsert(obj, \"PPS-2011-BLEND-OUTLIER-RATE\", str_PPS_2011_BLEND_OUTLIER_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.MSA_ADJ_YEAR_AMT, 0) ThenBlock: {\n    str_MSA_ADJ_YEAR_AMT = NumberToString(escal056_linkage.MSA_ADJ_YEAR_AMT)\n    XSHash.XInsert(obj, \"MSA-ADJ-YEAR-AMT\", str_MSA_ADJ_YEAR_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_LOW_VOL_AMT, 0) ThenBlock: {\n    str_PPS_LOW_VOL_AMT = NumberToString(escal056_linkage.PPS_LOW_VOL_AMT)\n    XSHash.XInsert(obj, \"PPS-LOW-VOL-AMT\", str_PPS_LOW_VOL_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_CASE_MIX_PREDICTED_MAP, 0) ThenBlock: {\n    str_OUT_CASE_MIX_PREDICTED_MAP = NumberToString(escal056_linkage.OUT_CASE_MIX_PREDICTED_MAP)\n    XSHash.XInsert(obj, \"OUT-CASE-MIX-PREDICTED-MAP\", str_OUT_CASE_MIX_PREDICTED_MAP)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_HEMO_EQUIV_DIAL_SESSIONS, 0) ThenBlock: {\n    str_OUT_HEMO_EQUIV_DIAL_SESSIONS = NumberToString(escal056_linkage.OUT_HEMO_EQUIV_DIAL_SESSIONS)\n    XSHash.XInsert(obj, \"OUT-HEMO-EQUIV-DIAL-SESSIONS\", str_OUT_HEMO_EQUIV_DIAL_SESSIONS)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_SB_BSA, 0) ThenBlock: {\n    str_OUT_SB_BSA = NumberToString(escal056_linkage.OUT_SB_BSA)\n    XSHash.XInsert(obj, \"OUT-SB-BSA\", str_OUT_SB_BSA)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_SB_BMI, 0) ThenBlock: {\n    str_OUT_SB_BMI = NumberToString(escal056_linkage.OUT_SB_BMI)\n    XSHash.XInsert(obj, \"OUT-SB-BMI\", str_OUT_SB_BMI)\n        }\n    IfCondition NotEqual(escal056_linkage.A_49_CENT_DRUG_ADJ, 0) ThenBlock: {\n    str_A_49_CENT_DRUG_ADJ = NumberToString(escal056_linkage.A_49_CENT_DRUG_ADJ)\n    XSHash.XInsert(obj, \"A-49-CENT-DRUG-ADJ\", str_A_49_CENT_DRUG_ADJ)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_CM_BSA, 0) ThenBlock: {\n    str_PPS_CM_BSA = NumberToString(escal056_linkage.PPS_CM_BSA)\n    XSHash.XInsert(obj, \"PPS-CM-BSA\", str_PPS_CM_BSA)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_CM_BMI_LT_18_5, 0) ThenBlock: {\n    str_PPS_CM_BMI_LT_18_5 = NumberToString(escal056_linkage.PPS_CM_BMI_LT_18_5)\n    XSHash.XInsert(obj, \"PPS-CM-BMI-LT-18-5\", str_PPS_CM_BMI_LT_18_5)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BUN_BASE_PMT_RATE, 0) ThenBlock: {\n    str_PPS_BUN_BASE_PMT_RATE = NumberToString(escal056_linkage.PPS_BUN_BASE_PMT_RATE)\n    XSHash.XInsert(obj, \"PPS-BUN-BASE-PMT-RATE\", str_PPS_BUN_BASE_PMT_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_ADJUSTED_BASE_WAGE_AMT, 0) ThenBlock: {\n    str_BUN_ADJUSTED_BASE_WAGE_AMT = NumberToString(escal056_linkage.BUN_ADJUSTED_BASE_WAGE_AMT)\n    XSHash.XInsert(obj, \"BUN-ADJUSTED-BASE-WAGE-AMT\", str_BUN_ADJUSTED_BASE_WAGE_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.CR_BSA_MULTIPLIER, 0) ThenBlock: {\n    str_CR_BSA_MULTIPLIER = NumberToString(escal056_linkage.CR_BSA_MULTIPLIER)\n    XSHash.XInsert(obj, \"CR-BSA-MULTIPLIER\", str_CR_BSA_MULTIPLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.CR_BMI_MULTIPLIER, 0) ThenBlock: {\n    str_CR_BMI_MULTIPLIER = NumberToString(escal056_linkage.CR_BMI_MULTIPLIER)\n    XSHash.XInsert(obj, \"CR-BMI-MULTIPLIER\", str_CR_BMI_MULTIPLIER)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BUN_CBSA_W_INDEX, 0) ThenBlock: {\n    str_PPS_BUN_CBSA_W_INDEX = NumberToString(escal056_linkage.PPS_BUN_CBSA_W_INDEX)\n    XSHash.XInsert(obj, \"PPS-BUN-CBSA-W-INDEX\", str_PPS_BUN_CBSA_W_INDEX)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_BUN_WAGE_ADJ_TRAIN_AMT, 0) ThenBlock: {\n    str_PPS_BUN_WAGE_ADJ_TRAIN_AMT = NumberToString(escal056_linkage.PPS_BUN_WAGE_ADJ_TRAIN_AMT)\n    XSHash.XInsert(obj, \"PPS-BUN-WAGE-ADJ-TRAIN-AMT\", str_PPS_BUN_WAGE_ADJ_TRAIN_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.PPS_TRAINING_ADD_ON_PMT_AMT, 0) ThenBlock: {\n    str_PPS_TRAINING_ADD_ON_PMT_AMT = NumberToString(escal056_linkage.PPS_TRAINING_ADD_ON_PMT_AMT)\n    XSHash.XInsert(obj, \"PPS-TRAINING-ADD-ON-PMT-AMT\", str_PPS_TRAINING_ADD_ON_PMT_AMT)\n        }\n    IfCondition NotEqual(escal056_linkage.OUT_NON_PER_DIEM_PAYMENT, 0) ThenBlock: {\n    str_OUT_NON_PER_DIEM_PAYMENT = NumberToString(escal056_linkage.OUT_NON_PER_DIEM_PAYMENT)\n    XSHash.XInsert(obj, \"OUT-NON-PER-DIEM-PAYMENT\", str_OUT_NON_PER_DIEM_PAYMENT)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_PAYMENT_RATE, 0) ThenBlock: {\n    str_COM_PAYMENT_RATE = NumberToString(escal056_linkage.COM_PAYMENT_RATE)\n    XSHash.XInsert(obj, \"COM-PAYMENT-RATE\", str_COM_PAYMENT_RATE)\n        }\n    IfCondition NotEqual(escal056_linkage.TDAPA_RETURN, 0) ThenBlock: {\n    str_TDAPA_RETURN = NumberToString(escal056_linkage.TDAPA_RETURN)\n    XSHash.XInsert(obj, \"TDAPA-RETURN\", str_TDAPA_RETURN)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_MSA, 0) ThenBlock: {\n    str_W_NEW_MSA = NumberToString(escal056_linkage.W_NEW_MSA)\n    XSHash.XInsert(obj, \"W-NEW-MSA\", str_W_NEW_MSA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.W_NEW_EFF_DATE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"W-NEW-EFF-DATE\", escal056_linkage.W_NEW_EFF_DATE)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_EFF_DATE_CC, 0) ThenBlock: {\n    str_W_NEW_EFF_DATE_CC = NumberToString(escal056_linkage.W_NEW_EFF_DATE_CC)\n    XSHash.XInsert(obj, \"W-NEW-EFF-DATE-CC\", str_W_NEW_EFF_DATE_CC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.W_NEW_EFF_DATE_YMD), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"W-NEW-EFF-DATE-YMD\", escal056_linkage.W_NEW_EFF_DATE_YMD)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_EFF_DATE_YY, 0) ThenBlock: {\n    str_W_NEW_EFF_DATE_YY = NumberToString(escal056_linkage.W_NEW_EFF_DATE_YY)\n    XSHash.XInsert(obj, \"W-NEW-EFF-DATE-YY\", str_W_NEW_EFF_DATE_YY)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_EFF_DATE_MM, 0) ThenBlock: {\n    str_W_NEW_EFF_DATE_MM = NumberToString(escal056_linkage.W_NEW_EFF_DATE_MM)\n    XSHash.XInsert(obj, \"W-NEW-EFF-DATE-MM\", str_W_NEW_EFF_DATE_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_EFF_DATE_DD, 0) ThenBlock: {\n    str_W_NEW_EFF_DATE_DD = NumberToString(escal056_linkage.W_NEW_EFF_DATE_DD)\n    XSHash.XInsert(obj, \"W-NEW-EFF-DATE-DD\", str_W_NEW_EFF_DATE_DD)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_RATE1_RECORD, 0) ThenBlock: {\n    str_W_NEW_RATE1_RECORD = NumberToString(escal056_linkage.W_NEW_RATE1_RECORD)\n    XSHash.XInsert(obj, \"W-NEW-RATE1-RECORD\", str_W_NEW_RATE1_RECORD)\n        }\n    IfCondition NotEqual(escal056_linkage.W_NEW_RATE2_RECORD, 0) ThenBlock: {\n    str_W_NEW_RATE2_RECORD = NumberToString(escal056_linkage.W_NEW_RATE2_RECORD)\n    XSHash.XInsert(obj, \"W-NEW-RATE2-RECORD\", str_W_NEW_RATE2_RECORD)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COM_CBSA_WAGE_RECORD), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COM-CBSA-WAGE-RECORD\", escal056_linkage.COM_CBSA_WAGE_RECORD)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA, 0) ThenBlock: {\n    str_COM_CBSA = NumberToString(escal056_linkage.COM_CBSA)\n    XSHash.XInsert(obj, \"COM-CBSA\", str_COM_CBSA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COM_CBSA_DATE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COM-CBSA-DATE\", escal056_linkage.COM_CBSA_DATE)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA_DATE_CC, 0) ThenBlock: {\n    str_COM_CBSA_DATE_CC = NumberToString(escal056_linkage.COM_CBSA_DATE_CC)\n    XSHash.XInsert(obj, \"COM-CBSA-DATE-CC\", str_COM_CBSA_DATE_CC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.COM_CBSA_DATE_YMD), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"COM-CBSA-DATE-YMD\", escal056_linkage.COM_CBSA_DATE_YMD)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA_DATE_YY, 0) ThenBlock: {\n    str_COM_CBSA_DATE_YY = NumberToString(escal056_linkage.COM_CBSA_DATE_YY)\n    XSHash.XInsert(obj, \"COM-CBSA-DATE-YY\", str_COM_CBSA_DATE_YY)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA_DATE_MM, 0) ThenBlock: {\n    str_COM_CBSA_DATE_MM = NumberToString(escal056_linkage.COM_CBSA_DATE_MM)\n    XSHash.XInsert(obj, \"COM-CBSA-DATE-MM\", str_COM_CBSA_DATE_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA_DATE_DD, 0) ThenBlock: {\n    str_COM_CBSA_DATE_DD = NumberToString(escal056_linkage.COM_CBSA_DATE_DD)\n    XSHash.XInsert(obj, \"COM-CBSA-DATE-DD\", str_COM_CBSA_DATE_DD)\n        }\n    IfCondition NotEqual(escal056_linkage.COM_CBSA_W_INDEX, 0) ThenBlock: {\n    str_COM_CBSA_W_INDEX = NumberToString(escal056_linkage.COM_CBSA_W_INDEX)\n    XSHash.XInsert(obj, \"COM-CBSA-W-INDEX\", str_COM_CBSA_W_INDEX)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BUN_CBSA_WAGE_RECORD), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BUN-CBSA-WAGE-RECORD\", escal056_linkage.BUN_CBSA_WAGE_RECORD)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA, 0) ThenBlock: {\n    str_BUN_CBSA = NumberToString(escal056_linkage.BUN_CBSA)\n    XSHash.XInsert(obj, \"BUN-CBSA\", str_BUN_CBSA)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BUN_CBSA_DATE), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BUN-CBSA-DATE\", escal056_linkage.BUN_CBSA_DATE)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA_DATE_CC, 0) ThenBlock: {\n    str_BUN_CBSA_DATE_CC = NumberToString(escal056_linkage.BUN_CBSA_DATE_CC)\n    XSHash.XInsert(obj, \"BUN-CBSA-DATE-CC\", str_BUN_CBSA_DATE_CC)\n        }\n    IfCondition NotEqual(StringLength(escal056_linkage.BUN_CBSA_DATE_YMD), 0) ThenBlock: {\n    XSHash.XInsert(obj, \"BUN-CBSA-DATE-YMD\", escal056_linkage.BUN_CBSA_DATE_YMD)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA_DATE_YY, 0) ThenBlock: {\n    str_BUN_CBSA_DATE_YY = NumberToString(escal056_linkage.BUN_CBSA_DATE_YY)\n    XSHash.XInsert(obj, \"BUN-CBSA-DATE-YY\", str_BUN_CBSA_DATE_YY)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA_DATE_MM, 0) ThenBlock: {\n    str_BUN_CBSA_DATE_MM = NumberToString(escal056_linkage.BUN_CBSA_DATE_MM)\n    XSHash.XInsert(obj, \"BUN-CBSA-DATE-MM\", str_BUN_CBSA_DATE_MM)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA_DATE_DD, 0) ThenBlock: {\n    str_BUN_CBSA_DATE_DD = NumberToString(escal056_linkage.BUN_CBSA_DATE_DD)\n    XSHash.XInsert(obj, \"BUN-CBSA-DATE-DD\", str_BUN_CBSA_DATE_DD)\n        }\n    IfCondition NotEqual(escal056_linkage.BUN_CBSA_W_INDEX, 0) ThenBlock: {\n    str_BUN_CBSA_W_INDEX = NumberToString(escal056_linkage.BUN_CBSA_W_INDEX)\n    XSHash.XInsert(obj, \"BUN-CBSA-W-INDEX\", str_BUN_CBSA_W_INDEX)\n        }\n    json_str = JSON.BuildObject(obj)\n    XSHash.XDestroy(obj)\n    ReturnValue(json_str)\n    }\n}\n\nSubRoutine.Main {\n    escal056_linkage = AllocateLinkage(LinkagePool.ESCAL056_Linkage)\n    job_id = Cobol.GetJobIdFromCommandLine()\n    Cobol.api_job_id = job_id\n    ContainerConfig.job_id = job_id\n    Cobol.api_db_conn = PG_Connect(DBConfig.host, DBConfig.port, DBConfig.database, DBConfig.user, DBConfig.password)\n    ContainerConfig.db_conn = Cobol.api_db_conn\n    job_id = ContainerConfig.job_id\n    IfCondition GreaterThan(job_id, 0) ThenBlock: {\n    data_json = JCL_DataLoader.LoadJobData(job_id, ContainerConfig.db_conn)\n    IfCondition NotEqual(data_json, 0) ThenBlock: {\n    escal056_linkage.W_NEW_MSA = StringToNumber(JCL_DataLoader.GetField(data_json, \"W-NEW-MSA\"))\n    escal056_linkage.W_NEW_RATE1_RECORD = StringToNumber(JCL_DataLoader.GetField(data_json, \"W-NEW-RATE1-RECORD\"))\n    escal056_linkage.W_NEW_RATE2_RECORD = StringToNumber(JCL_DataLoader.GetField(data_json, \"W-NEW-RATE2-RECORD\"))\n    Deallocate(data_json, 0)\n            } ElseBlock: {\n    PrintMessage(\"[JCL] Warning: No job data found for job_id \")\n    PrintNumber(job_id)\n    PrintMessage(\"\\n\")\n            }\n        }\n    ESCAL056_0000_MAINLINE_CONTROL(escal056_linkage)\n    IfCondition And(GreaterThan(ContainerConfig.job_id, 0), EqualTo(Cobol.api_response_data, 0)) ThenBlock: {\n    Cobol.api_response_data = BuildResponse_ESCAL056(escal056_linkage)\n        }\n    ReturnValue(0)\n}\n\nFunction.ESCAL056_0000_MAINLINE_CONTROL {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    ESCAL056_0100_INITIAL_ROUTINE(escal056_linkage)\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    ESCAL056_1000_EDIT_THE_BILL_INFO(escal056_linkage)\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    ESCAL056_2000_ASSEMBLE_PPS_VARIABLES(escal056_linkage)\n    ESCAL056_3000_CALC_PAYMENT(escal056_linkage)\n        }\n    ESCAL056_9000_MOVE_RESULTS(escal056_linkage)\n    ReturnValue(0)\n    }\n}\n\nFunction.ESCAL056_0100_INITIAL_ROUTINE {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n        }\n    escal056_linkage.PPS_RTC = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_CALC_VERS_CD\")\n        }\n    escal056_linkage.PPS_CALC_VERS_CD = ESCAL056_VARS.CAL_VERSION\n    IfCondition EqualTo(StringCompare(escal056_linkage.P_PROV_TYPE, \"40\"), 0) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_NAT_LABOR_PCT\")\n            }\n    escal056_linkage.PPS_NAT_LABOR_PCT = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_NAT_NONLABOR_PCT\")\n            }\n    escal056_linkage.PPS_NAT_NONLABOR_PCT = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n            }\n    escal056_linkage.PPS_WAGE_ADJ_RATE = escal056_linkage.W_NEW_RATE1_RECORD\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_WAGE_AMT\")\n            }\n    escal056_linkage.MSA_WAGE_AMT = escal056_linkage.W_NEW_RATE1_RECORD\n        } ElseBlock: {\n    IfCondition EqualTo(StringCompare(escal056_linkage.P_PROV_TYPE, \"41\"), 0) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_NAT_LABOR_PCT\")\n                }\n    escal056_linkage.PPS_NAT_LABOR_PCT = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_NAT_NONLABOR_PCT\")\n                }\n    escal056_linkage.PPS_NAT_NONLABOR_PCT = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n                }\n    escal056_linkage.PPS_WAGE_ADJ_RATE = escal056_linkage.W_NEW_RATE2_RECORD\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_WAGE_AMT\")\n                }\n    escal056_linkage.MSA_WAGE_AMT = escal056_linkage.W_NEW_RATE2_RECORD\n            } ElseBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 52\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n                }\n    escal056_linkage.PPS_WAGE_ADJ_RATE = 0\n            }\n        }\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_ADJ_YEAR_AMT\")\n        }\n    escal056_linkage.MSA_ADJ_YEAR_AMT = escal056_linkage.PPS_WAGE_ADJ_RATE\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_BDGT_NEUT_RATE\")\n        }\n    escal056_linkage.PPS_BDGT_NEUT_RATE = ESCAL056_VARS.CASE_MIX_BDGT_NEUT_FACTOR\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_DRUG_ADDON\")\n        }\n    ESCAL056_VARS.H_DRUG_ADDON = ESCAL056_VARS.DRUG_ADDON\n    ReturnValue(0)\n    }\n}\n\nFunction.ESCAL056_1000_EDIT_THE_BILL_INFO {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition And(NotEqual(StringCompare(escal056_linkage.P_SPEC_PYMT_IND, \"1\"), 0), \" \") ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 53\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition Or(EqualTo(StringCompare(escal056_linkage.B_DOB_DATE, 0), 0), EqualTo(Cobol.IsNumeric(escal056_linkage.B_DOB_DATE), 0)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 54\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition Or(EqualTo(escal056_linkage.B_PATIENT_WGT, 0), EqualTo(Cobol.IsNumeric(escal056_linkage.B_PATIENT_WGT), 0)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 55\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition Or(EqualTo(escal056_linkage.B_PATIENT_HGT, 0), EqualTo(Cobol.IsNumeric(escal056_linkage.B_PATIENT_HGT), 0)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 56\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition Or(Or(Or(Or(Or(EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0821\"), 0), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0831\"), 0)), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0841\"), 0)), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0851\"), 0)), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0880\"), 0)), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0881\"), 0)) ThenBlock: {\n            }\n        } ElseBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n            }\n    escal056_linkage.PPS_RTC = 57\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition And(And(NotEqual(StringCompare(escal056_linkage.B_COND_CODE, \"73\"), 0), \"74\"), \"  \") ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 58\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition GreaterThan(escal056_linkage.B_PATIENT_HGT, 300) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 71\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    IfCondition GreaterThan(escal056_linkage.B_PATIENT_WGT, 500) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                }\n    escal056_linkage.PPS_RTC = 72\n            }\n        }\n    IfCondition EqualTo(escal056_linkage.PPS_RTC, 0) ThenBlock: {\n    ESCAL056_1200_CALC_AGE(escal056_linkage)\n        }\n    ReturnValue(0)\n    }\n}\n\nFunction.ESCAL056_1200_CALC_AGE {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    ESCAL056_VARS.H_PATIENT_AGE = Subtract(escal056_linkage.B_THRU_CCYY, escal056_linkage.B_DOB_CCYY)\n    IfCondition GreaterThan(escal056_linkage.B_DOB_MM, escal056_linkage.B_THRU_MM) ThenBlock: {\n    ESCAL056_VARS.H_PATIENT_AGE = Subtract(ESCAL056_VARS.H_PATIENT_AGE, 1)\n        }\n    IfCondition LessThan(ESCAL056_VARS.H_PATIENT_AGE, 18) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n            }\n    ESCAL056_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 17), LessThan(ESCAL056_VARS.H_PATIENT_AGE, 45)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n            }\n    ESCAL056_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 44), LessThan(ESCAL056_VARS.H_PATIENT_AGE, 60)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n            }\n    ESCAL056_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 59), LessThan(ESCAL056_VARS.H_PATIENT_AGE, 70)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n            }\n    ESCAL056_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 69), LessThan(ESCAL056_VARS.H_PATIENT_AGE, 80)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n            }\n    ESCAL056_VARS.H_AGE_FACTOR = 1\n        } ElseBlock: {\n    IfCondition GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 79) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                }\n    ESCAL056_VARS.H_AGE_FACTOR = 1\n            }\n        }\n    ReturnValue(0)\n    }\n}\n\nFunction.ESCAL056_2000_ASSEMBLE_PPS_VARIABLES {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_WAGE_ADJ_PYMT_AMT\")\n        }\n    ESCAL056_VARS.H_WAGE_ADJ_PYMT_AMT = escal056_linkage.PPS_WAGE_ADJ_RATE\n    ESCAL056_VARS.H_BSA = Multiply(Multiply(0, Power(escal056_linkage.B_PATIENT_HGT, 0)), Power(escal056_linkage.B_PATIENT_WGT, 0))\n    ESCAL056_VARS.H_BMI = Multiply(FixedPoint.Divide(escal056_linkage.B_PATIENT_WGT, Power(escal056_linkage.B_PATIENT_HGT, 2)), 10000)\n    IfCondition GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 17) ThenBlock: {\n    ESCAL056_VARS.H_BSA_FACTOR = Power(1, Divide(FixedPoint.Subtract(ESCAL056_VARS.H_BSA, 1), 0))\n        } ElseBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_BSA_FACTOR\")\n            }\n    ESCAL056_VARS.H_BSA_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL056_VARS.H_PATIENT_AGE, 17), LessThan(ESCAL056_VARS.H_BMI, 18)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_BMI_FACTOR\")\n            }\n    ESCAL056_VARS.H_BMI_FACTOR = 1\n        } ElseBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  H_BMI_FACTOR\")\n            }\n    ESCAL056_VARS.H_BMI_FACTOR = 1\n        }\n    ReturnValue(0)\n    }\n}\n\nFunction.ESCAL056_3000_CALC_PAYMENT {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    ESCAL056_VARS.H_PYMT_AMT = FixedPoint.Multiply(FixedPoint.Multiply(FixedPoint.Multiply(FixedPoint.Multiply(FixedPoint.Multiply(ESCAL056_VARS.H_WAGE_ADJ_PYMT_AMT, ESCAL056_VARS.H_BMI_FACTOR), ESCAL056_VARS.H_BSA_FACTOR), escal056_linkage.PPS_BDGT_NEUT_RATE), ESCAL056_VARS.H_AGE_FACTOR), ESCAL056_VARS.H_DRUG_ADDON)\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  CASE_MIX_FCTR_ADJ_RATE\")\n        }\n    escal056_linkage.CASE_MIX_FCTR_ADJ_RATE = ESCAL056_VARS.H_PYMT_AMT\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  COND_CD_73\")\n        }\n    escal056_linkage.COND_CD_73 = \" \"\n    IfCondition And(EqualTo(StringCompare(escal056_linkage.B_COND_CODE, \"73\"), 0), Or(Or(EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0821\"), 0), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0831\"), 0)), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0851\"), 0))) ThenBlock: {\n    ESCAL056_VARS.H_PYMT_AMT = FixedPoint.Add(ESCAL056_VARS.H_PYMT_AMT, Multiply(ESCAL056_VARS.HEMO_PERI_CCPD_AMT, 10000))\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  AMT_INDIC\")\n            }\n    escal056_linkage.AMT_INDIC = \"A\"\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  BLOOD_DOLLAR\")\n            }\n    escal056_linkage.BLOOD_DOLLAR = ESCAL056_VARS.HEMO_PERI_CCPD_AMT\n        }\n    IfCondition And(EqualTo(StringCompare(escal056_linkage.B_COND_CODE, \"73\"), 0), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0841\"), 0)) ThenBlock: {\n    ESCAL056_VARS.H_PYMT_AMT = FixedPoint.Add(ESCAL056_VARS.H_PYMT_AMT, Multiply(ESCAL056_VARS.CAPD_AMT, 10000))\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  AMT_INDIC\")\n            }\n    escal056_linkage.AMT_INDIC = \"A\"\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  BLOOD_DOLLAR\")\n            }\n    escal056_linkage.BLOOD_DOLLAR = ESCAL056_VARS.CAPD_AMT\n        } ElseBlock: {\n    IfCondition And(EqualTo(StringCompare(escal056_linkage.B_COND_CODE, \"74\"), 0), Or(EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0841\"), 0), EqualTo(StringCompare(escal056_linkage.B_REV_CODE, \"0851\"), 0))) ThenBlock: {\n    ESCAL056_VARS.H_PYMT_AMT = FixedPoint.Multiply(ESCAL056_VARS.H_PYMT_AMT, ESCAL056_VARS.CAPD_OR_CCPD_FACTOR)\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  HEMO_CCPD_CAPD\")\n                }\n    escal056_linkage.HEMO_CCPD_CAPD = ESCAL056_VARS.CAPD_OR_CCPD_FACTOR\n            } ElseBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  AMT_INDIC\")\n                }\n    escal056_linkage.AMT_INDIC = \"A\"\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  BLOOD_DOLLAR\")\n                }\n    escal056_linkage.BLOOD_DOLLAR = 0\n            }\n        }\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_FINAL_PAY_AMT\")\n        }\n    escal056_linkage.PPS_FINAL_PAY_AMT = ESCAL056_VARS.H_PYMT_AMT\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n        }\n    escal056_linkage.PPS_WAGE_ADJ_RATE = 0\n    ReturnValue(0)\n    }\n}\n\nFunction.ESCAL056_9000_MOVE_RESULTS {\n    Input: escal056_linkage: LinkagePool.ESCAL056_Linkage\n    Body: {\n    IfCondition LessThan(escal056_linkage.PPS_RTC, 50) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_COND_CODE\")\n            }\n    escal056_linkage.PPS_COND_CODE = escal056_linkage.B_COND_CODE\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_REV_CODE\")\n            }\n    escal056_linkage.PPS_REV_CODE = escal056_linkage.B_REV_CODE\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_MSA\")\n            }\n    escal056_linkage.PPS_MSA = escal056_linkage.P_GEO_MSA\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_CBSA\")\n            }\n    escal056_linkage.PPS_CBSA = escal056_linkage.P_GEO_CBSA\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_AGE_FACTOR\")\n            }\n    escal056_linkage.PPS_AGE_FACTOR = ESCAL056_VARS.H_AGE_FACTOR\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_BSA_FACTOR\")\n            }\n    escal056_linkage.PPS_BSA_FACTOR = ESCAL056_VARS.H_BSA_FACTOR\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_BMI_FACTOR\")\n            }\n    escal056_linkage.PPS_BMI_FACTOR = ESCAL056_VARS.H_BMI_FACTOR\n        }\n    IfCondition escal056_linkage.OLD_TEST_CASE ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  DRUG_ADD_ON_RETURN\")\n            }\n    escal056_linkage.DRUG_ADD_ON_RETURN = ESCAL056_VARS.H_DRUG_ADDON\n    IfCondition Or(EqualTo(StringCompare(escal056_linkage.P_PROV_TYPE, \"40\"), 0), EqualTo(StringCompare(escal056_linkage.P_PROV_TYPE, \"05\"), 0)) ThenBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n                }\n    escal056_linkage.PPS_WAGE_ADJ_RATE = escal056_linkage.W_NEW_RATE1_RECORD\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_WAGE_AMT\")\n                }\n    escal056_linkage.MSA_WAGE_AMT = escal056_linkage.W_NEW_RATE1_RECORD\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_WAGE_ADJ\")\n                }\n    escal056_linkage.MSA_WAGE_ADJ = escal056_linkage.W_NEW_RATE1_RECORD\n            } ElseBlock: {\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n                }\n    escal056_linkage.PPS_WAGE_ADJ_RATE = escal056_linkage.W_NEW_RATE2_RECORD\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_WAGE_AMT\")\n                }\n    escal056_linkage.MSA_WAGE_AMT = escal056_linkage.W_NEW_RATE2_RECORD\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_WAGE_ADJ\")\n                }\n    escal056_linkage.MSA_WAGE_ADJ = escal056_linkage.W_NEW_RATE2_RECORD\n            }\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  CBSA_WAGE_ADJ\")\n            }\n    escal056_linkage.CBSA_WAGE_ADJ = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  CBSA_PCT\")\n            }\n    escal056_linkage.CBSA_PCT = ESCAL056_VARS.CBSA_BLEND_PCT\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  MSA_PCT\")\n            }\n    escal056_linkage.MSA_PCT = ESCAL056_VARS.MSA_BLEND_PCT\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  CBSA_WAGE_PMT_RATE\")\n            }\n    escal056_linkage.CBSA_WAGE_PMT_RATE = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  AGE_RETURN\")\n            }\n    escal056_linkage.AGE_RETURN = ESCAL056_VARS.H_PATIENT_AGE\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  CBSA_WAGE_INDEX\")\n            }\n    escal056_linkage.CBSA_WAGE_INDEX = 0\n    Debug(\"cobol.trace\", level=3) {\n    PrintMessage(\"[COBOL] MOVE  LABOR_PCT\")\n            }\n    escal056_linkage.LABOR_PCT = ESCAL056_VARS.NAT_LABOR_PCT\n        }\n    ReturnValue(0)\n    }\n}\n\nRunTask(Main)\n",
+    "sha256": "e01c8d045c7f47b216d3a4775bbbf06f25ba92e791505bfc72110289975fdd37",
+    "line_count": 1490,
+    "size_bytes": 72601
+  },
+  "validation": {
+    "warnings": [],
+    "errors": [],
+    "statistics": {
+      "size_ratio": 3.5992761885875764,
+      "size_delta_bytes": 52430,
+      "line_ratio": 3.401826484018265,
+      "line_delta": 1052,
+      "conversion_rate": 1.0,
+      "comment_preservation_rate": 1.8571428571428572,
+      "warning_count": 0,
+      "error_count": 0
+    }
+  }
+}

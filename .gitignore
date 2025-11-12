@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ailang build artifacts
+# Compiled binaries
+*_exec
+*.import_debug.json
+*.out
+
+# Ignore all .ailang files in the ailang/ folder
+*.ailang
+
+# Ignore frontend folders
+cobol_frontend/
+mumps_frontend/
+aimacro_frontend/
+
+# Ignore demo/test folders
+Demo/
+JCL/
+"compiler dev tests"/
+"dev scripts"/
+"example programs"/
+
+# Test artifacts
+test_cat_files/
+
+# Debug output
+debug_*.py
+*_debug.py
+conversion_failures/
+parser_failures/
+
+# Test outputs in root
+/*.ailang
+/*.cbl
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Ailang build artifacts
+*_exec
+*.import_debug.json
+
+# Temporary files
+*.tmp
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ============================================================================
+# AI/ML Models
+# ============================================================================
+*.onnx
+*.weights
+
+# Large test data files
+ailang/cobol_frontend/tests/bigtest.cbl
+ailang/cobol_frontend/tests/newcob.cbl
+ailang/debug_output.txt

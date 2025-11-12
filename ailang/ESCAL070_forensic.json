@@ -1,0 +1,808 @@
+{
+  "metadata": {
+    "generated_at": "2025-10-29T11:32:36.541153",
+    "generator_version": "1.0.0",
+    "artifact_type": "cobol_to_ailang_forensic"
+  },
+  "cobol_source": {
+    "files": [
+      "/mnt/c/Users/Sean/Documents/AiLang/ailang/cobol_frontend/tests/medicare/ESCAL070"
+    ],
+    "combined_source": "000100 IDENTIFICATION DIVISION.\n000200 PROGRAM-ID. ESCAL070.\n000300*AUTHORS.    CMS.\n000400*       EFFECTIVE JANUARY 1, 2007\n000500******************************************************************\n000600* 4/06/05 - ALLOW PROVIDER TYPE '05' FOR PEDIATRIC HOSP          *\n000700*         - TO BE EFFECTIVE WITH THE NEXT RELEASE                *\n000800*         - CHANGED IN 0100-INITIAL-ROUTINE WITH PROVIDER        *\n000900*           TYPE '40'                                            *\n001000* 1/01/06 - NEW CBSA TABLE FOR CY2006                            *\n001100*         - UPDATE RATES WITH 1.6% INCREASE                      *\n001200* 1/18/07 - THE MSA-WAGE-FACTOR-2007 WAS NOT IMPLEMENTED DURING  *\n001300*           THE FIRST THREE MONTHS OF 2007                       *\n001400*         - MSA-CBSA blend percent now set at 50% MSA 50% CBSA   *\n001500*         - ADDITIONAL VARIABLES WERE CREATED IN ORDER TO MAKE   *\n001600*           CHANGING VALUES EASIER (IN WORKING STORAGE RATHER    *\n001700*           THAN IN THE PROCEDURE DIVISION)                      *\n001800*         - THIS PROGRAM NOW REFLECTS ENHANCEMENTS MADE SO THAT  *\n001900*           TESTING OF THE CODE DOES NOT REQUIRE COMMENTING      *\n002000*           IN/OUT LINES OF CODE.  IN ADDITION CALCULATED        *\n002100*           VARIABLES ARE NOW PASSED BACK WHEN TEST CASES ARE    *\n002200*           ENCOUNTERED IN ORDER FOR THE MASTER DRIVER TO PRINT  *\n002300*           MORE INFORMATION ABOUT WHAT WENT ON IN THIS PROGRAM. *\n002400******************************************************************\n002500 DATE-COMPILED.\n002600 ENVIRONMENT DIVISION.\n002700 CONFIGURATION SECTION.\n002800 SOURCE-COMPUTER.            IBM-Z990.\n002900 OBJECT-COMPUTER.            ITTY-BITTY-MACHINE-CORPORATION.\n003000 INPUT-OUTPUT  SECTION.\n003100 FILE-CONTROL.\n003200\n003300 DATA DIVISION.\n003400 FILE SECTION.\n003500/\n003600 WORKING-STORAGE SECTION.\n003700 01  W-STORAGE-REF                  PIC X(46)  VALUE\n003800     'ESCAL070      - W O R K I N G   S T O R A G E'.\n003900\n004000 01  CAL-VERSION                    PIC X(05)  VALUE 'C07.0'.\n004100\n004200 01  DISPLAY-LINE-MEASUREMENT.\n004300     05  FILLER                     PIC X(50) VALUE\n004400         '....:...10....:...20....:...30....:...40....:...50'.\n004500     05  FILLER                     PIC X(50) VALUE\n004600         '....:...60....:...70....:...80....:...90....:..100'.\n004700     05  FILLER                     PIC X(20) VALUE\n004800         '....:..110....:..120'.\n004900\n005000 01  PRINT-LINE-MEASUREMENT.\n005100     05  FILLER                     PIC X(51) VALUE\n005200         'X....:...10....:...20....:...30....:...40....:...50'.\n005300     05  FILLER                     PIC X(50) VALUE\n005400         '....:...60....:...70....:...80....:...90....:..100'.\n005500     05  FILLER                     PIC X(32) VALUE\n005600         '....:..110....:..120....:..130..'.\n005700\n005800 01  HOLD-PPS-COMPONENTS.\n005900     05  H-PYMT-AMT                 PIC 9(07)V9(02).\n006000     05  H-WAGE-ADJ-PYMT-AMT        PIC 9(07)V9(02).\n006100     05  H-2006-WAGE-ADJ-PYMT       PIC 9(07)V9(02).\n006200     05  H-MSA-COMPOSITE-PYMT       PIC 9(07)V9(02).\n006300     05  H-WAGE-ADJ-PYMT-OLD        PIC 9(07)V9(02).\n006400     05  H-WAGE-ADJ-PYMT-NEW        PIC 9(07)V9(02).\n006500     05  H-WAGE-ADJ                 PIC 9(02)V9(04).\n006600     05  H-PYMT-RATE                PIC 9(04)V9(02).\n006700     05  H-FIXED-LOSS-AMT           PIC 9(07)V9(02).\n006800     05  H-ESRD-FAC-RATE            PIC 9(07)V9(02).\n006900     05  H-PATIENT-AGE              PIC 9(03).\n007000     05  H-AGE-FACTOR               PIC 9(01)V9(03).\n007100     05  H-BSA-FACTOR               PIC 9(01)V9(04).\n007200     05  H-BMI-FACTOR               PIC 9(01)V9(04).\n007300     05  H-BSA                      PIC 9(03)V9(04).\n007400     05  H-BMI                      PIC 9(03)V9(04).\n007500     05  H-DRUG-ADDON               PIC 9(01)V9(04).\n007600\n007700*   THE FOLLOWING THREE VARIABLES WILL CHANGE FROM YEAR TO YEAR\n007800 01  DRUG-ADDON                     PIC 9(01)V9(04) VALUE 1.1510.\n007900 01  HOSP-BASED-PMT-RATE            PIC 9(04)V9(02) VALUE 134.53.\n008000 01  INDP-ESRD-FAC-PMT-RATE         PIC 9(04)V9(02) VALUE 130.40.\n008100\n008200*   THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n008300*   THEY WILL CONTINUE TO CHANGE UNTIL 2009 (AND THEN BE FIXED)\n008400 01  MSA-BLEND-PCT                  PIC 9(01)V9(02) VALUE 0.50.\n008500 01  CBSA-BLEND-PCT                 PIC 9(01)V9(02) VALUE 0.50.\n008600\n008700\n008800*  CONSTANTS AREA\n008900*   THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n009000 01  NAT-LABOR-PCT                  PIC 9(01)V9(05) VALUE 0.53711.\n009100 01  NAT-NONLABOR-PCT               PIC 9(01)V9(05) VALUE 0.46289.\n009200\n009300 01  HEMO-PERI-CCPD-AMT             PIC 9(02)       VALUE 20.\n009400 01  CAPD-AMT                       PIC 9(02)       VALUE 12.\n009500 01  CAPD-OR-CCPD-FACTOR            PIC 9(01)V9(06) VALUE\n009600                                                       0.428571.\n009700 01  MSA-WAGE-FACTOR-2006           PIC 9(01)V9(03) VALUE 1.016.\n009800*01  MSA-WAGE-FACTOR-2007           PIC 9(01)V9(03) VALUE 1.016.\n009900\n010000*  THE FOLLOWING NUMBER THAT IS LOADED INTO THE PAYMENT EQUATION\n010100*  IS MEANT TO BUDGET NEUTRALIZE CHANGES IN THE CASE MIX INDEX\n010200*  AND   --DOES NOT CHANGE--\n010300 01  CASE-MIX-BDGT-NEUT-FACTOR      PIC 9(01)V9(04) VALUE 0.9116.\n010400\n010500\n010600******************************************************************\n010700*                                                                *\n010800*   ******** POSSIBLE RETURN CODES FROM THIS PROGRAM ********    *\n010900*                                                                *\n011000*    ****  PPS-RTC 00-49 = BILL PAYMENT INFORMATION CODES        *\n011100*                                                                *\n011200*            00 = ESRD PPS PAYMENT CALCULATED                    *\n011300*                                                                *\n011400*    ****  PPS-RTC 50-99 = WHY THE BILL WAS NOT PAID             *\n011500*                                                                *\n011600*            52 = PROVIDER TYPE NOT = '40' OR '41' OR '05'       *\n011700*            53 = SPECIAL PAYMENT INDICATOR NOT = '1' OR BLANK   *\n011800*            54 = DATE OF BIRTH  NOT NUMERIC OR = ZERO           *\n011900*            55 = PATIENT WEIGHT NOT NUMERIC OR = ZERO           *\n012000*            56 = PATIENT HEIGHT NOT NUMERIC OR = ZERO           *\n012100*            57 = REVENUE CENTER CODE NOT IN RANGE               *\n012200*            58 = CONDITION CODE NOT = '73' OR '74' OR BLANK     *\n012300*            71 = EXCEEDS MAXIMUM HEIGHT ALLOWANCE               *\n012400*            72 = EXCEEDS MAXIMUM WEIGHT ALLOWANCE               *\n012500*            73 = EXCEEDS MAXIMUM AGE                            *\n012600******************************************************************\n012700/\n012800 LINKAGE SECTION.\n012900 COPY BILLCPY.\n013000*COPY \"BILLCPY.CPY\".\n013100/\n013200 COPY WAGECPY.\n013300*COPY \"WAGECPY.CPY\".\n013400/\n013500 PROCEDURE DIVISION  USING BILL-NEW-DATA\n013600                           PPS-DATA-ALL\n013700                           WAGE-NEW-RATE-RECORD\n013800                           COM-CBSA-WAGE-RECORD.\n013900\n014000******************************************************************\n014100* THERE ARE VARIOUS WAYS TO COMPUTE A FINAL DOLLAR AMOUNT.  THE  *\n014200* METHOD USED IN THIS PROGRAM IS TO USE ROUNDED INTERMEDIATE     *\n014300* VARIABLES.  THIS WAS DONE TO SIMPLIFY THE CALCULATIONS SO THAT *\n014400* WHEN SOMETHING GOES AWRY, ONE IS NOT LEFT WONDERING WHERE IN   *\n014500* A VAST COMPUTE STATEMENT, THINGS HAVE GONE AWRY.  THE METHOD   *\n014600* UTILIZED HERE HAS BEEN APPROVED BY WIL GEHNE AND JOEY BRYSON   *\n014700* BOTH OF WHOM WORK IN THE DIVISION OF INSTITUTIONAL CLAIMS      *\n014800* PROCESSING (DICP).                                             *\n014900*                                                                *\n015000*                                                                *\n015100*    PROCESSING:                                                 *\n015200*        A. WILL PROCESS CLAIMS BASED ON AGE/HEIGHT/WEIGHT       *\n015300*        B. INITIALIZE ESCAL HOLD VARIABLES.                     *\n015400*        C. EDIT THE DATA PASSED FROM THE CLAIM BEFORE           *\n015500*           ATTEMPTING TO CALCULATE PPS. IF THIS CLAIM           *\n015600*           CANNOT BE PROCESSED, SET A RETURN CODE AND           *\n015700*           GOBACK.                                              *\n015800*        D. ASSEMBLE PRICING COMPONENTS.                         *\n015900*        E. CALCULATE THE PRICE.                                 *\n016000******************************************************************\n016100\n016200 0000-MAINLINE-CONTROL.\n016300\n016400     PERFORM 0100-INITIAL-ROUTINE.\n016500\n016600     IF PPS-RTC = 00\n016700        PERFORM 1000-EDIT-THE-BILL-INFO\n016800     END-IF.\n016900\n017000     IF PPS-RTC = 00\n017100        PERFORM 2000-ASSEMBLE-PPS-VARIABLES\n017200        PERFORM 3000-CALC-PAYMENT\n017300     END-IF.\n017400\n017500     PERFORM 9000-MOVE-RESULTS.\n017600\n017700     GOBACK.\n017800/\n017900 0100-INITIAL-ROUTINE.\n018000\n018100******************************************************************\n018200**   NEW PAYMENT RATES FOR NEW LEGISLATION                      **\n018300******************************************************************\n018400     INITIALIZE PPS-DATA-ALL.\n018500     INITIALIZE BILL-DATA-TEST.\n018600     INITIALIZE HOLD-PPS-COMPONENTS.\n018700     MOVE ZEROS                        TO PPS-RTC.\n018800     MOVE CAL-VERSION                  TO PPS-CALC-VERS-CD.\n018900\n019000* PROVIDER TYPE '40' AND '05' ARE HOSPITAL BASED ESRD FACILITIES\n019100     IF P-PROV-TYPE = '40' OR '05'\n019200        MOVE NAT-LABOR-PCT             TO PPS-NAT-LABOR-PCT\n019300        MOVE NAT-NONLABOR-PCT          TO PPS-NAT-NONLABOR-PCT\n019400        MOVE HOSP-BASED-PMT-RATE       TO H-PYMT-RATE\n019500        COMPUTE H-2006-WAGE-ADJ-PYMT ROUNDED =\n019600                W-NEW-RATE1-RECORD    *  MSA-WAGE-FACTOR-2006\n019700        MOVE H-2006-WAGE-ADJ-PYMT      TO H-WAGE-ADJ-PYMT-OLD\n019800        MOVE W-NEW-RATE1-RECORD        TO MSA-WAGE-AMT\n019900        MOVE COM-CBSA-W-INDEX          TO H-WAGE-ADJ\n020000     ELSE\n020100* PROVIDER TYPE '41' IS AN INDEPENDENT ESRD FACILITY\n020200        IF P-PROV-TYPE = '41'\n020300           MOVE NAT-LABOR-PCT          TO PPS-NAT-LABOR-PCT\n020400           MOVE NAT-NONLABOR-PCT       TO PPS-NAT-NONLABOR-PCT\n020500           MOVE INDP-ESRD-FAC-PMT-RATE TO H-PYMT-RATE\n020600           COMPUTE H-2006-WAGE-ADJ-PYMT ROUNDED =\n020700                   W-NEW-RATE2-RECORD    *  MSA-WAGE-FACTOR-2006\n020800           MOVE H-2006-WAGE-ADJ-PYMT   TO H-WAGE-ADJ-PYMT-OLD\n020900           MOVE W-NEW-RATE2-RECORD     TO MSA-WAGE-AMT\n021000           MOVE COM-CBSA-W-INDEX       TO H-WAGE-ADJ\n021100        ELSE\n021200           MOVE 52                     TO PPS-RTC\n021300           MOVE ZERO                   TO PPS-WAGE-ADJ-RATE\n021400        END-IF\n021500     END-IF.\n021600\n021700     MOVE H-WAGE-ADJ-PYMT-OLD          TO MSA-ADJ-YEAR-AMT.\n021800\n021900******************************************************************\n022000**  NEW DRUG ADD-ON FOR NEW LEGISLATION                         **\n022100******************************************************************\n022200\n022300     MOVE CASE-MIX-BDGT-NEUT-FACTOR    TO PPS-BDGT-NEUT-RATE.\n022400     MOVE DRUG-ADDON                   TO H-DRUG-ADDON.\n022500/\n022600******************************************************************\n022700***  BILL DATA EDITS IF ANY FAIL SET PPS-RTC                   ***\n022800***  AND DO NOT ATTEMPT TO PRICE.                              ***\n022900******************************************************************\n023000 1000-EDIT-THE-BILL-INFO.\n023100\n023200     IF PPS-RTC = 00\n023300        IF P-SPEC-PYMT-IND NOT = '1' AND ' '\n023400           MOVE 53                     TO PPS-RTC\n023500        END-IF\n023600     END-IF.\n023700\n023800     IF PPS-RTC = 00\n023900        IF (B-DOB-DATE = ZERO) OR (B-DOB-DATE NOT NUMERIC)\n024000           MOVE 54                     TO PPS-RTC\n024100        END-IF\n024200     END-IF.\n024300\n024400     IF PPS-RTC = 00\n024500        IF (B-PATIENT-WGT = 0) OR (B-PATIENT-WGT NOT NUMERIC)\n024600           MOVE 55                     TO PPS-RTC\n024700        END-IF\n024800     END-IF.\n024900\n025000     IF PPS-RTC = 00\n025100        IF (B-PATIENT-HGT = 0) OR (B-PATIENT-HGT NOT NUMERIC)\n025200           MOVE 56                     TO PPS-RTC\n025300        END-IF\n025400     END-IF.\n025500\n025600     IF PPS-RTC = 00\n025700        IF B-REV-CODE  = '0821' OR '0831' OR '0841' OR '0851'\n025800                                OR '0880' OR '0881'\n025900           NEXT SENTENCE\n026000        ELSE\n026100           MOVE 57                     TO PPS-RTC\n026200        END-IF\n026300     END-IF.\n026400\n026500     IF PPS-RTC = 00\n026600        IF B-COND-CODE NOT = '73' AND '74' AND '  '\n026700           MOVE 58                     TO PPS-RTC\n026800        END-IF\n026900     END-IF.\n027000\n027100     IF PPS-RTC = 00\n027200        IF B-PATIENT-HGT > 300.00\n027300           MOVE 71                     TO PPS-RTC\n027400        END-IF\n027500     END-IF.\n027600\n027700     IF PPS-RTC = 00\n027800        IF B-PATIENT-WGT > 500.00\n027900           MOVE 72                     TO PPS-RTC\n028000        END-IF\n028100     END-IF.\n028200\n028300     IF PPS-RTC = 00\n028400        PERFORM 1200-CALC-AGE\n028500     END-IF.\n028600\n028700\n028800 1200-CALC-AGE.\n028900******************************************************************\n029000***  CALCULATE PATIENT AGE                                     ***\n029100******************************************************************\n029200\n029300     COMPUTE H-PATIENT-AGE = B-THRU-CCYY - B-DOB-CCYY.\n029400\n029500     IF B-DOB-MM > B-THRU-MM\n029600        COMPUTE H-PATIENT-AGE = H-PATIENT-AGE - 1\n029700     END-IF.\n029800\n029900******************************************************************\n030000***  SET AGE ADJUSTMENT FACTOR                                 ***\n030100******************************************************************\n030200\n030300     IF H-PATIENT-AGE < 18\n030400        MOVE 1.620                     TO H-AGE-FACTOR\n030500     ELSE\n030600        IF H-PATIENT-AGE > 17 AND H-PATIENT-AGE < 45\n030700           MOVE 1.223                  TO H-AGE-FACTOR\n030800        ELSE\n030900           IF H-PATIENT-AGE > 44 AND H-PATIENT-AGE < 60\n031000              MOVE 1.055               TO H-AGE-FACTOR\n031100           ELSE\n031200              IF H-PATIENT-AGE > 59 AND H-PATIENT-AGE < 70\n031300                 MOVE 1.000            TO H-AGE-FACTOR\n031400              ELSE\n031500                 IF H-PATIENT-AGE > 69 AND H-PATIENT-AGE < 80\n031600                    MOVE 1.094         TO H-AGE-FACTOR\n031700                 ELSE\n031800                    IF H-PATIENT-AGE > 79\n031900                       MOVE 1.174      TO H-AGE-FACTOR\n032000                    END-IF\n032100                 END-IF\n032200              END-IF\n032300           END-IF\n032400        END-IF\n032500     END-IF.\n032600\n032700/\n032800 2000-ASSEMBLE-PPS-VARIABLES.\n032900******************************************************************\n033000***  CALCULATE PPS PRICING VARIABLES                           ***\n033100******************************************************************\n033200\n033300     COMPUTE H-BSA ROUNDED = (.007184 *\n033400         (B-PATIENT-HGT ** .725) * (B-PATIENT-WGT ** .425))\n033500\n033600     COMPUTE H-BMI ROUNDED = (B-PATIENT-WGT /\n033700         (B-PATIENT-HGT ** 2)) * 10000.\n033800\n033900     IF H-PATIENT-AGE > 17\n034000        COMPUTE H-BSA-FACTOR ROUNDED =\n034100             1.037 ** ((H-BSA - 1.84) / .1)\n034200     ELSE\n034300        MOVE 1.000                     TO H-BSA-FACTOR\n034400     END-IF.\n034500\n034600     IF (H-PATIENT-AGE > 17) AND (H-BMI < 18.5)\n034700        MOVE 1.112                     TO H-BMI-FACTOR\n034800     ELSE\n034900        MOVE 1.000                     TO H-BMI-FACTOR\n035000     END-IF.\n035100\n035200/\n035300******************************************************************\n035400***  IF THE BILL DATA HAS PASSED ALL EDITS (RTC=00)            ***\n035500***      CALCULATE THE STANDARD PAYMENT AMOUNT.                ***\n035600***    - BLEND 50% OLD RATE (MSA) WITH 50% NEW RATE (CBSA).    ***\n035700******************************************************************\n035800 3000-CALC-PAYMENT.\n035900\n036000* BEGINNING 01/01/2007 THE BLEND RATE WILL BE 50% MSA 50% CBSA\n036100     COMPUTE H-WAGE-ADJ-PYMT-OLD ROUNDED =\n036200            (H-WAGE-ADJ-PYMT-OLD * MSA-BLEND-PCT).\n036300\n036400     COMPUTE H-WAGE-ADJ-PYMT-NEW ROUNDED =\n036500         (((H-PYMT-RATE * PPS-NAT-LABOR-PCT) * H-WAGE-ADJ) +\n036600           (H-PYMT-RATE * PPS-NAT-NONLABOR-PCT)) * CBSA-BLEND-PCT.\n036700\n036800     COMPUTE H-WAGE-ADJ-PYMT-AMT =\n036900             H-WAGE-ADJ-PYMT-NEW + H-WAGE-ADJ-PYMT-OLD.\n037000\n037100     COMPUTE H-PYMT-AMT ROUNDED = H-WAGE-ADJ-PYMT-AMT *\n037200          H-BMI-FACTOR * H-BSA-FACTOR * PPS-BDGT-NEUT-RATE *\n037300          H-AGE-FACTOR * H-DRUG-ADDON.\n037400\n037500     MOVE H-PYMT-AMT                   TO CASE-MIX-FCTR-ADJ-RATE.\n037600     MOVE SPACES                       TO COND-CD-73.\n037700\n037800     IF (B-COND-CODE = '73') AND (B-REV-CODE = '0821' OR '0831'\n037900                                                      OR '0851')\n038000        COMPUTE H-PYMT-AMT = H-PYMT-AMT + HEMO-PERI-CCPD-AMT\n038100        MOVE 'A'                       TO AMT-INDIC\n038200        MOVE HEMO-PERI-CCPD-AMT        TO BLOOD-DOLLAR\n038300     ELSE\n038400        IF (B-COND-CODE = '73') AND (B-REV-CODE = '0841')\n038500           COMPUTE H-PYMT-AMT = H-PYMT-AMT + CAPD-AMT\n038600           MOVE 'A'                    TO AMT-INDIC\n038700           MOVE CAPD-AMT               TO BLOOD-DOLLAR\n038800        ELSE\n038900           IF (B-COND-CODE = '74') AND\n039000              (B-REV-CODE = '0841' OR '0851')\n039100              COMPUTE H-PYMT-AMT ROUNDED = H-PYMT-AMT *\n039200                                           CAPD-OR-CCPD-FACTOR\n039300              MOVE CAPD-OR-CCPD-FACTOR TO HEMO-CCPD-CAPD\n039400           ELSE\n039500              MOVE 'A'                 TO AMT-INDIC\n039600              MOVE ZERO                TO BLOOD-DOLLAR\n039700           END-IF\n039800        END-IF\n039900     END-IF.\n040000\n040100     MOVE H-PYMT-AMT                   TO PPS-FINAL-PAY-AMT.\n040200     MOVE H-WAGE-ADJ-PYMT-AMT          TO PPS-WAGE-ADJ-RATE.\n040300/\n040400 9000-MOVE-RESULTS.\n040500\n040600     IF PPS-RTC < 50  THEN\n040700        MOVE B-COND-CODE               TO PPS-COND-CODE\n040800        MOVE B-REV-CODE                TO PPS-REV-CODE\n040900        MOVE P-GEO-MSA                 TO PPS-MSA\n041000        MOVE P-GEO-CBSA                TO PPS-CBSA\n041100        MOVE H-AGE-FACTOR              TO PPS-AGE-FACTOR\n041200        MOVE H-BSA-FACTOR              TO PPS-BSA-FACTOR\n041300        MOVE H-BMI-FACTOR              TO PPS-BMI-FACTOR\n041400        IF OLD-TEST-CASE  THEN\n041500           MOVE H-DRUG-ADDON           TO DRUG-ADD-ON-RETURN\n041600           MOVE H-WAGE-ADJ-PYMT-OLD    TO MSA-WAGE-ADJ\n041700           MOVE H-WAGE-ADJ-PYMT-NEW    TO CBSA-WAGE-ADJ\n041800           MOVE CBSA-BLEND-PCT         TO CBSA-PCT\n041900           MOVE MSA-BLEND-PCT          TO MSA-PCT\n042000           MOVE H-PYMT-RATE            TO CBSA-WAGE-PMT-RATE\n042100           MOVE H-PATIENT-AGE          TO AGE-RETURN\n042200           MOVE H-WAGE-ADJ             TO CBSA-WAGE-INDEX\n042300           MOVE NAT-LABOR-PCT          TO LABOR-PCT\n042400        END-IF\n042500     ELSE\n042600        IF OLD-TEST-CASE  THEN\n042700           INITIALIZE PPS-COND-CODE\n042800           INITIALIZE PPS-REV-CODE\n042900           INITIALIZE PPS-MSA\n043000           INITIALIZE PPS-CBSA\n043100           INITIALIZE PPS-AGE-FACTOR\n043200           INITIALIZE PPS-BSA-FACTOR\n043300           INITIALIZE PPS-BMI-FACTOR\n043400           INITIALIZE DRUG-ADD-ON-RETURN\n043500           INITIALIZE MSA-WAGE-ADJ\n043600           INITIALIZE CBSA-WAGE-ADJ\n043700           INITIALIZE CBSA-PCT\n043800           INITIALIZE MSA-PCT\n043900           INITIALIZE CASE-MIX-FCTR-ADJ-RATE\n044000           INITIALIZE CBSA-WAGE-PMT-RATE\n044100           INITIALIZE HEMO-CCPD-CAPD\n044200           INITIALIZE AGE-RETURN\n044300        END-IF\n044400     END-IF.\n044500\n044600******        L A S T   S O U R C E   S T A T E M E N T      *****\n\n",
+    "sha256": "706d0c115f5ffc4bb5c9d31f00bc1920d532fe1350fbfb70e9b409200d21da55",
+    "line_count": 448,
+    "size_bytes": 20662
+  },
+  "comments": {
+    "total_count": 112,
+    "by_context": {
+      "IN-PARAGRAPH: 000200": [
+        {
+          "line": 3,
+          "text": "AUTHORS.    CMS.",
+          "type": "line"
+        },
+        {
+          "line": 4,
+          "text": "EFFECTIVE JANUARY 1, 2007",
+          "type": "line"
+        },
+        {
+          "line": 5,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 6,
+          "text": "4/06/05 - ALLOW PROVIDER TYPE '05' FOR PEDIATRIC HOSP          *",
+          "type": "line"
+        },
+        {
+          "line": 7,
+          "text": "- TO BE EFFECTIVE WITH THE NEXT RELEASE                *",
+          "type": "line"
+        },
+        {
+          "line": 8,
+          "text": "- CHANGED IN 0100-INITIAL-ROUTINE WITH PROVIDER        *",
+          "type": "line"
+        },
+        {
+          "line": 9,
+          "text": "TYPE '40'                                            *",
+          "type": "line"
+        },
+        {
+          "line": 10,
+          "text": "1/01/06 - NEW CBSA TABLE FOR CY2006                            *",
+          "type": "line"
+        },
+        {
+          "line": 11,
+          "text": "- UPDATE RATES WITH 1.6% INCREASE                      *",
+          "type": "line"
+        },
+        {
+          "line": 12,
+          "text": "1/18/07 - THE MSA-WAGE-FACTOR-2007 WAS NOT IMPLEMENTED DURING  *",
+          "type": "line"
+        },
+        {
+          "line": 13,
+          "text": "THE FIRST THREE MONTHS OF 2007                       *",
+          "type": "line"
+        },
+        {
+          "line": 14,
+          "text": "- MSA-CBSA blend percent now set at 50% MSA 50% CBSA   *",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 002500": [
+        {
+          "line": 15,
+          "text": "- ADDITIONAL VARIABLES WERE CREATED IN ORDER TO MAKE   *",
+          "type": "line"
+        },
+        {
+          "line": 16,
+          "text": "CHANGING VALUES EASIER (IN WORKING STORAGE RATHER    *",
+          "type": "line"
+        },
+        {
+          "line": 17,
+          "text": "THAN IN THE PROCEDURE DIVISION)                      *",
+          "type": "line"
+        },
+        {
+          "line": 18,
+          "text": "- THIS PROGRAM NOW REFLECTS ENHANCEMENTS MADE SO THAT  *",
+          "type": "line"
+        },
+        {
+          "line": 19,
+          "text": "TESTING OF THE CODE DOES NOT REQUIRE COMMENTING      *",
+          "type": "line"
+        },
+        {
+          "line": 20,
+          "text": "IN/OUT LINES OF CODE.  IN ADDITION CALCULATED        *",
+          "type": "line"
+        },
+        {
+          "line": 21,
+          "text": "VARIABLES ARE NOW PASSED BACK WHEN TEST CASES ARE    *",
+          "type": "line"
+        },
+        {
+          "line": 22,
+          "text": "ENCOUNTERED IN ORDER FOR THE MASTER DRIVER TO PRINT  *",
+          "type": "line"
+        },
+        {
+          "line": 23,
+          "text": "MORE INFORMATION ABOUT WHAT WENT ON IN THIS PROGRAM. *",
+          "type": "line"
+        },
+        {
+          "line": 24,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 004400": [
+        {
+          "line": 35,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 005800": [
+        {
+          "line": 77,
+          "text": "THE FOLLOWING THREE VARIABLES WILL CHANGE FROM YEAR TO YEAR",
+          "type": "line"
+        },
+        {
+          "line": 82,
+          "text": "THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)",
+          "type": "line"
+        },
+        {
+          "line": 83,
+          "text": "THEY WILL CONTINUE TO CHANGE UNTIL 2009 (AND THEN BE FIXED)",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 009600": [
+        {
+          "line": 88,
+          "text": "CONSTANTS AREA",
+          "type": "line"
+        },
+        {
+          "line": 89,
+          "text": "THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 009600": [
+        {
+          "line": 98,
+          "text": "01  MSA-WAGE-FACTOR-2007           PIC 9(01)V9(03) VALUE 1.016.",
+          "type": "line"
+        },
+        {
+          "line": 100,
+          "text": "THE FOLLOWING NUMBER THAT IS LOADED INTO THE PAYMENT EQUATION",
+          "type": "line"
+        },
+        {
+          "line": 101,
+          "text": "IS MEANT TO BUDGET NEUTRALIZE CHANGES IN THE CASE MIX INDEX",
+          "type": "line"
+        },
+        {
+          "line": 102,
+          "text": "AND   --DOES NOT CHANGE--",
+          "type": "line"
+        },
+        {
+          "line": 106,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 107,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 108,
+          "text": "******** POSSIBLE RETURN CODES FROM THIS PROGRAM ********    *",
+          "type": "line"
+        },
+        {
+          "line": 109,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 110,
+          "text": "****  PPS-RTC 00-49 = BILL PAYMENT INFORMATION CODES        *",
+          "type": "line"
+        },
+        {
+          "line": 111,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 112,
+          "text": "00 = ESRD PPS PAYMENT CALCULATED                    *",
+          "type": "line"
+        },
+        {
+          "line": 113,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 114,
+          "text": "****  PPS-RTC 50-99 = WHY THE BILL WAS NOT PAID             *",
+          "type": "line"
+        },
+        {
+          "line": 115,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 116,
+          "text": "52 = PROVIDER TYPE NOT = '40' OR '41' OR '05'       *",
+          "type": "line"
+        },
+        {
+          "line": 117,
+          "text": "53 = SPECIAL PAYMENT INDICATOR NOT = '1' OR BLANK   *",
+          "type": "line"
+        },
+        {
+          "line": 118,
+          "text": "54 = DATE OF BIRTH  NOT NUMERIC OR = ZERO           *",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 012900": [
+        {
+          "line": 119,
+          "text": "55 = PATIENT WEIGHT NOT NUMERIC OR = ZERO           *",
+          "type": "line"
+        },
+        {
+          "line": 120,
+          "text": "56 = PATIENT HEIGHT NOT NUMERIC OR = ZERO           *",
+          "type": "line"
+        },
+        {
+          "line": 121,
+          "text": "57 = REVENUE CENTER CODE NOT IN RANGE               *",
+          "type": "line"
+        },
+        {
+          "line": 122,
+          "text": "58 = CONDITION CODE NOT = '73' OR '74' OR BLANK     *",
+          "type": "line"
+        },
+        {
+          "line": 123,
+          "text": "71 = EXCEEDS MAXIMUM HEIGHT ALLOWANCE               *",
+          "type": "line"
+        },
+        {
+          "line": 124,
+          "text": "72 = EXCEEDS MAXIMUM WEIGHT ALLOWANCE               *",
+          "type": "line"
+        },
+        {
+          "line": 125,
+          "text": "73 = EXCEEDS MAXIMUM AGE                            *",
+          "type": "line"
+        },
+        {
+          "line": 126,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 127,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 013200": [
+        {
+          "line": 130,
+          "text": "COPY \"BILLCPY.CPY\".",
+          "type": "line"
+        },
+        {
+          "line": 131,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 013800": [
+        {
+          "line": 133,
+          "text": "COPY \"WAGECPY.CPY\".",
+          "type": "line"
+        },
+        {
+          "line": 134,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 013800": [
+        {
+          "line": 140,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 141,
+          "text": "THERE ARE VARIOUS WAYS TO COMPUTE A FINAL DOLLAR AMOUNT.  THE  *",
+          "type": "line"
+        },
+        {
+          "line": 142,
+          "text": "METHOD USED IN THIS PROGRAM IS TO USE ROUNDED INTERMEDIATE     *",
+          "type": "line"
+        },
+        {
+          "line": 143,
+          "text": "VARIABLES.  THIS WAS DONE TO SIMPLIFY THE CALCULATIONS SO THAT *",
+          "type": "line"
+        },
+        {
+          "line": 144,
+          "text": "WHEN SOMETHING GOES AWRY, ONE IS NOT LEFT WONDERING WHERE IN   *",
+          "type": "line"
+        },
+        {
+          "line": 145,
+          "text": "A VAST COMPUTE STATEMENT, THINGS HAVE GONE AWRY.  THE METHOD   *",
+          "type": "line"
+        },
+        {
+          "line": 146,
+          "text": "UTILIZED HERE HAS BEEN APPROVED BY WIL GEHNE AND JOEY BRYSON   *",
+          "type": "line"
+        },
+        {
+          "line": 147,
+          "text": "BOTH OF WHOM WORK IN THE DIVISION OF INSTITUTIONAL CLAIMS      *",
+          "type": "line"
+        },
+        {
+          "line": 148,
+          "text": "PROCESSING (DICP).                                             *",
+          "type": "line"
+        },
+        {
+          "line": 149,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 150,
+          "text": "*",
+          "type": "line"
+        },
+        {
+          "line": 151,
+          "text": "PROCESSING:                                                 *",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 016200": [
+        {
+          "line": 152,
+          "text": "A. WILL PROCESS CLAIMS BASED ON AGE/HEIGHT/WEIGHT       *",
+          "type": "line"
+        },
+        {
+          "line": 153,
+          "text": "B. INITIALIZE ESCAL HOLD VARIABLES.                     *",
+          "type": "line"
+        },
+        {
+          "line": 154,
+          "text": "C. EDIT THE DATA PASSED FROM THE CLAIM BEFORE           *",
+          "type": "line"
+        },
+        {
+          "line": 155,
+          "text": "ATTEMPTING TO CALCULATE PPS. IF THIS CLAIM           *",
+          "type": "line"
+        },
+        {
+          "line": 156,
+          "text": "CANNOT BE PROCESSED, SET A RETURN CODE AND           *",
+          "type": "line"
+        },
+        {
+          "line": 157,
+          "text": "GOBACK.                                              *",
+          "type": "line"
+        },
+        {
+          "line": 158,
+          "text": "D. ASSEMBLE PRICING COMPONENTS.                         *",
+          "type": "line"
+        },
+        {
+          "line": 159,
+          "text": "E. CALCULATE THE PRICE.                                 *",
+          "type": "line"
+        },
+        {
+          "line": 160,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 017900": [
+        {
+          "line": 178,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 018400": [
+        {
+          "line": 181,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 182,
+          "text": "*   NEW PAYMENT RATES FOR NEW LEGISLATION                      **",
+          "type": "line"
+        },
+        {
+          "line": 183,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 018600": [
+        {
+          "line": 190,
+          "text": "PROVIDER TYPE '40' AND '05' ARE HOSPITAL BASED ESRD FACILITIES",
+          "type": "line"
+        },
+        {
+          "line": 201,
+          "text": "PROVIDER TYPE '41' IS AN INDEPENDENT ESRD FACILITY",
+          "type": "line"
+        }
+      ],
+      "HEADER": [
+        {
+          "line": 219,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 403,
+          "text": "",
+          "type": "line"
+        },
+        {
+          "line": 446,
+          "text": "*****        L A S T   S O U R C E   S T A T E M E N T      *****",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 023000": [
+        {
+          "line": 220,
+          "text": "*  NEW DRUG ADD-ON FOR NEW LEGISLATION                         **",
+          "type": "line"
+        },
+        {
+          "line": 221,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 225,
+          "text": "",
+          "type": "line"
+        },
+        {
+          "line": 226,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 227,
+          "text": "**  BILL DATA EDITS IF ANY FAIL SET PPS-RTC                   ***",
+          "type": "line"
+        },
+        {
+          "line": 228,
+          "text": "**  AND DO NOT ATTEMPT TO PRICE.                              ***",
+          "type": "line"
+        },
+        {
+          "line": 229,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 028800": [
+        {
+          "line": 289,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 290,
+          "text": "**  CALCULATE PATIENT AGE                                     ***",
+          "type": "line"
+        },
+        {
+          "line": 291,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 299,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 300,
+          "text": "**  SET AGE ADJUSTMENT FACTOR                                 ***",
+          "type": "line"
+        },
+        {
+          "line": 301,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 032800": [
+        {
+          "line": 327,
+          "text": "",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 032800": [
+        {
+          "line": 329,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 330,
+          "text": "**  CALCULATE PPS PRICING VARIABLES                           ***",
+          "type": "line"
+        },
+        {
+          "line": 331,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "PARAGRAPH: 035800": [
+        {
+          "line": 352,
+          "text": "",
+          "type": "line"
+        },
+        {
+          "line": 353,
+          "text": "*****************************************************************",
+          "type": "line"
+        },
+        {
+          "line": 354,
+          "text": "**  IF THE BILL DATA HAS PASSED ALL EDITS (RTC=00)            ***",
+          "type": "line"
+        },
+        {
+          "line": 355,
+          "text": "**      CALCULATE THE STANDARD PAYMENT AMOUNT.                ***",
+          "type": "line"
+        },
+        {
+          "line": 356,
+          "text": "**    - BLEND 50% OLD RATE (MSA) WITH 50% NEW RATE (CBSA).    ***",
+          "type": "line"
+        },
+        {
+          "line": 357,
+          "text": "*****************************************************************",
+          "type": "line"
+        }
+      ],
+      "IN-PARAGRAPH: 035800": [
+        {
+          "line": 360,
+          "text": "BEGINNING 01/01/2007 THE BLEND RATE WILL BE 50% MSA 50% CBSA",
+          "type": "line"
+        }
+      ]
+    },
+    "paragraph_associations": {
+      "002500": 10,
+      "004400": 1,
+      "009600": 2,
+      "012900": 9,
+      "013200": 2,
+      "013800": 2,
+      "016200": 9,
+      "017900": 1,
+      "018400": 3,
+      "023000": 7,
+      "032800": 1,
+      "035800": 6
+    }
+  },
+  "lexing": {
+    "token_count": 0,
+    "tokens": []
+  },
+  "cobol_ast": {
+    "program_count": 1,
+    "programs": [
+      {
+        "program_id": "ESCAL070",
+        "is_nested": false,
+        "metadata": [],
+        "statistics": {
+          "working_storage_vars": 17,
+          "linkage_vars": 0,
+          "file_descriptors": 0,
+          "paragraphs": 7,
+          "statements": 42
+        },
+        "structure": {
+          "paragraphs": [
+            {
+              "name": "0000-MAINLINE-CONTROL",
+              "statement_count": 5,
+              "line": 83
+            },
+            {
+              "name": "0100-INITIAL-ROUTINE",
+              "statement_count": 6,
+              "line": 99
+            },
+            {
+              "name": "1000-EDIT-THE-BILL-INFO",
+              "statement_count": 9,
+              "line": 137
+            },
+            {
+              "name": "1200-CALC-AGE",
+              "statement_count": 7,
+              "line": 195
+            },
+            {
+              "name": "2000-ASSEMBLE-PPS-VARIABLES",
+              "statement_count": 4,
+              "line": 228
+            },
+            {
+              "name": "3000-CALC-PAYMENT",
+              "statement_count": 10,
+              "line": 249
+            },
+            {
+              "name": "9000-MOVE-RESULTS",
+              "statement_count": 1,
+              "line": 293
+            }
+          ]
+        }
+      }
+    ],
+    "statistics": {
+      "total_programs": 1,
+      "total_paragraphs": 7,
+      "total_statements": 42,
+      "total_variables": 17
+    }
+  },
+  "conversion_mapping": {
+    "paragraphs_to_subroutines": {
+      "0000-MAINLINE-CONTROL": {
+        "ailang_name": "ESCAL070_0000_MAINLINE_CONTROL",
+        "statement_count": 5,
+        "has_comments": false
+      },
+      "0100-INITIAL-ROUTINE": {
+        "ailang_name": "ESCAL070_0100_INITIAL_ROUTINE",
+        "statement_count": 6,
+        "has_comments": false
+      },
+      "1000-EDIT-THE-BILL-INFO": {
+        "ailang_name": "ESCAL070_1000_EDIT_THE_BILL_INFO",
+        "statement_count": 9,
+        "has_comments": false
+      },
+      "1200-CALC-AGE": {
+        "ailang_name": "ESCAL070_1200_CALC_AGE",
+        "statement_count": 7,
+        "has_comments": false
+      },
+      "2000-ASSEMBLE-PPS-VARIABLES": {
+        "ailang_name": "ESCAL070_2000_ASSEMBLE_PPS_VARIABLES",
+        "statement_count": 4,
+        "has_comments": false
+      },
+      "3000-CALC-PAYMENT": {
+        "ailang_name": "ESCAL070_3000_CALC_PAYMENT",
+        "statement_count": 10,
+        "has_comments": false
+      },
+      "9000-MOVE-RESULTS": {
+        "ailang_name": "ESCAL070_9000_MOVE_RESULTS",
+        "statement_count": 1,
+        "has_comments": false
+      }
+    },
+    "variables": {},
+    "statements": []
+  },
+  "ailang_ast": {
+    "subroutine_count": 8,
+    "pool_count": 1,
+    "structure": {
+      "declarations": [
+        {
+          "type": "Pool",
+          "name": "ESCAL070_VARS"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "Main"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_0000_MAINLINE_CONTROL"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_0100_INITIAL_ROUTINE"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_1000_EDIT_THE_BILL_INFO"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_1200_CALC_AGE"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_2000_ASSEMBLE_PPS_VARIABLES"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_3000_CALC_PAYMENT"
+        },
+        {
+          "type": "SubRoutine",
+          "name": "ESCAL070_9000_MOVE_RESULTS"
+        }
+      ]
+    }
+  },
+  "ailang_source": {
+    "code": "// ============================================================================\n// COBOL PROGRAM INFORMATION\n// ============================================================================\n// Program: ESCAL070\n// ============================================================================\n\n// --- HEADER ---\n// *****************************************************************\n// *****        L A S T   S O U R C E   S T A T E M E N T      *****\n\n// --- IN-PARAGRAPH: 000200 ---\n// AUTHORS.    CMS.\n// EFFECTIVE JANUARY 1, 2007\n// *****************************************************************\n// 4/06/05 - ALLOW PROVIDER TYPE '05' FOR PEDIATRIC HOSP          *\n// - TO BE EFFECTIVE WITH THE NEXT RELEASE                *\n// - CHANGED IN 0100-INITIAL-ROUTINE WITH PROVIDER        *\n// TYPE '40'                                            *\n// 1/01/06 - NEW CBSA TABLE FOR CY2006                            *\n// - UPDATE RATES WITH 1.6% INCREASE                      *\n// 1/18/07 - THE MSA-WAGE-FACTOR-2007 WAS NOT IMPLEMENTED DURING  *\n// THE FIRST THREE MONTHS OF 2007                       *\n// - MSA-CBSA blend percent now set at 50% MSA 50% CBSA   *\n\n// --- IN-PARAGRAPH: 005800 ---\n// THE FOLLOWING THREE VARIABLES WILL CHANGE FROM YEAR TO YEAR\n// THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n// THEY WILL CONTINUE TO CHANGE UNTIL 2009 (AND THEN BE FIXED)\n\n// --- IN-PARAGRAPH: 009600 ---\n// 01  MSA-WAGE-FACTOR-2007           PIC 9(01)V9(03) VALUE 1.016.\n// THE FOLLOWING NUMBER THAT IS LOADED INTO THE PAYMENT EQUATION\n// IS MEANT TO BUDGET NEUTRALIZE CHANGES IN THE CASE MIX INDEX\n// AND   --DOES NOT CHANGE--\n// *****************************************************************\n// *\n// ******** POSSIBLE RETURN CODES FROM THIS PROGRAM ********    *\n// *\n// ****  PPS-RTC 00-49 = BILL PAYMENT INFORMATION CODES        *\n// *\n// 00 = ESRD PPS PAYMENT CALCULATED                    *\n// *\n// ****  PPS-RTC 50-99 = WHY THE BILL WAS NOT PAID             *\n// *\n// 52 = PROVIDER TYPE NOT = '40' OR '41' OR '05'       *\n// 53 = SPECIAL PAYMENT INDICATOR NOT = '1' OR BLANK   *\n// 54 = DATE OF BIRTH  NOT NUMERIC OR = ZERO           *\n\n// --- IN-PARAGRAPH: 013800 ---\n// *****************************************************************\n// THERE ARE VARIOUS WAYS TO COMPUTE A FINAL DOLLAR AMOUNT.  THE  *\n// METHOD USED IN THIS PROGRAM IS TO USE ROUNDED INTERMEDIATE     *\n// VARIABLES.  THIS WAS DONE TO SIMPLIFY THE CALCULATIONS SO THAT *\n// WHEN SOMETHING GOES AWRY, ONE IS NOT LEFT WONDERING WHERE IN   *\n// A VAST COMPUTE STATEMENT, THINGS HAVE GONE AWRY.  THE METHOD   *\n// UTILIZED HERE HAS BEEN APPROVED BY WIL GEHNE AND JOEY BRYSON   *\n// BOTH OF WHOM WORK IN THE DIVISION OF INSTITUTIONAL CLAIMS      *\n// PROCESSING (DICP).                                             *\n// *\n// *\n// PROCESSING:                                                 *\n\n// --- IN-PARAGRAPH: 018600 ---\n// PROVIDER TYPE '40' AND '05' ARE HOSPITAL BASED ESRD FACILITIES\n// PROVIDER TYPE '41' IS AN INDEPENDENT ESRD FACILITY\n\n// --- IN-PARAGRAPH: 028800 ---\n// *****************************************************************\n// **  CALCULATE PATIENT AGE                                     ***\n// *****************************************************************\n// *****************************************************************\n// **  SET AGE ADJUSTMENT FACTOR                                 ***\n// *****************************************************************\n\n// --- IN-PARAGRAPH: 032800 ---\n// *****************************************************************\n// **  CALCULATE PPS PRICING VARIABLES                           ***\n// *****************************************************************\n\n// --- IN-PARAGRAPH: 035800 ---\n// BEGINNING 01/01/2007 THE BLEND RATE WILL BE 50% MSA 50% CBSA\n\n// --- PARAGRAPH: 002500 ---\n// - ADDITIONAL VARIABLES WERE CREATED IN ORDER TO MAKE   *\n// CHANGING VALUES EASIER (IN WORKING STORAGE RATHER    *\n// THAN IN THE PROCEDURE DIVISION)                      *\n// - THIS PROGRAM NOW REFLECTS ENHANCEMENTS MADE SO THAT  *\n// TESTING OF THE CODE DOES NOT REQUIRE COMMENTING      *\n// IN/OUT LINES OF CODE.  IN ADDITION CALCULATED        *\n// VARIABLES ARE NOW PASSED BACK WHEN TEST CASES ARE    *\n// ENCOUNTERED IN ORDER FOR THE MASTER DRIVER TO PRINT  *\n// MORE INFORMATION ABOUT WHAT WENT ON IN THIS PROGRAM. *\n// *****************************************************************\n\n// --- PARAGRAPH: 004400 ---\n\n// --- PARAGRAPH: 009600 ---\n// CONSTANTS AREA\n// THE NEXT TWO PERCENTAGES MUST ADD UP TO 1 (I.E. 100%)\n\n// --- PARAGRAPH: 012900 ---\n// 55 = PATIENT WEIGHT NOT NUMERIC OR = ZERO           *\n// 56 = PATIENT HEIGHT NOT NUMERIC OR = ZERO           *\n// 57 = REVENUE CENTER CODE NOT IN RANGE               *\n// 58 = CONDITION CODE NOT = '73' OR '74' OR BLANK     *\n// 71 = EXCEEDS MAXIMUM HEIGHT ALLOWANCE               *\n// 72 = EXCEEDS MAXIMUM WEIGHT ALLOWANCE               *\n// 73 = EXCEEDS MAXIMUM AGE                            *\n// *****************************************************************\n\n// --- PARAGRAPH: 013200 ---\n// COPY \"BILLCPY.CPY\".\n\n// --- PARAGRAPH: 013800 ---\n// COPY \"WAGECPY.CPY\".\n\n// --- PARAGRAPH: 016200 ---\n// A. WILL PROCESS CLAIMS BASED ON AGE/HEIGHT/WEIGHT       *\n// B. INITIALIZE ESCAL HOLD VARIABLES.                     *\n// C. EDIT THE DATA PASSED FROM THE CLAIM BEFORE           *\n// ATTEMPTING TO CALCULATE PPS. IF THIS CLAIM           *\n// CANNOT BE PROCESSED, SET A RETURN CODE AND           *\n// GOBACK.                                              *\n// D. ASSEMBLE PRICING COMPONENTS.                         *\n// E. CALCULATE THE PRICE.                                 *\n// *****************************************************************\n\n// --- PARAGRAPH: 017900 ---\n\n// --- PARAGRAPH: 018400 ---\n// *****************************************************************\n// *   NEW PAYMENT RATES FOR NEW LEGISLATION                      **\n// *****************************************************************\n\n// --- PARAGRAPH: 023000 ---\n// *  NEW DRUG ADD-ON FOR NEW LEGISLATION                         **\n// *****************************************************************\n// *****************************************************************\n// **  BILL DATA EDITS IF ANY FAIL SET PPS-RTC                   ***\n// **  AND DO NOT ATTEMPT TO PRICE.                              ***\n// *****************************************************************\n\n// --- PARAGRAPH: 032800 ---\n\n// --- PARAGRAPH: 035800 ---\n// *****************************************************************\n// **  IF THE BILL DATA HAS PASSED ALL EDITS (RTC=00)            ***\n// **      CALCULATE THE STANDARD PAYMENT AMOUNT.                ***\n// **    - BLEND 50% OLD RATE (MSA) WITH 50% NEW RATE (CBSA).    ***\n// *****************************************************************\nLibraryImport.Cobol\nLibraryImport.COBOL_ControlFlow\nLibraryImport.PostgreSQL_Complete\nLibraryImport.XArrays\nLibraryImport.HashMap\n\n// Set I/O backend: jcl\nCobol.io_backend_type = \"jcl\"\n\n// Generated from COBOL source\n\nFixedPool.ESCAL070_VARS {\n    \"W_STORAGE_REF\": Initialize=\"ESCAL070      - W O R K I N G   S T O R A G E\"\n    \"CAL_VERSION\": Initialize=\"C07.0\"\n    \"DISPLAY_LINE_MEASUREMENT\": Initialize=\"\"\n    \"FILLER\": Initialize=\"....:..110....:..120....:..130..\"\n    \"PRINT_LINE_MEASUREMENT\": Initialize=\"\"\n    \"HOLD_PPS_COMPONENTS\": Initialize=\"\"\n    \"H_PYMT_AMT\": Initialize=0\n    \"H_WAGE_ADJ_PYMT_AMT\": Initialize=0\n    \"H_2006_WAGE_ADJ_PYMT\": Initialize=0\n    \"H_MSA_COMPOSITE_PYMT\": Initialize=0\n    \"H_WAGE_ADJ_PYMT_OLD\": Initialize=0\n    \"H_WAGE_ADJ_PYMT_NEW\": Initialize=0\n    \"H_WAGE_ADJ\": Initialize=0\n    \"H_PYMT_RATE\": Initialize=0\n    \"H_FIXED_LOSS_AMT\": Initialize=0\n    \"H_ESRD_FAC_RATE\": Initialize=0\n    \"H_PATIENT_AGE\": Initialize=0\n    \"H_AGE_FACTOR\": Initialize=0\n    \"H_BSA_FACTOR\": Initialize=0\n    \"H_BMI_FACTOR\": Initialize=0\n    \"H_BSA\": Initialize=0\n    \"H_BMI\": Initialize=0\n    \"H_DRUG_ADDON\": Initialize=0\n    \"DRUG_ADDON\": Initialize=11510\n    \"HOSP_BASED_PMT_RATE\": Initialize=1345300\n    \"INDP_ESRD_FAC_PMT_RATE\": Initialize=1304000\n    \"MSA_BLEND_PCT\": Initialize=5000\n    \"CBSA_BLEND_PCT\": Initialize=5000\n    \"NAT_LABOR_PCT\": Initialize=0\n    \"NAT_NONLABOR_PCT\": Initialize=0\n    \"HEMO_PERI_CCPD_AMT\": Initialize=20\n    \"CAPD_AMT\": Initialize=12\n    \"CAPD_OR_CCPD_FACTOR\": Initialize=0\n    \"MSA_WAGE_FACTOR_2006\": Initialize=10160\n    \"CASE_MIX_BDGT_NEUT_FACTOR\": Initialize=9116\n}\n\nSubRoutine.Main {\n    Cobol.api_db_conn = PG_Connect(\"localhost\", 5432, \"testdb\", \"testuser\", \"testpass\")\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_0000_MAINLINE_CONTROL {\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] PERFORM 0100-INITIAL-ROUTINE\")\n        }\n    RunTask(ESCAL070_0100_INITIAL_ROUTINE)\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] PERFORM 1000-EDIT-THE-BILL-INFO\")\n                    }\n            RunTask(ESCAL070_1000_EDIT_THE_BILL_INFO)\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] PERFORM 2000-ASSEMBLE-PPS-VARIABLES\")\n                    }\n            RunTask(ESCAL070_2000_ASSEMBLE_PPS_VARIABLES)\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] PERFORM 3000-CALC-PAYMENT\")\n                    }\n            RunTask(ESCAL070_3000_CALC_PAYMENT)\n        }\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] PERFORM 9000-MOVE-RESULTS\")\n        }\n    RunTask(ESCAL070_9000_MOVE_RESULTS)\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_0100_INITIAL_ROUTINE {\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n        }\n    PPS_RTC = 0\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  PPS_CALC_VERS_CD\")\n        }\n    PPS_CALC_VERS_CD = ESCAL070_VARS.CAL_VERSION\n    IfCondition Or(EqualTo(P_PROV_TYPE, \"40\"), EqualTo(P_PROV_TYPE, \"05\")) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_NAT_LABOR_PCT\")\n                    }\n            PPS_NAT_LABOR_PCT = ESCAL070_VARS.NAT_LABOR_PCT\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_NAT_NONLABOR_PCT\")\n                    }\n            PPS_NAT_NONLABOR_PCT = ESCAL070_VARS.NAT_NONLABOR_PCT\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_PYMT_RATE\")\n                    }\n            ESCAL070_VARS.H_PYMT_RATE = ESCAL070_VARS.HOSP_BASED_PMT_RATE\n            ESCAL070_VARS.H_2006_WAGE_ADJ_PYMT = FixedPoint.Multiply(W_NEW_RATE1_RECORD, ESCAL070_VARS.MSA_WAGE_FACTOR_2006)\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_WAGE_ADJ_PYMT_OLD\")\n                    }\n            ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD = ESCAL070_VARS.H_2006_WAGE_ADJ_PYMT\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  MSA_WAGE_AMT\")\n                    }\n            MSA_WAGE_AMT = W_NEW_RATE1_RECORD\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_WAGE_ADJ\")\n                    }\n            ESCAL070_VARS.H_WAGE_ADJ = COM_CBSA_W_INDEX\n        } ElseBlock: {\n            IfCondition EqualTo(P_PROV_TYPE, \"41\") ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_NAT_LABOR_PCT\")\n                                    }\n                        PPS_NAT_LABOR_PCT = ESCAL070_VARS.NAT_LABOR_PCT\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_NAT_NONLABOR_PCT\")\n                                    }\n                        PPS_NAT_NONLABOR_PCT = ESCAL070_VARS.NAT_NONLABOR_PCT\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  H_PYMT_RATE\")\n                                    }\n                        ESCAL070_VARS.H_PYMT_RATE = ESCAL070_VARS.INDP_ESRD_FAC_PMT_RATE\n                        ESCAL070_VARS.H_2006_WAGE_ADJ_PYMT = FixedPoint.Multiply(W_NEW_RATE2_RECORD, ESCAL070_VARS.MSA_WAGE_FACTOR_2006)\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  H_WAGE_ADJ_PYMT_OLD\")\n                                    }\n                        ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD = ESCAL070_VARS.H_2006_WAGE_ADJ_PYMT\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  MSA_WAGE_AMT\")\n                                    }\n                        MSA_WAGE_AMT = W_NEW_RATE2_RECORD\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  H_WAGE_ADJ\")\n                                    }\n                        ESCAL070_VARS.H_WAGE_ADJ = COM_CBSA_W_INDEX\n                    } ElseBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 52\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n                                    }\n                        PPS_WAGE_ADJ_RATE = 0\n                    }\n        }\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  MSA_ADJ_YEAR_AMT\")\n        }\n    MSA_ADJ_YEAR_AMT = ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  PPS_BDGT_NEUT_RATE\")\n        }\n    PPS_BDGT_NEUT_RATE = ESCAL070_VARS.CASE_MIX_BDGT_NEUT_FACTOR\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  H_DRUG_ADDON\")\n        }\n    ESCAL070_VARS.H_DRUG_ADDON = ESCAL070_VARS.DRUG_ADDON\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_1000_EDIT_THE_BILL_INFO {\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition And(NotEqual(P_SPEC_PYMT_IND, \"1\"), \" \") ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 53\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition Or(EqualTo(B_DOB_DATE, 0), EqualTo(Cobol.IsNumeric(ESCAL070_VARS.B_DOB_DATE), 0)) ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 54\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition Or(EqualTo(B_PATIENT_WGT, 0), EqualTo(Cobol.IsNumeric(ESCAL070_VARS.B_PATIENT_WGT), 0)) ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 55\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition Or(EqualTo(B_PATIENT_HGT, 0), EqualTo(Cobol.IsNumeric(ESCAL070_VARS.B_PATIENT_HGT), 0)) ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 56\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition Or(Or(Or(Or(Or(EqualTo(B_REV_CODE, \"0821\"), EqualTo(B_REV_CODE, \"0831\")), EqualTo(B_REV_CODE, \"0841\")), EqualTo(B_REV_CODE, \"0851\")), EqualTo(B_REV_CODE, \"0880\")), EqualTo(B_REV_CODE, \"0881\")) ThenBlock: {\n                    }\n        } ElseBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                    }\n            PPS_RTC = 57\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition And(And(NotEqual(B_COND_CODE, \"73\"), \"74\"), \"  \") ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 58\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition GreaterThan(B_PATIENT_HGT, 300) ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 71\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            IfCondition GreaterThan(B_PATIENT_WGT, 500) ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  PPS_RTC\")\n                                    }\n                        PPS_RTC = 72\n                    }\n        }\n    IfCondition EqualTo(PPS_RTC, 0) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] PERFORM 1200-CALC-AGE\")\n                    }\n            RunTask(ESCAL070_1200_CALC_AGE)\n        }\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_1200_CALC_AGE {\n    ESCAL070_VARS.H_PATIENT_AGE = Subtract(B_THRU_CCYY, B_DOB_CCYY)\n    IfCondition GreaterThan(B_DOB_MM, B_THRU_MM) ThenBlock: {\n            ESCAL070_VARS.H_PATIENT_AGE = Subtract(ESCAL070_VARS.H_PATIENT_AGE, 1)\n        }\n    IfCondition LessThan(ESCAL070_VARS.H_PATIENT_AGE, 18) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                    }\n            ESCAL070_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 17), LessThan(ESCAL070_VARS.H_PATIENT_AGE, 45)) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                    }\n            ESCAL070_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 44), LessThan(ESCAL070_VARS.H_PATIENT_AGE, 60)) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                    }\n            ESCAL070_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 59), LessThan(ESCAL070_VARS.H_PATIENT_AGE, 70)) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                    }\n            ESCAL070_VARS.H_AGE_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 69), LessThan(ESCAL070_VARS.H_PATIENT_AGE, 80)) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                    }\n            ESCAL070_VARS.H_AGE_FACTOR = 1\n        } ElseBlock: {\n            IfCondition GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 79) ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  H_AGE_FACTOR\")\n                                    }\n                        ESCAL070_VARS.H_AGE_FACTOR = 1\n                    }\n        }\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_2000_ASSEMBLE_PPS_VARIABLES {\n    ESCAL070_VARS.H_BSA = Multiply(Multiply(0, Power(B_PATIENT_HGT, 0)), Power(B_PATIENT_WGT, 0))\n    ESCAL070_VARS.H_BMI = Multiply(Divide(B_PATIENT_WGT, Power(B_PATIENT_HGT, 2)), 10000)\n    IfCondition GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 17) ThenBlock: {\n            ESCAL070_VARS.H_BSA_FACTOR = Power(1, Divide(FixedPoint.Subtract(ESCAL070_VARS.H_BSA, 1), 0))\n        } ElseBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_BSA_FACTOR\")\n                    }\n            ESCAL070_VARS.H_BSA_FACTOR = 1\n        }\n    IfCondition And(GreaterThan(ESCAL070_VARS.H_PATIENT_AGE, 17), LessThan(ESCAL070_VARS.H_BMI, 18)) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_BMI_FACTOR\")\n                    }\n            ESCAL070_VARS.H_BMI_FACTOR = 1\n        } ElseBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  H_BMI_FACTOR\")\n                    }\n            ESCAL070_VARS.H_BMI_FACTOR = 1\n        }\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_3000_CALC_PAYMENT {\n    ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD = FixedPoint.Multiply(ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD, ESCAL070_VARS.MSA_BLEND_PCT)\n    ESCAL070_VARS.H_WAGE_ADJ_PYMT_NEW = FixedPoint.Multiply(Add(FixedPoint.Multiply(FixedPoint.Multiply(ESCAL070_VARS.H_PYMT_RATE, PPS_NAT_LABOR_PCT), ESCAL070_VARS.H_WAGE_ADJ), FixedPoint.Multiply(ESCAL070_VARS.H_PYMT_RATE, PPS_NAT_NONLABOR_PCT)), ESCAL070_VARS.CBSA_BLEND_PCT)\n    ESCAL070_VARS.H_WAGE_ADJ_PYMT_AMT = FixedPoint.Add(ESCAL070_VARS.H_WAGE_ADJ_PYMT_NEW, ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD)\n    ESCAL070_VARS.H_PYMT_AMT = FixedPoint.Multiply(FixedPoint.Multiply(Multiply(FixedPoint.Multiply(FixedPoint.Multiply(ESCAL070_VARS.H_WAGE_ADJ_PYMT_AMT, ESCAL070_VARS.H_BMI_FACTOR), ESCAL070_VARS.H_BSA_FACTOR), PPS_BDGT_NEUT_RATE), ESCAL070_VARS.H_AGE_FACTOR), ESCAL070_VARS.H_DRUG_ADDON)\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  CASE_MIX_FCTR_ADJ_RATE\")\n        }\n    CASE_MIX_FCTR_ADJ_RATE = ESCAL070_VARS.H_PYMT_AMT\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  COND_CD_73\")\n        }\n    COND_CD_73 = \" \"\n    IfCondition And(EqualTo(B_COND_CODE, \"73\"), Or(Or(EqualTo(B_REV_CODE, \"0821\"), EqualTo(B_REV_CODE, \"0831\")), EqualTo(B_REV_CODE, \"0851\"))) ThenBlock: {\n            ESCAL070_VARS.H_PYMT_AMT = FixedPoint.Add(ESCAL070_VARS.H_PYMT_AMT, Multiply(ESCAL070_VARS.HEMO_PERI_CCPD_AMT, 10000))\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  AMT_INDIC\")\n                    }\n            AMT_INDIC = \"A\"\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  BLOOD_DOLLAR\")\n                    }\n            BLOOD_DOLLAR = ESCAL070_VARS.HEMO_PERI_CCPD_AMT\n        }\n    IfCondition And(EqualTo(B_COND_CODE, \"73\"), EqualTo(B_REV_CODE, \"0841\")) ThenBlock: {\n            ESCAL070_VARS.H_PYMT_AMT = FixedPoint.Add(ESCAL070_VARS.H_PYMT_AMT, Multiply(ESCAL070_VARS.CAPD_AMT, 10000))\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  AMT_INDIC\")\n                    }\n            AMT_INDIC = \"A\"\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  BLOOD_DOLLAR\")\n                    }\n            BLOOD_DOLLAR = ESCAL070_VARS.CAPD_AMT\n        } ElseBlock: {\n            IfCondition And(EqualTo(B_COND_CODE, \"74\"), Or(EqualTo(B_REV_CODE, \"0841\"), EqualTo(B_REV_CODE, \"0851\"))) ThenBlock: {\n                        ESCAL070_VARS.H_PYMT_AMT = FixedPoint.Multiply(ESCAL070_VARS.H_PYMT_AMT, ESCAL070_VARS.CAPD_OR_CCPD_FACTOR)\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  HEMO_CCPD_CAPD\")\n                                    }\n                        HEMO_CCPD_CAPD = ESCAL070_VARS.CAPD_OR_CCPD_FACTOR\n                    } ElseBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  AMT_INDIC\")\n                                    }\n                        AMT_INDIC = \"A\"\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  BLOOD_DOLLAR\")\n                                    }\n                        BLOOD_DOLLAR = 0\n                    }\n        }\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  PPS_FINAL_PAY_AMT\")\n        }\n    PPS_FINAL_PAY_AMT = ESCAL070_VARS.H_PYMT_AMT\n    Debug(\"cobol.trace\", level=3) {\n            PrintMessage(\"[COBOL] MOVE  PPS_WAGE_ADJ_RATE\")\n        }\n    PPS_WAGE_ADJ_RATE = ESCAL070_VARS.H_WAGE_ADJ_PYMT_AMT\n    ReturnValue(0)\n}\n\nSubRoutine.ESCAL070_9000_MOVE_RESULTS {\n    IfCondition LessThan(PPS_RTC, 50) ThenBlock: {\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_COND_CODE\")\n                    }\n            PPS_COND_CODE = B_COND_CODE\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_REV_CODE\")\n                    }\n            PPS_REV_CODE = B_REV_CODE\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_MSA\")\n                    }\n            PPS_MSA = P_GEO_MSA\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_CBSA\")\n                    }\n            PPS_CBSA = P_GEO_CBSA\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_AGE_FACTOR\")\n                    }\n            PPS_AGE_FACTOR = ESCAL070_VARS.H_AGE_FACTOR\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_BSA_FACTOR\")\n                    }\n            PPS_BSA_FACTOR = ESCAL070_VARS.H_BSA_FACTOR\n            Debug(\"cobol.trace\", level=3) {\n                        PrintMessage(\"[COBOL] MOVE  PPS_BMI_FACTOR\")\n                    }\n            PPS_BMI_FACTOR = ESCAL070_VARS.H_BMI_FACTOR\n            IfCondition OLD_TEST_CASE ThenBlock: {\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  DRUG_ADD_ON_RETURN\")\n                                    }\n                        DRUG_ADD_ON_RETURN = ESCAL070_VARS.H_DRUG_ADDON\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  MSA_WAGE_ADJ\")\n                                    }\n                        MSA_WAGE_ADJ = ESCAL070_VARS.H_WAGE_ADJ_PYMT_OLD\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  CBSA_WAGE_ADJ\")\n                                    }\n                        CBSA_WAGE_ADJ = ESCAL070_VARS.H_WAGE_ADJ_PYMT_NEW\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  CBSA_PCT\")\n                                    }\n                        CBSA_PCT = ESCAL070_VARS.CBSA_BLEND_PCT\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  MSA_PCT\")\n                                    }\n                        MSA_PCT = ESCAL070_VARS.MSA_BLEND_PCT\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  CBSA_WAGE_PMT_RATE\")\n                                    }\n                        CBSA_WAGE_PMT_RATE = ESCAL070_VARS.H_PYMT_RATE\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  AGE_RETURN\")\n                                    }\n                        AGE_RETURN = ESCAL070_VARS.H_PATIENT_AGE\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  CBSA_WAGE_INDEX\")\n                                    }\n                        CBSA_WAGE_INDEX = ESCAL070_VARS.H_WAGE_ADJ\n                        Debug(\"cobol.trace\", level=3) {\n                                        PrintMessage(\"[COBOL] MOVE  LABOR_PCT\")\n                                    }\n                        LABOR_PCT = ESCAL070_VARS.NAT_LABOR_PCT\n                    }\n        } ElseBlock: {\n            IfCondition OLD_TEST_CASE ThenBlock: {\n                    }\n        }\n    ReturnValue(0)\n}\n\nRunTask(Main)\n",
+    "sha256": "e2114f1fe0bf6923b6e5877576ed85c692495c2500a72acf9deb82433041a368",
+    "line_count": 605,
+    "size_bytes": 28453
+  },
+  "validation": {
+    "warnings": [],
+    "errors": [],
+    "statistics": {
+      "size_ratio": 1.377069015584164,
+      "size_delta_bytes": 7791,
+      "line_ratio": 1.3504464285714286,
+      "line_delta": 157,
+      "conversion_rate": 1.0,
+      "comment_preservation_rate": 1.7142857142857142,
+      "warning_count": 0,
+      "error_count": 0
+    }
+  }
+}
