@@ -1,0 +1,170 @@
+SubRoutine.Main {
+    PrintMessage("Redis Server with Storage - CLEAN BUILD")
+    
+    // Create hash store
+    store = HashCreate(1024)
+    PrintMessage("Hash store created")
+    
+    // Create socket
+    server_socket = SocketCreate()
+    SocketSetOption(server_socket, 1, 2, 1)
+    SocketBind(server_socket, 0, 6379)
+    SocketListen(server_socket, 128)
+    
+    PrintMessage("Listening on 6379...")
+    
+    WhileLoop 1 {
+        client = SocketAccept(server_socket)
+        
+        IfCondition GreaterThan(client, 0) ThenBlock {
+            buffer = Allocate(1024)
+            bytes = SocketRead(client, buffer, 1024)
+            
+            // Find command character
+            offset = 0
+            newlines = 0
+            WhileLoop And(LessThan(offset, bytes), LessThan(newlines, 2)) {
+                byte = GetByte(buffer, offset)
+                IfCondition EqualTo(byte, 10) ThenBlock {
+                    newlines = Add(newlines, 1)
+                }
+                offset = Add(offset, 1)
+            }
+            
+            cmd = GetByte(buffer, offset)
+            
+            // PING
+            IfCondition EqualTo(cmd, 80) ThenBlock {
+                PrintMessage("PING")
+                SocketWrite(client, "+PONG\r\n", 7)
+            }
+            
+            // GET
+            IfCondition EqualTo(cmd, 71) ThenBlock {
+                PrintMessage("GET command")
+                
+                // Extract key (skip 4 newlines)
+                key_offset = 0
+                key_newlines = 0
+                WhileLoop And(LessThan(key_offset, bytes), LessThan(key_newlines, 4)) {
+                    byte = GetByte(buffer, key_offset)
+                    IfCondition EqualTo(byte, 10) ThenBlock {
+                        key_newlines = Add(key_newlines, 1)
+                    }
+                    key_offset = Add(key_offset, 1)
+                }
+                
+                // Copy key
+                key_start = key_offset
+                key_end = key_offset
+                WhileLoop And(LessThan(key_end, bytes), NotEqual(GetByte(buffer, key_end), 13)) {
+                    key_end = Add(key_end, 1)
+                }
+                
+                key_len = Subtract(key_end, key_start)
+                key = Allocate(Add(key_len, 1))
+                i = 0
+                WhileLoop LessThan(i, key_len) {
+                    SetByte(key, i, GetByte(buffer, Add(key_start, i)))
+                    i = Add(i, 1)
+                }
+                SetByte(key, key_len, 0)
+                
+                PrintMessage("  Key: ")
+                PrintString(key)
+                
+                exists = HashExists(store, key)
+                IfCondition exists ThenBlock {
+                    value = HashGet(store, key)
+                    PrintMessage("  Found: ")
+                    PrintString(value)
+                    // For now, return fixed response
+                    SocketWrite(client, "$5\r\nhello\r\n", 11)
+                } ElseBlock {
+                    PrintMessage("  Not found")
+                    SocketWrite(client, "$-1\r\n", 5)
+                }
+                
+                Deallocate(key, 0)
+            }
+            
+            // SET  
+            IfCondition EqualTo(cmd, 83) ThenBlock {
+                PrintMessage("SET command")
+                
+                // Extract key
+                key_offset = 0
+                key_newlines = 0
+                WhileLoop And(LessThan(key_offset, bytes), LessThan(key_newlines, 4)) {
+                    byte = GetByte(buffer, key_offset)
+                    IfCondition EqualTo(byte, 10) ThenBlock {
+                        key_newlines = Add(key_newlines, 1)
+                    }
+                    key_offset = Add(key_offset, 1)
+                }
+                
+                key_start = key_offset
+                key_end = key_offset
+                WhileLoop And(LessThan(key_end, bytes), NotEqual(GetByte(buffer, key_end), 13)) {
+                    key_end = Add(key_end, 1)
+                }
+                
+                key_len = Subtract(key_end, key_start)
+                key = Allocate(Add(key_len, 1))
+                i = 0
+                WhileLoop LessThan(i, key_len) {
+                    SetByte(key, i, GetByte(buffer, Add(key_start, i)))
+                    i = Add(i, 1)
+                }
+                SetByte(key, key_len, 0)
+                
+                // Extract value (skip 6 newlines)
+                val_offset = 0
+                val_newlines = 0
+                WhileLoop And(LessThan(val_offset, bytes), LessThan(val_newlines, 6)) {
+                    byte = GetByte(buffer, val_offset)
+                    IfCondition EqualTo(byte, 10) ThenBlock {
+                        val_newlines = Add(val_newlines, 1)
+                    }
+                    val_offset = Add(val_offset, 1)
+                }
+                
+                val_start = val_offset
+                val_end = val_offset
+                WhileLoop And(LessThan(val_end, bytes), NotEqual(GetByte(buffer, val_end), 13)) {
+                    val_end = Add(val_end, 1)
+                }
+                
+                val_len = Subtract(val_end, val_start)
+                value = Allocate(Add(val_len, 1))
+                i = 0
+                WhileLoop LessThan(i, val_len) {
+                    SetByte(value, i, GetByte(buffer, Add(val_start, i)))
+                    i = Add(i, 1)
+                }
+                SetByte(value, val_len, 0)
+                
+                PrintMessage("  Key: ")
+                PrintString(key)
+                PrintMessage("  Value: ")
+                PrintString(value)
+                
+                HashSet(store, key, value)
+                
+                check = HashExists(store, key)
+                PrintMessage("  Stored: ")
+                PrintNumber(check)
+                
+                Deallocate(key, 0)
+                Deallocate(value, 0)
+                
+                SocketWrite(client, "+OK\r\n", 5)
+            }
+            
+            SocketClose(client)
+            Deallocate(buffer, 1024)
+        }
+    }
+}
+
+RunTask(Main)

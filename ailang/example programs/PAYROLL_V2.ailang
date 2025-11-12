@@ -1,0 +1,614 @@
+// PAYROLL_v2.ailang - Using new COBOL.DB library
+// Demonstrates the new database abstraction layer
+
+LibraryImport.Cobol
+LibraryImport.PostgreSQL_Complete
+LibraryImport.COBOL_DB
+
+FixedPool.Employee {
+    "emp_id": Initialize=0
+    "emp_name": Initialize=0
+    "hourly_rate": Initialize=0
+    "hours_worked": Initialize=0
+    "gross_pay": Initialize=0
+    "tax_amount": Initialize=0
+    "net_pay": Initialize=0
+}
+
+FixedPool.ReportTotals {
+    "total_employees": Initialize=0
+    "total_gross": Initialize=0
+    "total_tax": Initialize=0
+    "total_net": Initialize=0
+}
+
+FixedPool.AppState {
+    "db_conn": Initialize=0
+    "running": Initialize=1
+    "employee_layout": Initialize=0
+}
+
+Function.Payroll.Initialize {
+    Input: db_conn: Address
+    Body: {
+        Cobol.InitFileSystem(db_conn)
+        COBOL.DB.Init()
+        
+        employee_layout = COBOL.DB.DefineRecordLayout("EMPLOYEE-RECORD", 4)
+        COBOL.DB.AddField(employee_layout, 0, "emp_id", 0, 8, 1)
+        COBOL.DB.AddField(employee_layout, 1, "emp_name", 8, 30, 2)
+        COBOL.DB.AddField(employee_layout, 2, "hourly_rate", 38, 8, 1)
+        COBOL.DB.AddField(employee_layout, 3, "hours_worked", 46, 8, 1)
+        
+        AppState.employee_layout = employee_layout
+        
+        create_sql = "CREATE TABLE IF NOT EXISTS employees (emp_id INT PRIMARY KEY, emp_name TEXT, hourly_rate INT, hours_worked INT)"
+        result = PG_Query(db_conn, create_sql)
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+        
+        PrintMessage("Database initialized\n")
+    }
+}
+
+Function.Payroll.ShowMenu {
+    Body: {
+        PrintMessage("\n")
+        PrintMessage("=================================================\n")
+        PrintMessage("   PAYROLL SYSTEM v2.0 (COBOL.DB Edition)\n")
+        PrintMessage("=================================================\n")
+        PrintMessage("  1. Add New Employee\n")
+        PrintMessage("  2. View All Employees\n")
+        PrintMessage("  3. Update Employee Hours\n")
+        PrintMessage("  4. Process Payroll & Generate Report\n")
+        PrintMessage("  5. View Payroll Report\n")
+        PrintMessage("  6. Delete Employee\n")
+        PrintMessage("  7. Exit\n")
+        PrintMessage("=================================================\n")
+        PrintMessage("\nEnter choice (1-7): ")
+    }
+}
+
+Function.Payroll.AddEmployee {
+    Body: {
+        PrintMessage("\n=== ADD NEW EMPLOYEE ===\n")
+        
+        PrintMessage("Employee ID: ")
+        input_id = ReadInput()
+        emp_id = StringToNumber(input_id)
+        
+        PrintMessage("Employee Name: ")
+        emp_name = ReadInput()
+        
+        PrintMessage("Hourly Rate (e.g., 25.50): ")
+        input_rate = ReadInput()
+        rate_float = StringToNumber(input_rate)
+        hourly_rate = Multiply(rate_float, 100)
+        
+        PrintMessage("Hours Worked (e.g., 40.00): ")
+        input_hours = ReadInput()
+        hours_float = StringToNumber(input_hours)
+        hours_worked = Multiply(hours_float, 100)
+        
+        values = ArrayCreate(4)
+        ArraySet(values, 0, emp_id)
+        ArraySet(values, 1, emp_name)
+        ArraySet(values, 2, hourly_rate)
+        ArraySet(values, 3, hours_worked)
+        
+        record_ptr = COBOL.DB.PackRecord(AppState.employee_layout, values)
+        cursor = COBOL.DB.OpenSequential(AppState.db_conn, "employees", "OUTPUT")
+        
+        IfCondition NotEqual(cursor, 0) ThenBlock: {
+            status = COBOL.DB.WriteRecord(cursor, AppState.employee_layout, record_ptr)
+            
+            IfCondition EqualTo(status, 1) ThenBlock: {
+                PrintMessage("\nEmployee added successfully!\n")
+            } ElseBlock: {
+                PrintMessage("\nFailed to add employee\n")
+            }
+            
+            COBOL.DB.Close(cursor)
+        } ElseBlock: {
+            PrintMessage("\nFailed to open employee file\n")
+        }
+        
+        Deallocate(record_ptr, 54)
+    }
+}
+
+Function.Payroll.ViewAllEmployees {
+    Body: {
+        PrintMessage("\n=== EMPLOYEE ROSTER ===\n\n")
+        
+        cursor = COBOL.DB.OpenSequential(AppState.db_conn, "employees", "INPUT")
+        
+        IfCondition EqualTo(cursor, 0) ThenBlock: {
+            PrintMessage("No employees found.\n")
+            ReturnValue(0)
+        }
+        
+        PrintMessage("ID    Name                   Rate      Hours\n")
+        PrintMessage("------------------------------------------------\n")
+        
+        count = 0
+        record_ptr = COBOL.DB.ReadNext(cursor, AppState.employee_layout)
+        
+        WhileLoop NotEqual(record_ptr, 0) {
+            emp_id = Dereference(record_ptr)
+            
+            emp_name = Allocate(31)
+            j = 0
+            name_offset = 8
+            WhileLoop LessThan(j, 30) {
+                byte_addr = Add(record_ptr, Add(name_offset, j))
+                byte = Dereference(byte_addr, "byte")
+                StoreValue(Add(emp_name, j), byte)
+                j = Add(j, 1)
+            }
+            StoreValue(Add(emp_name, 30), 0)
+            
+            hourly_rate_offset = 38
+            hourly_rate = Dereference(Add(record_ptr, hourly_rate_offset))
+            hours_worked_offset = 46
+            hours_worked = Dereference(Add(record_ptr, hours_worked_offset))
+            
+            PrintNumber(emp_id)
+            PrintMessage("     ")
+            PrintString(emp_name)
+            
+            name_len = StringLength(emp_name)
+            pad_count = Subtract(20, name_len)
+            k = 0
+            WhileLoop LessThan(k, pad_count) {
+                PrintMessage(" ")
+                k = Add(k, 1)
+            }
+            
+            rate_formatted = FormatDecimal(hourly_rate, 2, 2)
+            PrintMessage("  $")
+            PrintString(rate_formatted)
+            PrintMessage("   ")
+            
+            hours_formatted = FormatDecimal(hours_worked, 2, 2)
+            PrintString(hours_formatted)
+            PrintMessage("\n")
+            
+            Deallocate(emp_name, 31)
+            Deallocate(record_ptr, 54)
+            
+            count = Add(count, 1)
+            record_ptr = COBOL.DB.ReadNext(cursor, AppState.employee_layout)
+        }
+        
+        COBOL.DB.Close(cursor)
+        
+        PrintMessage("\nTotal employees: ")
+        PrintNumber(count)
+        PrintMessage("\n")
+    }
+}
+
+Function.Payroll.UpdateHours {
+    Body: {
+        PrintMessage("\n=== UPDATE EMPLOYEE HOURS ===\n")
+        
+        PrintMessage("Employee ID: ")
+        input_id = ReadInput()
+        emp_id = StringToNumber(input_id)
+        
+        PrintMessage("New Hours Worked (e.g., 45.50): ")
+        input_hours = ReadInput()
+        hours_float = StringToNumber(input_hours)
+        new_hours = Multiply(hours_float, 100)
+        
+        cursor = COBOL.DB.OpenIndexed(AppState.db_conn, "employees", "emp_id", "I-O")
+        
+        IfCondition NotEqual(cursor, 0) ThenBlock: {
+            record_ptr = COBOL.DB.ReadByKey(cursor, emp_id, AppState.employee_layout)
+            
+            IfCondition NotEqual(record_ptr, 0) ThenBlock: {
+                hours_offset = 46
+                hours_addr = Add(record_ptr, hours_offset)
+                StoreValue(hours_addr, new_hours)
+                
+                status = COBOL.DB.UpdateRecord(cursor, AppState.employee_layout, record_ptr)
+                
+                IfCondition EqualTo(status, 1) ThenBlock: {
+                    PrintMessage("\nHours updated successfully!\n")
+                } ElseBlock: {
+                    PrintMessage("\nFailed to update hours\n")
+                }
+                
+                Deallocate(record_ptr, 54)
+            } ElseBlock: {
+                PrintMessage("\nEmployee not found\n")
+            }
+            
+            COBOL.DB.Close(cursor)
+        } ElseBlock: {
+            PrintMessage("\nFailed to open employee file\n")
+        }
+    }
+}
+
+Function.Payroll.CalculatePay {
+    Input: hourly_rate: Integer
+    Input: hours_worked: Integer
+    Output: Address  // Returns array [gross, tax, net]
+    Body: {
+        gross_cents = Multiply(hourly_rate, hours_worked)
+        gross_pay = Divide(gross_cents, 100)
+        tax_amount = Divide(Multiply(gross_pay, 20), 100)
+        net_pay = Subtract(gross_pay, tax_amount)
+        
+        // Return results as array
+        results = ArrayCreate(3)
+        ArraySet(results, 0, gross_pay)
+        ArraySet(results, 1, tax_amount)
+        ArraySet(results, 2, net_pay)
+        
+        ReturnValue(results)
+    }
+}
+
+Function.Payroll.ProcessPayroll {
+    Body: {
+        PrintMessage("\n=== PROCESSING PAYROLL ===\n\n")
+        PrintMessage("[DEBUG] Step 1: Opening cursor...\n")
+        
+        cursor = COBOL.DB.OpenSequential(AppState.db_conn, "employees", "INPUT")
+        
+        PrintMessage("[DEBUG] Step 2: Cursor returned: ")
+        PrintNumber(cursor)
+        PrintMessage("\n")
+        
+        IfCondition EqualTo(cursor, 0) ThenBlock: {
+            PrintMessage("[ERROR] No employees to process - cursor is 0\n")
+            ReturnValue(0)
+        }
+        
+        PrintMessage("[DEBUG] Step 3: Initializing totals...\n")
+        ReportTotals.total_employees = 0
+        ReportTotals.total_gross = 0
+        ReportTotals.total_tax = 0
+        ReportTotals.total_net = 0
+        
+        PrintMessage("[DEBUG] Step 4: Opening report file...\n")
+        report_fd = FileOpen("PAYROLL_REPORT.txt", "w")
+        PrintMessage("[DEBUG] Report FD: ")
+        PrintNumber(report_fd)
+        PrintMessage("\n")
+        
+        PrintMessage("[DEBUG] Step 5: Writing header lines...\n")
+        Cobol.WriteLine(report_fd, "==========================================================================")
+        PrintMessage("[DEBUG] Header line 1 written\n")
+        
+        Cobol.WriteLine(report_fd, "                         PAYROLL REGISTER REPORT                          ")
+        PrintMessage("[DEBUG] Header line 2 written\n")
+        
+        Cobol.WriteLine(report_fd, "==========================================================================")
+        PrintMessage("[DEBUG] Header line 3 written\n")
+        
+        Cobol.WriteLine(report_fd, "")
+        PrintMessage("[DEBUG] Blank line written\n")
+        
+        Cobol.WriteLine(report_fd, "  ID    Employee Name        Rate      Hours    Gross      Tax        Net    ")
+        PrintMessage("[DEBUG] Column header written\n")
+        
+        Cobol.WriteLine(report_fd, "--------------------------------------------------------------------------")
+        PrintMessage("[DEBUG] Separator line written\n")
+        
+        PrintMessage("[DEBUG] Step 6: Reading first record...\n")
+        record_ptr = COBOL.DB.ReadNext(cursor, AppState.employee_layout)
+        
+        PrintMessage("[DEBUG] First record pointer: ")
+        PrintNumber(record_ptr)
+        PrintMessage("\n")
+        
+        IfCondition EqualTo(record_ptr, 0) ThenBlock: {
+            PrintMessage("[DEBUG] No records returned - empty table\n")
+        }
+        
+        record_count = 0
+        
+        WhileLoop NotEqual(record_ptr, 0) {
+            record_count = Add(record_count, 1)
+            PrintMessage("[DEBUG] ========== Processing record #")
+            PrintNumber(record_count)
+            PrintMessage(" ==========\n")
+            
+            PrintMessage("[DEBUG] Step 7a: Reading emp_id at offset 0...\n")
+            emp_id = Dereference(record_ptr)
+            PrintMessage("[DEBUG] emp_id = ")
+            PrintNumber(emp_id)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] Step 7b: Allocating name buffer (31 bytes)...\n")
+            emp_name = Allocate(31)
+            PrintMessage("[DEBUG] Name buffer allocated at: ")
+            PrintNumber(emp_name)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] Step 7c: Copying name bytes (offset 8, length 30)...\n")
+            j = 0
+            WhileLoop LessThan(j, 30) {
+                offset = Add(8, j)
+                byte_addr = Add(record_ptr, offset)
+                byte = Dereference(byte_addr, "byte")
+                name_addr = Add(emp_name, j)
+                StoreValue(name_addr, byte)
+                j = Add(j, 1)
+            }
+            PrintMessage("[DEBUG] Name bytes copied\n")
+            
+            PrintMessage("[DEBUG] Step 7d: Null-terminating name...\n")
+            StoreValue(Add(emp_name, 30), 0)
+            PrintMessage("[DEBUG] emp_name = ")
+            PrintString(emp_name)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] Step 7e: Reading hourly_rate at offset 38...\n")
+            hourly_rate = Dereference(Add(record_ptr, 38))
+            PrintMessage("[DEBUG] hourly_rate = ")
+            PrintNumber(hourly_rate)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] Step 7f: Reading hours_worked at offset 46...\n")
+            hours_worked = Dereference(Add(record_ptr, 46))
+            PrintMessage("[DEBUG] hours_worked = ")
+            PrintNumber(hours_worked)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] Step 8: Calculating pay...\n")
+            gross_cents = Multiply(hourly_rate, hours_worked)
+            PrintMessage("[DEBUG] gross_cents = ")
+            PrintNumber(gross_cents)
+            PrintMessage("\n")
+            
+            gross_pay = Divide(gross_cents, 100)
+            PrintMessage("[DEBUG] gross_pay = ")
+            PrintNumber(gross_pay)
+            PrintMessage("\n")
+            
+            tax_amount = Divide(Multiply(gross_pay, 20), 100)
+            PrintMessage("[DEBUG] tax_amount = ")
+            PrintNumber(tax_amount)
+            PrintMessage("\n")
+            
+            net_pay = Subtract(gross_pay, tax_amount)
+            PrintMessage("[DEBUG] net_pay = ")
+            PrintNumber(net_pay)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] Step 9: Building output line...\n")
+            line = "  "
+            PrintMessage("[DEBUG] 9a: Adding emp_id...\n")
+            line = StringConcat(line, NumberToString(emp_id))
+            
+            PrintMessage("[DEBUG] 9b: Adding spacing...\n")
+            line = StringConcat(line, "      ")
+            
+            PrintMessage("[DEBUG] 9c: Adding emp_name...\n")
+            line = StringConcat(line, emp_name)
+            
+            PrintMessage("[DEBUG] 9d: Calculating padding...\n")
+            name_len = StringLength(emp_name)
+            PrintMessage("[DEBUG] name_len = ")
+            PrintNumber(name_len)
+            PrintMessage("\n")
+            
+            pad_count = Subtract(20, name_len)
+            PrintMessage("[DEBUG] pad_count = ")
+            PrintNumber(pad_count)
+            PrintMessage("\n")
+            
+            PrintMessage("[DEBUG] 9e: Adding padding...\n")
+            k = 0
+            WhileLoop LessThan(k, pad_count) {
+                line = StringConcat(line, " ")
+                k = Add(k, 1)
+            }
+            
+            PrintMessage("[DEBUG] 9f: Formatting hourly_rate...\n")
+            line = StringConcat(line, "  $")
+            rate_formatted = FormatDecimal(hourly_rate, 2, 2)
+            PrintMessage("[DEBUG] rate_formatted = ")
+            PrintString(rate_formatted)
+            PrintMessage("\n")
+            line = StringConcat(line, rate_formatted)
+            
+            PrintMessage("[DEBUG] 9g: Formatting hours_worked...\n")
+            line = StringConcat(line, "   ")
+            hours_formatted = FormatDecimal(hours_worked, 2, 2)
+            PrintMessage("[DEBUG] hours_formatted = ")
+            PrintString(hours_formatted)
+            PrintMessage("\n")
+            line = StringConcat(line, hours_formatted)
+            
+            PrintMessage("[DEBUG] 9h: Formatting gross_pay...\n")
+            line = StringConcat(line, "    $")
+            gross_formatted = FormatDecimal(gross_pay, 2, 2)
+            PrintMessage("[DEBUG] gross_formatted = ")
+            PrintString(gross_formatted)
+            PrintMessage("\n")
+            line = StringConcat(line, gross_formatted)
+            
+            PrintMessage("[DEBUG] 9i: Formatting tax_amount...\n")
+            line = StringConcat(line, "    $")
+            tax_formatted = FormatDecimal(tax_amount, 2, 2)
+            PrintMessage("[DEBUG] tax_formatted = ")
+            PrintString(tax_formatted)
+            PrintMessage("\n")
+            line = StringConcat(line, tax_formatted)
+            
+            PrintMessage("[DEBUG] 9j: Formatting net_pay...\n")
+            line = StringConcat(line, "    $")
+            net_formatted = FormatDecimal(net_pay, 2, 2)
+            PrintMessage("[DEBUG] net_formatted = ")
+            PrintString(net_formatted)
+            PrintMessage("\n")
+            line = StringConcat(line, net_formatted)
+            
+            PrintMessage("[DEBUG] Step 10: Writing line to report...\n")
+            Cobol.WriteLine(report_fd, line)
+            PrintMessage("[DEBUG] Line written successfully\n")
+            
+            PrintMessage("[DEBUG] Step 11: Updating totals...\n")
+            ReportTotals.total_employees = Add(ReportTotals.total_employees, 1)
+            ReportTotals.total_gross = Add(ReportTotals.total_gross, gross_pay)
+            ReportTotals.total_tax = Add(ReportTotals.total_tax, tax_amount)
+            ReportTotals.total_net = Add(ReportTotals.total_net, net_pay)
+            PrintMessage("[DEBUG] Totals updated\n")
+            
+            PrintMessage("[DEBUG] Step 12: Deallocating emp_name...\n")
+            Deallocate(emp_name, 31)
+            PrintMessage("[DEBUG] emp_name deallocated\n")
+            
+            PrintMessage("[DEBUG] Step 13: Deallocating record_ptr...\n")
+            Deallocate(record_ptr, 54)
+            PrintMessage("[DEBUG] record_ptr deallocated\n")
+            
+            PrintMessage("[DEBUG] Step 14: Reading next record...\n")
+            record_ptr = COBOL.DB.ReadNext(cursor, AppState.employee_layout)
+            PrintMessage("[DEBUG] Next record pointer: ")
+            PrintNumber(record_ptr)
+            PrintMessage("\n")
+        }
+        
+        PrintMessage("[DEBUG] Step 15: Writing footer...\n")
+        Cobol.WriteLine(report_fd, "--------------------------------------------------------------------------")
+        
+        PrintMessage("[DEBUG] Step 16: Building totals line...\n")
+        total_line = "  TOTALS:                                      $"
+        total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_gross, 2, 2))
+        total_line = StringConcat(total_line, "   $")
+        total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_tax, 2, 2))
+        total_line = StringConcat(total_line, "   $")
+        total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_net, 2, 2))
+        
+        PrintMessage("[DEBUG] Step 17: Writing totals line...\n")
+        Cobol.WriteLine(report_fd, total_line)
+        Cobol.WriteLine(report_fd, "==========================================================================")
+        
+        PrintMessage("[DEBUG] Step 18: Closing files...\n")
+        FileClose(report_fd)
+        COBOL.DB.Close(cursor)
+        
+        PrintMessage("[DEBUG] Step 19: Printing summary...\n")
+        PrintMessage("Processed ")
+        PrintNumber(ReportTotals.total_employees)
+        PrintMessage(" employees\n")
+        PrintMessage("Report saved to database\n")
+        
+        PrintMessage("[DEBUG] ProcessPayroll completed successfully!\n")
+    }
+}
+
+Function.Payroll.ViewReport {
+    Body: {
+        PrintMessage("\n")
+        
+        report_fd = FileOpen("PAYROLL_REPORT.txt", "r")
+        
+        IfCondition EqualTo(report_fd, 0) ThenBlock: {
+            PrintMessage("No report available. Please process payroll first.\n")
+            ReturnValue(0)
+        }
+        
+        content = FileRead(report_fd)
+        FileClose(report_fd)
+        
+        PrintString(content)
+        PrintMessage("\n")
+    }
+}
+
+Function.Payroll.DeleteEmployee {
+    Body: {
+        PrintMessage("\n=== DELETE EMPLOYEE ===\n")
+        
+        PrintMessage("Employee ID to delete: ")
+        input_id = ReadInput()
+        emp_id = StringToNumber(input_id)
+        
+        PrintMessage("Are you sure? (yes/no): ")
+        confirm = ReadInput()
+        
+        is_yes = StringEquals(confirm, "yes")
+        
+        IfCondition EqualTo(is_yes, 1) ThenBlock: {
+            cursor = COBOL.DB.OpenIndexed(AppState.db_conn, "employees", "emp_id", "I-O")
+            
+            IfCondition NotEqual(cursor, 0) ThenBlock: {
+                status = COBOL.DB.DeleteRecord(cursor, emp_id)
+                
+                IfCondition EqualTo(status, 1) ThenBlock: {
+                    PrintMessage("\nEmployee deleted\n")
+                } ElseBlock: {
+                    PrintMessage("\nFailed to delete employee\n")
+                }
+                
+                COBOL.DB.Close(cursor)
+            } ElseBlock: {
+                PrintMessage("\nFailed to open employee file\n")
+            }
+        } ElseBlock: {
+            PrintMessage("\nCancelled\n")
+        }
+    }
+}
+
+LoopMain.Main {
+    PrintMessage("Connecting to database...\n")
+    db_conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+    
+    IfCondition EqualTo(db_conn, 0) ThenBlock: {
+        PrintMessage("ERROR: Database connection failed\n")
+        SystemCall(60, 1)
+    }
+    
+    AppState.db_conn = db_conn
+    Payroll.Initialize(db_conn)
+    
+    WhileLoop EqualTo(AppState.running, 1) {
+        Payroll.ShowMenu()
+        
+        choice_str = ReadInput()
+        choice = StringToNumber(choice_str)
+        
+        IfCondition EqualTo(choice, 1) ThenBlock: {
+            Payroll.AddEmployee()
+        } ElseBlock: {
+            IfCondition EqualTo(choice, 2) ThenBlock: {
+                Payroll.ViewAllEmployees()
+            } ElseBlock: {
+                IfCondition EqualTo(choice, 3) ThenBlock: {
+                    Payroll.UpdateHours()
+                } ElseBlock: {
+                    IfCondition EqualTo(choice, 4) ThenBlock: {
+                        Payroll.ProcessPayroll()
+                    } ElseBlock: {
+                        IfCondition EqualTo(choice, 5) ThenBlock: {
+                            Payroll.ViewReport()
+                        } ElseBlock: {
+                            IfCondition EqualTo(choice, 6) ThenBlock: {
+                                Payroll.DeleteEmployee()
+                            } ElseBlock: {
+                                IfCondition EqualTo(choice, 7) ThenBlock: {
+                                    AppState.running = 0
+                                    PrintMessage("\nGoodbye!\n")
+                                } ElseBlock: {
+                                    PrintMessage("\nInvalid choice. Please try again.\n")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    PG_Disconnect(db_conn)
+}

@@ -1,0 +1,67 @@
+// redis_minimal_simple.ailang
+// Minimal Redis using only primitives (no library)
+
+PrintMessage("=== Minimal Redis Server (Primitives Only) ===")
+
+// Create hash table for storage
+store = HashCreate(256)
+
+// Create server socket
+server = SocketCreate()
+bind_result = SocketBind(server, 0, 6379)
+
+IfCondition NotEqual(bind_result, 0) ThenBlock {
+    PrintMessage("Port 6379 in use, trying 6380")
+    bind_result = SocketBind(server, 0, 6380)
+}
+
+IfCondition NotEqual(bind_result, 0) ThenBlock {
+    PrintMessage("Cannot bind to Redis port")
+    SocketClose(server)
+} ElseBlock {
+    PrintMessage("Redis server listening...")
+    PrintMessage("Commands: PING (hardcoded response)")
+    SocketListen(server, 5)
+    
+    // Handle 3 client connections (sequential)
+    connections = 0
+    WhileLoop LessThan(connections, 3) {
+        // Accept client
+        client = SocketAccept(server)
+        PrintMessage("Client connected")
+        
+        // Read command
+        buffer = ArrayCreate(512)
+        bytes_read = SocketRead(client, buffer, 512)
+        
+        IfCondition GreaterThan(bytes_read, 0) ThenBlock {
+            // Check first byte to identify command
+            first = ArrayGet(buffer, 0)
+            PrintMessage("First byte received:")
+            PrintNumber(first)
+            
+            // Build a simple +PONG\r\n response
+            response = ArrayCreate(7)
+            ArraySet(response, 0, 43)   // '+'
+            ArraySet(response, 1, 80)   // 'P'
+            ArraySet(response, 2, 79)   // 'O'
+            ArraySet(response, 3, 78)   // 'N'
+            ArraySet(response, 4, 71)   // 'G'
+            ArraySet(response, 5, 13)   // '\r'
+            ArraySet(response, 6, 10)   // '\n'
+            
+            // Send response
+            SocketWrite(client, response, 7)
+            PrintMessage("Sent PONG response")
+        }
+        
+        // Close client
+        SocketClose(client)
+        PrintMessage("Client disconnected")
+        
+        connections = Add(connections, 1)
+    }
+    
+    SocketClose(server)
+    PrintMessage("Server stopped after 3 connections")
+}

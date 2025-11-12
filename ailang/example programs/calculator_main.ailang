@@ -1,0 +1,31 @@
+// Calculator with main entry point (LoopMain not yet implemented)
+
+PrintMessage("AILANG Calculator")
+PrintMessage("=================")
+
+FixedPool.CalcState {
+    "running": Initialize=1
+}
+
+// Using Function until LoopMain is implemented
+Function.Main.Entry {
+    Body: {
+        PrintMessage("Main entry starting...")
+        
+        // Simple demo calculations
+        result1 = Add(10, 20)
+        PrintMessage("10 + 20 =")
+        PrintNumber(result1)
+        
+        result2 = Multiply(6, 7)
+        PrintMessage("6 * 7 =")
+        PrintNumber(result2)
+        
+        PrintMessage("Main entry complete")
+        ReturnValue(0)
+    }
+}
+
+// Call the main entry
+result = Main.Entry()
+PrintMessage("Program finished")

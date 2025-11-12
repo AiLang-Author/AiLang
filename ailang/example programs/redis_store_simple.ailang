@@ -1,0 +1,235 @@
+// redis_store_simple.ailang
+// Simple working Redis store with SET/GET
+
+// ====================
+// Store Implementation Using Arrays
+// ====================
+MAX_KEYS = 100
+store_keys = ArrayCreate(MAX_KEYS)
+store_values = ArrayCreate(MAX_KEYS)
+store_count = 0
+
+// Working variables
+i = 0
+found = 0
+key_index = 0
+
+// ====================
+// Find Key in Store
+// ====================
+SubRoutine.FindKey {
+    // Input: key (global)
+    // Output: key_index (global), found (global)
+    found = 0
+    key_index = -1
+    i = 0
+    
+    WhileLoop And(LessThan(i, store_count), EqualTo(found, 0)) {
+        stored_key = ArrayGet(store_keys, i)
+        cmp = StringCompare(key, stored_key)
+        IfCondition EqualTo(cmp, 0) ThenBlock: {
+            found = 1
+            key_index = i
+        }
+        i = Add(i, 1)
+    }
+}
+
+// ====================
+// SET Command
+// ====================
+SubRoutine.RedisSet {
+    // Input: key, value (globals)
+    PrintMessage("[SET] key=")
+    PrintMessage(key)
+    PrintMessage(" value=")
+    PrintMessage(value)
+    
+    RunTask(FindKey)
+    
+    IfCondition EqualTo(found, 1) ThenBlock: {
+        // Update existing
+        ArraySet(store_values, key_index, value)
+        PrintMessage("  Updated existing key at index")
+        PrintNumber(key_index)
+    } ElseBlock: {
+        // Add new
+        IfCondition LessThan(store_count, MAX_KEYS) ThenBlock: {
+            ArraySet(store_keys, store_count, key)
+            ArraySet(store_values, store_count, value)
+            PrintMessage("  Added new key at index")
+            PrintNumber(store_count)
+            store_count = Add(store_count, 1)
+        } ElseBlock: {
+            PrintMessage("  ERROR: Store full!")
+        }
+    }
+}
+
+// ====================
+// GET Command
+// ====================
+SubRoutine.RedisGet {
+    // Input: key (global)
+    PrintMessage("[GET] key=")
+    PrintMessage(key)
+    
+    RunTask(FindKey)
+    
+    IfCondition EqualTo(found, 1) ThenBlock: {
+        value = ArrayGet(store_values, key_index)
+        PrintMessage("  Found value=")
+        PrintMessage(value)
+    } ElseBlock: {
+        value = "(nil)"
+        PrintMessage("  Key not found")
+    }
+}
+
+// ====================
+// DEL Command
+// ====================
+SubRoutine.RedisDel {
+    // Input: key (global)
+    PrintMessage("[DEL] key=")
+    PrintMessage(key)
+    
+    RunTask(FindKey)
+    
+    IfCondition EqualTo(found, 1) ThenBlock: {
+        // Shift everything down
+        i = key_index
+        WhileLoop LessThan(i, Subtract(store_count, 1)) {
+            next_key = ArrayGet(store_keys, Add(i, 1))
+            next_val = ArrayGet(store_values, Add(i, 1))
+            ArraySet(store_keys, i, next_key)
+            ArraySet(store_values, i, next_val)
+            i = Add(i, 1)
+        }
+        store_count = Subtract(store_count, 1)
+        PrintMessage("  Deleted key")
+    } ElseBlock: {
+        PrintMessage("  Key not found")
+    }
+}
+
+// ====================
+// EXISTS Command
+// ====================
+SubRoutine.RedisExists {
+    // Input: key (global)
+    PrintMessage("[EXISTS] key=")
+    PrintMessage(key)
+    
+    RunTask(FindKey)
+    
+    IfCondition EqualTo(found, 1) ThenBlock: {
+        PrintMessage("  1")
+    } ElseBlock: {
+        PrintMessage("  0")
+    }
+}
+
+// ====================
+// DBSIZE Command
+// ====================
+SubRoutine.RedisDbSize {
+    PrintMessage("[DBSIZE]")
+    PrintNumber(store_count)
+    PrintMessage(" keys")
+}
+
+// ====================
+// Test Harness
+// ====================
+SubRoutine.TestStore {
+    PrintMessage("=== Testing Redis Store ===")
+    PrintMessage("")
+    
+    // Test SET
+    key = "name"
+    value = "Alice"
+    RunTask(RedisSet)
+    
+    key = "age"
+    value = "30"
+    RunTask(RedisSet)
+    
+    key = "city"
+    value = "Boston"
+    RunTask(RedisSet)
+    
+    PrintMessage("")
+    
+    // Test GET
+    key = "name"
+    RunTask(RedisGet)
+    
+    key = "age"
+    RunTask(RedisGet)
+    
+    key = "missing"
+    RunTask(RedisGet)
+    
+    PrintMessage("")
+    
+    // Test EXISTS
+    key = "name"
+    RunTask(RedisExists)
+    
+    key = "missing"
+    RunTask(RedisExists)
+    
+    PrintMessage("")
+    
+    // Test DBSIZE
+    RunTask(RedisDbSize)
+    
+    PrintMessage("")
+    
+    // Test UPDATE
+    key = "age"
+    value = "31"
+    RunTask(RedisSet)
+    
+    key = "age"
+    RunTask(RedisGet)
+    
+    PrintMessage("")
+    
+    // Test DEL
+    key = "city"
+    RunTask(RedisDel)
+    
+    key = "city"
+    RunTask(RedisExists)
+    
+    RunTask(RedisDbSize)
+    
+    PrintMessage("")
+    PrintMessage("=== Test Complete ===")
+}
+
+// ====================
+// Main
+// ====================
+PrintMessage("Simple Redis Store")
+PrintMessage("==================")
+PrintMessage("")
+
+// Global test variables
+key = ""
+value = ""
+
+RunTask(TestStore)
+
+PrintMessage("")
+PrintMessage("Store contents:")
+i = 0
+WhileLoop LessThan(i, store_count) {
+    PrintMessage("  ")
+    PrintMessage(ArrayGet(store_keys, i))
+    PrintMessage(" => ")
+    PrintMessage(ArrayGet(store_values, i))
+    i = Add(i, 1)
+}

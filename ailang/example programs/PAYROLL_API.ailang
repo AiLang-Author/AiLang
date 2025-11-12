@@ -1,0 +1,540 @@
+// PAYROLL_API.ailang
+// API-enabled payroll program for REST integration
+// Copyright (c) 2025 Sean Collins, 2 Paws Machine and Engineering
+
+LibraryImport.Cobol
+LibraryImport.SQL
+LibraryImport.PostgreSQL_Complete
+LibraryImport.JCL_Worker
+LibraryImport.XArrays
+LibraryImport.HashMap
+
+// ============================================================================
+// DATA STRUCTURES
+// ============================================================================
+
+FixedPool.Employee {
+    "emp_id": Initialize=0
+    "emp_name": Initialize=0
+    "hourly_rate": Initialize=0
+    "hours_worked": Initialize=0
+    "gross_pay": Initialize=0
+    "tax_amount": Initialize=0
+    "net_pay": Initialize=0
+}
+
+FixedPool.APIRequest {
+    "session_id": Initialize=0
+    "action": Initialize=0
+    "params": Initialize=0
+}
+
+FixedPool.ReportTotals {
+    "total_employees": Initialize=0
+    "total_gross": Initialize=0
+    "total_tax": Initialize=0
+    "total_net": Initialize=0
+}
+
+// ============================================================================
+// API REQUEST/RESPONSE HANDLERS
+// ============================================================================
+
+Function.API.ReadRequest {
+    Input: db_conn: Integer
+    Input: session_id: Address
+    Output: Integer
+    Body: {
+        PrintMessage("[API] Reading request for session: ")
+        PrintString(session_id)
+        PrintMessage("\n")
+        
+        // Build SELECT query to get pending request
+        query = "SELECT action, params FROM api_requests WHERE session_id = '"
+        query = StringConcat(query, session_id)
+        query = StringConcat(query, "' AND status = 'pending'")
+        
+        result = PG_Query(db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("[API] ERROR: Query failed\n")
+            ReturnValue(0)
+        }
+        
+        // Check if we got any rows
+        row_count = XArray.XSize(result)
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            PrintMessage("[API] ERROR: No pending request found\n")
+            XArray.XDestroy(result)
+            ReturnValue(0)
+        }
+        
+        // Get value from row HashMap - result is XArray of HashMaps
+        row_map = XArray.XGet(result, 0)
+        action_value = HashMap.HGetSimple(row_map, "action")
+        params_value = HashMap.HGetSimple(row_map, "params")
+        
+        // Store in APIRequest
+        APIRequest.action = action_value
+        APIRequest.params = params_value
+        
+        PrintMessage("[API] Action: ")
+        PrintString(APIRequest.action)
+        PrintMessage("\n")
+        PrintMessage("[API] Params: ")
+        PrintString(APIRequest.params)
+        PrintMessage("\n")
+        
+        XArray.XDestroy(result)
+        
+        // Mark request as processing
+        update_query = "UPDATE api_requests SET status = 'processing', started_at = NOW() WHERE session_id = '"
+        update_query = StringConcat(update_query, session_id)
+        update_query = StringConcat(update_query, "'")
+        
+        update_result = PG_Query(db_conn, update_query)
+        Deallocate(update_query, 0)
+        
+        IfCondition NotEqual(update_result, 0) ThenBlock: {
+            XArray.XDestroy(update_result)
+        }
+        
+        ReturnValue(1)
+    }
+}
+
+Function.API.WriteResponse {
+    Input: db_conn: Integer
+    Input: session_id: Address
+    Input: result_status: Address
+    Input: result_data: Address
+    Body: {
+        PrintMessage("[API] Writing response: ")
+        PrintString(result_status)
+        PrintMessage("\n")
+        
+        // Build INSERT query for response
+        query = "INSERT INTO api_responses (session_id, result, data) VALUES ('"
+        query = StringConcat(query, session_id)
+        query = StringConcat(query, "', '")
+        query = StringConcat(query, result_status)
+        query = StringConcat(query, "', '")
+        query = StringConcat(query, result_data)
+        query = StringConcat(query, "'::jsonb)")
+        
+        result = PG_Query(db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+        }
+        
+        // Mark request as completed
+        update_query = "UPDATE api_requests SET status = 'completed', completed_at = NOW() WHERE session_id = '"
+        update_query = StringConcat(update_query, session_id)
+        update_query = StringConcat(update_query, "'")
+        
+        update_result = PG_Query(db_conn, update_query)
+        Deallocate(update_query, 0)
+        
+        IfCondition NotEqual(update_result, 0) ThenBlock: {
+            XArray.XDestroy(update_result)
+        }
+        
+        PrintMessage("[API] Response written successfully\n")
+    }
+}
+
+// ============================================================================
+// BUSINESS LOGIC
+// ============================================================================
+
+Function.Payroll.CalculatePay {
+    Body: {
+        gross_cents = Multiply(Employee.hourly_rate, Employee.hours_worked)
+        Employee.gross_pay = Divide(gross_cents, 100)
+        Employee.tax_amount = Divide(Multiply(Employee.gross_pay, 20), 100)
+        Employee.net_pay = Subtract(Employee.gross_pay, Employee.tax_amount)
+    }
+}
+
+Function.HandleListEmployees {
+    Input: db_conn: Integer
+    Output: Address
+    Body: {
+        PrintMessage("[HANDLER] LIST_EMPLOYEES\n")
+        
+        // Query all employees
+        result = SQL.Select(db_conn, "employees", "*", 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue("{\"status\":\"success\",\"employees\":[]}")
+        }
+        
+        count = SQL.RowCount(result)
+        
+        // Build JSON array response
+        json = "{\"status\":\"success\",\"employees\":["
+        
+        i = 0
+        WhileLoop LessThan(i, count) {
+            IfCondition GreaterThan(i, 0) ThenBlock: {
+                json = StringConcat(json, ",")
+            }
+            
+            emp_id = SQL.GetValue(result, i, "emp_id")
+            name = SQL.GetValue(result, i, "emp_name")
+            rate = SQL.GetValue(result, i, "hourly_rate")
+            hours = SQL.GetValue(result, i, "hours_worked")
+            
+            json = StringConcat(json, "{\"employee_id\":")
+            json = StringConcat(json, emp_id)
+            json = StringConcat(json, ",\"name\":\"")
+            json = StringConcat(json, name)
+            json = StringConcat(json, "\",\"hourly_rate\":")
+            json = StringConcat(json, rate)
+            json = StringConcat(json, ",\"hours_worked\":")
+            json = StringConcat(json, hours)
+            json = StringConcat(json, "}")
+            
+            i = Add(i, 1)
+        }
+        
+        json = StringConcat(json, "]}")
+        
+        XArray.XDestroy(result)
+        ReturnValue(json)
+    }
+}
+
+Function.HandleGetEmployee {
+    Input: db_conn: Integer
+    Input: params: Address
+    Output: Address
+    Body: {
+        PrintMessage("[HANDLER] GET_EMPLOYEE\n")
+        
+        // TODO: Parse employee_id from params JSON
+        // For now, this is a placeholder
+        emp_id = 1
+        
+        query = "SELECT * FROM employees WHERE emp_id = "
+        query = StringConcat(query, NumberToString(emp_id))
+        
+        result = PG_Query(db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue("{\"status\":\"error\",\"message\":\"Employee not found\"}")
+        }
+        
+        // Check row count
+        row_count = XArray.XSize(result)
+        
+        IfCondition EqualTo(row_count, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            ReturnValue("{\"status\":\"error\",\"message\":\"Employee not found\"}")
+        }
+        
+        // Build employee object from row
+        row_map = XArray.XGet(result, 0)
+        emp_id_str = HashMap.HGetSimple(row_map, "emp_id")
+        name = HashMap.HGetSimple(row_map, "emp_name")
+        rate = HashMap.HGetSimple(row_map, "hourly_rate")
+        hours = HashMap.HGetSimple(row_map, "hours_worked")
+        
+        json = "{\"status\":\"success\",\"employee\":{"
+        json = StringConcat(json, "\"employee_id\":")
+        json = StringConcat(json, emp_id_str)
+        json = StringConcat(json, ",\"name\":\"")
+        json = StringConcat(json, name)
+        json = StringConcat(json, "\",\"hourly_rate\":")
+        json = StringConcat(json, rate)
+        json = StringConcat(json, ",\"hours_worked\":")
+        json = StringConcat(json, hours)
+        json = StringConcat(json, "}}")
+        
+        XArray.XDestroy(result)
+        ReturnValue(json)
+    }
+}
+
+Function.HandleAddEmployee {
+    Input: db_conn: Integer
+    Input: params: Address
+    Output: Address
+    Body: {
+        PrintMessage("[HANDLER] ADD_EMPLOYEE\n")
+        
+        // TODO: Parse JSON params properly
+        // For now, use placeholder values
+        name = "John Doe"
+        hourly_rate = 2500  // $25.00/hr in cents
+        hours_worked = 4000  // 40.00 hours in cents
+        
+        // Generate new employee ID
+        id_query = "SELECT COALESCE(MAX(emp_id), 0) + 1 AS next_id FROM employees"
+        id_result = PG_Query(db_conn, id_query)
+        
+        new_id = 1
+        IfCondition NotEqual(id_result, 0) ThenBlock: {
+            row_count_check = XArray.XSize(id_result)
+            IfCondition GreaterThan(row_count_check, 0) ThenBlock: {
+                row_map = XArray.XGet(id_result, 0)
+                id_str = HashMap.HGetSimple(row_map, "next_id")
+                new_id = StringToNumber(id_str)
+            }
+            XArray.XDestroy(id_result)
+        }
+        
+        // Insert new employee
+        insert_query = "INSERT INTO employees (emp_id, emp_name, hourly_rate, hours_worked) VALUES ("
+        insert_query = StringConcat(insert_query, NumberToString(new_id))
+        insert_query = StringConcat(insert_query, ", '")
+        insert_query = StringConcat(insert_query, name)
+        insert_query = StringConcat(insert_query, "', ")
+        insert_query = StringConcat(insert_query, NumberToString(hourly_rate))
+        insert_query = StringConcat(insert_query, ", ")
+        insert_query = StringConcat(insert_query, NumberToString(hours_worked))
+        insert_query = StringConcat(insert_query, ")")
+        
+        insert_result = PG_Query(db_conn, insert_query)
+        Deallocate(insert_query, 0)
+        
+        response = 0
+        IfCondition NotEqual(insert_result, 0) ThenBlock: {
+            XArray.XDestroy(insert_result)
+            
+            // Build success response
+            response = "{\"status\":\"success\",\"employee_id\":"
+            response = StringConcat(response, NumberToString(new_id))
+            response = StringConcat(response, ",\"message\":\"Employee added successfully\"}")
+        } ElseBlock: {
+            response = "{\"status\":\"error\",\"message\":\"Failed to add employee\"}"
+        }
+        
+        ReturnValue(response)
+    }
+}
+
+Function.HandleUpdateHours {
+    Input: db_conn: Integer
+    Input: params: Address
+    Output: Address
+    Body: {
+        PrintMessage("[HANDLER] UPDATE_HOURS\n")
+        
+        // TODO: Parse params properly
+        emp_id = 1
+        hours_worked = 4500  // 45.00 hours
+        
+        // Update employee hours
+        update_query = "UPDATE employees SET hours_worked = "
+        update_query = StringConcat(update_query, NumberToString(hours_worked))
+        update_query = StringConcat(update_query, " WHERE emp_id = ")
+        update_query = StringConcat(update_query, NumberToString(emp_id))
+        
+        result = PG_Query(db_conn, update_query)
+        Deallocate(update_query, 0)
+        
+        response = 0
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            response = "{\"status\":\"success\",\"employee_id\":"
+            response = StringConcat(response, NumberToString(emp_id))
+            response = StringConcat(response, ",\"updated_hours\":")
+            response = StringConcat(response, NumberToString(hours_worked))
+            response = StringConcat(response, ",\"message\":\"Hours updated successfully\"}")
+        } ElseBlock: {
+            response = "{\"status\":\"error\",\"message\":\"Update failed\"}"
+        }
+        
+        ReturnValue(response)
+    }
+}
+
+Function.HandleDeleteEmployee {
+    Input: db_conn: Integer
+    Input: params: Address
+    Output: Address
+    Body: {
+        PrintMessage("[HANDLER] DELETE_EMPLOYEE\n")
+        
+        // TODO: Parse employee_id from params
+        emp_id = 1
+        
+        delete_query = "DELETE FROM employees WHERE emp_id = "
+        delete_query = StringConcat(delete_query, NumberToString(emp_id))
+        
+        result = PG_Query(db_conn, delete_query)
+        Deallocate(delete_query, 0)
+        
+        response = 0
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            XArray.XDestroy(result)
+            response = "{\"status\":\"success\",\"employee_id\":"
+            response = StringConcat(response, NumberToString(emp_id))
+            response = StringConcat(response, ",\"message\":\"Employee deleted successfully\"}")
+        } ElseBlock: {
+            response = "{\"status\":\"error\",\"message\":\"Delete failed\"}"
+        }
+        
+        ReturnValue(response)
+    }
+}
+
+Function.HandleCalculatePayroll {
+    Input: db_conn: Integer
+    Output: Address
+    Body: {
+        PrintMessage("[HANDLER] CALCULATE_PAYROLL\n")
+        
+        // Get all employees
+        result = SQL.Select(db_conn, "employees", "*", 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            ReturnValue("{\"status\":\"error\",\"message\":\"No employees found\"}")
+        }
+        
+        count = SQL.RowCount(result)
+        
+        // Reset totals
+        ReportTotals.total_employees = count
+        ReportTotals.total_gross = 0
+        ReportTotals.total_tax = 0
+        ReportTotals.total_net = 0
+        
+        // Process each employee
+        i = 0
+        WhileLoop LessThan(i, count) {
+            Employee.hourly_rate = StringToNumber(SQL.GetValue(result, i, "hourly_rate"))
+            Employee.hours_worked = StringToNumber(SQL.GetValue(result, i, "hours_worked"))
+            
+            Payroll.CalculatePay()
+            
+            ReportTotals.total_gross = Add(ReportTotals.total_gross, Employee.gross_pay)
+            ReportTotals.total_tax = Add(ReportTotals.total_tax, Employee.tax_amount)
+            ReportTotals.total_net = Add(ReportTotals.total_net, Employee.net_pay)
+            
+            i = Add(i, 1)
+        }
+        
+        XArray.XDestroy(result)
+        
+        // Build JSON response
+        response = "{\"status\":\"success\",\"total_employees\":"
+        response = StringConcat(response, NumberToString(count))
+        response = StringConcat(response, ",\"total_gross\":")
+        response = StringConcat(response, NumberToString(ReportTotals.total_gross))
+        response = StringConcat(response, ",\"total_tax\":")
+        response = StringConcat(response, NumberToString(ReportTotals.total_tax))
+        response = StringConcat(response, ",\"total_net\":")
+        response = StringConcat(response, NumberToString(ReportTotals.total_net))
+        response = StringConcat(response, ",\"report_file\":\"PAYROLL_REPORT.txt\"}")
+        
+        ReturnValue(response)
+    }
+}
+
+// ============================================================================
+// MAIN ENTRY POINT
+// ============================================================================
+
+LoopMain.Main {
+    PrintMessage("╔═══════════════════════════════════════╗\n")
+    PrintMessage("║   PAYROLL API PROGRAM v1.0            ║\n")
+    PrintMessage("╚═══════════════════════════════════════╝\n\n")
+    
+    // Get SESSION_ID from command line argument (argv[1])
+    // For now, use a placeholder - the JCL daemon will need to pass this
+    // TODO: Implement proper argv parsing or environment variable access
+    session_id = "test-session-123"
+    
+    PrintMessage("[MAIN] Session ID: ")
+    PrintString(session_id)
+    PrintMessage("\n")
+    PrintMessage("[MAIN] NOTE: Using placeholder session ID\n")
+    PrintMessage("[MAIN] TODO: JCL daemon should pass SESSION_ID as argument\n")
+    
+    // Try to use container's database connection first
+    db_conn = ContainerConfig.db_conn
+    
+    IfCondition EqualTo(db_conn, 0) ThenBlock: {
+        // No container connection - connect directly
+        PrintMessage("[MAIN] Connecting to database...\n")
+        db_conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+        
+        IfCondition EqualTo(db_conn, 0) ThenBlock: {
+            PrintMessage("[ERROR] Database connection failed\n")
+            error_response = "{\"status\":\"error\",\"message\":\"Database unavailable\"}"
+            SystemCall(60, 1)
+        }
+    } ElseBlock: {
+        PrintMessage("[MAIN] Using container database connection\n")
+    }
+    
+    // Initialize COBOL file system
+    Cobol.InitFileSystem(db_conn)
+    PrintMessage("[MAIN] File system initialized\n")
+    
+    // Read API request from database
+    request_success = API.ReadRequest(db_conn, session_id)
+    
+    IfCondition EqualTo(request_success, 0) ThenBlock: {
+        PrintMessage("[ERROR] Failed to read API request\n")
+        error_response = "{\"status\":\"error\",\"message\":\"Request not found or invalid\"}"
+        API.WriteResponse(db_conn, session_id, "error", error_response)
+        SystemCall(60, 1)
+    }
+    
+    // Route to appropriate handler based on action
+    response_data = 0
+    
+    is_list = StringCompare(APIRequest.action, "LIST_EMPLOYEES")
+    is_get = StringCompare(APIRequest.action, "GET_EMPLOYEE")
+    is_add = StringCompare(APIRequest.action, "ADD_EMPLOYEE")
+    is_update = StringCompare(APIRequest.action, "UPDATE_HOURS")
+    is_delete = StringCompare(APIRequest.action, "DELETE_EMPLOYEE")
+    is_calc = StringCompare(APIRequest.action, "CALCULATE_PAYROLL")
+    
+    IfCondition EqualTo(is_list, 0) ThenBlock: {
+        response_data = HandleListEmployees(db_conn)
+    }
+    
+    IfCondition EqualTo(is_get, 0) ThenBlock: {
+        response_data = HandleGetEmployee(db_conn, APIRequest.params)
+    }
+    
+    IfCondition EqualTo(is_add, 0) ThenBlock: {
+        response_data = HandleAddEmployee(db_conn, APIRequest.params)
+    }
+    
+    IfCondition EqualTo(is_update, 0) ThenBlock: {
+        response_data = HandleUpdateHours(db_conn, APIRequest.params)
+    }
+    
+    IfCondition EqualTo(is_delete, 0) ThenBlock: {
+        response_data = HandleDeleteEmployee(db_conn, APIRequest.params)
+    }
+    
+    IfCondition EqualTo(is_calc, 0) ThenBlock: {
+        response_data = HandleCalculatePayroll(db_conn)
+    }
+    
+    // Check if action was recognized
+    IfCondition EqualTo(response_data, 0) ThenBlock: {
+        PrintMessage("[ERROR] Unknown action: ")
+        PrintString(APIRequest.action)
+        PrintMessage("\n")
+        response_data = "{\"status\":\"error\",\"message\":\"Unknown action\"}"
+    }
+    
+    // Write response back to database
+    API.WriteResponse(db_conn, session_id, "success", response_data)
+    
+    PrintMessage("[MAIN] Request processed successfully\n")
+    PrintMessage("╚═══════════════════════════════════════╝\n")
+    
+    SystemCall(60, 0)
+}

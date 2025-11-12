@@ -1,0 +1,171 @@
+// PAYROLL_BATCH.jcl
+// Non-interactive batch payroll for daemon execution
+
+LibraryImport.Cobol
+LibraryImport.SQL
+LibraryImport.PostgreSQL_Complete
+LibraryImport.JCL_Worker
+
+FixedPool.Employee {
+    "emp_id": Initialize=0
+    "emp_name": Initialize=0
+    "hourly_rate": Initialize=0
+    "hours_worked": Initialize=0
+    "gross_pay": Initialize=0
+    "tax_amount": Initialize=0
+    "net_pay": Initialize=0
+}
+
+FixedPool.ReportTotals {
+    "total_employees": Initialize=0
+    "total_gross": Initialize=0
+    "total_tax": Initialize=0
+    "total_net": Initialize=0
+}
+
+Function.Payroll.CalculatePay {
+    Body: {
+        gross_cents = Multiply(Employee.hourly_rate, Employee.hours_worked)
+        Employee.gross_pay = Divide(gross_cents, 100)
+        Employee.tax_amount = Divide(Multiply(Employee.gross_pay, 20), 100)
+        Employee.net_pay = Subtract(Employee.gross_pay, Employee.tax_amount)
+    }
+}
+
+LoopMain.Main {
+    PrintMessage("═══════════════════════════════════════════════════\n")
+    PrintMessage("   AUTOMATED PAYROLL BATCH PROCESSING              \n")
+    PrintMessage("═══════════════════════════════════════════════════\n\n")
+    
+    // Try to use container's connection first
+    db_conn = ContainerConfig.db_conn
+    standalone = 0
+    
+    IfCondition EqualTo(db_conn, 0) ThenBlock: {
+        // No container - connect ourselves
+        PrintMessage("[INFO] Running standalone - connecting to database\n")
+        db_conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+        
+        IfCondition EqualTo(db_conn, 0) ThenBlock: {
+            PrintMessage("[ERROR] Database connection failed\n")
+            SystemCall(60, 1)
+        }
+        
+        standalone = 1
+    } ElseBlock: {
+        PrintMessage("[INFO] Using container database connection\n")
+    }
+    
+    // Initialize COBOL file system
+    Cobol.InitFileSystem(db_conn)
+    PrintMessage("[INFO] File system ready\n\n")
+    
+    // Load employees
+    PrintMessage("[PROCESS] Loading employee data...\n")
+    result = SQL.Select(db_conn, "employees", "*", 0)
+    
+    IfCondition EqualTo(result, 0) ThenBlock: {
+        PrintMessage("[WARNING] No employees found in database\n")
+        IfCondition EqualTo(standalone, 1) ThenBlock: {
+            PG_Disconnect(db_conn)
+        }
+        SystemCall(60, 0)
+    }
+    
+    count = SQL.RowCount(result)
+    PrintMessage("[PROCESS] Found ")
+    PrintNumber(count)
+    PrintMessage(" employees\n\n")
+    
+    // Open report
+    report_fd = FileOpen("PAYROLL_AUTOMATED.txt", "w")
+    
+    Cobol.WriteLine(report_fd, "═══════════════════════════════════════════════════════════════════════════")
+    Cobol.WriteLine(report_fd, "                    AUTOMATED PAYROLL BATCH REPORT                         ")
+    Cobol.WriteLine(report_fd, "═══════════════════════════════════════════════════════════════════════════")
+    Cobol.WriteLine(report_fd, "")
+    Cobol.WriteLine(report_fd, "  ID    Employee Name        Rate      Hours    Gross      Tax        Net    ")
+    Cobol.WriteLine(report_fd, "───────────────────────────────────────────────────────────────────────────")
+    
+    // Process each employee
+    i = 0
+    WhileLoop LessThan(i, count) {
+        emp_id_str = SQL.GetValue(result, i, "emp_id")
+        emp_name_str = SQL.GetValue(result, i, "emp_name")
+        rate_str = SQL.GetValue(result, i, "hourly_rate")
+        hours_str = SQL.GetValue(result, i, "hours_worked")
+        
+        Employee.emp_id = StringToNumber(emp_id_str)
+        Employee.emp_name = emp_name_str
+        Employee.hourly_rate = StringToNumber(rate_str)
+        Employee.hours_worked = StringToNumber(hours_str)
+        
+        Payroll.CalculatePay()
+        
+        PrintMessage("  ✓ ")
+        PrintString(Employee.emp_name)
+        PrintMessage(": $")
+        PrintString(FormatDecimal(Employee.gross_pay, 2, 2))
+        PrintMessage(" gross\n")
+        
+        // Write to report
+        line = "  "
+        line = StringConcat(line, NumberToString(Employee.emp_id))
+        line = StringConcat(line, "      ")
+        line = StringConcat(line, Employee.emp_name)
+        
+        name_len = StringLength(Employee.emp_name)
+        j = name_len
+        WhileLoop LessThan(j, 20) {
+            line = StringConcat(line, " ")
+            j = Add(j, 1)
+        }
+        
+        line = StringConcat(line, "  $")
+        line = StringConcat(line, FormatDecimal(Employee.hourly_rate, 2, 2))
+        line = StringConcat(line, "   ")
+        line = StringConcat(line, FormatDecimal(Employee.hours_worked, 2, 2))
+        line = StringConcat(line, "    $")
+        line = StringConcat(line, FormatDecimal(Employee.gross_pay, 2, 2))
+        line = StringConcat(line, "    $")
+        line = StringConcat(line, FormatDecimal(Employee.tax_amount, 2, 2))
+        line = StringConcat(line, "    $")
+        line = StringConcat(line, FormatDecimal(Employee.net_pay, 2, 2))
+        
+        Cobol.WriteLine(report_fd, line)
+        
+        ReportTotals.total_gross = Add(ReportTotals.total_gross, Employee.gross_pay)
+        ReportTotals.total_tax = Add(ReportTotals.total_tax, Employee.tax_amount)
+        ReportTotals.total_net = Add(ReportTotals.total_net, Employee.net_pay)
+        ReportTotals.total_employees = Add(ReportTotals.total_employees, 1)
+        
+        i = Add(i, 1)
+    }
+    
+    // Write totals
+    Cobol.WriteLine(report_fd, "───────────────────────────────────────────────────────────────────────────")
+    total_line = "  TOTALS:                                      $"
+    total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_gross, 2, 2))
+    total_line = StringConcat(total_line, "   $")
+    total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_tax, 2, 2))
+    total_line = StringConcat(total_line, "   $")
+    total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_net, 2, 2))
+    Cobol.WriteLine(report_fd, total_line)
+    Cobol.WriteLine(report_fd, "═══════════════════════════════════════════════════════════════════════════")
+    
+    FileClose(report_fd)
+    PG_DestroyResult(result)
+    
+    PrintMessage("\n[COMPLETE] Processed ")
+    PrintNumber(ReportTotals.total_employees)
+    PrintMessage(" employees\n")
+    PrintMessage("[COMPLETE] Total payroll: $")
+    PrintString(FormatDecimal(ReportTotals.total_net, 2, 2))
+    PrintMessage("\n")
+    PrintMessage("[COMPLETE] Report saved to PAYROLL_AUTOMATED.txt\n")
+    
+    // Only disconnect if we connected ourselves
+    IfCondition EqualTo(standalone, 1) ThenBlock: {
+        PG_Disconnect(db_conn)
+    }
+}

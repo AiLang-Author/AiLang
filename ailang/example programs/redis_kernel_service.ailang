@@ -1,0 +1,301 @@
+// redis_kernel_service.ailang - FIXED SYNTAX
+// Redis String service running as kernel process
+
+// ====================
+// Global Variables (AILang requirement)
+// ====================
+redis_master_pid = 0
+redis_string_pid = 0
+redis_list_pid = 0
+redis_expire_pid = 0
+redis_cmd_pipe = 0
+redis_resp_pipe = 0
+redis_store = 0
+redis_store_size = 0
+cmd_type = 0
+cmd_key = 0
+cmd_value = 0
+cmd_result = 0
+
+// Variables from kernel we'll need
+NPROC = 64
+PGSIZE = 4096
+PRIORITY_HIGH = 0
+PRIORITY_NORMAL = 1
+PRIORITY_LOW = 2
+SLEEPING = 2
+RUNNABLE = 3
+RUNNING = 4
+pipe_id = 0
+alloc_pid = 0
+i = 0
+pid = 0
+state = 0
+nwrite = 0
+nread = 0
+sleep_chan = 0
+pages_allocated = 0
+syscall_count = 0
+current_cpu = 0
+
+// Arrays we need
+proc_pids = ArrayCreate(NPROC)
+proc_states = ArrayCreate(NPROC)
+proc_priority = ArrayCreate(NPROC)
+pipe_nwrite = ArrayCreate(16)
+pipe_nread = ArrayCreate(16)
+
+// ====================
+// Stubs for kernel functions
+// ====================
+SubRoutine.Kalloc {
+    pages_allocated = Add(pages_allocated, 1)
+    PrintMessage("[STUB] Page allocated")
+}
+
+SubRoutine.PipeAlloc {
+    pipe_id = 0
+    PrintMessage("[STUB] Pipe allocated")
+}
+
+SubRoutine.PipeRead {
+    PrintMessage("[STUB] Pipe read")
+}
+
+SubRoutine.PipeWrite {
+    PrintMessage("[STUB] Pipe write")
+}
+
+SubRoutine.AllocProc {
+    alloc_pid = Add(alloc_pid, 1)
+    PrintMessage("[STUB] Process allocated")
+}
+
+SubRoutine.Sleep {
+    PrintMessage("[STUB] Sleep")
+}
+
+SubRoutine.Wakeup {
+    PrintMessage("[STUB] Wakeup")
+}
+
+SubRoutine.Yield {
+    PrintMessage("[STUB] Yield")
+}
+
+SubRoutine.Schedule {
+    PrintMessage("[STUB] Schedule")
+}
+
+// ====================
+// Redis Service Init
+// ====================
+SubRoutine.RedisServiceInit {
+    PrintMessage("[REDIS] Starting Redis kernel service")
+    
+    RunTask(Kalloc)
+    redis_store = pages_allocated
+    redis_store_size = PGSIZE
+    
+    RunTask(PipeAlloc)
+    redis_cmd_pipe = pipe_id
+    
+    RunTask(PipeAlloc)
+    redis_resp_pipe = pipe_id
+    
+    PrintMessage("[REDIS] Service initialized")
+    PrintMessage("  Store at page:")
+    PrintNumber(redis_store)
+    PrintMessage("  Command pipe:")
+    PrintNumber(redis_cmd_pipe)
+    PrintMessage("  Response pipe:")
+    PrintNumber(redis_resp_pipe)
+}
+
+// ====================
+// Redis String Handler Process - FIXED SYNTAX
+// ====================
+SubRoutine.RedisStringProcess {
+    PrintMessage("[REDIS-STRING] Process started")
+    
+    pipe_id = redis_cmd_pipe
+    RunTask(PipeRead)
+    
+    cmd_type = 1
+    
+    IfCondition EqualTo(cmd_type, 1) ThenBlock: {  // Note the colon!
+        PrintMessage("[REDIS-STRING] Processing SET command")
+        cmd_result = 1
+        syscall_count = Add(syscall_count, 1)
+    }
+    
+    pipe_id = redis_resp_pipe
+    RunTask(PipeWrite)
+    
+    PrintMessage("[REDIS-STRING] Command processed")
+}
+
+// ====================
+// Redis Expiration Handler Process - FIXED SYNTAX
+// ====================
+SubRoutine.RedisExpireProcess {
+    PrintMessage("[REDIS-EXPIRE] Process started")
+    
+    sleep_chan = 100
+    RunTask(Sleep)
+    
+    PrintMessage("[REDIS-EXPIRE] Checking for expired keys...")
+    PrintMessage("[REDIS-EXPIRE] No keys expired")
+    
+    sleep_chan = 100
+    RunTask(Wakeup)
+}
+
+// ====================
+// Redis Master Scheduler - FIXED SYNTAX
+// ====================
+SubRoutine.RedisMasterProcess {
+    PrintMessage("[REDIS-MASTER] Master process started")
+    
+    nwrite = ArrayGet(pipe_nwrite, redis_cmd_pipe)
+    nread = ArrayGet(pipe_nread, redis_cmd_pipe)
+    
+    IfCondition GreaterThan(nwrite, nread) ThenBlock: {
+        PrintMessage("[REDIS-MASTER] Dispatching to string handler")
+        
+        i = 0
+        WhileLoop LessThan(i, NPROC) {
+            pid = ArrayGet(proc_pids, i)
+            IfCondition EqualTo(pid, redis_string_pid) ThenBlock: {
+                state = ArrayGet(proc_states, i)
+                IfCondition EqualTo(state, SLEEPING) ThenBlock: {
+                    ArraySet(proc_states, i, RUNNABLE)
+                    PrintMessage("[REDIS-MASTER] Woke string handler")
+                }
+                i = NPROC
+            }
+            i = Add(i, 1)
+        }
+    }
+    
+    RunTask(Yield)
+}
+
+// ====================
+// Create Redis Service Processes - FIXED SYNTAX
+// ====================
+SubRoutine.SpawnRedisServices {
+    PrintMessage("[REDIS] Spawning Redis service processes")
+    
+    RunTask(RedisServiceInit)
+    
+    RunTask(AllocProc)
+    redis_master_pid = alloc_pid
+    i = 0
+    WhileLoop LessThan(i, NPROC) {
+        pid = ArrayGet(proc_pids, i)
+        IfCondition EqualTo(pid, redis_master_pid) ThenBlock: {
+            ArraySet(proc_states, i, RUNNABLE)
+            ArraySet(proc_priority, i, PRIORITY_HIGH)
+            PrintMessage("[REDIS] Master PID:")
+            PrintNumber(redis_master_pid)
+            i = NPROC
+        }
+        i = Add(i, 1)
+    }
+    
+    RunTask(AllocProc)
+    redis_string_pid = alloc_pid
+    i = 0
+    WhileLoop LessThan(i, NPROC) {
+        pid = ArrayGet(proc_pids, i)
+        IfCondition EqualTo(pid, redis_string_pid) ThenBlock: {
+            ArraySet(proc_states, i, SLEEPING)
+            ArraySet(proc_priority, i, PRIORITY_NORMAL)
+            PrintMessage("[REDIS] String handler PID:")
+            PrintNumber(redis_string_pid)
+            i = NPROC
+        }
+        i = Add(i, 1)
+    }
+    
+    RunTask(AllocProc)
+    redis_expire_pid = alloc_pid
+    i = 0
+    WhileLoop LessThan(i, NPROC) {
+        pid = ArrayGet(proc_pids, i)
+        IfCondition EqualTo(pid, redis_expire_pid) ThenBlock: {
+            ArraySet(proc_states, i, SLEEPING)
+            ArraySet(proc_priority, i, PRIORITY_LOW)
+            PrintMessage("[REDIS] Expire handler PID:")
+            PrintNumber(redis_expire_pid)
+            i = NPROC
+        }
+        i = Add(i, 1)
+    }
+    
+    PrintMessage("[REDIS] All services spawned")
+}
+
+// ====================
+// Test Redis in Kernel - FIXED SYNTAX
+// ====================
+SubRoutine.TestRedisKernel {
+    PrintMessage("")
+    PrintMessage("=== Redis Kernel Integration Test ===")
+    
+    RunTask(SpawnRedisServices)
+    
+    PrintMessage("")
+    PrintMessage("[TEST] Sending SET command through pipe")
+    pipe_id = redis_cmd_pipe
+    RunTask(PipeWrite)
+    
+    current_cpu = 0
+    RunTask(Schedule)
+    
+    i = 0
+    WhileLoop LessThan(i, NPROC) {
+        pid = ArrayGet(proc_pids, i)
+        state = ArrayGet(proc_states, i)
+        IfCondition And(EqualTo(pid, redis_master_pid), EqualTo(state, RUNNING)) ThenBlock: {
+            PrintMessage("[TEST] Redis master is running")
+            RunTask(RedisMasterProcess)
+            i = NPROC
+        }
+        i = Add(i, 1)
+    }
+    
+    i = 0
+    WhileLoop LessThan(i, NPROC) {
+        pid = ArrayGet(proc_pids, i)
+        state = ArrayGet(proc_states, i)
+        IfCondition And(EqualTo(pid, redis_string_pid), EqualTo(state, RUNNABLE)) ThenBlock: {
+            ArraySet(proc_states, i, RUNNING)
+            PrintMessage("[TEST] Redis string handler is running")
+            RunTask(RedisStringProcess)
+            ArraySet(proc_states, i, SLEEPING)
+            i = NPROC
+        }
+        i = Add(i, 1)
+    }
+    
+    nwrite = ArrayGet(pipe_nwrite, redis_resp_pipe)
+    PrintMessage("[TEST] Response pipe has")
+    PrintNumber(nwrite)
+    PrintMessage(" writes")
+    
+    PrintMessage("")
+    PrintMessage("=== Redis Kernel Test Complete ===")
+}
+
+// ====================
+// Main Entry Point
+// ====================
+PrintMessage("Redis Kernel Service Test")
+PrintMessage("==========================")
+
+RunTask(TestRedisKernel)
+
+PrintMessage("")
+PrintMessage("Test complete")

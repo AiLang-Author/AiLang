@@ -1,0 +1,201 @@
+// redis_kernel_master_fixed.ailang
+// Redis Master Process with unique variable names to avoid kernel collisions
+
+// ====================
+// Redis-specific globals (prefixed with rkm_)
+// ====================
+rkm_master_pid = 1
+rkm_string_pid = 2
+rkm_list_pid = 3
+rkm_expire_pid = 4
+
+// Command queue (prefixed)
+rkm_max_cmds = 32
+rkm_cmd_queue = ArrayCreate(32)
+rkm_queue_head = 0
+rkm_queue_tail = 0
+rkm_queue_count = 0
+
+// Command types
+rkm_cmd_set = 1
+rkm_cmd_get = 2
+rkm_cmd_del = 3
+rkm_cmd_ping = 4
+
+// Process states (prefixed)
+rkm_proc_idle = 0
+rkm_proc_busy = 1
+rkm_proc_waiting = 2
+
+rkm_string_state = 0
+rkm_list_state = 0
+rkm_expire_state = 0
+
+// Stats (prefixed)
+rkm_cmds_processed = 0
+rkm_cmds_dispatched = 0
+rkm_cmds_queued = 0
+
+// Working vars (prefixed)
+rkm_cmd = 0
+rkm_cmd_type = 0
+rkm_dispatched = 0
+rkm_i = 0
+
+// ====================
+// Command Queue Management (with prefixed vars)
+// ====================
+SubRoutine.RKM_EnqueueCommand {
+    PrintMessage("[RKM] Enqueuing command type:")
+    PrintNumber(rkm_cmd_type)
+    
+    IfCondition LessThan(rkm_queue_count, rkm_max_cmds) ThenBlock: {
+        rkm_cmd = Multiply(rkm_cmd_type, 65536)
+        ArraySet(rkm_cmd_queue, rkm_queue_tail, rkm_cmd)
+        
+        rkm_queue_tail = Modulo(Add(rkm_queue_tail, 1), rkm_max_cmds)
+        rkm_queue_count = Add(rkm_queue_count, 1)
+        rkm_cmds_queued = Add(rkm_cmds_queued, 1)
+        
+        PrintMessage("  Queue depth:")
+        PrintNumber(rkm_queue_count)
+    } ElseBlock: {
+        PrintMessage("  ERROR: Command queue full!")
+    }
+}
+
+SubRoutine.RKM_DequeueCommand {
+    rkm_cmd = 0
+    
+    IfCondition GreaterThan(rkm_queue_count, 0) ThenBlock: {
+        rkm_cmd = ArrayGet(rkm_cmd_queue, rkm_queue_head)
+        rkm_queue_head = Modulo(Add(rkm_queue_head, 1), rkm_max_cmds)
+        rkm_queue_count = Subtract(rkm_queue_count, 1)
+        
+        rkm_cmd_type = Divide(rkm_cmd, 65536)
+        
+        PrintMessage("[RKM] Dequeued command type:")
+        PrintNumber(rkm_cmd_type)
+    }
+}
+
+// ====================
+// Dispatch Commands (with prefixed vars)
+// ====================
+SubRoutine.RKM_DispatchCommand {
+    rkm_dispatched = 0
+    
+    PrintMessage("[RKM] Dispatching command type:")
+    PrintNumber(rkm_cmd_type)
+    
+    IfCondition EqualTo(rkm_cmd_type, rkm_cmd_set) ThenBlock: {
+        IfCondition EqualTo(rkm_string_state, rkm_proc_idle) ThenBlock: {
+            rkm_string_state = rkm_proc_busy
+            PrintMessage("  -> Dispatched to String handler")
+            rkm_cmds_dispatched = Add(rkm_cmds_dispatched, 1)
+            rkm_dispatched = 1
+            
+            RunTask(RKM_StringHandler)
+        } ElseBlock: {
+            PrintMessage("  -> String handler busy")
+            RunTask(RKM_EnqueueCommand)
+        }
+    }
+    
+    IfCondition EqualTo(rkm_cmd_type, rkm_cmd_get) ThenBlock: {
+        IfCondition EqualTo(rkm_string_state, rkm_proc_idle) ThenBlock: {
+            rkm_string_state = rkm_proc_busy
+            PrintMessage("  -> Dispatched to String handler")
+            rkm_cmds_dispatched = Add(rkm_cmds_dispatched, 1)
+            rkm_dispatched = 1
+            
+            RunTask(RKM_StringHandler)
+        }
+    }
+    
+    IfCondition EqualTo(rkm_cmd_type, rkm_cmd_ping) ThenBlock: {
+        PrintMessage("  -> PONG")
+        rkm_cmds_processed = Add(rkm_cmds_processed, 1)
+        rkm_dispatched = 1
+    }
+}
+
+// ====================
+// String Handler (with prefixed vars)
+// ====================
+SubRoutine.RKM_StringHandler {
+    PrintMessage("[RKM-STRING] Processing command type:")
+    PrintNumber(rkm_cmd_type)
+    
+    IfCondition EqualTo(rkm_cmd_type, rkm_cmd_set) ThenBlock: {
+        PrintMessage("  SET key=test value=data")
+        rkm_cmds_processed = Add(rkm_cmds_processed, 1)
+    }
+    
+    IfCondition EqualTo(rkm_cmd_type, rkm_cmd_get) ThenBlock: {
+        PrintMessage("  GET key=test -> value=data")
+        rkm_cmds_processed = Add(rkm_cmds_processed, 1)
+    }
+    
+    rkm_string_state = rkm_proc_idle
+    PrintMessage("[RKM-STRING] Handler idle")
+}
+
+// ====================
+// Main Process Loop (with prefixed vars)
+// ====================
+SubRoutine.RKM_MainLoop {
+    PrintMessage("[RKM] Redis Kernel Master starting")
+    
+    // Queue some test commands
+    rkm_cmd_type = rkm_cmd_ping
+    RunTask(RKM_EnqueueCommand)
+    
+    rkm_cmd_type = rkm_cmd_set
+    RunTask(RKM_EnqueueCommand)
+    
+    rkm_cmd_type = rkm_cmd_get
+    RunTask(RKM_EnqueueCommand)
+    
+    PrintMessage("[RKM] Processing commands...")
+    
+    rkm_i = 0
+    WhileLoop LessThan(rkm_i, 5) {
+        IfCondition GreaterThan(rkm_queue_count, 0) ThenBlock: {
+            RunTask(RKM_DequeueCommand)
+            
+            IfCondition NotEqual(rkm_cmd_type, 0) ThenBlock: {
+                RunTask(RKM_DispatchCommand)
+            }
+        }
+        
+        rkm_i = Add(rkm_i, 1)
+    }
+    
+    PrintMessage("[RKM] Complete")
+}
+
+// ====================
+// Stats (with prefixed vars)
+// ====================
+SubRoutine.RKM_PrintStats {
+    PrintMessage("=== Redis Kernel Master Stats ===")
+    PrintMessage("Commands queued:")
+    PrintNumber(rkm_cmds_queued)
+    PrintMessage("Commands dispatched:")
+    PrintNumber(rkm_cmds_dispatched)
+    PrintMessage("Commands processed:")
+    PrintNumber(rkm_cmds_processed)
+    PrintMessage("=================================")
+}
+
+// ====================
+// Entry Point
+// ====================
+PrintMessage("Redis Kernel Master (Fixed)")
+PrintMessage("===========================")
+
+RunTask(RKM_MainLoop)
+RunTask(RKM_PrintStats)
+
+PrintMessage("Done")

@@ -1,0 +1,406 @@
+// PAYROLL.ailang - Interactive Terminal Version
+// Payroll processing system with menu-driven interface
+
+LibraryImport.Cobol
+LibraryImport.SQL
+LibraryImport.PostgreSQL_Complete
+
+// Employee data structure
+FixedPool.Employee {
+    "emp_id": Initialize=0
+    "emp_name": Initialize=0
+    "hourly_rate": Initialize=0
+    "hours_worked": Initialize=0
+    "gross_pay": Initialize=0
+    "tax_amount": Initialize=0
+    "net_pay": Initialize=0
+}
+
+// Report counters
+FixedPool.ReportTotals {
+    "total_employees": Initialize=0
+    "total_gross": Initialize=0
+    "total_tax": Initialize=0
+    "total_net": Initialize=0
+}
+
+// Global database connection
+FixedPool.AppState {
+    "db_conn": Initialize=0
+    "running": Initialize=1
+}
+
+Function.Payroll.Initialize {
+    Input: db_conn: Address
+    Body: {
+        // Initialize COBOL file system
+        Cobol.InitFileSystem(db_conn)
+        
+        // Create employees table if not exists
+        create_sql = "CREATE TABLE IF NOT EXISTS employees (emp_id INT PRIMARY KEY, emp_name TEXT, hourly_rate INT, hours_worked INT)"
+        
+        result = PG_Query(db_conn, create_sql)
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+        }
+    }
+}
+
+Function.Payroll.ShowMenu {
+    Body: {
+        PrintMessage("\n")
+        PrintMessage("╔═══════════════════════════════════════════════════╗\n")
+        PrintMessage("║       PAYROLL PROCESSING SYSTEM v1.0              ║\n")
+        PrintMessage("╠═══════════════════════════════════════════════════╣\n")
+        PrintMessage("║  1. Add New Employee                              ║\n")
+        PrintMessage("║  2. View All Employees                            ║\n")
+        PrintMessage("║  3. Update Employee Hours                         ║\n")
+        PrintMessage("║  4. Process Payroll & Generate Report             ║\n")
+        PrintMessage("║  5. View Payroll Report                           ║\n")
+        PrintMessage("║  6. Delete Employee                               ║\n")
+        PrintMessage("║  7. Exit                                          ║\n")
+        PrintMessage("╚═══════════════════════════════════════════════════╝\n")
+        PrintMessage("\nEnter choice (1-7): ")
+    }
+}
+
+Function.Payroll.AddEmployee {
+    Body: {
+        PrintMessage("\n╔═══ ADD NEW EMPLOYEE ═══╗\n")
+        
+        // Get employee ID
+        PrintMessage("Employee ID: ")
+        input_id = ReadInput()
+        emp_id = StringToNumber(input_id)
+        
+        // Get name
+        PrintMessage("Employee Name: ")
+        emp_name = ReadInput()
+        
+        // Get hourly rate
+        PrintMessage("Hourly Rate (dollars, e.g., 25.50): ")
+        input_rate = ReadInput()
+        rate_float = StringToNumber(input_rate)
+        hourly_rate = Multiply(rate_float, 100)  // Convert to cents
+        
+        // Get hours worked
+        PrintMessage("Hours Worked (e.g., 40.00): ")
+        input_hours = ReadInput()
+        hours_float = StringToNumber(input_hours)
+        hours_worked = Multiply(hours_float, 100)  // Convert to cents
+        
+        // Build INSERT query
+        query = "INSERT INTO employees (emp_id, emp_name, hourly_rate, hours_worked) VALUES ("
+        query = StringConcat(query, NumberToString(emp_id))
+        query = StringConcat(query, ", '")
+        query = StringConcat(query, emp_name)
+        query = StringConcat(query, "', ")
+        query = StringConcat(query, NumberToString(hourly_rate))
+        query = StringConcat(query, ", ")
+        query = StringConcat(query, NumberToString(hours_worked))
+        query = StringConcat(query, ")")
+        
+        result = PG_Query(AppState.db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            PrintMessage("\n✓ Employee added successfully!\n")
+        } ElseBlock: {
+            PrintMessage("\n✗ Failed to add employee (may already exist)\n")
+        }
+    }
+}
+
+Function.Payroll.ViewAllEmployees {
+    Body: {
+        PrintMessage("\n╔═══ EMPLOYEE ROSTER ═══╗\n\n")
+        
+        result = SQL.Select(AppState.db_conn, "employees", "*", 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("No employees found.\n")
+            ReturnValue(0)
+        }
+        
+        count = SQL.RowCount(result)
+        
+        PrintMessage("ID    Name                   Rate      Hours\n")
+        PrintMessage("────────────────────────────────────────────────\n")
+        
+        i = 0
+        WhileLoop LessThan(i, count) {
+            emp_id_str = SQL.GetValue(result, i, "emp_id")
+            emp_name_str = SQL.GetValue(result, i, "emp_name")
+            rate_str = SQL.GetValue(result, i, "hourly_rate")
+            hours_str = SQL.GetValue(result, i, "hours_worked")
+            
+            emp_id = StringToNumber(emp_id_str)
+            hourly_rate = StringToNumber(rate_str)
+            hours_worked = StringToNumber(hours_str)
+            
+            // Format output
+            PrintNumber(emp_id)
+            PrintMessage("     ")
+            PrintString(emp_name_str)
+            
+            // Pad name
+            name_len = StringLength(emp_name_str)
+            j = name_len
+            WhileLoop LessThan(j, 20) {
+                PrintMessage(" ")
+                j = Add(j, 1)
+            }
+            
+            rate_formatted = FormatDecimal(hourly_rate, 2, 2)
+            PrintMessage("  $")
+            PrintString(rate_formatted)
+            PrintMessage("   ")
+            
+            hours_formatted = FormatDecimal(hours_worked, 2, 2)
+            PrintString(hours_formatted)
+            PrintMessage("\n")
+            
+            i = Add(i, 1)
+        }
+        
+        PG_DestroyResult(result)
+        PrintMessage("\nTotal employees: ")
+        PrintNumber(count)
+        PrintMessage("\n")
+    }
+}
+
+Function.Payroll.UpdateHours {
+    Body: {
+        PrintMessage("\n╔═══ UPDATE EMPLOYEE HOURS ═══╗\n")
+        
+        PrintMessage("Employee ID: ")
+        input_id = ReadInput()
+        emp_id = StringToNumber(input_id)
+        
+        PrintMessage("New Hours Worked (e.g., 45.50): ")
+        input_hours = ReadInput()
+        hours_float = StringToNumber(input_hours)
+        hours_worked = Multiply(hours_float, 100)
+        
+        // Build UPDATE query
+        query = "UPDATE employees SET hours_worked = "
+        query = StringConcat(query, NumberToString(hours_worked))
+        query = StringConcat(query, " WHERE emp_id = ")
+        query = StringConcat(query, NumberToString(emp_id))
+        
+        result = PG_Query(AppState.db_conn, query)
+        Deallocate(query, 0)
+        
+        IfCondition NotEqual(result, 0) ThenBlock: {
+            PG_DestroyResult(result)
+            PrintMessage("\n✓ Hours updated successfully!\n")
+        } ElseBlock: {
+            PrintMessage("\n✗ Failed to update hours\n")
+        }
+    }
+}
+
+Function.Payroll.CalculatePay {
+    Body: {
+        gross_cents = Multiply(Employee.hourly_rate, Employee.hours_worked)
+        Employee.gross_pay = Divide(gross_cents, 100)
+        Employee.tax_amount = Divide(Multiply(Employee.gross_pay, 20), 100)
+        Employee.net_pay = Subtract(Employee.gross_pay, Employee.tax_amount)
+    }
+}
+
+Function.Payroll.ProcessPayroll {
+    Body: {
+        PrintMessage("\n╔═══ PROCESSING PAYROLL ═══╗\n\n")
+        
+        result = SQL.Select(AppState.db_conn, "employees", "*", 0)
+        
+        IfCondition EqualTo(result, 0) ThenBlock: {
+            PrintMessage("No employees to process.\n")
+            ReturnValue(0)
+        }
+        
+        count = SQL.RowCount(result)
+        
+        // Reset totals
+        ReportTotals.total_employees = count
+        ReportTotals.total_gross = 0
+        ReportTotals.total_tax = 0
+        ReportTotals.total_net = 0
+        
+        // Open report file
+        report_fd = FileOpen("PAYROLL_REPORT.txt", "w")
+        
+        // Write header
+        Cobol.WriteLine(report_fd, "═══════════════════════════════════════════════════════════════════════════")
+        Cobol.WriteLine(report_fd, "                         PAYROLL REGISTER REPORT                           ")
+        Cobol.WriteLine(report_fd, "═══════════════════════════════════════════════════════════════════════════")
+        Cobol.WriteLine(report_fd, "")
+        Cobol.WriteLine(report_fd, "  ID    Employee Name        Rate      Hours    Gross      Tax        Net    ")
+        Cobol.WriteLine(report_fd, "───────────────────────────────────────────────────────────────────────────")
+        
+        // Process each employee
+        i = 0
+        WhileLoop LessThan(i, count) {
+            emp_id_str = SQL.GetValue(result, i, "emp_id")
+            emp_name_str = SQL.GetValue(result, i, "emp_name")
+            rate_str = SQL.GetValue(result, i, "hourly_rate")
+            hours_str = SQL.GetValue(result, i, "hours_worked")
+            
+            Employee.emp_id = StringToNumber(emp_id_str)
+            Employee.emp_name = emp_name_str
+            Employee.hourly_rate = StringToNumber(rate_str)
+            Employee.hours_worked = StringToNumber(hours_str)
+            
+            Payroll.CalculatePay()
+            
+            // Write detail line
+            line = "  "
+            line = StringConcat(line, NumberToString(Employee.emp_id))
+            line = StringConcat(line, "      ")
+            line = StringConcat(line, Employee.emp_name)
+            
+            name_len = StringLength(Employee.emp_name)
+            j = name_len
+            WhileLoop LessThan(j, 20) {
+                line = StringConcat(line, " ")
+                j = Add(j, 1)
+            }
+            
+            line = StringConcat(line, "  $")
+            line = StringConcat(line, FormatDecimal(Employee.hourly_rate, 2, 2))
+            line = StringConcat(line, "   ")
+            line = StringConcat(line, FormatDecimal(Employee.hours_worked, 2, 2))
+            line = StringConcat(line, "    $")
+            line = StringConcat(line, FormatDecimal(Employee.gross_pay, 2, 2))
+            line = StringConcat(line, "    $")
+            line = StringConcat(line, FormatDecimal(Employee.tax_amount, 2, 2))
+            line = StringConcat(line, "    $")
+            line = StringConcat(line, FormatDecimal(Employee.net_pay, 2, 2))
+            
+            Cobol.WriteLine(report_fd, line)
+            
+            ReportTotals.total_gross = Add(ReportTotals.total_gross, Employee.gross_pay)
+            ReportTotals.total_tax = Add(ReportTotals.total_tax, Employee.tax_amount)
+            ReportTotals.total_net = Add(ReportTotals.total_net, Employee.net_pay)
+            
+            i = Add(i, 1)
+        }
+        
+        // Write totals
+        Cobol.WriteLine(report_fd, "───────────────────────────────────────────────────────────────────────────")
+        
+        total_line = "  TOTALS:                                      $"
+        total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_gross, 2, 2))
+        total_line = StringConcat(total_line, "   $")
+        total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_tax, 2, 2))
+        total_line = StringConcat(total_line, "   $")
+        total_line = StringConcat(total_line, FormatDecimal(ReportTotals.total_net, 2, 2))
+        
+        Cobol.WriteLine(report_fd, total_line)
+        Cobol.WriteLine(report_fd, "═══════════════════════════════════════════════════════════════════════════")
+        
+        FileClose(report_fd)
+        PG_DestroyResult(result)
+        
+        PrintMessage("✓ Processed ")
+        PrintNumber(count)
+        PrintMessage(" employees\n")
+        PrintMessage("✓ Report saved to database\n")
+    }
+}
+
+Function.Payroll.ViewReport {
+    Body: {
+        PrintMessage("\n")
+        
+        report_fd = FileOpen("PAYROLL_REPORT.txt", "r")
+        
+        IfCondition EqualTo(report_fd, 0) ThenBlock: {
+            PrintMessage("No report available. Please process payroll first.\n")
+            ReturnValue(0)
+        }
+        
+        content = FileRead(report_fd)
+        FileClose(report_fd)
+        
+        PrintString(content)
+        PrintMessage("\n")
+    }
+}
+
+Function.Payroll.DeleteEmployee {
+    Body: {
+        PrintMessage("\n╔═══ DELETE EMPLOYEE ═══╗\n")
+        
+        PrintMessage("Employee ID to delete: ")
+        input_id = ReadInput()
+        emp_id = StringToNumber(input_id)
+        
+        PrintMessage("Are you sure? (yes/no): ")
+        confirm = ReadInput()
+        
+        is_yes = StringEquals(confirm, "yes")
+        
+        IfCondition EqualTo(is_yes, 1) ThenBlock: {
+            query = "DELETE FROM employees WHERE emp_id = "
+            query = StringConcat(query, NumberToString(emp_id))
+            
+            result = PG_Query(AppState.db_conn, query)
+            Deallocate(query, 0)
+            
+            IfCondition NotEqual(result, 0) ThenBlock: {
+                PG_DestroyResult(result)
+                PrintMessage("\n✓ Employee deleted\n")
+            } ElseBlock: {
+                PrintMessage("\n✗ Failed to delete employee\n")
+            }
+        } ElseBlock: {
+            PrintMessage("\n✗ Cancelled\n")
+        }
+    }
+}
+
+// Main program
+LoopMain.Main {
+    // Connect to database
+    PrintMessage("Connecting to database...\n")
+    db_conn = PG_Connect("localhost", 5432, "testdb", "testuser", "testpass")
+    
+    IfCondition EqualTo(db_conn, 0) ThenBlock: {
+        PrintMessage("ERROR: Database connection failed\n")
+        SystemCall(60, 1)
+    }
+    
+    AppState.db_conn = db_conn
+    
+    // Initialize system
+    Payroll.Initialize(db_conn)
+    
+    // Main loop
+    WhileLoop EqualTo(AppState.running, 1) {
+        Payroll.ShowMenu()
+        
+        choice_str = ReadInput()
+        choice = StringToNumber(choice_str)
+        
+        Branch choice {
+            Case 1: { Payroll.AddEmployee() }
+            Case 2: { Payroll.ViewAllEmployees() }
+            Case 3: { Payroll.UpdateHours() }
+            Case 4: { Payroll.ProcessPayroll() }
+            Case 5: { Payroll.ViewReport() }
+            Case 6: { Payroll.DeleteEmployee() }
+            Case 7: { 
+                AppState.running = 0
+                PrintMessage("\nGoodbye!\n")
+            }
+            Default: { PrintMessage("\nInvalid choice. Please try again.\n") }
+        }
+    }
+    
+    // Cleanup
+    PG_Disconnect(db_conn)
+}
