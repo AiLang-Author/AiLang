@@ -1,74 +1,105 @@
-# Python
+# === WIP .ailang files (keep Librarys and UnitTestCode) ===
+# Banking/COBOL transpiler experiments
+ailang/BANKING*.ailang
+ailang/banking*.ailang
+ailang/ESCAL*.ailang
+ailang/ESDRV*.ailang
+ailang/EXEC85*.ailang
+
+# Transformer/LLM experiments
+ailang/FCtransformer*.ailang
+ailang/*transformer*.ailang
+ailang/smollm*.ailang
+ailang/pedagogical*.ailang
+ailang/embedding*.ailang
+ailang/token_pools*.ailang
+ailang/sql_loader*.ailang
+ailang/generated*.ailang
+
+# Test files
+ailang/crashburn.ailang
+ailang/test_*.ailang
+ailang/Untitled*.ailang
+ailang/ipctest.ailang
+ailang/linkagetest.ailang
+ailang/VICIOUS*.ailang
+ailang/Gsort.ailang
+ailang/PGQ.ailang
+ailang/branch_optimization*.ailang
+ailang/raw_memory*.ailang
+ailang/fork_branch*.ailang
+ailang/btrsp*.ailang
+ailang/tiny_llm.ailang
+ailang/xv6*.ailang
+
+# Library files (except the ones we want to keep)
+ailang/Library.JCL*.ailang
+ailang/Library.smollm*.ailang
+
+# Frontend folders
+ailang/cobol_frontend/
+ailang/mumps_frontend/
+ailang/aimacro_frontend/
+
+# Demo/test folders
+ailang/Demo/
+ailang/JCL/
+ailang/compiler dev tests/
+ailang/dev scripts/
+ailang/example programs/
+
+# Compiled binaries and debug files
+*_exec
+*.out
+*.import_debug.json
+*_forensic.json
+
+# Large files
+ailang/debug_output.txt
+ailang/debug.log
+ailang/*_debug.log
+ailang/dictionary.txt
+
+# Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# Ailang build artifacts
-# Compiled binaries
-*_exec
-*.import_debug.json
-*.out
-
-# Ignore all .ailang files in the ailang/ folder
-*.ailang
-
-# Ignore frontend folders
-cobol_frontend/
-mumps_frontend/
-aimacro_frontend/
-
-# Ignore demo/test folders
-Demo/
-JCL/
-"compiler dev tests"/
-"dev scripts"/
-"example programs"/
 
 # Test artifacts
 test_cat_files/
-
-# Debug output
-debug_*.py
-*_debug.py
-conversion_failures/
-parser_failures/
-
-# Test outputs in root
-/*.ailang
-/*.cbl
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-
-# Ailang build artifacts
-*_exec
-*.import_debug.json
-
-# Temporary files
-*.tmp
 *.log
+*.tmp
+ailang/*.txt
+ailang/*.sql
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# ============================================================================
-# AI/ML Models
-# ============================================================================
+# Model files
 *.onnx
-*.weights
+*.bin
+*.pth
+*.safetensors
+*.gguf
 
-# Large test data files
-ailang/cobol_frontend/tests/bigtest.cbl
-ailang/cobol_frontend/tests/newcob.cbl
-ailang/debug_output.txt
+# Zip archives
+*.zip
+
+# Scripts (keep main.py, keep test scripts in UnitTestCode)
+ailang/*.sh
+ailang/*.py
+!ailang/main.py
+!ailang/import_resolver.py
+
+# === KEEP THESE (don't ignore) ===
+# Keep Librarys/ folder completely
+!ailang/Librarys/
+!ailang/Librarys/**
+
+# Keep UnitTestCode/ folder completely  
+!ailang/UnitTestCode/
+!ailang/UnitTestCode/**
+
+# Keep compiler folders
+!ailang/ailang_compiler/
+!ailang/ailang_compiler/**
+!ailang/ailang_parser/
+!ailang/ailang_parser/**
+!ailang/ailang_lexer/
+!ailang/ailang_lexer/** 
