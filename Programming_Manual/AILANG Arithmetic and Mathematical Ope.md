@@ -1,4 +1,4 @@
-# AILANG Arithmetic and Mathematical Operations Manual
+# AILANG Arithmetic and Mathematical Operations Manual 
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -606,23 +606,45 @@ result = (true_condition || expensive_operation())
 
 ## Advanced Mathematical Functions
 
-### Absolute Value
+AILANG provides several advanced mathematical functions as **compiler-level primitives** for optimal performance. These are implemented directly in the compiler's `math_ops.py` module.
 
-**Function Syntax:**
+### Integer Square Root
+
+**Function Syntax (Compiler Primitive):**
 ```ailang
-result = Absolute(value)
+result = ISqrt(value)  // Newton's method, implemented in assembly
 ```
 
 **Examples:**
 ```ailang
-pos = Absolute(42)     // Returns 42
-pos = Absolute(-42)    // Returns 42
-zero = Absolute(0)     // Returns 0
+sqrt_25 = ISqrt(25)    // Returns 5
+sqrt_100 = ISqrt(100)  // Returns 10  
+sqrt_50 = ISqrt(50)    // Returns 7 (floor of 7.071...)
 ```
+
+**Implementation:** Uses Newton's method directly compiled to x86-64 assembly for maximum performance.
+
+**Note:** A slower library version `Math.ISqrt()` exists in `Library.FixedPointTrig` but the compiler primitive is recommended.
+
+### Absolute Value
+
+**Function Syntax (Compiler Primitive):**
+```ailang
+result = Abs(value)
+```
+
+**Examples:**
+```ailang
+pos = Abs(42)      // Returns 42
+pos = Abs(-42)     // Returns 42
+zero = Abs(0)      // Returns 0
+```
+
+**Implementation:** Uses branchless conditional move (CMOV) for optimal performance.
 
 ### Minimum and Maximum
 
-**Function Syntax:**
+**Function Syntax (Compiler Primitives):**
 ```ailang
 result = Min(a, b)     // Returns smaller value
 result = Max(a, b)     // Returns larger value
@@ -633,10 +655,29 @@ result = Max(a, b)     // Returns larger value
 smaller = Min(10, 5)   // Returns 5
 larger = Max(10, 5)    // Returns 10
 
-// Can be chained
+// Can be nested (with caution)
 smallest = Min(Min(a, b), c)
 largest = Max(Max(a, b), c)
 ```
+
+**Implementation:** Uses x86-64 CMOV instructions for branchless execution.
+
+**Note:** Library versions `Math.Min()` and `Math.Max()` exist in `Library.FixedPointTrig` but are slower.
+
+### Power (Alternative to Infix)
+
+**Function Syntax (Compiler Primitive):**
+```ailang
+result = Pow(base, exponent)  // Alias for Power()
+```
+
+**Examples:**
+```ailang
+squared = Pow(5, 2)      // Returns 25
+cubed = Pow(3, 3)        // Returns 27
+```
+
+**Note:** `Pow()` is an alias for the `Power()` function, which is also available via infix as `(base ^ exponent)`. All three forms compile to the same efficient assembly code.
 
 ## Mixed Notation Programming
 
