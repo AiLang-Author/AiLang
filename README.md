@@ -48,7 +48,7 @@ improving logic following, and preventing vast classes of bugs through intention
 
 
 
-🚀 What is AiLang exactly?
+ What is AiLang exactly?
 ---
 AiLang is a new programming language where debugging is a primitive, cache placement is explicit, and every operation states its intent. It make these operations easy with rich deep primitives and keywords and built in functions.It compiles to small efficient executables, often 20-30% smaller than C using GCC , often smaller than 8kb for a calculator, with extremly low runtime overhead, offering compelling features, deep primitives and core functionality unseen in other languages that operate at such a low level, while also allowing for complex application development with tracable understandable behavior. 
 
@@ -61,7 +61,7 @@ A few Code and syntax samples
 ---
 
 ```
-✅ Native Debug Primitives
+ Native Debug Primitives
 textailangDebug("cache critical", level=2) {
     DebugPerf.CacheStats()
     DebugMemory.Dump(buffer, 64)
@@ -75,7 +75,7 @@ Multi-level debugging: -D, -D2, -D3 for progressive detail.
 Built-in profiling: Cache misses, TLB stats, branch predictions.
 ```
 ```
-✅ Progressive Shorthand Mode (VSCode Plugin, in development)
+ Progressive Shorthand Mode (VSCode Plugin, in development)
 
 textailang// Level 0: Verbose (on disk) no syntax reduction
 Function.Calculate {
@@ -101,7 +101,7 @@ Perfect bijection—each shorthand maps to one verbose form.
 ```
 
 ```
-✅ Cache-Aware Memory Pools (in development)
+ Cache-Aware Memory Pools (in development)
 textailangFixedPool.HotData {
     "buffer": Initialize=0, CacheLevel="L1", Alignment=64
 }
@@ -116,7 +116,7 @@ Compile-time layout: Predictable memory patterns.
 ```
 
 ```
-✅ VM Operations as Language Features (in development)
+ VM Operations as Language Features (in development)
 textailangPageTable.Map(virtual_addr=0x1000, physical_addr=0x2000, flags="RW")
 Cache.Flush(level="L2", address=buffer_addr)
 TLB.Invalidate(address=0x1000)
@@ -124,7 +124,7 @@ MemoryBarrier.Full()
 ```
 
 ```
-✅Concurenccy as a labguage feature (in development and testing)
+Concurenccy as a labguage feature (in development and testing)
 textailangLoopActor.Worker {
     LoopReceive message {
         case "task": ProcessTask(message.data)
@@ -140,7 +140,7 @@ Memory barriers: Lock-free synchronization primitives.
 ```
 
 ```
-🎯 Deep Built-in Operations (100+ Primitives)
+ Deep Built-in Operations (100+ Primitives)
 textCore Operations
 Arithmetic: Add(), Subtract(), Multiply(), Divide(), Power(), Modulo(), SquareRoot()
 Bitwise: BitwiseAnd(), BitwiseOr(), BitwiseXor(), LeftShift(), RightShift()
@@ -166,7 +166,7 @@ Deterministic scheduling: Predictable execution order.
 ```
 
 ```
-🔧 Compiler & Tooling
+ Compiler & Tooling
 Compilation
 text# Standard compilation
 python3 main.py program.ailang          # Creates program_exec
@@ -186,26 +186,26 @@ text./run_function_tests.sh   # 30/30 tests passing
 ```
 
 ```
-🧬 Why AiLang?
+ Why AiLang?
 What You Escape
 
-❌ Garbage collector pauses—no GC, no surprises.
-❌ Hidden allocations—every allocation is explicit.
-❌ Cryptic operators—Add(x, y) not x + y, intent is clear.
-❌ Bolted-on debugging—printf debugging is obsolete.
-❌ Cache-oblivious code—random memory access patterns.
+ Garbage collector pauses—no GC, no surprises.
+ Hidden allocations—every allocation is explicit.
+ Cryptic operators—Add(x, y) not x + y, intent is clear.
+ Bolted-on debugging—printf debugging is obsolete.
+ Cache-oblivious code—random memory access patterns.
 
 What You Get
 
-✅ Smaller executables—often 30x smaller than C in initial benchmarks.
-✅ Predictable performance—no hidden costs.
-✅ Hardware sympathy—cache-aware, TLB-optimized.
-✅ Debug-first design—assertions and traces in syntax.
-✅ Zero overhead—compiles to raw x86-64, no runtime.
+ Smaller executables—often 30x smaller than C in initial benchmarks.
+ Predictable performance—no hidden costs.
+ Hardware sympathy—cache-aware, TLB-optimized.
+ Debug-first design—assertions and traces in syntax.
+ Zero overhead—compiles to raw x86-64, no runtime.
 ```
 
 ```
-📊 Performance Metrics
+ Performance Metrics
 
 Binary size: 8-12KB for typical simple programs.
 Context switch: 0ns (actor model, no OS threads)—optimistic test case, a long-term goal (YMMV in production).
@@ -215,7 +215,7 @@ Cache efficiency: Explicit L1/L2/L3 placement (long-term feature, not yet implem
 ```
 
 ```
-🎯 Use Cases
+ Use Cases
 
 Operating Systems: Kernels, drivers, bootloaders.
 Application Development: GUI, user-facing apps, machine controls, aerospace (where explicit logic and 100% reliable, unambiguous code are mandatory).
@@ -226,8 +226,8 @@ Research Systems: VM experiments, hardware simulation (ideal for teaching with n
 ```
 
 ```
-🗺️ Roadmap
-Complete ✅
+ Roadmap
+Complete 
 
 Core compiler (30/30 tests).
 Debug system with -D flags.
@@ -237,14 +237,14 @@ Memory pools (Fixed, Dynamic, Temporal).
 String and array operations.
 x86-64 code generation.
 
-In Progress 🚧
+In Progress 
 
 Progressive shorthand VSCode plugin.
 Agent FSM system (cache-aware actors).
 LoopMain (RTOS-style program structure).
 Extended VM operations.
 
-Planned 📋
+Planned 
 
 Self-hosting compiler.
 RISC-V backend.
@@ -253,7 +253,7 @@ Redis subset implementation.
 ```
 
 ```
-🚀 Quick Start
+Quick Start
 text# Clone repository
 git clone https://github.com/yourusername/AILANG.git
 cd AILANG
