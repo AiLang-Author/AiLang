@@ -1,6 +1,7 @@
 Why make AiLang??? : A Verb-First,Easier to Reason About,  Programming Language for Next-Generation Computing
 ---
-
+Added Core Utils for unix/GNU repo here https://github.com/AiLang-Author/CoreUtils-
+---
 
 AiLang is the first verb-first, low-level programming language with the capability for high level library abstraction.
 ---
